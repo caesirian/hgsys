@@ -1,0 +1,62 @@
+<div class="module-content">
+    <div class="module-header">
+        <h2><i class="fas fa-chart-bar"></i> Módulo 1</h2>
+        <p>Ejemplo de módulo cargado dinámicamente</p>
+    </div>
+
+    <div class="module-body">
+        <div class="card">
+            <div class="card-header">
+                <h3>Funcionalidades del Módulo 1</h3>
+            </div>
+            <div class="card-body">
+                <p>Este es un módulo cargado desde un archivo externo. Puede contener cualquier tipo de contenido:</p>
+                
+                <div class="features-grid">
+                    <div class="feature-item">
+                        <i class="fas fa-database"></i>
+                        <h4>Gestión de Datos</h4>
+                        <p>Manejo de información y registros</p>
+                    </div>
+                    
+                    <div class="feature-item">
+                        <i class="fas fa-chart-line"></i>
+                        <h4>Reportes</h4>
+                        <p>Generación de reportes y estadísticas</p>
+                    </div>
+                    
+                    <div class="feature-item">
+                        <i class="fas fa-cogs"></i>
+                        <h4>Configuración</h4>
+                        <p>Opciones de personalización</p>
+                    </div>
+                </div>
+
+                <div class="action-section">
+                    <button class="btn btn-primary" onclick="alert('Acción del Módulo 1')">
+                        <i class="fas fa-play"></i> Ejecutar Acción
+                    </button>
+                    
+                    <button class="btn btn-secondary" onclick="systemManager.showNotification('Función del Módulo 1', 'success')">
+                        <i class="fas fa-bell"></i> Notificación
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h3>Información Adicional</h3>
+            </div>
+            <div class="card-body">
+                <p>Los módulos pueden ser tan simples o complejos como necesites:</p>
+                <ul>
+                    <li>Formularios de entrada</li>
+                    <li>Tablas de datos</li>
+                    <li>Gráficos y visualizaciones</li>
+                    <li>Configuraciones específicas</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
