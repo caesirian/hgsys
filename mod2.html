@@ -1,0 +1,82 @@
+<div class="module-content">
+    <div class="module-header">
+        <h2><i class="fas fa-cog"></i> Módulo 2</h2>
+        <p>Otro ejemplo de módulo modular</p>
+    </div>
+
+    <div class="module-body">
+        <div class="card">
+            <div class="card-header">
+                <h3>Configuración del Sistema</h3>
+            </div>
+            <div class="card-body">
+                <form id="configForm">
+                    <div class="form-group">
+                        <label for="systemName">Nombre del Sistema</label>
+                        <input type="text" id="systemName" value="HG Sys" class="form-control">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="theme">Tema de Color</label>
+                        <select id="theme" class="form-control">
+                            <option value="light">Claro</option>
+                            <option value="dark">Oscuro</option>
+                            <option value="auto">Automático</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="notifications"> 
+                            Activar notificaciones
+                        </label>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Guardar Configuración
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h3>Estado del Sistema</h3>
+            </div>
+            <div class="card-body">
+                <div class="status-list">
+                    <div class="status-item">
+                        <span class="status-label">Autenticación</span>
+                        <span class="status-value status-ok">
+                            <i class="fas fa-check-circle"></i> Activa
+                        </span>
+                    </div>
+                    
+                    <div class="status-item">
+                        <span class="status-label">Módulos</span>
+                        <span class="status-value status-ok">
+                            <i class="fas fa-check-circle"></i> 2 Cargados
+                        </span>
+                    </div>
+                    
+                    <div class="status-item">
+                        <span class="status-label">Sesión</span>
+                        <span class="status-value status-ok">
+                            <i class="fas fa-check-circle"></i> Válida
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Script específico del módulo 2
+    document.getElementById('configForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        systemManager.showNotification('Configuración guardada correctamente', 'success');
+    });
+</script>
