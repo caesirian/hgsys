@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HG Sys - Sistema Principal</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-auth-compat.js"></script>
+</head>
+<body class="system-body">
+    <!-- Loading del sistema -->
+    <div id="systemLoading" class="system-loading active">
+        <div class="loading-content">
+            <div class="loading-spinner">
+                <div class="spinner-circle"></div>
+                <div class="spinner-circle"></div>
+                <div class="spinner-circle"></div>
+            </div>
+            <h2>Iniciando HG Sys</h2>
+            <p>Cargando sistema modular...</p>
+        </div>
+    </div>
+
+    <!-- Estructura principal del sistema -->
+    <div class="app-container" id="appContainer" style="display: none;">
+        <!-- Header -->
+        <header class="system-header">
+            <div class="header-left">
+                <button id="menuToggle" class="menu-toggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <h1>
+                    <i class="fas fa-cubes"></i>
+                    <span>HG Sys</span>
+                    <small class="version">v1.0</small>
+                </h1>
+            </div>
+            
+            <div class="header-center">
+                <div class="module-title" id="moduleTitle">
+                    <i class="fas fa-home"></i>
+                    <span>Inicio</span>
+                </div>
+            </div>
+
+            <div class="header-right">
+                <div class="user-menu">
+                    <div class="user-info">
+                        <div class="user-avatar-small" id="headerAvatar">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <span class="user-name" id="headerUserName">Usuario</span>
+                    </div>
+                    <button class="logout-btn-small" onclick="systemManager.logout()">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <nav class="sidebar-nav">
+                <div class="nav-section">
+                    <h3>Módulos Principales</h3>
+                    <ul>
+                        <li>
+                            <a href="#" class="nav-link active" data-module="dashboard">
+                                <i class="fas fa-tachometer-alt"></i>
+                                <span>Dashboard</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" class="nav-link" data-module="mod1">
+                                <i class="fas fa-chart-bar"></i>
+                                <span>Módulo 1</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" class="nav-link" data-module="mod2">
+                                <i class="fas fa-cog"></i>
+                                <span>Módulo 2</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="nav-section">
+                    <h3>Herramientas</h3>
+                    <ul>
+                        <li>
+                            <a href="#" class="nav-link" data-module="config">
+                                <i class="fas fa-sliders-h"></i>
+                                <span>Configuración</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" class="nav-link" data-module="help">
+                                <i class="fas fa-question-circle"></i>
+                                <span>Ayuda</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="system-status">
+                    <i class="fas fa-circle status-online"></i>
+                    <span>Sistema Online</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Overlay para móviles -->
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+        <!-- Contenido principal -->
+        <main class="main-content">
+            <div class="content-header">
+                <div class="breadcrumb" id="breadcrumb">
+                    <span>HG Sys</span>
+                    <i class="fas fa-chevron-right"></i>
+                    <span id="currentModule">Dashboard</span>
+                </div>
+                <div class="content-actions" id="contentActions">
+                    <!-- Acciones dinámicas del módulo -->
+                </div>
+            </div>
+
+            <div class="module-container" id="moduleContainer">
+                <!-- Los módulos se cargarán aquí -->
+                <div class="welcome-module">
+                    <div class="welcome-header">
+                        <i class="fas fa-cubes"></i>
+                        <h2>Bienvenido a HG Sys</h2>
+                    </div>
+                    <div class="welcome-content">
+                        <p>Sistema modular básico para desarrollo de proyectos web.</p>
+                        <div class="welcome-features">
+                            <div class="feature-card">
+                                <i class="fas fa-shield-alt"></i>
+                                <h4>Seguro</h4>
+                                <p>Autenticación con Firebase</p>
+                            </div>
+                            <div class="feature-card">
+                                <i class="fas fa-puzzle-piece"></i>
+                                <h4>Modular</h4>
+                                <p>Arquitectura escalable</p>
+                            </div>
+                            <div class="feature-card">
+                                <i class="fas fa-mobile-alt"></i>
+                                <h4>Responsive</h4>
+                                <p>Adaptable a dispositivos</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="auth-manager.js"></script>
+    <script src="system-manager.js"></script>
+    <script>
+        // Inicializar el sistema cuando se cargue la página
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Iniciando HG Sys - Sistema modular');
+            systemManager.init();
+        });
+    </script>
+</body>
+</html>
