@@ -215,42 +215,64 @@ Desarrollo Web & Sistemas de Gestión – Presupuesto sin compromiso
 </div>
 
 </div>
-
 <script>
 const radios = document.querySelectorAll('input[name="base"]');
 const extras = document.querySelectorAll('.extra');
 const totalDiv = document.getElementById("total");
 
 function calcular() {
-    let total = 0;
+  let total = 0;
+  let detalle = [];
 
-    radios.forEach(radio => {
-        if (radio.checked) total += parseInt(radio.value);
-    });
+  radios.forEach(radio => {
+    if (radio.checked) {
+      total += parseInt(radio.value);
+      detalle.push(radio.parentElement.innerText);
+    }
+  });
 
-    extras.forEach(extra => {
-        if (extra.checked) total += parseInt(extra.value);
-    });
+  extras.forEach(extra => {
+    if (extra.checked) {
+      total += parseInt(extra.value);
+      detalle.push(extra.parentElement.innerText);
+    }
+  });
 
-    totalDiv.innerText = "Total estimado: ARS " + total.toLocaleString();
+  totalDiv.innerText = "Total estimado: ARS " + total.toLocaleString();
+  window.detallePresupuesto = detalle.join("\n");
+  window.totalPresupuesto = "ARS " + total.toLocaleString();
 }
 
 radios.forEach(r => r.addEventListener("change", calcular));
 extras.forEach(e => e.addEventListener("change", calcular));
 
 function enviarPresupuesto() {
-    const nombre = document.getElementById("nombre").value;
-    const email = document.getElementById("email").value;
-    const mensaje = document.getElementById("mensaje").value;
-    const total = totalDiv.innerText;
+  const nombre = document.getElementById("nombre").value;
+  const email = document.getElementById("email").value;
+  const mensaje = document.getElementById("mensaje").value;
 
-    const mailto = `mailto:hernan.garbarino@gmail.com?subject=Solicitud de presupuesto&body=
-Nombre: ${nombre}%0D%0A
-Email: ${email}%0D%0A
-Mensaje: ${mensaje}%0D%0A
-${total}`;
+  if (!nombre || !email) {
+    alert("Completá nombre y email");
+    return;
+  }
 
-    window.location.href = mailto;
+  fetch("https://script.google.com/macros/s/AKfycbxEazT71UEDhRUKwcJK9ROULYguXXVR4j7sq_yXwx62TPawSQm8EhVdfobSBE2Nrhtrxw/exec", {
+    method: "POST",
+    body: JSON.stringify({
+      nombre,
+      email,
+      mensaje,
+      total: window.totalPresupuesto,
+      detalle: window.detallePresupuesto
+    })
+  })
+  .then(res => res.json())
+  .then(() => {
+    alert("✅ Presupuesto enviado correctamente");
+  })
+  .catch(() => {
+    alert("❌ Error al enviar presupuesto");
+  });
 }
 </script>
 
