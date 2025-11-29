@@ -116,7 +116,7 @@
       font-size: .85rem;
     }
 
-    .tool-window {
+    .tool-window, #module-container {
       background: #0b0b10;
       border-radius: 14px;
       padding: 20px;
@@ -314,21 +314,29 @@
 <script>
 async function loadModule(url, localId=null) {
   const container = document.getElementById('module-container');
-  container.innerHTML = 'Cargando módulo...';
+  container.innerHTML = '<div class="loader">Cargando módulo...</div>';
+
   try {
-    const res = await fetch(url);
-    if(!res.ok) throw new Error('Fallback local');
+    const res = await fetch(url, { mode: 'cors' });
+    if (!res.ok) throw new Error('Fetch fallido');
     const html = await res.text();
-    container.innerHTML = html;
-    toast('Módulo cargado');
-  } catch(e){
-    if(localId){
+
+    // Parseamos el HTML remoto y extraemos solo el <main>
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    const main = doc.querySelector('main') || doc.body;
+
+    container.innerHTML = main.innerHTML;
+    toast('Módulo cargado correctamente');
+  } catch (e) {
+    if (localId) {
       const local = document.getElementById(localId);
       container.innerHTML = local.innerHTML;
       toast('Módulo local cargado');
     } else {
-      container.innerHTML = 'Error cargando módulo';
+      container.innerHTML = '<p style="color:red">Error cargando módulo.</p>';
     }
+  }
+}
   }
 }
 
