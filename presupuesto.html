@@ -66,7 +66,6 @@ h1 {
     padding-left: 12px;
     margin-bottom: 18px;
 }
-
 .opcion {
     background: rgba(255, 255, 255, 0.06);
     border-radius: 14px;
@@ -74,11 +73,14 @@ h1 {
     margin-bottom: 12px;
     cursor: pointer;
     transition: 0.3s;
-    display: flex;
+    display: grid;
+    grid-template-columns: 26px 1fr;  /* ✅ checkbox ancho fijo + texto flexible */
     align-items: center;
-    gap: 14px;              /* ✅ separación perfecta entre checkbox y texto */
-    line-height: 1.4;      /* ✅ mejor lectura vertical */
+    gap: 14px;
+    line-height: 1.4;
+    overflow: hidden;                 /* ✅ evita que el texto se salga */
 }
+
 
 
 .opcion:hover {
@@ -90,7 +92,7 @@ input[type="radio"],
 input[type="checkbox"] {
     transform: scale(1.25);
     cursor: pointer;
-    flex-shrink: 0;        /* ✅ evita que se desplace */
+    margin: 0;
 }
 
 
