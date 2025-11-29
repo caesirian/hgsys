@@ -141,25 +141,37 @@ window.addEventListener('DOMContentLoaded', () => {
 async function loadModule(url) {
   const container = document.getElementById('module-container');
   if (!container) return;
-  container.innerHTML = 'Cargando modulo...';
+  container.innerHTML = 'Cargando módulo…';
+
+  // Fuerza https para evitar bloqueos mixed-content
+  const safeUrl = url.replace(/^http:\/\//i, 'https://');
 
   try {
-    const res = await fetch(url, { cache: 'no-store' });
+    // Intento 1: fetch normal (requiere CORS habilitado en el servidor del módulo)
+    const res = await fetch(safeUrl, { cache: 'no-store', mode: 'cors' });
     if (!res.ok) throw new Error('HTTP ' + res.status);
 
     const html = await res.text();
     const doc = new DOMParser().parseFromString(html, 'text/html');
     const main = doc.querySelector('main');
 
-    if (!main) throw new Error('El modulo no contiene <main>');
+    if (!main) throw new Error('El módulo no contiene <main>');
 
     container.innerHTML = main.innerHTML;
     container.scrollIntoView({ behavior: 'smooth' });
   } catch (e) {
-    console.error(e);
-    container.innerHTML = 'Error cargando el modulo';
-    toast('No se pudo cargar el modulo');
+    console.warn('Fetch bloqueado por CORS o red. Fallback a iframe.', e);
+
+    // Fallback PRO: usar iframe si el servidor externo no permite CORS
+    container.innerHTML = `
+      <div style="width:100%; height:720px; border-radius:12px; overflow:hidden; border:1px solid rgba(255,255,255,.12)">
+        <iframe src="${safeUrl}" style="width:100%; height:100%; border:0"></iframe>
+      </div>
+    `;
+
+    toast('El módulo se cargó en modo seguro (iframe)');
   }
+}
 }
 
 // ---- UI ----
