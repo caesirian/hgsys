@@ -45,7 +45,11 @@
 
     footer{padding:64px 0 32px;border-top:1px solid rgba(255,255,255,.05);color:var(--muted);text-align:center;font-size:.85rem}
 
-    .tool-window,#module-container{background:#0b0b10;border-radius:14px;padding:20px;border:1px solid rgba(255,255,255,.1);margin-top:24px}
+    .tool-window,#module-container{background:#0b0b10;border-radius:16px;padding:18px;border:1px solid rgba(255,255,255,.14)}
+    #module-container{position:fixed;top:84px;left:50%;transform:translateX(-50%) translateY(-10px);max-width:1100px;width:calc(100% - 24px);z-index:80;box-shadow:0 30px 80px rgba(0,0,0,.6);display:none;opacity:0;transition:.35s ease}
+    #module-container.active{display:block;opacity:1;transform:translateX(-50%) translateY(0)}
+    .overlay{position:fixed;inset:0;z-index:70;background:rgba(10,10,18,.55);backdrop-filter:blur(6px);display:none}
+    .overlay.active{display:block}
     body.light .tool-window{background:#f6f8ff}
 
     input,textarea,select{width:100%;padding:12px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:#0f0f14;color:var(--text);margin-bottom:12px}
@@ -73,6 +77,8 @@
     <button class="btn" onclick="toggleTheme()">🌗</button>
   </div>
 </header>
+
+<div class="overlay" id="overlay" onclick="closeModule()"></div>
 
 <main>
 
@@ -103,7 +109,7 @@
     <button class="btn primary" onclick="loadModule('http://hgsys.vercel.app/presupuesto.html')">Módulo Presupuesto</button>
   </div>
 
-  <div id="module-container" class="tool-window">Seleccioná una herramienta para comenzar.</div>
+  <div id="module-container" class="tool-window" aria-live="polite">Seleccioná una herramienta para comenzar.</div>
 </section>
 
 <section id="contacto" class="container">
@@ -140,14 +146,13 @@ window.addEventListener('DOMContentLoaded', () => {
 // ---- Modular loader ----
 async function loadModule(url) {
   const container = document.getElementById('module-container');
+  const overlay = document.getElementById('overlay');
   if (!container) return;
   container.innerHTML = 'Cargando módulo…';
 
-  // Fuerza https para evitar bloqueos mixed-content
   const safeUrl = url.replace(/^http:\/\//i, 'https://');
 
   try {
-    // Intento 1: fetch normal (requiere CORS habilitado en el servidor del módulo)
     const res = await fetch(safeUrl, { cache: 'no-store', mode: 'cors' });
     if (!res.ok) throw new Error('HTTP ' + res.status);
 
@@ -158,19 +163,22 @@ async function loadModule(url) {
     if (!main) throw new Error('El módulo no contiene <main>');
 
     container.innerHTML = main.innerHTML;
-    container.scrollIntoView({ behavior: 'smooth' });
   } catch (e) {
     console.warn('Fetch bloqueado por CORS o red. Fallback a iframe.', e);
-
-    // Fallback PRO: usar iframe si el servidor externo no permite CORS
     container.innerHTML = `
-      <div style="width:100%; height:720px; border-radius:12px; overflow:hidden; border:1px solid rgba(255,255,255,.12)">
+      <div style="width:100%; height:min(78vh,860px); border-radius:12px; overflow:hidden; border:1px solid rgba(255,255,255,.18)">
         <iframe src="${safeUrl}" style="width:100%; height:100%; border:0"></iframe>
       </div>
     `;
-
     toast('El módulo se cargó en modo seguro (iframe)');
   }
+
+  // Mostrar panel centrado y prioritario
+  document.body.style.overflow = 'hidden';
+  container.classList.add('active');
+  if (overlay) overlay.classList.add('active');
+  container.focus?.();
+}
 }
 
 // ---- UI ----
@@ -195,7 +203,15 @@ function toast(t) {
   if (!el) return;
   el.innerText = t;
   el.style.display = 'block';
-  setTimeout(() => (el.style.display = 'none'), 2500);
+  setTimeout(() => (el.style.display = 'none'), 2200);
+}
+
+function closeModule(){
+  const container = document.getElementById('module-container');
+  const overlay = document.getElementById('overlay');
+  document.body.style.overflow = '';
+  container?.classList.remove('active');
+  overlay?.classList.remove('active');
 }
 </script>
 
