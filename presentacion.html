@@ -129,24 +129,63 @@
 <div class="toast" id="toast"></div>
 
 <script>
-async function loadModule(url){
-  const container=document.getElementById('module-container');
-  container.innerHTML='Cargando módulo…';
-  try{
-    const res=await fetch(url);
-    const html=await res.text();
-    const doc=new DOMParser().parseFromString(html,'text/html');
-    const main=doc.querySelector('main');
-    if(!main) throw 'El módulo no contiene <main>';
-    container.innerHTML=main.innerHTML;
-    container.scrollIntoView({behavior:'smooth'});
-  }catch(e){container.innerHTML='Error cargando módulo';console.error(e)}
+// Cache DOM safely after load
+let chatbox, messages, msg;
+window.addEventListener('DOMContentLoaded', () => {
+  chatbox = document.getElementById('chatbox');
+  messages = document.getElementById('messages');
+  msg = document.getElementById('msg');
+});
+
+// ---- Modular loader ----
+async function loadModule(url) {
+  const container = document.getElementById('module-container');
+  if (!container) return;
+  container.innerHTML = 'Cargando modulo...';
+
+  try {
+    const res = await fetch(url, { cache: 'no-store' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+
+    const html = await res.text();
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    const main = doc.querySelector('main');
+
+    if (!main) throw new Error('El modulo no contiene <main>');
+
+    container.innerHTML = main.innerHTML;
+    container.scrollIntoView({ behavior: 'smooth' });
+  } catch (e) {
+    console.error(e);
+    container.innerHTML = 'Error cargando el modulo';
+    toast('No se pudo cargar el modulo');
+  }
 }
 
-function toggleTheme(){document.body.classList.toggle('light')}
-function openChat(){chatbox.style.display='flex'}
-function enviar(){messages.innerHTML+=`<br><b>Tú:</b> ${msg.value}`;messages.innerHTML+=`<br><b>Bot:</b> Perfecto, puedo automatizar eso.`;msg.value=''}
-function toast(t){const el=document.getElementById('toast');el.innerText=t;el.style.display='block';setTimeout(()=>el.style.display='none',2500)}
+// ---- UI ----
+function toggleTheme() {
+  document.body.classList.toggle('light');
+}
+
+function openChat() {
+  if (chatbox) chatbox.style.display = 'flex';
+}
+
+function enviar() {
+  if (!messages || !msg || !msg.value) return;
+  messages.innerHTML += '<br><b>Tu:</b> ' + msg.value;
+  messages.innerHTML += '<br><b>Bot:</b> Perfecto, puedo automatizar eso.';
+  msg.value = '';
+  messages.scrollTop = messages.scrollHeight;
+}
+
+function toast(t) {
+  const el = document.getElementById('toast');
+  if (!el) return;
+  el.innerText = t;
+  el.style.display = 'block';
+  setTimeout(() => (el.style.display = 'none'), 2500);
+}
 </script>
 
 </body>
