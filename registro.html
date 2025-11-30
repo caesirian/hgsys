@@ -1,216 +1,162 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<title>Registro de Cultivo INASE</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8">
+  <title>Registro de Cultivo INASE</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      background: #0f172a;
+      color: white;
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
 
-<style>
-body {
-  margin: 0;
-  font-family: system-ui, Arial;
-  background: linear-gradient(180deg, #020617, #041830);
-  color: #e5e7eb;
-}
-.container {
-  max-width: 900px;
-  margin: auto;
-  padding: 20px;
-}
-h1 {
-  text-align: center;
-  color: #86efac;
-}
-.section {
-  background: rgba(15, 23, 42, 0.9);
-  border-radius: 12px;
-  padding: 15px;
-  margin-bottom: 15px;
-}
-.section h2 {
-  color: #7dd3fc;
-  font-size: 18px;
-}
-.row {
-  display: grid;
-  grid-template-columns: repeat(auto-fit,minmax(200px,1fr));
-  gap: 10px;
-}
-label {
-  font-size: 13px;
-  color: #cbd5f5;
-}
-input, select, textarea {
-  width: 100%;
-  padding: 9px;
-  border-radius: 8px;
-  border: none;
-  background: #020617;
-  color: #fff;
-}
-textarea { resize: vertical; }
-button {
-  background: #22c55e;
-  border: none;
-  padding: 14px;
-  width: 100%;
-  border-radius: 10px;
-  font-weight: bold;
-  margin-top: 15px;
-  cursor: pointer;
-}
-.status {
-  text-align: center;
-  margin-top: 12px;
-  font-size: 14px;
-}
-</style>
+    .card {
+      max-width: 600px;
+      margin: auto;
+      background: #020617;
+      padding: 25px;
+      border-radius: 12px;
+      border: 1px solid #16a34a;
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      margin-top: 10px;
+      font-size: 14px;
+    }
+
+    input, select, textarea, button {
+      width: 100%;
+      padding: 8px;
+      margin-top: 4px;
+      border-radius: 6px;
+      border: none;
+    }
+
+    button {
+      background: #16a34a;
+      color: white;
+      font-weight: bold;
+      margin-top: 20px;
+      cursor: pointer;
+    }
+
+    #estado {
+      text-align: center;
+      margin-top: 15px;
+    }
+  </style>
 </head>
-
 <body>
 
-<div class="container">
-<h1>🌱 Registro de Cultivo - INASE</h1>
+<div class="card">
+  <h2>Registro de Cultivo INASE</h2>
 
-<form id="formCultivo">
+  <form id="formCultivo" target="invisibleFrame"
+    action="https://script.google.com/macros/s/AKfycbzCpeQNNlqNZm4Sft76lwS8OSweYFYhohu6BazaoAZryjNL_oJV56mjtHrc7VqsNxyY/exec"
+    method="POST" enctype="multipart/form-data">
 
-<div class="section">
-<h2>1. Identificación</h2>
-<div class="row">
-<div>
-<label>ID Semilla *</label>
-<input name="id_semilla" required>
-</div>
-<div>
-<label>Variedad</label>
-<input name="variedad" value="Gorilla">
-</div>
-<div>
-<label>Fecha</label>
-<input type="date" name="fecha">
-</div>
-</div>
-</div>
+    <label>ID Semilla</label>
+    <input name="id_semilla" required>
 
-<div class="section">
-<h2>2. Ambiente</h2>
-<div class="row">
-<div>
-<label>Tipo de Cultivo</label>
-<select name="tipo_cultivo">
-<option>Indoor</option>
-<option>Outdoor</option>
-</select>
-</div>
-<div>
-<label>Superficie</label>
-<input name="superficie" value="1x1 m">
-</div>
-<div>
-<label>Luminaria</label>
-<input name="luminaria" value="Panel 250W">
-</div>
-</div>
-</div>
+    <label>Variedad</label>
+    <input name="variedad">
 
-<div class="section">
-<h2>3. Sustrato</h2>
-<div class="row">
-<div>
-<label>Tipo</label>
-<input name="sustrato" value="Plagron">
-</div>
-<div>
-<label>Base Orgánica</label>
-<input name="base_organica" value="Algas">
-</div>
-</div>
-</div>
+    <label>Fecha</label>
+    <input type="date" name="fecha">
 
-<div class="section">
-<h2>4. Fenología</h2>
-<div class="row">
-<div>
-<label>Día del Ciclo</label>
-<input type="number" name="dia_ciclo">
-</div>
-<div>
-<label>Etapa</label>
-<select name="etapa">
-<option>Germinación</option>
-<option>Vegetativo</option>
-<option>Floración</option>
-<option>Cosecha</option>
-</select>
-</div>
-</div>
-</div>
+    <label>Tipo de Cultivo</label>
+    <select name="tipo_cultivo">
+      <option>Interior</option>
+      <option>Exterior</option>
+    </select>
 
-<div class="section">
-<h2>5. Variables Técnicas</h2>
-<div class="row">
-<input name="altura" placeholder="Altura cm">
-<input name="ph" placeholder="pH">
-<input name="ec" placeholder="EC">
-<input name="temperatura" placeholder="Temperatura">
-<input name="humedad" placeholder="Humedad">
-</div>
-</div>
+    <label>Ambiente</label>
+    <input name="ambiente">
 
-<div class="section">
-<h2>6. Nutrición</h2>
-<div class="row">
-<input name="fertilizante" placeholder="Fertilizante">
-<input name="dosis" placeholder="Dosis">
-<input name="riego" placeholder="Riego ml">
-</div>
-</div>
+    <label>Superficie</label>
+    <input name="superficie">
 
-<div class="section">
-<h2>7. Sanidad</h2>
-<div class="row">
-<input name="plagas" placeholder="Plagas">
-<input name="enfermedades" placeholder="Enfermedades">
-<input name="tratamientos" placeholder="Tratamientos">
-</div>
-</div>
+    <label>Luminaria</label>
+    <input name="luminaria">
 
-<div class="section">
-<h2>8. Archivo</h2>
-<input type="file" name="archivo">
+    <label>Potencia (W)</label>
+    <input name="potencia">
+
+    <label>Sustrato</label>
+    <input name="sustrato">
+
+    <label>Fertilizante</label>
+    <input name="fertilizante">
+
+    <label>Etapa</label>
+    <select name="etapa">
+      <option>Germinación</option>
+      <option>Crecimiento</option>
+      <option>Floración</option>
+    </select>
+
+    <label>Día del ciclo</label>
+    <input type="number" name="dia_ciclo">
+
+    <label>Altura (cm)</label>
+    <input name="altura">
+
+    <label>pH</label>
+    <input name="ph">
+
+    <label>EC</label>
+    <input name="ec">
+
+    <label>Temperatura °C</label>
+    <input name="temperatura">
+
+    <label>Humedad %</label>
+    <input name="humedad">
+
+    <label>Riego</label>
+    <input name="riego">
+
+    <label>Plagas</label>
+    <input name="plagas">
+
+    <label>Enfermedades</label>
+    <input name="enfermedades">
+
+    <label>Tratamientos</label>
+    <input name="tratamientos">
+
+    <label>Archivo (foto, video, audio)</label>
+    <input type="file" name="archivo">
+
+    <label>Observaciones</label>
+    <textarea name="observaciones"></textarea>
+
+    <button type="submit">Enviar Registro</button>
+  </form>
+
+  <div id="estado"></div>
 </div>
-
-<div class="section">
-<h2>9. Observaciones</h2>
-<textarea name="observaciones"></textarea>
-</div>
-
-<button type="submit">✅ Registrar</button>
-<div class="status" id="estado"></div>
-
-</form>
 
 <iframe name="invisibleFrame" style="display:none;"></iframe>
 
-</div>
-
 <script>
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyFcQHub1tsdbMiuRKHiVEnYNR7kXt4NoZDwJWzY58ydymJ1rFDe2pZYU1a2wE8ycal/exec";
-
-const form = document.getElementById("formCultivo");
 const estado = document.getElementById("estado");
-
-form.action = SCRIPT_URL;
-form.method = "POST";
-form.enctype = "multipart/form-data";
-form.target = "invisibleFrame";
+const form = document.getElementById("formCultivo");
 
 form.addEventListener("submit", () => {
   estado.innerText = "⏳ Enviando registro...";
 });
 
-document.querySelector('iframe[name="invisibleFrame"]').addEventListener("load", () => {
-  estado.innerText = "✅ Registro guardado correctamente";
+document.querySelector("iframe").addEventListener("load", () => {
+  estado.innerText = "✅ Registro enviado correctamente";
   form.reset();
 });
 </script>
