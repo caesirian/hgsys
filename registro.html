@@ -4,16 +4,17 @@
   <meta charset="UTF-8">
   <title>Registro de Cultivo INASE</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <style>
     body {
       background: #0f172a;
-      color: white;
+      color: #e5e7eb;
       font-family: Arial, sans-serif;
       padding: 20px;
     }
 
     .card {
-      max-width: 600px;
+      max-width: 700px;
       margin: auto;
       background: #020617;
       padding: 25px;
@@ -24,20 +25,27 @@
     h2 {
       text-align: center;
       margin-bottom: 20px;
+      color: #22c55e;
     }
 
     label {
       display: block;
-      margin-top: 10px;
+      margin-top: 12px;
       font-size: 14px;
     }
 
     input, select, textarea, button {
       width: 100%;
       padding: 8px;
-      margin-top: 4px;
+      margin-top: 5px;
       border-radius: 6px;
       border: none;
+      font-size: 14px;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 80px;
     }
 
     button {
@@ -51,17 +59,22 @@
     #estado {
       text-align: center;
       margin-top: 15px;
+      font-weight: bold;
     }
   </style>
 </head>
 <body>
 
 <div class="card">
-  <h2>Registro de Cultivo INASE</h2>
+  <h2>Registro de Cultivo – INASE</h2>
 
-  <form id="formCultivo" target="invisibleFrame"
+  <form
+    id="formCultivo"
     action="https://script.google.com/macros/s/AKfycbzCpeQNNlqNZm4Sft76lwS8OSweYFYhohu6BazaoAZryjNL_oJV56mjtHrc7VqsNxyY/exec"
-    method="POST" enctype="multipart/form-data">
+    method="POST"
+    enctype="multipart/form-data"
+    target="invisibleFrame"
+  >
 
     <label>ID Semilla</label>
     <input name="id_semilla" required>
@@ -115,10 +128,10 @@
     <label>EC</label>
     <input name="ec">
 
-    <label>Temperatura °C</label>
+    <label>Temperatura (°C)</label>
     <input name="temperatura">
 
-    <label>Humedad %</label>
+    <label>Humedad (%)</label>
     <input name="humedad">
 
     <label>Riego</label>
@@ -133,7 +146,7 @@
     <label>Tratamientos</label>
     <input name="tratamientos">
 
-    <label>Archivo (foto, video, audio)</label>
+    <label>Archivo (foto / video / audio)</label>
     <input type="file" name="archivo">
 
     <label>Observaciones</label>
@@ -148,17 +161,18 @@
 <iframe name="invisibleFrame" style="display:none;"></iframe>
 
 <script>
-const estado = document.getElementById("estado");
-const form = document.getElementById("formCultivo");
+  const form = document.getElementById("formCultivo");
+  const estado = document.getElementById("estado");
+  const iframe = document.querySelector("iframe");
 
-form.addEventListener("submit", () => {
-  estado.innerText = "⏳ Enviando registro...";
-});
+  form.addEventListener("submit", () => {
+    estado.innerText = "⏳ Enviando registro...";
+  });
 
-document.querySelector("iframe").addEventListener("load", () => {
-  estado.innerText = "✅ Registro enviado correctamente";
-  form.reset();
-});
+  iframe.addEventListener("load", () => {
+    estado.innerText = "✅ Registro enviado correctamente";
+    form.reset();
+  });
 </script>
 
 </body>
