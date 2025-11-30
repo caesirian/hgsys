@@ -1,179 +1,39 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <title>Registro de Cultivo INASE</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <style>
-    body {
-      background: #0f172a;
-      color: #e5e7eb;
-      font-family: Arial, sans-serif;
-      padding: 20px;
-    }
-
-    .card {
-      max-width: 700px;
-      margin: auto;
-      background: #020617;
-      padding: 25px;
-      border-radius: 12px;
-      border: 1px solid #16a34a;
-    }
-
-    h2 {
-      text-align: center;
-      margin-bottom: 20px;
-      color: #22c55e;
-    }
-
-    label {
-      display: block;
-      margin-top: 12px;
-      font-size: 14px;
-    }
-
-    input, select, textarea, button {
-      width: 100%;
-      padding: 8px;
-      margin-top: 5px;
-      border-radius: 6px;
-      border: none;
-      font-size: 14px;
-    }
-
-    textarea {
-      resize: vertical;
-      min-height: 80px;
-    }
-
-    button {
-      background: #16a34a;
-      color: white;
-      font-weight: bold;
-      margin-top: 20px;
-      cursor: pointer;
-    }
-
-    #estado {
-      text-align: center;
-      margin-top: 15px;
-      font-weight: bold;
-    }
-  </style>
-</head>
-<body>
-
-<div class="card">
-  <h2>Registro de Cultivo – INASE</h2>
-
-  <form
-    id="formCultivo"
-    action="https://script.google.com/macros/s/AKfycbyFma05rfFRMdq0HHhn6ZF_Qyv3MsQZ9BzPAEGC9Gny6O0efWQ0tOCsj2lOYRnKpDs/exec"
-    method="POST"
-    enctype="multipart/form-data"
-    target="invisibleFrame"
-  >
-
-    <label>ID Semilla</label>
-    <input name="id_semilla" required>
-
-    <label>Variedad</label>
-    <input name="variedad">
-
-    <label>Fecha</label>
-    <input type="date" name="fecha">
-
-    <label>Tipo de Cultivo</label>
-    <select name="tipo_cultivo">
-      <option>Interior</option>
-      <option>Exterior</option>
-    </select>
-
-    <label>Ambiente</label>
-    <input name="ambiente">
-
-    <label>Superficie</label>
-    <input name="superficie">
-
-    <label>Luminaria</label>
-    <input name="luminaria">
-
-    <label>Potencia (W)</label>
-    <input name="potencia">
-
-    <label>Sustrato</label>
-    <input name="sustrato">
-
-    <label>Fertilizante</label>
-    <input name="fertilizante">
-
-    <label>Etapa</label>
-    <select name="etapa">
-      <option>Germinación</option>
-      <option>Crecimiento</option>
-      <option>Floración</option>
-    </select>
-
-    <label>Día del ciclo</label>
-    <input type="number" name="dia_ciclo">
-
-    <label>Altura (cm)</label>
-    <input name="altura">
-
-    <label>pH</label>
-    <input name="ph">
-
-    <label>EC</label>
-    <input name="ec">
-
-    <label>Temperatura (°C)</label>
-    <input name="temperatura">
-
-    <label>Humedad (%)</label>
-    <input name="humedad">
-
-    <label>Riego</label>
-    <input name="riego">
-
-    <label>Plagas</label>
-    <input name="plagas">
-
-    <label>Enfermedades</label>
-    <input name="enfermedades">
-
-    <label>Tratamientos</label>
-    <input name="tratamientos">
-
-    <label>Archivo (foto / video / audio)</label>
-    <input type="file" name="archivo">
-
-    <label>Observaciones</label>
-    <textarea name="observaciones"></textarea>
-
-    <button type="submit">Enviar Registro</button>
-  </form>
-
-  <div id="estado"></div>
-</div>
-
-<iframe name="invisibleFrame" style="display:none;"></iframe>
-
 <script>
   const form = document.getElementById("formCultivo");
   const estado = document.getElementById("estado");
-  const iframe = document.querySelector("iframe");
 
-  form.addEventListener("submit", () => {
-    estado.innerText = "⏳ Enviando registro...";
-  });
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    
+    try {
+      estado.innerText = "⏳ Enviando registro...";
+      estado.style.color = "white";
 
-  iframe.addEventListener("load", () => {
-    estado.innerText = "✅ Registro enviado correctamente";
-    form.reset();
+      const formData = new FormData(form);
+      
+      const response = await fetch(form.action, {
+        method: "POST",
+        body: formData
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error HTTP: ${response.status}`);
+      }
+
+      const result = await response.text();
+      
+      if (result.includes("ERROR")) {
+        throw new Error(result);
+      }
+
+      estado.innerText = "✅ Registro enviado correctamente";
+      estado.style.color = "#22c55e";
+      form.reset();
+
+    } catch (error) {
+      console.error("Error:", error);
+      estado.innerText = `❌ Error: ${error.message}`;
+      estado.style.color = "#ef4444";
+    }
   });
 </script>
-
-</body>
-</html>
