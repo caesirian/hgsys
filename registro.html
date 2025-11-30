@@ -256,23 +256,20 @@ button:hover { background: #16a34a; }
 <script>
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxvMsGvazlRwWMPq98pUvW1Y1yn7oPq7UTRb3Dy93PQJI_QzQpJSpU__jDZpvPSOcc3/exec";
 
-document.getElementById("formCultivo").addEventListener("submit", async function(e){
-  e.preventDefault();
-  const estado = document.getElementById("estado");
-  estado.innerText = "Enviando registro...";
+const form = document.getElementById("formCultivo");
+const estado = document.getElementById("estado");
 
-  const formData = new FormData(this);
+// ✅ SE CAMBIA EL ACTION Y METHOD DIRECTO (SIN FETCH)
+form.setAttribute("action", SCRIPT_URL);
+form.setAttribute("method", "POST");
+form.setAttribute("enctype", "multipart/form-data");
 
-  const res = await fetch(SCRIPT_URL, {
-    method: "POST",
-    body: formData
-  });
-
-  const txt = await res.text();
-  estado.innerText = txt;
-  this.reset();
+// ✅ MENSAJE VISUAL SIN ROMPER EL ENVÍO
+form.addEventListener("submit", () => {
+  estado.innerText = "⏳ Enviando registro...";
 });
 </script>
+
 
 </body>
 </html>
