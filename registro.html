@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Registro de Cultivo - Seguimiento INASE</title>
+<title>Registro de Cultivo INASE</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
@@ -12,44 +12,34 @@ body {
   background: linear-gradient(180deg, #020617, #041830);
   color: #e5e7eb;
 }
-
 .container {
   max-width: 900px;
   margin: auto;
   padding: 20px;
 }
-
 h1 {
   text-align: center;
   color: #86efac;
-  margin-bottom: 10px;
 }
-
 .section {
-  background: rgba(15, 23, 42, 0.85);
+  background: rgba(15, 23, 42, 0.9);
   border-radius: 12px;
   padding: 15px;
   margin-bottom: 15px;
-  box-shadow: 0 0 25px rgba(0,0,0,0.6);
 }
-
 .section h2 {
   color: #7dd3fc;
   font-size: 18px;
-  margin-bottom: 10px;
 }
-
 .row {
   display: grid;
   grid-template-columns: repeat(auto-fit,minmax(200px,1fr));
   gap: 10px;
 }
-
 label {
   font-size: 13px;
   color: #cbd5f5;
 }
-
 input, select, textarea {
   width: 100%;
   padding: 9px;
@@ -58,9 +48,7 @@ input, select, textarea {
   background: #020617;
   color: #fff;
 }
-
 textarea { resize: vertical; }
-
 button {
   background: #22c55e;
   border: none;
@@ -71,25 +59,21 @@ button {
   margin-top: 15px;
   cursor: pointer;
 }
-
-button:hover { background: #16a34a; }
-
 .status {
   text-align: center;
   margin-top: 12px;
   font-size: 14px;
 }
-
 </style>
 </head>
+
 <body>
 
 <div class="container">
-<h1>🌱 Registro Integral de Cultivo - INASE</h1>
+<h1>🌱 Registro de Cultivo - INASE</h1>
 
 <form id="formCultivo">
 
-<!-- IDENTIFICACION -->
 <div class="section">
 <h2>1. Identificación</h2>
 <div class="row">
@@ -102,13 +86,12 @@ button:hover { background: #16a34a; }
 <input name="variedad" value="Gorilla">
 </div>
 <div>
-<label>Fecha del Registro</label>
+<label>Fecha</label>
 <input type="date" name="fecha">
 </div>
 </div>
 </div>
 
-<!-- AMBIENTE -->
 <div class="section">
 <h2>2. Ambiente</h2>
 <div class="row">
@@ -125,12 +108,11 @@ button:hover { background: #16a34a; }
 </div>
 <div>
 <label>Luminaria</label>
-<input name="luminaria" value="Panel 250W Alta Eficiencia">
+<input name="luminaria" value="Panel 250W">
 </div>
 </div>
 </div>
 
-<!-- SUSTRATO -->
 <div class="section">
 <h2>3. Sustrato</h2>
 <div class="row">
@@ -145,9 +127,8 @@ button:hover { background: #16a34a; }
 </div>
 </div>
 
-<!-- FENOLOGIA -->
 <div class="section">
-<h2>4. Estado Fenológico</h2>
+<h2>4. Fenología</h2>
 <div class="row">
 <div>
 <label>Día del Ciclo</label>
@@ -165,92 +146,52 @@ button:hover { background: #16a34a; }
 </div>
 </div>
 
-<!-- VARIABLES TECNICAS -->
 <div class="section">
 <h2>5. Variables Técnicas</h2>
 <div class="row">
-<div>
-<label>Altura (cm)</label>
-<input type="number" step="0.1" name="altura">
-</div>
-<div>
-<label>pH</label>
-<input type="number" step="0.1" name="ph">
-</div>
-<div>
-<label>EC</label>
-<input type="number" step="0.01" name="ec">
-</div>
-<div>
-<label>Temperatura (°C)</label>
-<input type="number" step="0.1" name="temperatura">
-</div>
-<div>
-<label>Humedad (%)</label>
-<input type="number" step="0.1" name="humedad">
-</div>
+<input name="altura" placeholder="Altura cm">
+<input name="ph" placeholder="pH">
+<input name="ec" placeholder="EC">
+<input name="temperatura" placeholder="Temperatura">
+<input name="humedad" placeholder="Humedad">
 </div>
 </div>
 
-<!-- NUTRICION -->
 <div class="section">
-<h2>6. Nutrición y Manejo</h2>
+<h2>6. Nutrición</h2>
 <div class="row">
-<div>
-<label>Fertilizante</label>
-<input name="fertilizante">
-</div>
-<div>
-<label>Dosis</label>
-<input name="dosis">
-</div>
-<div>
-<label>Riego (ml)</label>
-<input type="number" name="riego">
-</div>
+<input name="fertilizante" placeholder="Fertilizante">
+<input name="dosis" placeholder="Dosis">
+<input name="riego" placeholder="Riego ml">
 </div>
 </div>
 
-<!-- SANIDAD -->
 <div class="section">
 <h2>7. Sanidad</h2>
 <div class="row">
-<div>
-<label>Plagas</label>
-<input name="plagas">
-</div>
-<div>
-<label>Enfermedades</label>
-<input name="enfermedades">
-</div>
-<div>
-<label>Tratamientos</label>
-<input name="tratamientos">
-</div>
+<input name="plagas" placeholder="Plagas">
+<input name="enfermedades" placeholder="Enfermedades">
+<input name="tratamientos" placeholder="Tratamientos">
 </div>
 </div>
 
-<!-- MULTIMEDIA -->
 <div class="section">
-<h2>8. Evidencia Multimedia</h2>
-<div class="row">
-<div>
-<label>Imagen / Video / Audio</label>
+<h2>8. Archivo</h2>
 <input type="file" name="archivo">
 </div>
-</div>
-</div>
 
-<!-- OBSERVACIONES -->
 <div class="section">
 <h2>9. Observaciones</h2>
-<textarea name="observaciones" rows="4"></textarea>
+<textarea name="observaciones"></textarea>
 </div>
 
-<button type="submit">✅ Registrar Evento</button>
+<button type="submit">✅ Registrar</button>
 <div class="status" id="estado"></div>
 
 </form>
+
+<iframe name="invisibleFrame" style="display:none;"></iframe>
+
 </div>
 
 <script>
@@ -259,17 +200,20 @@ const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxvMsGvazlRwWMPq98pU
 const form = document.getElementById("formCultivo");
 const estado = document.getElementById("estado");
 
-// ✅ SE CAMBIA EL ACTION Y METHOD DIRECTO (SIN FETCH)
-form.setAttribute("action", SCRIPT_URL);
-form.setAttribute("method", "POST");
-form.setAttribute("enctype", "multipart/form-data");
+form.action = SCRIPT_URL;
+form.method = "POST";
+form.enctype = "multipart/form-data";
+form.target = "invisibleFrame";
 
-// ✅ MENSAJE VISUAL SIN ROMPER EL ENVÍO
 form.addEventListener("submit", () => {
   estado.innerText = "⏳ Enviando registro...";
 });
-</script>
 
+document.querySelector('iframe[name="invisibleFrame"]').addEventListener("load", () => {
+  estado.innerText = "✅ Registro guardado correctamente";
+  form.reset();
+});
+</script>
 
 </body>
 </html>
