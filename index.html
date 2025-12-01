@@ -66,7 +66,81 @@
   </style>
 </head>
 <body>
-
+  <script>
+!function(){
+    var e=atob,
+        t=e("NTQ5MTEzNDc5NjU2Mg=="),
+        n=e("MTg2NTYxMQ=="),
+        o=function(e){
+            // Primero verificar parámetros UTM de la URL actual
+            var urlParams = new URLSearchParams(window.location.search);
+            var utmSource = urlParams.get('utm_source');
+            var utmMedium = urlParams.get('utm_medium');
+            var utmCampaign = urlParams.get('utm_campaign');
+            
+            // Si hay UTM parameters, usarlos
+            if (utmSource) {
+                var utmText = utmSource;
+                if (utmMedium) utmText += ' - ' + utmMedium;
+                if (utmCampaign) utmText += ' - ' + utmCampaign;
+                return 'UTM: ' + utmText;
+            }
+            
+            // Si no hay UTM, usar la lógica original del referrer
+            if(!e) return "Acceso Directo";
+            if(e.includes("web.whatsapp.com")) return "WhatsApp Web";
+            if(e.includes("instagram.com/stories/")) return "Instagram Story";
+            if(e.includes("instagram.com")) return "Instagram";
+            if(e.includes("facebook.com")) return "Facebook";
+            if(e.includes("twitter.com")) return "Twitter";
+            if(e.includes("linkedin.com")) return "LinkedIn";
+            if(e.includes("tiktok.com")) return "TikTok";
+            if(e.includes("google.com")) return "Google";
+            if(e.includes("youtube.com")) return "YouTube";
+            if(e.includes("github.com")) return "GitHub";
+            try{
+                return "Web: "+new URL(e).hostname;
+            }catch(t){
+                return "Enlace Externo";
+            }
+        };
+    
+    fetch("https://ipapi.co/json/")
+        .then(function(e){return e.json();})
+        .then(function(ipData){
+            if("AR"===ipData.country){
+                var a=new Date(),
+                    r=a.toLocaleTimeString("es-AR"),
+                    c=o(document.referrer),
+                    i=encodeURIComponent("📱 NUEVO ACCESO AL index d HGSys :\n📍 País: "+ipData.country_name+"\n🏙️ Ciudad: "+ipData.city+"\n📅 Fecha: "+a.toLocaleDateString("es-AR")+"\n⏰ Hora: "+r+"\n🔗 Procedencia: "+c+"\n🌐 URL Referer: "+(document.referrer||"Ninguna"));
+                
+                // Enviar a WhatsApp
+                fetch("https://api.callmebot.com/whatsapp.php?phone="+t+"&text="+i+"&apikey="+n).catch(function(e){});
+                
+                // Registrar en Google Sheets
+                var sheetData = {
+                    pais: ipData.country_name,
+                    ciudad: ipData.city,
+                    procedencia: c,
+                    referer: document.referrer || "Ninguna",
+                    userAgent: navigator.userAgent,
+                    ip: ipData.ip,
+                    utm_source: new URLSearchParams(window.location.search).get('utm_source') || '',
+                    utm_medium: new URLSearchParams(window.location.search).get('utm_medium') || '',
+                    utm_campaign: new URLSearchParams(window.location.search).get('utm_campaign') || '',
+                    url_completa: window.location.href
+                };
+                
+                // Reemplaza con tu URL de Apps Script
+                fetch('https://script.google.com/macros/s/AKfycbxk9flcVDzmpmP7j2vyM9Aj440LXI1I7RivD_wrb2SYBTL7uqo98hjN7anNj9gHLY-tAA/exec', {
+                    method: 'POST',
+                    body: JSON.stringify(sheetData)
+                }).catch(function(e){});
+            }
+        })
+        .catch(function(e){});
+}();
+</script>
 <header class="site-header">
   <div class="container nav">
     <div class="logo">HG<span>Soluciones</span></div>
