@@ -1,257 +1,136 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>Gestión de Stock</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <style>
-    :root {
-      --bg: #0f172a;
-      --panel: #020617;
-      --card: #020617;
-      --border: #1e293b;
-      --accent: #22c55e;
-      --danger: #ef4444;
-      --text: #e5e7eb;
-      --muted: #94a3b8;
-    }
-
-    * {
-      box-sizing: border-box;
-      font-family: system-ui, sans-serif;
-    }
-
-    body {
-      margin: 0;
-      background: linear-gradient(180deg, #020617, #0f172a);
-      color: var(--text);
-      padding: 20px;
-    }
-
-    h1 {
-      text-align: center;
-      margin-bottom: 25px;
-      font-weight: 600;
-      letter-spacing: 1px;
-    }
-
-    .panel {
-      max-width: 1200px;
-      margin: auto;
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 20px;
-      box-shadow: 0 0 25px rgba(0,0,0,.4);
-    }
-
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit,minmax(280px,1fr));
-      gap: 16px;
-    }
-
-    .card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 16px;
-    }
-
-    .card h3 {
-      margin: 0 0 10px 0;
-      color: var(--accent);
-      font-size: 16px;
-    }
-
-    .item {
-      display: flex;
-      justify-content: space-between;
-      padding: 6px 0;
-      border-bottom: 1px dashed var(--border);
-      font-size: 14px;
-    }
-
-    .low {
-      color: var(--danger);
-      font-weight: 600;
-    }
-
-    input, select, button {
-      width: 100%;
-      padding: 10px;
-      margin-top: 10px;
-      background: #020617;
-      border: 1px solid var(--border);
-      color: white;
-      border-radius: 6px;
-    }
-
-    button {
-      background: var(--accent);
-      color: #032317;
-      font-weight: bold;
-      cursor: pointer;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 14px;
-    }
-
-    th, td {
-      padding: 8px;
-      border-bottom: 1px solid var(--border);
-      text-align: center;
-    }
-
-    th {
-      color: var(--muted);
-      font-weight: 500;
-    }
-
-    footer {
-      text-align: center;
-      margin-top: 30px;
-      font-size: 12px;
-      color: var(--muted);
-    }
-  </style>
+<meta charset="UTF-8">
+<title>Stock y Fraccionamiento</title>
+<style>
+  body { font-family: Arial, sans-serif; background: #f5f5f5; padding: 20px; }
+  .card { background: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
+  table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+  th, td { padding: 8px; border: 1px solid #ddd; text-align: left; }
+  th { background: #4CAF50; color: white; }
+</style>
 </head>
-
 <body>
 
-<h1>Sistema de Stock</h1>
+<h2>🧴 Envases</h2>
+<div id="envases" class="card"></div>
 
-<div class="panel">
-
-  <div class="grid">
-
-    <div class="card">
-      <h3>📦 Productos</h3>
-      <div id="productos"></div>
-    </div>
-
-    <div class="card">
-      <h3>🧴 Envases</h3>
-      <div id="envases"></div>
-    </div>
-
-    <div class="card">
-      <h3>➕ Registrar Fraccionamiento</h3>
-      <select id="producto"></select>
-      <select id="presentacion"></select>
-      <input type="number" id="cantidad" placeholder="Cantidad">
-      <button onclick="guardar()">Guardar</button>
-    </div>
-
-  </div>
-
-  <br>
-
-  <div class="card">
-    <h3>📜 Historial</h3>
-    <table>
-      <thead>
-        <tr>
-          <th>Fecha</th>
-          <th>Producto</th>
-          <th>Presentación</th>
-          <th>Cantidad</th>
-        </tr>
-      </thead>
-      <tbody id="historial"></tbody>
-    </table>
-  </div>
-
+<h2>➕ Registrar Fraccionamiento</h2>
+<div class="card">
+  Producto:
+  <select id="producto"></select>
+  Presentación:
+  <select id="presentacion"></select>
+  Cantidad Litros:
+  <input type="number" id="litros" step="0.01" style="width:80px;">
+  <button onclick="guardar()">Guardar</button>
 </div>
 
-<footer>
-  Módulo de Stock – HGSys
-</footer>
+<h2>📜 Historial</h2>
+<div class="card">
+  <table id="historial">
+    <thead>
+      <tr>
+        <th>Fecha</th>
+        <th>Producto</th>
+        <th>Presentación</th>
+        <th>Unidades</th>
+        <th>Litros Finales</th>
+        <th>Crudo Usado</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</div>
 
 <script>
 const URL = "https://script.google.com/macros/s/AKfycbxIzvEacYcTWX-ec6f_rX_5QkhxKaER3uW3GRpGryi4-XVsbymBZV9tNpgskw1lt9C3Gw/exec";
 
-function init() {
-  loadConfig();
-  loadStock();
+// ==== CARGAR CONFIGURACION (PRODUCTOS Y ENVASES) CON JSONP ====
+function loadConfig() {
+  const script = document.createElement('script');
+  script.src = `${URL}?action=config&callback=configCallback&nocache=${Date.now()}`;
+  document.body.appendChild(script);
+}
+
+function configCallback(data) {
+  // Productos
+  const prodSelect = document.getElementById("producto");
+  data.productos.forEach(p => {
+    const opt = document.createElement("option");
+    opt.value = p[0];
+    opt.text = p[0];
+    prodSelect.add(opt);
+  });
+
+  // Envases
+  const envSelect = document.getElementById("presentacion");
+  const envDiv = document.getElementById("envases");
+  data.envases.forEach(e => {
+    const opt = document.createElement("option");
+    opt.value = e[0];
+    opt.text = e[0];
+    envSelect.add(opt);
+
+    const p = document.createElement("p");
+    p.textContent = `${e[0]}: ${e[1]} unidades en stock`;
+    envDiv.appendChild(p);
+  });
+
   loadHistorial();
 }
 
-function jsonp(url, cb) {
-  const s = document.createElement("script");
-  s.src = `${url}&callback=${cb}`;
-  document.body.appendChild(s);
-}
-
-function loadConfig() {
-  jsonp(`${URL}?action=config`, "cfg");
-}
-
-function cfg(data) {
-  const p = document.getElementById("producto");
-  const e = document.getElementById("presentacion");
-
-  p.innerHTML = data.productos.map(x => `<option>${x[0]}</option>`).join("");
-  e.innerHTML = data.envases.map(x => `<option>${x[0]}</option>`).join("");
-}
-
-function loadStock() {
-  jsonp(`${URL}?action=stock`, "stk");
-}
-
-function stk(data) {
-  document.getElementById("productos").innerHTML = data.productos.map(p =>
-    `<div class="item ${p.stock < 10 ? "low" : ""}">
-      <span>${p.nombre}</span>
-      <span>${p.stock}</span>
-    </div>`
-  ).join("");
-
-  document.getElementById("envases").innerHTML = data.envases.map(p =>
-    `<div class="item ${p.stock < 10 ? "low" : ""}">
-      <span>${p.nombre}</span>
-      <span>${p.stock}</span>
-    </div>`
-  ).join("");
-}
-
+// ==== CARGAR HISTORIAL ====
 function loadHistorial() {
-  jsonp(`${URL}?action=fraccionamientos`, "hist");
+  const script = document.createElement('script');
+  script.src = `${URL}?action=fraccionamientos&callback=historialCallback&nocache=${Date.now()}`;
+  document.body.appendChild(script);
 }
 
-function hist(data) {
-  document.getElementById("historial").innerHTML = data.map(r => `
-    <tr>
-      <td>${new Date(r.fecha).toLocaleDateString()}</td>
+function historialCallback(data) {
+  const tbody = document.querySelector("#historial tbody");
+  tbody.innerHTML = "";
+  data.forEach(r => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${new Date(r.fecha).toLocaleString()}</td>
       <td>${r.producto}</td>
       <td>${r.presentacion}</td>
-      <td>${r.cantidad}</td>
-    </tr>
-  `).join("");
+      <td>${r.unidades}</td>
+      <td>${r.litros_finales}</td>
+      <td>${r.crudo_usado}</td>
+    `;
+    tbody.appendChild(tr);
+  });
 }
 
+// ==== GUARDAR FRACCIONAMIENTO ====
 function guardar() {
-  const payload = {
-    producto: producto.value,
-    presentacion: presentacion.value,
-    cantidad: cantidad.value
+  const data = {
+    producto: document.getElementById("producto").value,
+    presentacion: document.getElementById("presentacion").value,
+    litros_finales: parseFloat(document.getElementById("litros").value)
   };
 
   fetch(URL, {
     method: "POST",
-    body: JSON.stringify(payload)
-  }).then(() => {
-    loadStock();
-    loadHistorial();
-  });
+    body: JSON.stringify(data)
+  })
+  .then(r => r.json())
+  .then(res => {
+    if(res.success) {
+      alert("Fraccionamiento registrado correctamente");
+      loadHistorial();
+    } else {
+      alert("Error: " + res.error);
+    }
+  })
+  .catch(e => alert("Error al guardar: " + e));
 }
 
-init();
+// ==== INICIALIZACION ====
+loadConfig();
 </script>
-
 </body>
 </html>
