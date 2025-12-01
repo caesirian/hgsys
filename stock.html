@@ -1,264 +1,254 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Stock · Fraccionado</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-<style>
-  :root{--bg:#071027;--card:#0d1b2a;--accent:#60a5fa;--ok:#10b981;--low:#f59e0b;--bad:#ef4444;color:#e6eef8}
-  body{margin:0;font-family:Inter,system-ui,Arial;background:var(--bg);color:var(--color, #e6eef8);padding:18px}
-  .wrap{max-width:1100px;margin:0 auto}
-  .row{display:flex;gap:12px;flex-wrap:wrap}
-  .card{background:var(--card);padding:14px;border-radius:10px;box-shadow:0 6px 18px rgba(2,6,23,.6)}
-  .small{flex:1 1 260px}
-  .large{flex:2 1 560px}
-  h1{margin:0 0 8px;font-size:20px}
-  label{font-size:13px;color:#cfe6ff;display:block;margin-top:8px}
-  select,input{width:100%;padding:10px;margin-top:6px;border-radius:8px;border:1px solid rgba(255,255,255,.04);background:transparent;color:inherit}
-  button{margin-top:10px;padding:10px 12px;border-radius:8px;border:0;background:linear-gradient(90deg,var(--accent),#06b6d4);color:#012;cursor:pointer;font-weight:700}
-  table{width:100%;border-collapse:collapse;margin-top:8px;font-size:13px}
-  th,td{padding:8px;border-bottom:1px solid rgba(255,255,255,.03);text-align:left}
-  thead th{color:#9fbff8;font-weight:600}
-  .meta{display:flex;justify-content:space-between;align-items:center;gap:8px}
-  @media(max-width:720px){ .row{flex-direction:column} .large{order:2} .small{order:1} }
-</style>
-<!-- Chart.js CDN -->
+<meta charset="UTF-8">
+<title>Stock Biotecnología</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+body {
+  font-family: Arial, sans-serif;
+  background: #0e1621;
+  color: #eaeaea;
+  margin: 0;
+  padding: 20px;
+}
+
+h2 {
+  margin-top: 40px;
+  border-bottom: 2px solid #00ff9c;
+  padding-bottom: 5px;
+}
+
+.card {
+  background: #121e2d;
+  padding: 15px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  box-shadow: 0 0 12px #000;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+}
+
+.indicador {
+  background: #08131f;
+  border-radius: 10px;
+  padding: 10px;
+  text-align: center;
+  border: 1px solid #00ff9c50;
+}
+
+.indicador strong {
+  font-size: 18px;
+  display: block;
+  color: #00ff9c;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+
+th, td {
+  padding: 6px;
+  border: 1px solid #333;
+  text-align: center;
+  font-size: 13px;
+}
+
+th {
+  background: #08131f;
+}
+
+input, select, button {
+  background: #08131f;
+  color: #fff;
+  border: 1px solid #00ff9c;
+  padding: 6px;
+  border-radius: 5px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px,1fr));
+  gap: 8px;
+  max-width: 700px;
+}
+
+button {
+  cursor: pointer;
+  background: #00ff9c;
+  color: #000;
+  font-weight: bold;
+}
+
+canvas {
+  max-width: 100%;
+}
+</style>
 </head>
+
 <body>
-<div class="wrap">
-  <h1>Panel de Producción — Stock & Fraccionado</h1>
 
-  <div class="row">
-    <div class="card small">
-      <div class="meta"><strong>Envases (stock)</strong><span id="envCount"></span></div>
-      <canvas id="chartEnv" height="240"></canvas>
-    </div>
+<h1>Panel de Stock — Biotecnología</h1>
 
-    <div class="card small">
-      <div class="meta"><strong>Crudos (stock)</strong><span id="cruCount"></span></div>
-      <canvas id="chartCrudos" height="240"></canvas>
-    </div>
+<!-- INDICADORES -->
+<div class="card">
+<h2>Indicadores de Stock</h2>
+<div class="grid" id="indicadores"></div>
+</div>
 
-    <div class="card small">
-      <div class="meta"><strong>Indicadores</strong><span></span></div>
-      <div id="indicators" style="margin-top:10px"></div>
-    </div>
+<!-- GRAFICOS -->
+<div class="card">
+<h2>Stock de Envases</h2>
+<canvas id="grafEnvases"></canvas>
+</div>
 
-    <div class="card large">
-      <strong>Registrar Fraccionamiento</strong>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
-        <div>
-          <label>Producto</label>
-          <select id="selProducto"></select>
-        </div>
-        <div>
-          <label>Presentación (envase)</label>
-          <select id="selPresentacion"></select>
-        </div>
-      </div>
+<div class="card">
+<h2>Stock de Crudos</h2>
+<canvas id="grafCrudos"></canvas>
+</div>
 
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
-        <div>
-          <label>Litros Totales (crudo+agua)</label>
-          <input id="inpLitros" inputmode="decimal" placeholder="ej. 45,5">
-        </div>
-        <div>
-          <label>Unidades (envases)</label>
-          <input id="inpUnidades" placeholder="ej. 100">
-        </div>
-      </div>
+<!-- FORMULARIO -->
+<div class="card">
+<h2>Registrar Fraccionado</h2>
 
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
-        <div>
-          <label>Litros Crudo (calculado)</label>
-          <input id="outCrudo" readonly>
-        </div>
-        <div>
-          <label>Litros Agua (calculado)</label>
-          <input id="outAgua" readonly>
-        </div>
-      </div>
+<div class="form-grid">
+  <select id="producto"></select>
+  <select id="envase"></select>
+  <input type="number" id="litros" placeholder="Litros Finales">
+  <input type="number" id="unidades" placeholder="Unidades">
+  <input type="number" id="crudo" placeholder="Crudo Usado (L)">
+  <button onclick="guardar()">Guardar</button>
+</div>
 
-      <div style="display:flex;gap:10px;margin-top:10px">
-        <input id="inpLote" placeholder="Lote (opcional)" style="flex:1">
-        <button id="btnGuardar" style="width:160px">Guardar</button>
-      </div>
-      <div id="msg" style="margin-top:8px;color:#9fe6c7"></div>
-    </div>
-  </div>
+<p style="font-size:12px;color:#aaa;">
+<strong>Litros Totales:</strong> representa el volumen final producido luego del fraccionado.
+</p>
+</div>
 
-  <div class="card" style="margin-top:12px">
-    <strong>Historial de Producción</strong>
-    <table id="tablaHist">
-      <thead>
-        <tr><th>ID</th><th>Fecha</th><th>Producto</th><th>Envase</th><th>Unidades</th><th>Lote</th><th>Crudo (L)</th><th>Agua (L)</th></tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
+<!-- HISTORIAL -->
+<div class="card">
+<h2>Historial de Producción</h2>
+
+<table>
+<thead>
+<tr>
+  <th>Fecha</th>
+  <th>Producto</th>
+  <th>Envase</th>
+  <th>Unidades</th>
+  <th>Litros</th>
+  <th>Crudo</th>
+</tr>
+</thead>
+<tbody id="historial"></tbody>
+</table>
+
 </div>
 
 <script>
-const API_URL = "https://script.google.com/macros/s/AKfycbxEfDHUZmU6LWZL7JTxALbrAyNHVJV4hZpDRrsOv_x1FDsTZ6vjmcCC3d-U8kih5ZLeQg/exec"; // <<-- reemplazar
+const URL = "https://script.google.com/macros/library/d/1WBwxohtl88oxpoXwWIii8qZwbTF0_43_9ni3dfHXXq8ghzDZEQym7Rvy/8";
 
-// helpers
-function parseAR(s){
-  if (s===null||s===undefined||s==="") return 0;
-  s = String(s).trim().replace(/\./g,'').replace(',','.');
-  return Number(s) || 0;
-}
-function fmtAR(n){ return Number(n||0).toLocaleString('es-AR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
-function shortId(id){ return String(id).slice(0,8); }
-function fmtDate(iso){
-  var d = Date.parse(iso);
-  if (isNaN(d)) return String(iso);
-  return new Date(d).toLocaleString();
-}
-
-// state
-let CONF = { presentaciones:[], productos:[] };
-let chartEnv, chartCrudos;
-
-// load config
-async function loadConfig(){
-  const r = await fetch(API_URL + "?action=config&nocache=" + Date.now());
-  const j = await r.json();
-  CONF = j;
-  // populate selects
-  selProducto.innerHTML = CONF.productos.map(p=>`<option value="${p.codigo}" data-d="${p.dilucion}">${p.codigo}</option>`).join('');
-  selPresentacion.innerHTML = CONF.presentaciones.map(p=>`<option value="${p.nombre}" data-l="${p.litros||p.capacidad||p.capacidad_lts||p.capacidad_lts}">${p.nombre}</option>`).join('');
-}
-
-// load stock and draw charts
-async function loadStock(){
-  const r = await fetch(API_URL + "?action=stock&nocache=" + Date.now());
-  const j = await r.json();
-  if (!j.success) return;
-
-  // envases and crudos arrays (objects: item, stock)
-  const env = j.envases || [];
-  const cru = j.crudos || [];
-
-  document.getElementById('envCount').textContent = env.length + ' items';
-  document.getElementById('cruCount').textContent = cru.length + ' items';
-
-  // indicators (top 5 low)
-  const ind = document.getElementById('indicators');
-  ind.innerHTML = '';
-  j.stock.slice(0,6).forEach(s=>{
-    const cls = s.estado && s.estado.toUpperCase()==='BAJO' ? 'color:var(--low)' : 'color:var(--ok)';
-    ind.innerHTML += `<div style="display:flex;justify-content:space-between;margin:6px 0"><div>${s.item}</div><div style="${cls}">${fmtAR(s.stock)}</div></div>`;
-  });
-
-  // Chart: Envases
-  const envLabels = env.map(e=>e.item);
-  const envValues = env.map(e=>e.stock);
-  if (!chartEnv) {
-    chartEnv = new Chart(document.getElementById('chartEnv'), {
-      type: 'bar',
-      data: { labels: envLabels, datasets: [{ label:'Envases', data: envValues, backgroundColor: envValues.map(v=> v<10?'#ef4444':'#60a5fa') }] },
-      options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}} }
-    });
-  } else {
-    chartEnv.data.labels = envLabels; chartEnv.data.datasets[0].data = envValues; chartEnv.update();
-  }
-
-  // Chart: Crudos
-  const cruLabels = cru.map(c=>c.item);
-  const cruValues = cru.map(c=>c.stock);
-  if (!chartCrudos) {
-    chartCrudos = new Chart(document.getElementById('chartCrudos'), {
-      type: 'bar',
-      data: { labels: cruLabels, datasets: [{ label:'Crudos (L)', data: cruValues, backgroundColor:'#10b981' }] },
-      options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}} }
-    });
-  } else {
-    chartCrudos.data.labels = cruLabels; chartCrudos.data.datasets[0].data = cruValues; chartCrudos.update();
-  }
-}
-
-// load history (structured)
-async function loadHist(){
-  const r = await fetch(API_URL + "?action=fraccionamientos&nocache=" + Date.now());
-  const j = await r.json();
-  if (!j.success) return;
-  const tbody = document.querySelector('#tablaHist tbody');
-  tbody.innerHTML = '';
-  j.fraccionamientos.forEach(row=>{
-    tbody.innerHTML += `<tr>
-      <td>${shortId(row.id)}</td>
-      <td>${fmtDate(row.fecha)}</td>
-      <td>${row.producto}</td>
-      <td>${row.presentacion}</td>
-      <td>${row.cantidad}</td>
-      <td>${row.lote||''}</td>
-      <td>${fmtAR(row.crudo)}</td>
-      <td>${fmtAR(row.agua)}</td>
-    </tr>`;
-  });
-}
-
-// calculations & binding
-document.getElementById('inpLitros').addEventListener('input', ()=>{
-  const v = parseAR(document.getElementById('inpLitros').value || 0);
-  const pres = selPresentacion.selectedOptions[0] ? parseAR(selPresentacion.selectedOptions[0].dataset.l) : 0;
-  const units = pres>0 ? Math.round(v / pres) : 0;
-  inpUnidades.value = units;
-  // compute crudo/agua preview
-  const dil = selProducto.selectedOptions[0] ? parseAR(selProducto.selectedOptions[0].dataset.d) : 0;
-  outCrudo.value = fmtAR(v * (1 - 0)); // Note: earlier scripts used dilution as fraction of water; adapt to your config. If dil is fraction of water, crudo = v*(1-dil).
-  outAgua.value = fmtAR(v - parseAR(outCrudo.value));
-});
-document.getElementById('inpUnidades').addEventListener('input', ()=>{
-  const u = parseInt(document.getElementById('inpUnidades').value||0,10);
-  const pres = selPresentacion.selectedOptions[0] ? parseAR(selPresentacion.selectedOptions[0].dataset.l) : 0;
-  const litros = u * pres;
-  inpLitros.value = litros ? String(litros).replace('.',',') : '';
-  // update crudo/agua similar
-});
-
-// guardar
-document.getElementById('btnGuardar').addEventListener('click', async ()=>{
-  const producto = selProducto.value;
-  const presentacion = selPresentacion.selectedOptions[0] ? selPresentacion.selectedOptions[0].textContent : '';
-  const cantidad = document.getElementById('inpUnidades').value || '';
-  const lote = document.getElementById('inpLote').value || '';
-  const litros = parseAR(document.getElementById('inpLitros').value||0);
-  const dil = selProducto.selectedOptions[0] ? parseAR(selProducto.selectedOptions[0].dataset.d) : 0;
-  const litrosCrudo = litros * (1 - dil);
-  const litrosAgua = litros - litrosCrudo;
-
-  const payload = {
-    producto: producto,
-    presentacion: presentacion,
-    cantidad: cantidad,
-    lote: lote,
-    litrosFinal: litros,
-    litrosCrudo: litrosCrudo,
-    litrosAgua: litrosAgua
-  };
-
-  const res = await fetch(API_URL, { method:'POST', body: JSON.stringify(payload) });
-  const js = await res.json();
-  if (js && js.success !== false) {
-    msg.textContent = 'Fraccionamiento registrado';
-    await loadStock();
-    await loadHist();
-  } else {
-    msg.textContent = 'Error: ' + (js.error || 'unknown');
-  }
-  setTimeout(()=>msg.textContent='',4000);
-});
-
-// init
-(async function init(){
+async function init(){
   await loadConfig();
   await loadStock();
-  await loadHist();
-  setInterval(()=>{ loadStock(); loadHist(); }, 6000);
-})();
+  await loadHistorial();
+}
+
+async function loadConfig(){
+  const r = await fetch(`${URL}?action=config&nocache=${Date.now()}`);
+  const data = await r.json();
+
+  const p = document.getElementById("producto");
+  const e = document.getElementById("envase");
+
+  data.productos.forEach(x=>{
+    p.innerHTML += `<option value="${x.codigo}">${x.nombre}</option>`;
+  });
+
+  data.envases.forEach(x=>{
+    e.innerHTML += `<option value="${x.codigo}">${x.nombre}</option>`;
+  });
+}
+
+async function loadStock(){
+  const r = await fetch(`${URL}?action=stock&nocache=${Date.now()}`);
+  const data = await r.json();
+
+  const ind = document.getElementById("indicadores");
+  ind.innerHTML = "";
+
+  let lblEnv=[], valEnv=[], lblCru=[], valCru=[];
+
+  data.envases.forEach(x=>{
+    ind.innerHTML += `<div class="indicador"><strong>${x.stock}</strong>${x.nombre}</div>`;
+    lblEnv.push(x.nombre); valEnv.push(x.stock);
+  });
+
+  data.crudos.forEach(x=>{
+    lblCru.push(x.nombre); valCru.push(x.stock);
+  });
+
+  new Chart(document.getElementById("grafEnvases"), {
+    type: 'bar',
+    data: { labels: lblEnv, datasets: [{ data: valEnv }] }
+  });
+
+  new Chart(document.getElementById("grafCrudos"), {
+    type: 'line',
+    data: { labels: lblCru, datasets: [{ data: valCru }] }
+  });
+}
+
+async function guardar(){
+  const body = {
+    producto: producto.value,
+    envase: envase.value,
+    litros: litros.value,
+    unidades: unidades.value,
+    crudo: crudo.value
+  };
+
+  await fetch(URL, {
+    method: "POST",
+    body: JSON.stringify(body)
+  });
+
+  litros.value = unidades.value = crudo.value = "";
+
+  loadStock();
+  loadHistorial();
+}
+
+async function loadHistorial(){
+  const r = await fetch(`${URL}?action=fraccionamientos&nocache=${Date.now()}`);
+  const data = await r.json();
+
+  const h = document.getElementById("historial");
+  h.innerHTML = "";
+
+  data.reverse().forEach(x=>{
+    h.innerHTML += `
+      <tr>
+        <td>${new Date(x.fecha).toLocaleString()}</td>
+        <td>${x.producto}</td>
+        <td>${x.envase}</td>
+        <td>${x.unidades}</td>
+        <td>${x.litros}</td>
+        <td>${x.crudo}</td>
+      </tr>
+    `;
+  });
+}
+
+init();
 </script>
+
 </body>
 </html>
