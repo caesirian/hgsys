@@ -1,205 +1,261 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gestión de Stock - Biotecnología</title>
-  <!-- Bootstrap 5 -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <!-- Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-  <style>
-    body { padding: 20px; background-color: #f4f6f9; font-family: 'Segoe UI', sans-serif; }
-    h2 { margin-top: 20px; }
-    .card { margin-bottom: 20px; border-radius: 10px; box-shadow: 0 3px 10px rgba(0,0,0,0.1); }
-    .chart-container { position: relative; height: 300px; }
-    table { background: #fff; border-radius: 8px; overflow: hidden; }
-    th, td { text-align: center; vertical-align: middle; }
-    th { background-color: #007bff; color: white; }
-    .form-control { max-width: 150px; display: inline-block; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stock y Fraccionamientos - Biotech</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+    background-color: #f7f9fb;
+    color: #222;
+  }
+
+  h2 {
+    color: #004080;
+    margin-top: 30px;
+  }
+
+  .section {
+    margin-bottom: 40px;
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+  }
+
+  table, th, td {
+    border: 1px solid #ccc;
+  }
+
+  th, td {
+    padding: 8px 12px;
+    text-align: center;
+  }
+
+  th {
+    background-color: #004080;
+    color: white;
+  }
+
+  input[type="number"] {
+    width: 80px;
+    padding: 5px;
+  }
+
+  button {
+    background-color: #004080;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  button:hover {
+    background-color: #0066cc;
+  }
+
+  .charts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 40px;
+    margin-top: 20px;
+  }
+
+  .chart-container {
+    flex: 1;
+    min-width: 300px;
+  }
+
+  @media(max-width:768px){
+    .charts {
+      flex-direction: column;
+    }
+  }
+
+</style>
 </head>
 <body>
-  <div class="container">
-    <h1 class="text-center">Gestión de Stock - Biotecnología</h1>
 
-    <!-- Indicadores de stock -->
-    <div class="row">
-      <div class="col-md-6">
-        <div class="card p-3">
-          <h2>🧴 Stock de Envases</h2>
-          <canvas id="envasesChart" class="chart-container"></canvas>
-        </div>
-      </div>
-      <div class="col-md-6">
-        <div class="card p-3">
-          <h2>🧪 Stock de Crudos</h2>
-          <canvas id="crudosChart" class="chart-container"></canvas>
-        </div>
-      </div>
+<h1>Gestión de Stock y Fraccionamientos</h1>
+
+<div class="section">
+  <h2>🧴 Indicadores de Stock</h2>
+  <div class="charts">
+    <div class="chart-container">
+      <canvas id="stockEnvases"></canvas>
     </div>
-
-    <!-- Formulario de fraccionamiento -->
-    <div class="card p-3">
-      <h2>➕ Registrar Fraccionamiento</h2>
-      <div class="row g-3 align-items-center">
-        <div class="col-md-3">
-          <label for="productoSelect" class="form-label">Producto</label>
-          <select id="productoSelect" class="form-select"></select>
-        </div>
-        <div class="col-md-3">
-          <label for="presentacionSelect" class="form-label">Presentación</label>
-          <select id="presentacionSelect" class="form-select">
-            <option>45ml</option>
-            <option>200ml</option>
-            <option>500ml</option>
-            <option>1lts</option>
-            <option>5lts</option>
-            <option>20lts</option>
-          </select>
-        </div>
-        <div class="col-md-2">
-          <label for="cantidadInput" class="form-label">Cantidad</label>
-          <input type="number" id="cantidadInput" class="form-control" placeholder="Litros">
-        </div>
-        <div class="col-md-2">
-          <label for="crudoInput" class="form-label">Crudo Usado</label>
-          <input type="number" id="crudoInput" class="form-control" readonly>
-        </div>
-        <div class="col-md-2 d-flex align-items-end">
-          <button id="guardarBtn" class="btn btn-success w-100">Guardar</button>
-        </div>
-      </div>
-      <small class="text-muted">Ingrese la cantidad en litros; las unidades y el crudo se calculan automáticamente.</small>
-    </div>
-
-    <!-- Historial de fraccionamientos -->
-    <div class="card p-3">
-      <h2>📜 Historial de Producción</h2>
-      <div class="table-responsive">
-        <table class="table table-striped" id="historialTable">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Fecha</th>
-              <th>Producto</th>
-              <th>Presentación</th>
-              <th>Cantidad</th>
-              <th>Litros</th>
-              <th>Crudo Usado</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
+    <div class="chart-container">
+      <canvas id="stockCrudos"></canvas>
     </div>
   </div>
+</div>
 
-  <script>
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzxBOK3uT9_9hjZ1detEzQjmFGmg7mD6O9OT41a5U8KTPgaIUqA-j4ptDTuyRiBQSFNuA/exec"; // reemplaza con tu URL
+<div class="section">
+  <h2>➕ Registrar Fraccionamiento</h2>
+  <form id="formFraccionamiento">
+    <label>Producto: 
+      <select id="productoSelect"></select>
+    </label>
+    &nbsp;
+    <label>Presentación: 
+      <select id="presentacionSelect"></select>
+    </label>
+    &nbsp;
+    <label>Cantidad (litros totales): 
+      <input type="number" id="cantidadLitros" step="0.01" min="0">
+    </label>
+    &nbsp;
+    <button type="submit">Guardar</button>
+  </form>
+</div>
 
-    let stockData = [];
+<div class="section">
+  <h2>📜 Historial de Fraccionamientos</h2>
+  <table id="tablaHistorial">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Fecha</th>
+        <th>Producto</th>
+        <th>Presentación</th>
+        <th>Cantidad</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Filas dinámicas -->
+    </tbody>
+  </table>
+</div>
 
-    // Cargar productos y stock
-    async function loadStock() {
-      try {
-        const res = await fetch(`${WEB_APP_URL}?action=stock`);
-        const data = await res.json();
-        stockData = data;
-        updateCharts();
-        updateCrudo();
-      } catch (err) {
-        console.error("Error al cargar stock:", err);
+<script>
+const GAS_URL = "TU_URL_DEL_GAS_AQUI"; // pon tu URL de GAS aquí
+
+async function fetchJSON(url){
+  const resp = await fetch(url);
+  return await resp.json();
+}
+
+async function cargarConfig() {
+  const config = await fetchJSON(`${GAS_URL}?action=config&nocache=${Date.now()}`);
+  return config;
+}
+
+async function cargarStock() {
+  const stock = await fetchJSON(`${GAS_URL}?action=stock&nocache=${Date.now()}`);
+  return stock;
+}
+
+async function cargarFraccionamientos() {
+  const fracs = await fetchJSON(`${GAS_URL}?action=fraccionamientos&nocache=${Date.now()}`);
+  return fracs;
+}
+
+function llenarSelects(stock){
+  const productoSelect = document.getElementById("productoSelect");
+  const presentacionSelect = document.getElementById("presentacionSelect");
+  productoSelect.innerHTML = "";
+  presentacionSelect.innerHTML = "";
+  stock.forEach(item => {
+    const optProd = document.createElement("option");
+    optProd.value = item.Producto;
+    optProd.textContent = item.Producto;
+    productoSelect.appendChild(optProd);
+
+    const optPres = document.createElement("option");
+    optPres.value = item.Presentacion;
+    optPres.textContent = item.Presentacion;
+    presentacionSelect.appendChild(optPres);
+  });
+}
+
+function llenarTabla(fraccionamientos){
+  const tbody = document.querySelector("#tablaHistorial tbody");
+  tbody.innerHTML = "";
+  fraccionamientos.forEach(f => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${f.ID}</td>
+      <td>${new Date(f.Fecha).toLocaleString()}</td>
+      <td>${f.Producto}</td>
+      <td>${f.Presentacion}</td>
+      <td>${f.Cantidad}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function graficarStock(stock){
+  const ctxEnvases = document.getElementById('stockEnvases').getContext('2d');
+  const ctxCrudos = document.getElementById('stockCrudos').getContext('2d');
+
+  // Grafico de envases (barras)
+  new Chart(ctxEnvases, {
+    type: 'bar',
+    data: {
+      labels: stock.map(s => s.Presentacion),
+      datasets: [{
+        label: 'Cantidad de Envases',
+        data: stock.map(s => s.Cantidad),
+        backgroundColor: '#004080'
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false }
+      },
+      scales: {
+        y: { beginAtZero: true }
       }
     }
+  });
 
-    // Cargar historial
-    async function loadHistorial() {
-      try {
-        const res = await fetch(`${WEB_APP_URL}?action=fraccionamientos`);
-        const data = await res.json();
-        const tbody = document.querySelector("#historialTable tbody");
-        tbody.innerHTML = "";
-        data.forEach(f => {
-          const tr = document.createElement("tr");
-          tr.innerHTML = `
-            <td>${f.id}</td>
-            <td>${new Date(f.fecha).toLocaleString()}</td>
-            <td>${f.producto}</td>
-            <td>${f.presentacion}</td>
-            <td>${f.cantidad}</td>
-            <td>${f.litros}</td>
-            <td>${f.crudo_usado}</td>
-          `;
-          tbody.appendChild(tr);
-        });
-      } catch (err) {
-        console.error("Error al cargar historial:", err);
+  // Grafico de crudos (dona)
+  new Chart(ctxCrudos, {
+    type: 'doughnut',
+    data: {
+      labels: stock.map(s => s.Producto),
+      datasets: [{
+        label: 'Stock Crudo',
+        data: stock.map(s => s.Cantidad),
+        backgroundColor: ['#004080','#0066cc','#3399ff','#66ccff','#99ddff']
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { position: 'bottom' }
       }
     }
+  });
+}
 
-    // Actualizar gráficos
-    function updateCharts() {
-      const envasesLabels = stockData.map(s => s.item);
-      const envasesValues = stockData.map(s => s.stock);
+document.getElementById("formFraccionamiento").addEventListener("submit", async function(e){
+  e.preventDefault();
+  alert("Funcionalidad de guardado activada (implementa POST al GAS)");
+});
 
-      new Chart(document.getElementById("envasesChart"), {
-        type: 'bar',
-        data: {
-          labels: envasesLabels,
-          datasets: [{
-            label: 'Stock Envases',
-            data: envasesValues,
-            backgroundColor: '#007bff'
-          }]
-        },
-        options: { responsive:true, plugins:{legend:{display:false}} }
-      });
+async function init(){
+  const stock = await cargarStock();
+  llenarSelects(stock);
+  graficarStock(stock);
 
-      // Crudos (puede ser tipo line)
-      new Chart(document.getElementById("crudosChart"), {
-        type: 'line',
-        data: {
-          labels: envasesLabels,
-          datasets: [{
-            label: 'Stock Crudos',
-            data: envasesValues,
-            borderColor: '#28a745',
-            backgroundColor: 'rgba(40,167,69,0.2)',
-            fill: true
-          }]
-        },
-        options: { responsive:true, plugins:{legend:{display:false}} }
-      });
+  const fracs = await cargarFraccionamientos();
+  llenarTabla(fracs);
+}
 
-      // Llenar dropdown de productos
-      const productoSelect = document.getElementById("productoSelect");
-      productoSelect.innerHTML = "";
-      stockData.forEach(p => {
-        const opt = document.createElement("option");
-        opt.value = p.item;
-        opt.textContent = p.item;
-        productoSelect.appendChild(opt);
-      });
-    }
+init();
+</script>
 
-    // Calcular crudo automáticamente según cantidad
-    function updateCrudo() {
-      const cantidadInput = document.getElementById("cantidadInput");
-      const crudoInput = document.getElementById("crudoInput");
-      cantidadInput.addEventListener("input", () => {
-        const val = parseFloat(cantidadInput.value) || 0;
-        // ejemplo de cálculo: crudo = litros * 0.9
-        crudoInput.value = (val * 0.9).toFixed(2);
-      });
-    }
-
-    // Guardar fraccionamiento
-    async function guardarFraccionamiento() {
-      const producto = document.getElementById("productoSelect").value;
-      const presentacion = document.getElementById("presentacionSelect").value;
-      const cantidad = document.getElementById("cantidadInput").value;
-      const crudo_usado = document.getElementById("crudoInput").value;
-
-      const params = new URLSearchParams();
-      params.append
+</body>
+</html>
