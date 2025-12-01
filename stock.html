@@ -2,70 +2,225 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Control de Stock</title>
+<title>Plataforma de Control de Stock - Biotecnología</title>
+
 <style>
-body{font-family:Arial;background:#0e1726;color:#fff;padding:20px}
-table{width:100%;border-collapse:collapse;margin-top:15px}
-th,td{border:1px solid #444;padding:8px;text-align:center}
-input,select,button{padding:8px;margin:5px;width:100%}
-button{background:#1abc9c;border:0;font-weight:bold}
+:root{
+  --bg:#0b1220;
+  --card:#111a2e;
+  --ok:#00c896;
+  --low:#f1c40f;
+  --bad:#e74c3c;
+  --text:#eaeaf0;
+}
+
+body{
+  margin:0;
+  font-family:system-ui, Arial;
+  background:var(--bg);
+  color:var(--text);
+}
+
+.container{
+  max-width:1200px;
+  margin:auto;
+  padding:20px;
+}
+
+h1,h2{
+  margin:10px 0;
+  font-weight:600;
+  letter-spacing:0.5px;
+}
+
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+  gap:15px;
+}
+
+.card{
+  background:var(--card);
+  padding:15px;
+  border-radius:12px;
+  box-shadow:0 5px 20px rgba(0,0,0,.4);
+}
+
+.indicador{
+  display:flex;
+  justify-content:space-between;
+  margin:8px 0;
+  padding:8px;
+  border-radius:6px;
+  font-size:14px;
+}
+
+.ok{background:rgba(0,200,150,.15); color:var(--ok)}
+.low{background:rgba(241,196,15,.15); color:var(--low)}
+.bad{background:rgba(231,76,60,.15); color:var(--bad)}
+
+table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:10px;
+  font-size:13px;
+}
+
+th,td{
+  border-bottom:1px solid #2a3555;
+  padding:6px;
+  text-align:center;
+}
+
+input,select,button{
+  width:100%;
+  padding:10px;
+  margin-top:8px;
+  border-radius:8px;
+  border:none;
+  outline:none;
+  font-size:14px;
+}
+
+button{
+  background:linear-gradient(135deg,#00c896,#00a8ff);
+  font-weight:700;
+  cursor:pointer;
+}
+
+.explicacion{
+  font-size:12px;
+  opacity:.8;
+  margin-top:5px;
+}
 </style>
 </head>
+
 <body>
+<div class="container">
 
-<h2>Stock Actual</h2>
-<table id="tablaStock"></table>
+<h1>Plataforma Profesional de Producción & Stock</h1>
 
-<h2>Registrar Fraccionamiento</h2>
+<!-- ================= INDICADORES ================= -->
+<div class="grid" id="indicadores">
+
+  <div class="card">
+    <h2>Stock de Productos Crudos</h2>
+    <div id="crudos"></div>
+  </div>
+
+  <div class="card">
+    <h2>Stock de Envases</h2>
+    <div id="envases"></div>
+  </div>
+
+  <div class="card">
+    <h2>Stock de Etiquetas</h2>
+    <div id="etiquetas">
+      <div class="indicador ok">Sistema preparado para integrar etiquetas 👤</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ================= REGISTRO ================= -->
+<div class="card" style="margin-top:25px">
+<h2>Registro de Fraccionamiento</h2>
 
 <select id="producto"></select>
 <select id="presentacion"></select>
 
-<input type="number" id="litros" placeholder="Litros finales">
-<input type="number" id="unidades" placeholder="Unidades">
-<input type="text" id="lote" placeholder="Lote">
+<input type="number" id="litros" placeholder="Litros Totales del Lote Final">
+<div class="explicacion">
+Litros Totales = volumen final ya mezclado (crudo + agua purificada).
+</div>
 
-<button onclick="guardar()">Guardar Fraccionado</button>
+<input type="number" id="unidades" placeholder="Unidades Fraccionadas">
 
-<h2>Historial</h2>
+<div class="explicacion" id="explicacionCalculo"></div>
+
+<input type="text" id="lote" placeholder="Código de Lote">
+
+<button onclick="guardar()">Guardar Fraccionamiento</button>
+</div>
+
+<!-- ================= HISTORIAL ================= -->
+<div class="card" style="margin-top:25px">
+<h2>Historial de Producción</h2>
 <table id="tablaHistorial"></table>
+</div>
+
+</div>
 
 <script>
 const URL = "https://script.google.com/macros/s/AKfycbyZpUVqjmg3rlBkG2ACx3DqBbzg9C4j5bRe9iwJ3-qTXazztGmDNvYfsrSZdVJAovNrSA/exec";
 
-// ================== CARGAR CONFIG ==================
+// ======================= CONFIG =======================
 async function cargarConfig(){
   const res = await fetch(`${URL}?action=config`);
   const data = await res.json();
 
-  producto.innerHTML = data.productos.map(p=>`<option value="${p.codigo}" data-d="${p.dilucion}">${p.codigo}</option>`).join("");
-  presentacion.innerHTML = data.presentaciones.map(p=>`<option value="${p.litros}">${p.nombre}</option>`).join("");
+  producto.innerHTML = data.productos.map(p=>
+    `<option value="${p.codigo}" data-d="${p.dilucion}">${p.codigo}</option>`
+  ).join("");
+
+  presentacion.innerHTML = data.presentaciones.map(p=>
+    `<option value="${p.litros}">${p.nombre}</option>`
+  ).join("");
 }
 
-// ================== CARGAR STOCK ==================
+// ======================= STOCK =======================
 async function cargarStock(){
   const res = await fetch(`${URL}?action=stock`);
   const data = await res.json();
-  tablaStock.innerHTML = data.map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join("")}</tr>`).join("");
+
+  crudos.innerHTML = "";
+  envases.innerHTML = "";
+
+  data.forEach((r,i)=>{
+    if(i===0 || r[0]==="") return;
+
+    let estado="ok";
+    if(r[2]==="BAJO") estado="low";
+
+    const div = `
+      <div class="indicador ${estado}">
+        <span>${r[0]}</span>
+        <strong>${Number(r[1]).toLocaleString("es-AR")}</strong>
+      </div>`;
+
+    if(i<7) envases.innerHTML += div;
+    else crudos.innerHTML += div;
+  });
 }
 
-// ================== CARGAR HISTORIAL ==================
+// ======================= HISTORIAL =======================
 async function cargarHistorial(){
   const res = await fetch(`${URL}?action=fraccionamientos`);
   const data = await res.json();
-  tablaHistorial.innerHTML = data.map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join("")}</tr>`).join("");
+
+  tablaHistorial.innerHTML = data.map(r=>`
+    <tr>${r.map(c=>`<td>${c}</td>`).join("")}</tr>
+  `).join("");
 }
 
-// ================== AUTO CÁLCULOS ==================
+// ======================= CALCULOS =======================
+function actualizarExplicacion(){
+  const d = producto.selectedOptions[0].dataset.d;
+  explicacionCalculo.innerText =
+  `Concentración del producto: ${d*100}% | El sistema calculará automáticamente cuántos litros de crudo se consumen del stock.`;
+}
+
 litros.oninput = ()=>{
   unidades.value = Math.round(litros.value / presentacion.value);
 };
-
 unidades.oninput = ()=>{
   litros.value = Math.round(unidades.value * presentacion.value * 100) / 100;
 };
 
-// ================== GUARDAR ==================
+producto.onchange = actualizarExplicacion;
+
+// ======================= GUARDAR =======================
 async function guardar(){
   const crudo = litros.value * producto.selectedOptions[0].dataset.d;
   const agua = litros.value - crudo;
@@ -87,10 +242,11 @@ async function guardar(){
   cargarHistorial();
 }
 
-// ================== INIT ==================
+// ======================= INIT =======================
 cargarConfig();
 cargarStock();
 cargarHistorial();
+actualizarExplicacion();
 setInterval(cargarStock, 5000);
 </script>
 
