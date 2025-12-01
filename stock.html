@@ -2,196 +2,334 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Control de Stock en Tiempo Real</title>
+  <title>Módulo de Fraccionamiento</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <style>
-    body {
+    body{
       font-family: Arial, sans-serif;
-      background: #0f172a;
-      color: white;
-      padding: 20px;
+      background:#0f172a;
+      color:#e5e7eb;
+      padding:20px;
     }
 
-    h2 {
-      margin-top: 40px;
-      color: #38bdf8;
+    h2,h3{
+      margin-bottom:10px;
+      color:#93c5fd;
     }
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 15px;
-      background: #020617;
+    .card{
+      background:#020617;
+      border:1px solid #1e3a8a;
+      border-radius:8px;
+      padding:16px;
+      margin-bottom:20px;
+      box-shadow:0 0 10px rgba(30,58,138,.3);
     }
 
-    th, td {
-      border: 1px solid #1e293b;
-      padding: 8px;
-      text-align: center;
+    label{
+      display:block;
+      margin-top:8px;
+      font-size:14px;
     }
 
-    th {
-      background: #1e293b;
+    select,input,button{
+      width:100%;
+      padding:10px;
+      margin-top:4px;
+      border-radius:4px;
+      border:1px solid #1e3a8a;
+      background:#020617;
+      color:#fff;
+      font-size:15px;
     }
 
-    input, select, button {
-      width: 100%;
-      padding: 10px;
-      background: #020617;
-      border: 1px solid #1e293b;
-      color: white;
-      margin-top: 5px;
+    button{
+      background:#22c55e;
+      border:none;
+      color:#000;
+      font-weight:bold;
+      cursor:pointer;
+      margin-top:12px;
     }
 
-    button {
-      background: #22c55e;
-      color: black;
-      font-weight: bold;
-      cursor: pointer;
+    button:hover{
+      background:#16a34a;
     }
 
-    button:hover {
-      background: #16a34a;
+    table{
+      width:100%;
+      border-collapse:collapse;
+      margin-top:10px;
+      font-size:14px;
     }
 
-    .form-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 15px;
+    th,td{
+      border:1px solid #1e3a8a;
+      padding:8px;
+      text-align:center;
+    }
+
+    th{
+      background:#020617;
+      color:#93c5fd;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+    }
+
+    .msg{
+      margin-top:10px;
+      color:#4ade80;
+      font-weight:bold;
     }
   </style>
 </head>
+
 <body>
 
-<h1>📦 Sistema de Control de Stock</h1>
+<h2>Módulo de Fraccionamiento</h2>
 
-<h2>Stock Actual</h2>
-<table id="tablaStock">
-  <thead>
-    <tr>
-      <th>Item</th>
-      <th>Stock</th>
-      <th>Estado</th>
-    </tr>
-  </thead>
-  <tbody></tbody>
-</table>
-
-<h2>Registrar Fraccionamiento</h2>
-
-<div class="form-grid">
-  <input id="producto" placeholder="Producto (P001)" />
-  <input id="presentacion" placeholder="Presentación (500ml)" />
-  <input id="cantidad" type="number" placeholder="Cantidad" />
-  <input id="lote" placeholder="Lote" />
-  <input id="litrosCrudo" type="number" step="0.01" placeholder="Litros Crudo" />
-  <input id="litrosAgua" type="number" step="0.01" placeholder="Litros Agua" />
+<!-- ================== STOCK ================== -->
+<div class="card">
+  <h3>Stock Actual</h3>
+  <table id="tablaStock">
+    <thead>
+      <tr>
+        <th>Item</th>
+        <th>Stock</th>
+        <th>Estado</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
 </div>
 
-<button onclick="guardarFraccionamiento()">Guardar Fraccionamiento</button>
+<!-- ================== FORM ================== -->
+<div class="card">
+  <h3>Registrar Fraccionamiento</h3>
 
-<h2>Historial de Fraccionamientos</h2>
-<table id="tablaFraccionamientos">
-  <thead>
-    <tr>
-      <th>ID</th>
-      <th>Fecha</th>
-      <th>Producto</th>
-      <th>Pres.</th>
-      <th>Cant.</th>
-      <th>Lote</th>
-      <th>Crudo</th>
-      <th>Agua</th>
-    </tr>
-  </thead>
-  <tbody></tbody>
-</table>
+  <label>Producto</label>
+  <select id="producto"></select>
+
+  <label>Presentación / Envase</label>
+  <select id="presentacion"></select>
+
+  <div class="grid">
+    <div>
+      <label>Unidades</label>
+      <input id="unidades" placeholder="Ej: 120">
+    </div>
+    <div>
+      <label>Litros Finales</label>
+      <input id="litrosFinales" placeholder="Ej: 45,5">
+    </div>
+  </div>
+
+  <div class="grid">
+    <div>
+      <label>Litros Crudo</label>
+      <input id="litrosCrudo" readonly>
+    </div>
+    <div>
+      <label>Litros Agua</label>
+      <input id="litrosAgua" readonly>
+    </div>
+  </div>
+
+  <label>Lote (opcional)</label>
+  <input id="lote" placeholder="LOTE-001">
+
+  <button onclick="guardar()">Guardar Fraccionamiento</button>
+
+  <div class="msg" id="mensaje"></div>
+</div>
+
+<!-- ================== HISTORIAL ================== -->
+<div class="card">
+  <h3>Historial de Fraccionamientos</h3>
+  <table id="tablaHistorial">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Fecha</th>
+        <th>Producto</th>
+        <th>Envase</th>
+        <th>Unidades</th>
+        <th>Lote</th>
+        <th>Crudo</th>
+        <th>Agua</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</div>
 
 <script>
-  // =============================
-  // 🔴 PEGÁ ACA TU URL REAL
-  // =============================
-  const API_URL = "https://script.google.com/macros/s/AKfycbwVxlDYqpyBS3ZxBxGfgRRydpPxqdMFJExw789Y_u7mZvkgy2xC5SHti8Xmd1NAHCNR/exec";
+/* ============================
+   CONFIGURACIÓN
+============================ */
 
-  // =============================
-  // CARGAR STOCK
-  // =============================
-  async function cargarStock() {
-    const res = await fetch(`${API_URL}?action=stock`, { cache: "no-store" });
-    const data = await res.json();
+const API_URL = "PEGÁ_ACÁ_TU_URL_DEL_SCRIPT"; 
 
-    const tbody = document.querySelector("#tablaStock tbody");
-    tbody.innerHTML = "";
+let CONFIG = { productos:[], presentaciones:[] };
 
-    data.stock.forEach(row => {
-      const tr = document.createElement("tr");
-      row.forEach(cell => {
-        const td = document.createElement("td");
-        td.textContent = cell;
-        tr.appendChild(td);
-      });
-      tbody.appendChild(tr);
-    });
+/* ============================
+   UTILIDADES NUMÉRICAS
+============================ */
+
+function parseAR(v){
+  if(!v) return 0;
+  v = v.replace(/\./g,"").replace(",",".");
+  return Number(v)||0;
+}
+
+function formatAR(n){
+  return Number(n||0).toLocaleString("es-AR",{minimumFractionDigits:2});
+}
+
+/* ============================
+   CARGA INICIAL
+============================ */
+
+async function cargarTodo(){
+  await cargarConfig();
+  await cargarStock();
+  await cargarHistorial();
+}
+
+async function cargarConfig(){
+  let r = await fetch(API_URL+"?action=config&x="+Date.now());
+  let j = await r.json();
+  CONFIG = j;
+
+  let prodSel = document.getElementById("producto");
+  let presSel = document.getElementById("presentacion");
+
+  prodSel.innerHTML = "";
+  presSel.innerHTML = "";
+
+  j.productos.forEach(p=>{
+    let o=document.createElement("option");
+    o.value=p.codigo;
+    o.text=p.codigo;
+    prodSel.appendChild(o);
+  });
+
+  j.presentaciones.forEach(p=>{
+    let o=document.createElement("option");
+    o.value=p.nombre;
+    o.text=p.nombre+" ("+p.capacidad+" L)";
+    presSel.appendChild(o);
+  });
+}
+
+async function cargarStock(){
+  let r = await fetch(API_URL+"?action=stock&x="+Date.now());
+  let j = await r.json();
+
+  let tb = document.querySelector("#tablaStock tbody");
+  tb.innerHTML = "";
+
+  j.stock.forEach(f=>{
+    tb.innerHTML += `<tr>
+      <td>${f[0]}</td>
+      <td>${formatAR(f[1])}</td>
+      <td>${f[2]}</td>
+    </tr>`;
+  });
+}
+
+async function cargarHistorial(){
+  let r = await fetch(API_URL+"?action=fraccionamientos&x="+Date.now());
+  let j = await r.json();
+
+  let tb = document.querySelector("#tablaHistorial tbody");
+  tb.innerHTML = "";
+
+  j.fraccionamientos.forEach(f=>{
+    tb.innerHTML += `<tr>
+      <td>${f[0]}</td>
+      <td>${new Date(f[1]).toLocaleString()}</td>
+      <td>${f[2]}</td>
+      <td>${f[3]}</td>
+      <td>${f[4]}</td>
+      <td>${f[5]}</td>
+      <td>${formatAR(f[6])}</td>
+      <td>${formatAR(f[7])}</td>
+    </tr>`;
+  });
+}
+
+/* ============================
+   CÁLCULOS AUTOMÁTICOS
+============================ */
+
+function recalcular(){
+  let pres = document.getElementById("presentacion").value;
+  let prod = document.getElementById("producto").value;
+  let uni = parseAR(document.getElementById("unidades").value);
+  let lit = parseAR(document.getElementById("litrosFinales").value);
+
+  let cap = CONFIG.presentaciones.find(p=>p.nombre===pres)?.capacidad||0;
+  let dil = CONFIG.productos.find(p=>p.codigo===prod)?.dilucion||0;
+
+  if(uni>0){
+    lit = uni * cap;
+    document.getElementById("litrosFinales").value = lit.toString().replace(".",",");
+  } else if(lit>0){
+    uni = Math.round(lit / cap);
+    document.getElementById("unidades").value = uni;
   }
 
-  // =============================
-  // CARGAR FRACCIONAMIENTOS
-  // =============================
-  async function cargarFraccionamientos() {
-    const res = await fetch(`${API_URL}?action=fraccionamientos`, { cache: "no-store" });
-    const data = await res.json();
+  let crudo = lit * (1-dil);
+  let agua  = lit - crudo;
 
-    const tbody = document.querySelector("#tablaFraccionamientos tbody");
-    tbody.innerHTML = "";
+  document.getElementById("litrosCrudo").value = formatAR(crudo);
+  document.getElementById("litrosAgua").value  = formatAR(agua);
+}
 
-    data.fraccionamientos.forEach(row => {
-      const tr = document.createElement("tr");
+document.getElementById("unidades").addEventListener("input",recalcular);
+document.getElementById("litrosFinales").addEventListener("input",recalcular);
+document.getElementById("producto").addEventListener("change",recalcular);
+document.getElementById("presentacion").addEventListener("change",recalcular);
 
-      for (let i = 0; i < 8; i++) {
-        const td = document.createElement("td");
-        td.textContent = row[i];
-        tr.appendChild(td);
-      }
+/* ============================
+   GUARDAR
+============================ */
 
-      tbody.appendChild(tr);
-    });
-  }
+async function guardar(){
+  let data = {
+    producto: producto.value,
+    presentacion: presentacion.value,
+    cantidad: unidades.value,
+    litrosFinal: litrosFinales.value,
+    lote: lote.value
+  };
 
-  // =============================
-  // GUARDAR FRACCIONAMIENTO
-  // =============================
-  async function guardarFraccionamiento() {
-    const payload = {
-      producto: producto.value,
-      presentacion: presentacion.value,
-      cantidad: cantidad.value,
-      lote: lote.value,
-      litrosCrudo: litrosCrudo.value,
-      litrosAgua: litrosAgua.value
-    };
+  let r = await fetch(API_URL,{
+    method:"POST",
+    body:JSON.stringify(data)
+  });
 
-    await fetch(API_URL, {
-      method: "POST",
-      body: JSON.stringify(payload)
-    });
+  let j = await r.json();
+  mensaje.innerHTML = j.success ? "✅ Fraccionamiento registrado" : "❌ Error";
 
-    // Limpia form
-    document.querySelectorAll("input").forEach(i => i.value = "");
+  await cargarStock();
+  await cargarHistorial();
 
-    // Refresca todo en tiempo real
-    cargarStock();
-    cargarFraccionamientos();
-  }
+  unidades.value="";
+  litrosFinales.value="";
+  litrosCrudo.value="";
+  litrosAgua.value="";
+  lote.value="";
+}
 
-  // =============================
-  // AUTO REFRESH
-  // =============================
-  cargarStock();
-  cargarFraccionamientos();
-  setInterval(() => {
-    cargarStock();
-    cargarFraccionamientos();
-  }, 4000);
-
+cargarTodo();
+setInterval(cargarStock, 5000);
 </script>
 
 </body>
