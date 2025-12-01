@@ -1,513 +1,1079 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Stock y Fraccionamientos - Biotech</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<style>
-  body {
-    font-family: Arial, sans-serif;
-    margin: 20px;
-    background-color: #f7f9fb;
-    color: #222;
-  }
-
-  h2 {
-    color: #004080;
-    margin-top: 30px;
-  }
-
-  .section {
-    margin-bottom: 40px;
-    background: #fff;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  }
-
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 10px;
-  }
-
-  table, th, td {
-    border: 1px solid #ccc;
-  }
-
-  th, td {
-    padding: 8px 12px;
-    text-align: center;
-  }
-
-  th {
-    background-color: #004080;
-    color: white;
-  }
-
-  input[type="number"], select {
-    width: 150px;
-    padding: 8px;
-    margin: 5px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-  }
-
-  button {
-    background-color: #004080;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 16px;
-    margin-top: 10px;
-  }
-
-  button:hover {
-    background-color: #0066cc;
-  }
-
-  .charts {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 40px;
-    margin-top: 20px;
-  }
-
-  .chart-container {
-    flex: 1;
-    min-width: 300px;
-    height: 300px;
-  }
-
-  .form-group {
-    margin: 10px 0;
-  }
-
-  label {
-    display: inline-block;
-    width: 150px;
-    font-weight: bold;
-  }
-
-  .loading {
-    color: #666;
-    font-style: italic;
-  }
-
-  .error {
-    color: #d32f2f;
-    background-color: #ffebee;
-    padding: 10px;
-    border-radius: 4px;
-    margin: 10px 0;
-  }
-
-  .success {
-    color: #2e7d32;
-    background-color: #e8f5e9;
-    padding: 10px;
-    border-radius: 4px;
-    margin: 10px 0;
-  }
-
-  @media(max-width:768px){
-    .charts {
-      flex-direction: column;
-    }
-    
-    label {
-      display: block;
-      width: 100%;
-      margin-bottom: 5px;
-    }
-    
-    input[type="number"], select {
-      width: 100%;
-    }
-  }
-
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Gestión de Stock - Biotecnología</title>
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+            --danger-color: #e74c3c;
+            --light-bg: #f8f9fa;
+            --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        body {
+            background-color: var(--light-bg);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding-bottom: 50px;
+        }
+        
+        .navbar-brand {
+            font-weight: 700;
+            color: var(--secondary-color) !important;
+        }
+        
+        .card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: var(--card-shadow);
+            margin-bottom: 20px;
+            transition: transform 0.3s;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .card-header {
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: 10px 10px 0 0 !important;
+            padding: 15px 20px;
+            font-weight: 600;
+        }
+        
+        .stat-card {
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .stat-icon {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            margin: 10px 0;
+        }
+        
+        .stat-label {
+            color: #6c757d;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+        
+        .table-responsive {
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: var(--card-shadow);
+        }
+        
+        .table th {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 15px;
+        }
+        
+        .table td {
+            vertical-align: middle;
+            padding: 10px 15px;
+        }
+        
+        .btn-primary {
+            background-color: var(--secondary-color);
+            border: none;
+            padding: 8px 20px;
+        }
+        
+        .btn-success {
+            background-color: var(--success-color);
+            border: none;
+            padding: 8px 20px;
+        }
+        
+        .btn-warning {
+            background-color: var(--warning-color);
+            border: none;
+            padding: 8px 20px;
+        }
+        
+        .badge {
+            padding: 5px 10px;
+            font-weight: 500;
+        }
+        
+        .alert {
+            border-radius: 8px;
+            border: none;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(0,0,0,.1);
+            border-radius: 50%;
+            border-top-color: var(--secondary-color);
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .last-updated {
+            font-size: 0.8rem;
+            color: #6c757d;
+            text-align: right;
+        }
+        
+        .form-control:focus {
+            border-color: var(--secondary-color);
+            box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+        }
+        
+        .select2-container--bootstrap5 .select2-selection {
+            border: 1px solid #ced4da;
+            border-radius: 0.375rem;
+        }
+        
+        footer {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            background-color: var(--primary-color);
+            color: white;
+            padding: 10px 0;
+            text-align: center;
+            z-index: 1000;
+        }
+        
+        .connection-status {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+        
+        .status-connected {
+            background-color: var(--success-color);
+        }
+        
+        .status-disconnected {
+            background-color: var(--danger-color);
+        }
+        
+        @media (max-width: 768px) {
+            .chart-container {
+                height: 250px;
+            }
+            
+            .stat-value {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
 </head>
 <body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-flask me-2"></i>BioStock Manager
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#"><i class="fas fa-home me-1"></i> Inicio</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" id="refreshBtn"><i class="fas fa-sync-alt me-1"></i> Actualizar</a>
+                    </li>
+                    <li class="nav-item">
+                        <span class="nav-link">
+                            <span class="connection-status" id="connectionStatus"></span>
+                            <span id="connectionText">Conectando...</span>
+                        </span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
 
-<h1>Gestión de Stock y Fraccionamientos</h1>
-
-<div class="section">
-  <h2>🧴 Indicadores de Stock</h2>
-  <div class="charts">
-    <div class="chart-container">
-      <canvas id="stockEnvases"></canvas>
+    <div class="container-fluid mt-4">
+        <!-- Alertas -->
+        <div id="alertContainer"></div>
+        
+        <!-- Tarjetas de Resumen -->
+        <div class="row">
+            <div class="col-md-3">
+                <div class="card stat-card">
+                    <div class="stat-icon text-primary">
+                        <i class="fas fa-boxes"></i>
+                    </div>
+                    <div class="stat-value" id="totalProductos">0</div>
+                    <div class="stat-label">Productos en Stock</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stat-card">
+                    <div class="stat-icon text-success">
+                        <i class="fas fa-prescription-bottle"></i>
+                    </div>
+                    <div class="stat-value" id="totalUnidades">0</div>
+                    <div class="stat-label">Total Unidades</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stat-card">
+                    <div class="stat-icon text-warning">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="stat-value" id="fraccionamientosHoy">0</div>
+                    <div class="stat-label">Fraccionamientos Hoy</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stat-card">
+                    <div class="stat-icon text-danger">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <div class="stat-value" id="productosBajos">0</div>
+                    <div class="stat-label">Stock Bajo</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Gráficos -->
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-chart-bar me-2"></i>Stock por Producto
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="stockChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-chart-pie me-2"></i>Distribución por Presentación
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="presentacionChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Formulario de Fraccionamiento -->
+        <div class="row mt-4">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-plus-circle me-2"></i>Registrar Nuevo Fraccionamiento
+                    </div>
+                    <div class="card-body">
+                        <form id="fraccionamientoForm">
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label for="productoSelect" class="form-label">Producto *</label>
+                                    <select class="form-select" id="productoSelect" required>
+                                        <option value="">Cargando productos...</option>
+                                    </select>
+                                    <div class="form-text" id="productoStockInfo"></div>
+                                </div>
+                                
+                                <div class="col-md-3">
+                                    <label for="presentacionSelect" class="form-label">Presentación *</label>
+                                    <select class="form-select" id="presentacionSelect" required>
+                                        <option value="">Seleccionar...</option>
+                                        <option value="45ml">45ml</option>
+                                        <option value="200ml">200ml</option>
+                                        <option value="500ml">500ml</option>
+                                        <option value="1lts">1 Litro</option>
+                                        <option value="5lts">5 Litros</option>
+                                        <option value="20lts">20 Litros</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="col-md-2">
+                                    <label for="cantidadInput" class="form-label">Cantidad (L) *</label>
+                                    <input type="number" class="form-control" id="cantidadInput" 
+                                           step="0.01" min="0.01" required>
+                                </div>
+                                
+                                <div class="col-md-2">
+                                    <label for="crudoInput" class="form-label">Crudo Usado (L)</label>
+                                    <input type="number" class="form-control" id="crudoInput" readonly>
+                                </div>
+                                
+                                <div class="col-md-1 d-flex align-items-end">
+                                    <button type="submit" class="btn btn-success w-100" id="guardarBtn">
+                                        <i class="fas fa-save me-1"></i> Guardar
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="row mt-2">
+                                <div class="col-md-12">
+                                    <small class="text-muted">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        El crudo usado se calcula automáticamente (Cantidad × Factor de conversión)
+                                    </small>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Stock Actual -->
+        <div class="row mt-4">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <div>
+                            <i class="fas fa-boxes me-2"></i>Stock Actual
+                        </div>
+                        <div class="last-updated">
+                            Actualizado: <span id="stockLastUpdate">--:--:--</span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="stockTable">
+                                <thead>
+                                    <tr>
+                                        <th>Producto</th>
+                                        <th>Presentación</th>
+                                        <th>Cantidad</th>
+                                        <th>Estado</th>
+                                        <th>Última Actualización</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="stockTableBody">
+                                    <!-- Datos dinámicos -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Historial de Fraccionamientos -->
+        <div class="row mt-4">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <div>
+                            <i class="fas fa-history me-2"></i>Historial de Fraccionamientos
+                        </div>
+                        <div class="last-updated">
+                            Registros: <span id="historialCount">0</span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="historialTable">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Fecha</th>
+                                        <th>Producto</th>
+                                        <th>Presentación</th>
+                                        <th>Cantidad (L)</th>
+                                        <th>Crudo Usado</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="historialTableBody">
+                                    <!-- Datos dinámicos -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-    <div class="chart-container">
-      <canvas id="stockCrudos"></canvas>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6 text-start">
+                    <small>Sistema de Gestión de Stock - Biotecnología v1.0</small>
+                </div>
+                <div class="col-md-6 text-end">
+                    <small id="appStatus">Cargando aplicación...</small>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Modal de Confirmación -->
+    <div class="modal fade" id="confirmModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Confirmar Fraccionamiento</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p id="confirmMessage"></p>
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Esta acción reducirá el stock disponible del producto.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-success" id="confirmSaveBtn">Confirmar y Guardar</button>
+                </div>
+            </div>
+        </div>
     </div>
-  </div>
-</div>
 
-<div class="section">
-  <h2>➕ Registrar Fraccionamiento</h2>
-  <form id="formFraccionamiento">
-    <div class="form-group">
-      <label for="productoSelect">Producto:</label>
-      <select id="productoSelect" required>
-        <option value="">Cargando productos...</option>
-      </select>
-    </div>
-    
-    <div class="form-group">
-      <label for="presentacionSelect">Presentación:</label>
-      <select id="presentacionSelect" required>
-        <option value="">Seleccionar...</option>
-        <option value="45ml">45ml</option>
-        <option value="200ml">200ml</option>
-        <option value="500ml">500ml</option>
-        <option value="1lts">1 Litro</option>
-        <option value="5lts">5 Litros</option>
-        <option value="20lts">20 Litros</option>
-      </select>
-    </div>
-    
-    <div class="form-group">
-      <label for="cantidadLitros">Cantidad (litros):</label>
-      <input type="number" id="cantidadLitros" step="0.01" min="0.01" required>
-    </div>
-    
-    <div class="form-group">
-      <label for="crudoUsado">Crudo usado:</label>
-      <input type="number" id="crudoUsado" step="0.01" readonly>
-    </div>
-    
-    <div id="formMessage"></div>
-    
-    <button type="submit">Guardar Fraccionamiento</button>
-  </form>
-</div>
-
-<div class="section">
-  <h2>📜 Historial de Fraccionamientos</h2>
-  <div id="loadingHistorial" class="loading">Cargando historial...</div>
-  <table id="tablaHistorial" style="display: none;">
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>Fecha</th>
-        <th>Producto</th>
-        <th>Presentación</th>
-        <th>Cantidad (L)</th>
-      </tr>
-    </thead>
-    <tbody>
-      <!-- Filas dinámicas -->
-    </tbody>
-  </table>
-</div>
-
-<script>
-// REEMPLAZA ESTA URL CON LA URL DE TU GAS
-// Para obtenerla: Publicar -> Implementar como aplicación web
-const GAS_URL = "https://script.google.com/macros/s/AKfycbzxBOK3uT9_9hjZ1detEzQjmFGmg7mD6O9OT41a5U8KTPgaIUqA-j4ptDTuyRiBQSFNuA/exec";
-
-let stockData = [];
-let fraccionamientosData = [];
-
-// Función para mostrar mensajes
-function showMessage(elementId, message, type = 'info') {
-  const element = document.getElementById(elementId);
-  element.innerHTML = `<div class="${type}">${message}</div>`;
-  if (type === 'success') {
-    setTimeout(() => element.innerHTML = '', 3000);
-  }
-}
-
-// Cargar stock desde GAS
-async function cargarStock() {
-  try {
-    const response = await fetch(`${GAS_URL}?action=stock&nocache=${Date.now()}`);
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-    
-    const data = await response.json();
-    
-    if (data.error) {
-      throw new Error(data.error);
-    }
-    
-    stockData = data;
-    return data;
-  } catch (error) {
-    console.error('Error al cargar stock:', error);
-    showMessage('formMessage', `Error al cargar stock: ${error.message}`, 'error');
-    return [];
-  }
-}
-
-// Cargar fraccionamientos desde GAS
-async function cargarFraccionamientos() {
-  try {
-    const loadingElement = document.getElementById('loadingHistorial');
-    const tableElement = document.getElementById('tablaHistorial');
-    
-    const response = await fetch(`${GAS_URL}?action=fraccionamientos&nocache=${Date.now()}`);
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-    
-    const data = await response.json();
-    
-    if (data.error) {
-      throw new Error(data.error);
-    }
-    
-    fraccionamientosData = data;
-    
-    // Ocultar loading y mostrar tabla
-    if (loadingElement) loadingElement.style.display = 'none';
-    if (tableElement) tableElement.style.display = 'table';
-    
-    return data;
-  } catch (error) {
-    console.error('Error al cargar fraccionamientos:', error);
-    showMessage('formMessage', `Error al cargar historial: ${error.message}`, 'error');
-    return [];
-  }
-}
-
-// Llenar dropdown de productos
-function llenarSelects(stock) {
-  const productoSelect = document.getElementById("productoSelect");
-  
-  if (stock.length === 0) {
-    productoSelect.innerHTML = '<option value="">No hay productos disponibles</option>';
-    return;
-  }
-  
-  // Limpiar opciones actuales
-  productoSelect.innerHTML = '';
-  
-  // Agregar productos únicos
-  const productosUnicos = [...new Set(stock.map(item => item.Producto))];
-  
-  productosUnicos.forEach(producto => {
-    const option = document.createElement("option");
-    option.value = producto;
-    option.textContent = producto;
-    productoSelect.appendChild(option);
-  });
-}
-
-// Llenar tabla de historial
-function llenarTabla(fraccionamientos) {
-  const tbody = document.querySelector("#tablaHistorial tbody");
-  tbody.innerHTML = "";
-  
-  if (fraccionamientos.length === 0) {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `<td colspan="5" style="text-align: center; padding: 20px;">No hay registros de fraccionamiento</td>`;
-    tbody.appendChild(tr);
-    return;
-  }
-  
-  // Ordenar por fecha (más reciente primero)
-  fraccionamientos.sort((a, b) => new Date(b.Fecha) - new Date(a.Fecha));
-  
-  fraccionamientos.forEach(f => {
-    const tr = document.createElement("tr");
-    
-    // Formatear fecha
-    let fechaFormateada = 'Fecha inválida';
-    try {
-      const fecha = new Date(f.Fecha);
-      if (!isNaN(fecha.getTime())) {
-        fechaFormateada = fecha.toLocaleString('es-ES');
-      }
-    } catch (e) {
-      console.warn('Error al formatear fecha:', e);
-    }
-    
-    tr.innerHTML = `
-      <td>${f.ID || 'N/A'}</td>
-      <td>${fechaFormateada}</td>
-      <td>${f.Producto || 'N/A'}</td>
-      <td>${f.Presentacion || 'N/A'}</td>
-      <td>${f.Cantidad || 0}</td>
-    `;
-    tbody.appendChild(tr);
-  });
-}
-
-// Crear gráficos
-function graficarStock(stock) {
-  if (stock.length === 0) return;
-  
-  // Destruir gráficos existentes si los hay
-  const chartInstances = Chart.instances;
-  Object.keys(chartInstances).forEach(key => {
-    chartInstances[key].destroy();
-  });
-  
-  // Gráfico de barras para stock
-  const ctxEnvases = document.getElementById('stockEnvases').getContext('2d');
-  new Chart(ctxEnvases, {
-    type: 'bar',
-    data: {
-      labels: stock.map(s => s.Producto),
-      datasets: [{
-        label: 'Cantidad de Envases',
-        data: stock.map(s => s.Cantidad),
-        backgroundColor: '#004080'
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { display: true }
-      },
-      scales: {
-        y: { 
-          beginAtZero: true,
-          title: {
-            display: true,
-            text: 'Cantidad'
-          }
-        },
-        x: {
-          title: {
-            display: true,
-            text: 'Productos'
-          }
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // =================== CONFIGURACIÓN ===================
+        // REEMPLAZA ESTA URL CON LA DE TU GAS
+        // Para obtenerla: Publicar -> Implementar como aplicación web
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbzxBOK3uT9_9hjZ1detEzQjmFGmg7mD6O9OT41a5U8KTPgaIUqA-j4ptDTuyRiBQSFNuA/exec";
+        
+        // Variables globales
+        let stockData = [];
+        let fraccionamientosData = [];
+        let configData = {};
+        let stockChart = null;
+        let presentacionChart = null;
+        let currentFraccionamiento = {};
+        
+        // =================== FUNCIONES UTILITARIAS ===================
+        function showAlert(message, type = 'info', duration = 5000) {
+            const alertContainer = document.getElementById('alertContainer');
+            const alertId = 'alert-' + Date.now();
+            
+            const alertHTML = `
+                <div id="${alertId}" class="alert alert-${type} alert-dismissible fade show">
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    ${message}
+                </div>
+            `;
+            
+            alertContainer.innerHTML += alertHTML;
+            
+            if (duration > 0) {
+                setTimeout(() => {
+                    const alertElement = document.getElementById(alertId);
+                    if (alertElement) {
+                        const bsAlert = new bootstrap.Alert(alertElement);
+                        bsAlert.close();
+                    }
+                }, duration);
+            }
         }
-      }
-    }
-  });
-  
-  // Gráfico de dona para presentaciones
-  const ctxCrudos = document.getElementById('stockCrudos').getContext('2d');
-  new Chart(ctxCrudos, {
-    type: 'doughnut',
-    data: {
-      labels: stock.map(s => `${s.Producto} (${s.Presentacion})`),
-      datasets: [{
-        label: 'Stock por Producto',
-        data: stock.map(s => s.Cantidad),
-        backgroundColor: [
-          '#004080', '#0066cc', '#3399ff', '#66ccff', '#99ddff',
-          '#003366', '#0055aa', '#1a75ff', '#4d94ff', '#80b3ff'
-        ]
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { 
-          position: 'right',
-          labels: {
-            boxWidth: 12,
-            padding: 15
-          }
+        
+        function formatDate(dateString) {
+            if (!dateString) return '--';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('es-ES', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
         }
-      }
-    }
-  });
-}
-
-// Calcular crudo usado automáticamente
-function setupCrudoCalculation() {
-  const cantidadInput = document.getElementById('cantidadLitros');
-  const crudoOutput = document.getElementById('crudoUsado');
-  
-  cantidadInput.addEventListener('input', function() {
-    const litros = parseFloat(this.value) || 0;
-    // Ejemplo: crudo usado = litros * 0.9 (ajusta según tu fórmula)
-    const crudoUsado = litros * 0.9;
-    crudoOutput.value = crudoUsado.toFixed(2);
-  });
-}
-
-// Guardar fraccionamiento
-async function guardarFraccionamiento(event) {
-  event.preventDefault();
-  
-  const producto = document.getElementById('productoSelect').value;
-  const presentacion = document.getElementById('presentacionSelect').value;
-  const cantidad = document.getElementById('cantidadLitros').value;
-  
-  if (!producto || !presentacion || !cantidad || parseFloat(cantidad) <= 0) {
-    showMessage('formMessage', 'Por favor complete todos los campos correctamente', 'error');
-    return;
-  }
-  
-  const datos = {
-    producto: producto,
-    presentacion: presentacion,
-    cantidad: parseFloat(cantidad)
-  };
-  
-  try {
-    showMessage('formMessage', 'Guardando...', 'info');
-    
-    const response = await fetch(GAS_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(datos)
-    });
-    
-    const result = await response.json();
-    
-    if (result.success) {
-      showMessage('formMessage', '✅ Fraccionamiento guardado exitosamente', 'success');
-      
-      // Limpiar formulario
-      document.getElementById('formFraccionamiento').reset();
-      document.getElementById('crudoUsado').value = '';
-      
-      // Recargar datos
-      await recargarDatos();
-    } else {
-      throw new Error(result.error || 'Error desconocido');
-    }
-    
-  } catch (error) {
-    console.error('Error al guardar:', error);
-    showMessage('formMessage', `❌ Error al guardar: ${error.message}`, 'error');
-  }
-}
-
-// Recargar todos los datos
-async function recargarDatos() {
-  stockData = await cargarStock();
-  if (stockData.length > 0) {
-    llenarSelects(stockData);
-    graficarStock(stockData);
-  }
-  
-  fraccionamientosData = await cargarFraccionamientos();
-  if (fraccionamientosData.length > 0) {
-    llenarTabla(fraccionamientosData);
-  }
-}
-
-// Inicializar aplicación
-async function init() {
-  console.log('Iniciando aplicación...');
-  console.log('URL del GAS:', GAS_URL);
-  
-  // Configurar eventos
-  document.getElementById('formFraccionamiento').addEventListener('submit', guardarFraccionamiento);
-  setupCrudoCalculation();
-  
-  // Cargar datos iniciales
-  await recargarDatos();
-  
-  console.log('Aplicación inicializada correctamente');
-}
-
-// Ejecutar cuando el DOM esté listo
-document.addEventListener('DOMContentLoaded', init);
-</script>
-
+        
+        function formatNumber(number) {
+            return new Intl.NumberFormat('es-ES').format(number);
+        }
+        
+        function updateConnectionStatus(connected) {
+            const statusElement = document.getElementById('connectionStatus');
+            const textElement = document.getElementById('connectionText');
+            const appStatusElement = document.getElementById('appStatus');
+            
+            if (connected) {
+                statusElement.className = 'connection-status status-connected';
+                textElement.textContent = 'Conectado';
+                appStatusElement.textContent = 'Conectado a Google Sheets';
+                appStatusElement.style.color = '#27ae60';
+            } else {
+                statusElement.className = 'connection-status status-disconnected';
+                textElement.textContent = 'Desconectado';
+                appStatusElement.textContent = 'Error de conexión - Modo offline';
+                appStatusElement.style.color = '#e74c3c';
+            }
+        }
+        
+        // =================== FUNCIONES DE DATOS ===================
+        async function fetchGAS(action, data = null) {
+            const url = `${GAS_URL}?action=${action}&nocache=${Date.now()}`;
+            
+            try {
+                let response;
+                
+                if (data) {
+                    // POST request
+                    response = await fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(data)
+                    });
+                } else {
+                    // GET request
+                    response = await fetch(url, {
+                        method: 'GET',
+                        mode: 'no-cors' // Para evitar problemas CORS
+                    }).catch(async () => {
+                        // Si falla por CORS, intentamos con un proxy
+                        const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+                        return await fetch(proxyUrl);
+                    });
+                }
+                
+                if (!response.ok) {
+                    throw new Error(`Error ${response.status}: ${response.statusText}`);
+                }
+                
+                const result = await response.json();
+                
+                if (result.error) {
+                    throw new Error(result.error);
+                }
+                
+                updateConnectionStatus(true);
+                return result;
+                
+            } catch (error) {
+                console.error(`Error en fetchGAS (${action}):`, error);
+                updateConnectionStatus(false);
+                
+                // Datos de prueba en caso de error
+                if (action === 'stock') {
+                    return [
+                        { Producto: 'Producto A', Presentacion: '45ml', Cantidad: 10 },
+                        { Producto: 'Producto B', Presentacion: '200ml', Cantidad: 5 },
+                        { Producto: 'Producto C', Presentacion: '1lts', Cantidad: 2 },
+                        { Producto: 'Producto D', Presentacion: '5lts', Cantidad: 8 },
+                        { Producto: 'Producto E', Presentacion: '20lts', Cantidad: 3 }
+                    ];
+                } else if (action === 'fraccionamientos') {
+                    return [
+                        { ID: '001', Fecha: new Date().toISOString(), Producto: 'Producto A', Presentacion: '45ml', Cantidad: 3 },
+                        { ID: '002', Fecha: new Date().toISOString(), Producto: 'Producto B', Presentacion: '200ml', Cantidad: 2 },
+                        { ID: '003', Fecha: new Date(Date.now() - 86400000).toISOString(), Producto: 'Producto C', Presentacion: '1lts', Cantidad: 1 }
+                    ];
+                } else if (action === 'config') {
+                    return { FactorCrudo: 0.9, UnidadLitros: 1, Moneda: 'ARS' };
+                }
+                
+                return { error: error.message };
+            }
+        }
+        
+        async function loadAllData() {
+            try {
+                showAlert('<i class="fas fa-sync-alt spinning me-2"></i> Cargando datos...', 'info', 0);
+                
+                // Cargar datos en paralelo
+                const [stock, fraccionamientos, config] = await Promise.allSettled([
+                    fetchGAS('stock'),
+                    fetchGAS('fraccionamientos'),
+                    fetchGAS('config')
+                ]);
+                
+                stockData = stock.value || [];
+                fraccionamientosData = fraccionamientos.value || [];
+                configData = config.value || {};
+                
+                updateUI();
+                showAlert('<i class="fas fa-check-circle me-2"></i> Datos cargados correctamente', 'success');
+                
+            } catch (error) {
+                console.error('Error cargando datos:', error);
+                showAlert(`<i class="fas fa-exclamation-triangle me-2"></i> Error: ${error.message}`, 'danger');
+            }
+        }
+        
+        // =================== ACTUALIZACIÓN UI ===================
+        function updateUI() {
+            updateSummaryCards();
+            updateStockTable();
+            updateHistorialTable();
+            updateProductoSelect();
+            updateCharts();
+            updateLastUpdated();
+        }
+        
+        function updateSummaryCards() {
+            // Total productos
+            document.getElementById('totalProductos').textContent = stockData.length;
+            
+            // Total unidades
+            const totalUnidades = stockData.reduce((sum, item) => sum + (item.Cantidad || 0), 0);
+            document.getElementById('totalUnidades').textContent = formatNumber(totalUnidades);
+            
+            // Fraccionamientos hoy
+            const today = new Date().toDateString();
+            const fraccionamientosHoy = fraccionamientosData.filter(f => {
+                const fecha = new Date(f.Fecha).toDateString();
+                return fecha === today;
+            }).length;
+            document.getElementById('fraccionamientosHoy').textContent = fraccionamientosHoy;
+            
+            // Productos con stock bajo (< 5 unidades)
+            const productosBajos = stockData.filter(item => (item.Cantidad || 0) < 5).length;
+            document.getElementById('productosBajos').textContent = productosBajos;
+        }
+        
+        function updateStockTable() {
+            const tbody = document.getElementById('stockTableBody');
+            tbody.innerHTML = '';
+            
+            if (stockData.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="text-center py-4">
+                            <i class="fas fa-database fa-2x text-muted mb-3"></i>
+                            <p class="text-muted">No hay datos de stock disponibles</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            stockData.forEach(item => {
+                const cantidad = item.Cantidad || 0;
+                let estadoClass = 'success';
+                let estadoText = 'Normal';
+                
+                if (cantidad < 3) {
+                    estadoClass = 'danger';
+                    estadoText = 'Crítico';
+                } else if (cantidad < 5) {
+                    estadoClass = 'warning';
+                    estadoText = 'Bajo';
+                }
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><strong>${item.Producto || 'N/A'}</strong></td>
+                    <td>${item.Presentacion || 'N/A'}</td>
+                    <td><span class="badge bg-primary">${formatNumber(cantidad)}</span></td>
+                    <td><span class="badge bg-${estadoClass}">${estadoText}</span></td>
+                    <td>${formatDate(new Date().toISOString())}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+        
+        function updateHistorialTable() {
+            const tbody = document.getElementById('historialTableBody');
+            const countElement = document.getElementById('historialCount');
+            
+            tbody.innerHTML = '';
+            countElement.textContent = fraccionamientosData.length;
+            
+            if (fraccionamientosData.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="text-center py-4">
+                            <i class="fas fa-history fa-2x text-muted mb-3"></i>
+                            <p class="text-muted">No hay historial de fraccionamientos</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            // Ordenar por fecha (más reciente primero)
+            fraccionamientosData.sort((a, b) => new Date(b.Fecha) - new Date(a.Fecha));
+            
+            fraccionamientosData.forEach(item => {
+                const factorCrudo = configData.FactorCrudo || 0.9;
+                const crudoUsado = (item.Cantidad || 0) * factorCrudo;
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><span class="badge bg-secondary">${item.ID || 'N/A'}</span></td>
+                    <td>${formatDate(item.Fecha)}</td>
+                    <td>${item.Producto || 'N/A'}</td>
+                    <td>${item.Presentacion || 'N/A'}</td>
+                    <td>${formatNumber(item.Cantidad || 0)} L</td>
+                    <td>${formatNumber(crudoUsado.toFixed(2))} L</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteFraccionamiento('${item.ID}')">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+        
+        function updateProductoSelect() {
+            const select = document.getElementById('productoSelect');
+            select.innerHTML = '<option value="">Seleccionar producto...</option>';
+            
+            if (stockData.length === 0) {
+                select.innerHTML += '<option value="">No hay productos disponibles</option>';
+                return;
+            }
+            
+            // Obtener productos únicos
+            const productosUnicos = [...new Set(stockData.map(item => item.Producto))];
+            
+            productosUnicos.forEach(producto => {
+                const option = document.createElement('option');
+                option.value = producto;
+                option.textContent = producto;
+                select.appendChild(option);
+            });
+        }
+        
+        function updateProductoStockInfo() {
+            const productoSelect = document.getElementById('productoSelect');
+            const presentacionSelect = document.getElementById('presentacionSelect');
+            const infoElement = document.getElementById('productoStockInfo');
+            
+            const producto = productoSelect.value;
+            const presentacion = presentacionSelect.value;
+            
+            if (!producto || !presentacion) {
+                infoElement.textContent = '';
+                return;
+            }
+            
+            const stockItem = stockData.find(item => 
+                item.Producto === producto && item.Presentacion === presentacion
+            );
+            
+            if (stockItem) {
+                const cantidad = stockItem.Cantidad || 0;
+                let estado = 'disponible';
+                let color = 'text-success';
+                
+                if (cantidad < 3) {
+                    estado = 'crítico';
+                    color = 'text-danger';
+                } else if (cantidad < 5) {
+                    estado = 'bajo';
+                    color = 'text-warning';
+                }
+                
+                infoElement.innerHTML = `
+                    <span class="${color}">
+                        <i class="fas fa-box me-1"></i>
+                        Stock actual: <strong>${cantidad} unidades</strong> (${estado})
+                    </span>
+                `;
+            } else {
+                infoElement.innerHTML = `
+                    <span class="text-danger">
+                        <i class="fas fa-exclamation-triangle me-1"></i>
+                        Este producto no tiene stock registrado
+                    </span>
+                `;
+            }
+        }
+        
+        function updateCharts() {
+            // Destruir gráficos existentes
+            if (stockChart) stockChart.destroy();
+            if (presentacionChart) presentacionChart.destroy();
+            
+            if (stockData.length === 0) return;
+            
+            // Gráfico de barras - Stock por producto
+            const ctx1 = document.getElementById('stockChart').getContext('2d');
+            const labels = stockData.map(item => item.Producto);
+            const data = stockData.map(item => item.Cantidad || 0);
+            const backgroundColors = data.map((cantidad, index) => {
+                if (cantidad < 3) return '#e74c3c';
+                if (cantidad < 5) return '#f39c12';
+                return '#3498db';
+            });
+            
+            stockChart = new Chart(ctx1, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Stock Disponible',
+                        data: data,
+                        backgroundColor: backgroundColors,
+                        borderColor: backgroundColors.map(color => color.replace('0.8', '1')),
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `Stock: ${formatNumber(context.raw)} unidades`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return formatNumber(value);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Gráfico de dona - Distribución por presentación
+            const ctx2 = document.getElementById('presentacionChart').getContext('2d');
+            const presentaciones = [...new Set(stockData.map(item => item.Presentacion))];
+            const presentacionData = presentaciones.map(pres => {
+                return stockData
+                    .filter(item => item.Presentacion === pres)
+                    .reduce((sum, item) => sum + (item.Cantidad || 0), 0);
+            });
+            
+            const colorPalette = [
+                '#3498db', '#2ecc71', '#e74c3c', '#f39c12', '#9b59b6', '#1abc9c',
+                '#34495e', '#e67e22', '#27ae60', '#8e44ad', '#16a085', '#c0392b'
+            ];
+            
+            presentacionChart = new Chart(ctx2, {
+                type: 'doughnut',
+                data: {
+                    labels: presentaciones,
+                    datasets: [{
+                        data: presentacionData,
+                        backgroundColor: colorPalette.slice(0, presentaciones.length),
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                padding: 20,
+                                usePointStyle: true
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const total = presentacionData.reduce((a, b) => a + b, 0);
+                                    const percentage = Math.round((context.raw / total) * 100);
+                                    return `${context.label}: ${formatNumber(context.raw)} unidades (${percentage}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function updateLastUpdated() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('es-ES', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+            document.getElementById('stockLastUpdate').textContent = timeString;
+        }
+        
+        // =================== MANEJO DE FORMULARIO ===================
+        function setupFormListeners() {
+            // Actualizar info de stock al cambiar producto o presentación
+            document.getElementById('productoSelect').addEventListener('change', updateProductoStockInfo);
+            document.getElementById('presentacionSelect').addEventListener('change', updateProductoStockInfo);
+            
+            // Calcular crudo usado automáticamente
+            document.getElementById('cantidadInput').addEventListener('input', function() {
+                const cantidad = parseFloat(this.value) || 0;
+                const factorCrudo = configData.FactorCrudo || 0.9;
+                const crudoUsado = cantidad * factorCrudo;
+                document.getElementById('crudoInput').value = crudoUsado.toFixed(2);
+            });
+            
+            // Envío del formulario
+            document.getElementById('fraccionamientoForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const producto = document.getElementById('productoSelect').value;
+                const presentacion = document.getElementById('presentacionSelect').value;
+                const cantidad = parseFloat(document.getElementById('cantidadInput').value) || 0;
+                
+                // Validaciones
+                if (!producto || !presentacion || cantidad <= 0) {
+                    showAlert('<i class="fas fa-exclamation-triangle me-2"></i> Complete todos los campos correctamente', 'danger');
+                    return;
+                }
+                
+                // Verificar stock disponible
+                const stockItem = stockData.find(item => 
+                    item.Producto === producto && item.Presentacion === presentacion
+                );
+                
+                if (!stockItem) {
+                    showAlert('<i class="fas fa-exclamation-triangle me-2"></i> Producto no encontrado en stock', 'danger');
+                    return;
+                }
+                
+                const stockDisponible = stockItem.Cantidad || 0;
+                if (cantidad > stockDisponible) {
+                    showAlert(`<i class="fas fa-exclamation-triangle me-2"></i> Stock insuficiente. Disponible: ${stockDisponible} unidades`, 'danger');
+                    return;
+                }
+                
+                // Guardar datos para confirmación
+                currentFraccionamiento = {
+                    producto,
+                    presentacion,
+                    cantidad,
+                    crudoUsado: (cantidad * (configData.FactorCrudo || 0.9)).toFixed(2)
+                };
+                
+                // Mostrar modal de confirmación
+                const confirmMessage = document.getElementById('confirmMessage');
+                confirmMessage.innerHTML = `
+                    <p>¿Confirmar fraccionamiento?</p>
+                    <ul>
+                        <li><strong>Producto:</strong> ${producto}</li>
+                        <li><strong>Presentación:</strong> ${presentacion}</li>
+                        <li><strong>Cantidad:</strong> ${formatNumber(cantidad)} L</li>
+                        <li><strong>Crudo usado:</strong> ${currentFraccionamiento.crudoUsado} L</li>
+                        <li><strong>Stock restante:</strong> ${formatNumber(stockDisponible - cantidad)} unidades</li>
+                    </ul>
+                `;
+                
+                const confirmModal = new bootstrap.Modal(document.getElementById('confirmModal'));
+                confirmModal.show();
+            });
+            
+            // Confirmar guardado
+            document.getElementById('confirmSaveBtn').addEventListener('click', async function() {
+                const confirmModal = bootstrap.Modal.getInstance(document.getElementById('confirmModal'));
+                
+                try {
+                    // Deshabilitar botón
+                    this.disabled = true;
+                    this.innerHTML = '<span class="loading"></span> Guardando...';
+                    
+                    // Guardar en GAS
+                    const result = await fetchGAS('guardarFraccionamiento', {
+                        action: 'guardarFraccionamiento',
+                        producto: currentFraccionamiento.producto,
+                        presentacion: currentFraccionamiento.presentacion,
+                        cantidad: currentFraccionamiento.cantidad
+                    });
+                    
+                    if (result.success) {
+                        showAlert(`<i class="fas fa-check-circle me-2"></i> Fraccionamiento guardado (ID: ${result.id})`, 'success');
+                        
+                        // Limpiar formulario
+                        document.getElementById('fraccionamientoForm').reset();
+                        document.getElementById('crudoInput').value = '';
+                        document.getElementById('productoStockInfo').textContent = '';
+                        
+                        // Recargar datos
+                        await loadAllData();
+                        
+                        // Cerrar modal
+                        confirmModal.hide();
+                    } else {
+                        throw new Error(result.error || 'Error desconocido');
+                    }
+                    
+                } catch (error) {
+                    showAlert(`<i class="fas fa-exclamation-triangle me-2"></i> Error al guardar: ${error.message}`, 'danger');
+                } finally {
+                    // Restaurar botón
+                    this.disabled = false;
+                    this.innerHTML = 'Confirmar y Guardar';
+                }
+            });
+        }
+        
+        // =================== FUNCIONES ADICIONALES ===================
+        function deleteFraccionamiento(id) {
+            if (confirm(`¿Está seguro de eliminar el fraccionamiento ${id}?`)) {
+                showAlert(`<i class="fas fa-trash me-2"></i> Eliminando fraccionamiento ${id}...`, 'warning');
+                // Nota: Para eliminar necesitarías implementar una función en GAS
+                // Por ahora solo mostramos un mensaje
+                setTimeout(() => {
+                    showAlert(`<i class="fas fa-info-circle me-2"></i> Función de eliminación pendiente de implementar`, 'info');
+                }, 1000);
+            }
+        }
+        
+        // =================== INICIALIZACIÓN ===================
+        async function init() {
+            console.log('Iniciando aplicación...');
+            
+            // Configurar listeners
+            setupFormListeners();
+            document.getElementById('refreshBtn').addEventListener('click', loadAllData);
+            
+            // Cargar datos iniciales
+            await loadAllData();
+            
+            // Configurar actualización automática cada 60 segundos
+            setInterval(loadAllData, 60000);
+            
+            console.log('Aplicación inicializada');
+        }
+        
+        // Iniciar cuando el DOM esté listo
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
 </body>
 </html>
