@@ -1,467 +1,98 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Stock</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        body { background: #f5f5f5; padding: 20px; }
-        .card { margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .chart-container { height: 300px; }
-    </style>
+<meta charset="UTF-8">
+<title>Control de Stock</title>
+<style>
+body{font-family:Arial;background:#0e1726;color:#fff;padding:20px}
+table{width:100%;border-collapse:collapse;margin-top:15px}
+th,td{border:1px solid #444;padding:8px;text-align:center}
+input,select,button{padding:8px;margin:5px;width:100%}
+button{background:#1abc9c;border:0;font-weight:bold}
+</style>
 </head>
 <body>
-    <div class="container">
-        <h1 class="mb-4">📦 Sistema de Stock</h1>
-        
-        <!-- Estado de conexión -->
-        <div class="alert alert-info" id="statusAlert">
-            <span id="statusText">Conectando al servidor...</span>
-        </div>
-        
-        <!-- Tarjetas de resumen -->
-        <div class="row mb-4">
-            <div class="col-md-3">
-                <div class="card text-white bg-primary">
-                    <div class="card-body text-center">
-                        <h5 id="totalProductos">0</h5>
-                        <p>Productos</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card text-white bg-success">
-                    <div class="card-body text-center">
-                        <h5 id="totalUnidades">0</h5>
-                        <p>Unidades</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card text-white bg-warning">
-                    <div class="card-body text-center">
-                        <h5 id="fraccionamientosHoy">0</h5>
-                        <p>Hoy</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card text-white bg-danger">
-                    <div class="card-body text-center">
-                        <h5 id="productosBajos">0</h5>
-                        <p>Stock Bajo</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Formulario -->
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5>➕ Nuevo Fraccionamiento</h5>
-            </div>
-            <div class="card-body">
-                <form id="fraccionamientoForm">
-                    <div class="row g-3">
-                        <div class="col-md-4">
-                            <label class="form-label">Producto</label>
-                            <select class="form-select" id="productoSelect" required>
-                                <option value="">Cargando...</option>
-                            </select>
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label">Presentación</label>
-                            <select class="form-select" id="presentacionSelect" required>
-                                <option value="">Seleccionar...</option>
-                                <option value="45ml">45ml</option>
-                                <option value="200ml">200ml</option>
-                                <option value="1lts">1 Litro</option>
-                                <option value="5lts">5 Litros</option>
-                            </select>
-                        </div>
-                        <div class="col-md-2">
-                            <label class="form-label">Cantidad (L)</label>
-                            <input type="number" class="form-control" id="cantidadInput" step="0.01" min="0.01" required>
-                        </div>
-                        <div class="col-md-2">
-                            <label class="form-label">Crudo Usado</label>
-                            <input type="text" class="form-control" id="crudoInput" readonly>
-                        </div>
-                        <div class="col-md-1 d-flex align-items-end">
-                            <button type="submit" class="btn btn-success w-100">Guardar</button>
-                        </div>
-                    </div>
-                </form>
-            </div>
-        </div>
-        
-        <!-- Stock -->
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5>📊 Stock Actual</h5>
-            </div>
-            <div class="card-body">
-                <div class="chart-container">
-                    <canvas id="stockChart"></canvas>
-                </div>
-                <div class="table-responsive mt-3">
-                    <table class="table table-striped">
-                        <thead>
-                            <tr>
-                                <th>Producto</th>
-                                <th>Presentación</th>
-                                <th>Cantidad</th>
-                                <th>Estado</th>
-                            </tr>
-                        </thead>
-                        <tbody id="stockTable">
-                            <!-- Datos dinámicos -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Historial -->
-        <div class="card">
-            <div class="card-header">
-                <h5>📜 Historial</h5>
-            </div>
-            <div class="card-body">
-                <table class="table table-striped">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Fecha</th>
-                            <th>Producto</th>
-                            <th>Presentación</th>
-                            <th>Cantidad</th>
-                        </tr>
-                    </thead>
-                    <tbody id="historialTable">
-                        <!-- Datos dinámicos -->
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
 
-    <script>
-        // URL de tu GAS - REEMPLAZA CON TU URL
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbzlE8scs_qAPEcBtjswkvd2MH1SYfonR1rDZuN3vKrzJq7c4jvoKPyHS0mKANzGFEI51A/exec";
-        
-        // Variables
-        let stockData = [];
-        let fraccionamientosData = [];
-        let configData = {};
-        let chart = null;
-        
-        // Función para mostrar estado
-        function updateStatus(message, type = 'info') {
-            const alert = document.getElementById('statusAlert');
-            const text = document.getElementById('statusText');
-            
-            alert.className = `alert alert-${type}`;
-            text.textContent = message;
-        }
-        
-        // Función para cargar datos
-        async function loadData(action) {
-            try {
-                // Usamos un enfoque diferente para evitar CORS
-                const url = `${GAS_URL}?action=${action}&_=${Date.now()}`;
-                console.log(`Cargando: ${url}`);
-                
-                // Usamos un proxy simple si falla el fetch directo
-                let response;
-                try {
-                    response = await fetch(url, {
-                        method: 'GET',
-                        mode: 'cors',
-                        cache: 'no-cache'
-                    });
-                } catch (error) {
-                    // Si falla por CORS, usamos JSONP
-                    console.log('Usando JSONP...');
-                    return await loadWithJSONP(url);
-                }
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}`);
-                }
-                
-                const result = await response.json();
-                
-                if (result.error) {
-                    throw new Error(result.error);
-                }
-                
-                updateStatus('✓ Datos cargados correctamente', 'success');
-                return result.data || result;
-                
-            } catch (error) {
-                console.error(`Error cargando ${action}:`, error);
-                updateStatus(`⚠️ Error: ${error.message}`, 'warning');
-                
-                // Datos de prueba
-                return getMockData(action);
-            }
-        }
-        
-        // Función JSONP para evitar CORS
-        function loadWithJSONP(url) {
-            return new Promise((resolve, reject) => {
-                const callbackName = 'callback_' + Date.now();
-                const script = document.createElement('script');
-                
-                window[callbackName] = function(data) {
-                    delete window[callbackName];
-                    document.body.removeChild(script);
-                    resolve(data);
-                };
-                
-                script.src = `${url}&callback=${callbackName}`;
-                script.onerror = reject;
-                document.body.appendChild(script);
-                
-                setTimeout(() => {
-                    if (window[callbackName]) {
-                        delete window[callbackName];
-                        document.body.removeChild(script);
-                        reject(new Error('Timeout'));
-                    }
-                }, 10000);
-            });
-        }
-        
-        // Datos de prueba
-        function getMockData(action) {
-            if (action === 'stock') {
-                return [
-                    { Producto: 'Producto A', Presentacion: '45ml', Cantidad: 10 },
-                    { Producto: 'Producto B', Presentacion: '200ml', Cantidad: 5 },
-                    { Producto: 'Producto C', Presentacion: '1lts', Cantidad: 2 }
-                ];
-            } else if (action === 'fraccionamientos') {
-                return [
-                    { ID: '001', Fecha: new Date().toString(), Producto: 'Producto A', Presentacion: '45ml', Cantidad: 3 },
-                    { ID: '002', Fecha: new Date().toString(), Producto: 'Producto B', Presentacion: '200ml', Cantidad: 2 }
-                ];
-            } else if (action === 'config') {
-                return { FactorCrudo: 0.9 };
-            }
-            return [];
-        }
-        
-        // Cargar todos los datos
-        async function loadAllData() {
-            updateStatus('Cargando datos...', 'info');
-            
-            try {
-                stockData = await loadData('stock');
-                fraccionamientosData = await loadData('fraccionamientos');
-                configData = await loadData('config');
-                
-                updateUI();
-                
-            } catch (error) {
-                console.error('Error cargando datos:', error);
-                updateStatus('Error cargando datos', 'danger');
-            }
-        }
-        
-        // Actualizar UI
-        function updateUI() {
-            updateSummary();
-            updateStockTable();
-            updateHistorialTable();
-            updateProductoSelect();
-            updateChart();
-            
-            // Calcular crudo automáticamente
-            document.getElementById('cantidadInput').addEventListener('input', function() {
-                const cantidad = parseFloat(this.value) || 0;
-                const factor = configData.FactorCrudo || 0.9;
-                document.getElementById('crudoInput').value = (cantidad * factor).toFixed(2) + ' L';
-            });
-        }
-        
-        // Actualizar resumen
-        function updateSummary() {
-            document.getElementById('totalProductos').textContent = stockData.length;
-            
-            const totalUnidades = stockData.reduce((sum, item) => sum + (item.Cantidad || 0), 0);
-            document.getElementById('totalUnidades').textContent = totalUnidades;
-            
-            const today = new Date().toDateString();
-            const fraccionamientosHoy = fraccionamientosData.filter(f => 
-                new Date(f.Fecha).toDateString() === today
-            ).length;
-            document.getElementById('fraccionamientosHoy').textContent = fraccionamientosHoy;
-            
-            const productosBajos = stockData.filter(item => (item.Cantidad || 0) < 5).length;
-            document.getElementById('productosBajos').textContent = productosBajos;
-        }
-        
-        // Actualizar tabla de stock
-        function updateStockTable() {
-            const tbody = document.getElementById('stockTable');
-            tbody.innerHTML = '';
-            
-            stockData.forEach(item => {
-                const cantidad = item.Cantidad || 0;
-                let estado = '<span class="badge bg-success">Normal</span>';
-                
-                if (cantidad < 3) {
-                    estado = '<span class="badge bg-danger">Crítico</span>';
-                } else if (cantidad < 5) {
-                    estado = '<span class="badge bg-warning">Bajo</span>';
-                }
-                
-                const row = `
-                    <tr>
-                        <td>${item.Producto}</td>
-                        <td>${item.Presentacion}</td>
-                        <td>${cantidad}</td>
-                        <td>${estado}</td>
-                    </tr>
-                `;
-                tbody.innerHTML += row;
-            });
-        }
-        
-        // Actualizar historial
-        function updateHistorialTable() {
-            const tbody = document.getElementById('historialTable');
-            tbody.innerHTML = '';
-            
-            fraccionamientosData.forEach(item => {
-                const row = `
-                    <tr>
-                        <td>${item.ID}</td>
-                        <td>${new Date(item.Fecha).toLocaleString()}</td>
-                        <td>${item.Producto}</td>
-                        <td>${item.Presentacion}</td>
-                        <td>${item.Cantidad} L</td>
-                    </tr>
-                `;
-                tbody.innerHTML += row;
-            });
-        }
-        
-        // Actualizar select de productos
-        function updateProductoSelect() {
-            const select = document.getElementById('productoSelect');
-            select.innerHTML = '<option value="">Seleccionar producto...</option>';
-            
-            const productos = [...new Set(stockData.map(item => item.Producto))];
-            productos.forEach(producto => {
-                select.innerHTML += `<option value="${producto}">${producto}</option>`;
-            });
-        }
-        
-        // Actualizar gráfico
-        function updateChart() {
-            const ctx = document.getElementById('stockChart').getContext('2d');
-            
-            if (chart) {
-                chart.destroy();
-            }
-            
-            const labels = stockData.map(item => item.Producto);
-            const data = stockData.map(item => item.Cantidad || 0);
-            
-            chart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Stock',
-                        data: data,
-                        backgroundColor: '#007bff'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false
-                }
-            });
-        }
-        
-        // Guardar fraccionamiento
-        async function saveFraccionamiento(event) {
-            event.preventDefault();
-            
-            const producto = document.getElementById('productoSelect').value;
-            const presentacion = document.getElementById('presentacionSelect').value;
-            const cantidad = parseFloat(document.getElementById('cantidadInput').value);
-            
-            if (!producto || !presentacion || !cantidad) {
-                alert('Complete todos los campos');
-                return;
-            }
-            
-            try {
-                updateStatus('Guardando...', 'info');
-                
-                // Enviar datos al GAS
-                const data = {
-                    producto: producto,
-                    presentacion: presentacion,
-                    cantidad: cantidad
-                };
-                
-                // Usamos un enfoque simple para POST
-                const formData = new FormData();
-                formData.append('data', JSON.stringify(data));
-                
-                const response = await fetch(GAS_URL, {
-                    method: 'POST',
-                    body: JSON.stringify(data),
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                });
-                
-                const result = await response.json();
-                
-                if (result.success) {
-                    updateStatus('✓ Guardado correctamente', 'success');
-                    document.getElementById('fraccionamientoForm').reset();
-                    document.getElementById('crudoInput').value = '';
-                    
-                    // Recargar datos
-                    await loadAllData();
-                } else {
-                    throw new Error(result.error || 'Error desconocido');
-                }
-                
-            } catch (error) {
-                console.error('Error guardando:', error);
-                updateStatus(`Error: ${error.message}`, 'danger');
-            }
-        }
-        
-        // Inicializar
-        async function init() {
-            console.log('Iniciando aplicación...');
-            
-            // Configurar formulario
-            document.getElementById('fraccionamientoForm').addEventListener('submit', saveFraccionamiento);
-            
-            // Cargar datos
-            await loadAllData();
-            
-            // Auto-refresh cada 60 segundos
-            setInterval(loadAllData, 60000);
-            
-            console.log('Aplicación lista');
-        }
-        
-        // Iniciar cuando la página cargue
-        window.addEventListener('DOMContentLoaded', init);
-    </script>
+<h2>Stock Actual</h2>
+<table id="tablaStock"></table>
+
+<h2>Registrar Fraccionamiento</h2>
+
+<select id="producto"></select>
+<select id="presentacion"></select>
+
+<input type="number" id="litros" placeholder="Litros finales">
+<input type="number" id="unidades" placeholder="Unidades">
+<input type="text" id="lote" placeholder="Lote">
+
+<button onclick="guardar()">Guardar Fraccionado</button>
+
+<h2>Historial</h2>
+<table id="tablaHistorial"></table>
+
+<script>
+const URL = "PEGAR_TU_URL_ACA";
+
+// ================== CARGAR CONFIG ==================
+async function cargarConfig(){
+  const res = await fetch(`${URL}?action=config`);
+  const data = await res.json();
+
+  producto.innerHTML = data.productos.map(p=>`<option value="${p.codigo}" data-d="${p.dilucion}">${p.codigo}</option>`).join("");
+  presentacion.innerHTML = data.presentaciones.map(p=>`<option value="${p.litros}">${p.nombre}</option>`).join("");
+}
+
+// ================== CARGAR STOCK ==================
+async function cargarStock(){
+  const res = await fetch(`${URL}?action=stock`);
+  const data = await res.json();
+  tablaStock.innerHTML = data.map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join("")}</tr>`).join("");
+}
+
+// ================== CARGAR HISTORIAL ==================
+async function cargarHistorial(){
+  const res = await fetch(`${URL}?action=fraccionamientos`);
+  const data = await res.json();
+  tablaHistorial.innerHTML = data.map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join("")}</tr>`).join("");
+}
+
+// ================== AUTO CÁLCULOS ==================
+litros.oninput = ()=>{
+  unidades.value = Math.round(litros.value / presentacion.value);
+};
+
+unidades.oninput = ()=>{
+  litros.value = Math.round(unidades.value * presentacion.value * 100) / 100;
+};
+
+// ================== GUARDAR ==================
+async function guardar(){
+  const crudo = litros.value * producto.selectedOptions[0].dataset.d;
+  const agua = litros.value - crudo;
+
+  await fetch(URL,{
+    method:"POST",
+    body: JSON.stringify({
+      producto:producto.value,
+      presentacion:presentacion.selectedOptions[0].text,
+      unidades:unidades.value,
+      lote:lote.value,
+      crudo:crudo,
+      agua:agua
+    })
+  });
+
+  litros.value=""; unidades.value=""; lote.value="";
+  cargarStock();
+  cargarHistorial();
+}
+
+// ================== INIT ==================
+cargarConfig();
+cargarStock();
+cargarHistorial();
+setInterval(cargarStock, 5000);
+</script>
+
 </body>
 </html>
