@@ -46,18 +46,23 @@
     color: white;
   }
 
-  input[type="number"] {
-    width: 80px;
-    padding: 5px;
+  input[type="number"], select {
+    width: 150px;
+    padding: 8px;
+    margin: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
   }
 
   button {
     background-color: #004080;
     color: white;
     border: none;
-    padding: 8px 16px;
+    padding: 10px 20px;
     border-radius: 4px;
     cursor: pointer;
+    font-size: 16px;
+    margin-top: 10px;
   }
 
   button:hover {
@@ -74,11 +79,53 @@
   .chart-container {
     flex: 1;
     min-width: 300px;
+    height: 300px;
+  }
+
+  .form-group {
+    margin: 10px 0;
+  }
+
+  label {
+    display: inline-block;
+    width: 150px;
+    font-weight: bold;
+  }
+
+  .loading {
+    color: #666;
+    font-style: italic;
+  }
+
+  .error {
+    color: #d32f2f;
+    background-color: #ffebee;
+    padding: 10px;
+    border-radius: 4px;
+    margin: 10px 0;
+  }
+
+  .success {
+    color: #2e7d32;
+    background-color: #e8f5e9;
+    padding: 10px;
+    border-radius: 4px;
+    margin: 10px 0;
   }
 
   @media(max-width:768px){
     .charts {
       flex-direction: column;
+    }
+    
+    label {
+      display: block;
+      width: 100%;
+      margin-bottom: 5px;
+    }
+    
+    input[type="number"], select {
+      width: 100%;
     }
   }
 
@@ -103,32 +150,53 @@
 <div class="section">
   <h2>➕ Registrar Fraccionamiento</h2>
   <form id="formFraccionamiento">
-    <label>Producto: 
-      <select id="productoSelect"></select>
-    </label>
-    &nbsp;
-    <label>Presentación: 
-      <select id="presentacionSelect"></select>
-    </label>
-    &nbsp;
-    <label>Cantidad (litros totales): 
-      <input type="number" id="cantidadLitros" step="0.01" min="0">
-    </label>
-    &nbsp;
-    <button type="submit">Guardar</button>
+    <div class="form-group">
+      <label for="productoSelect">Producto:</label>
+      <select id="productoSelect" required>
+        <option value="">Cargando productos...</option>
+      </select>
+    </div>
+    
+    <div class="form-group">
+      <label for="presentacionSelect">Presentación:</label>
+      <select id="presentacionSelect" required>
+        <option value="">Seleccionar...</option>
+        <option value="45ml">45ml</option>
+        <option value="200ml">200ml</option>
+        <option value="500ml">500ml</option>
+        <option value="1lts">1 Litro</option>
+        <option value="5lts">5 Litros</option>
+        <option value="20lts">20 Litros</option>
+      </select>
+    </div>
+    
+    <div class="form-group">
+      <label for="cantidadLitros">Cantidad (litros):</label>
+      <input type="number" id="cantidadLitros" step="0.01" min="0.01" required>
+    </div>
+    
+    <div class="form-group">
+      <label for="crudoUsado">Crudo usado:</label>
+      <input type="number" id="crudoUsado" step="0.01" readonly>
+    </div>
+    
+    <div id="formMessage"></div>
+    
+    <button type="submit">Guardar Fraccionamiento</button>
   </form>
 </div>
 
 <div class="section">
   <h2>📜 Historial de Fraccionamientos</h2>
-  <table id="tablaHistorial">
+  <div id="loadingHistorial" class="loading">Cargando historial...</div>
+  <table id="tablaHistorial" style="display: none;">
     <thead>
       <tr>
         <th>ID</th>
         <th>Fecha</th>
         <th>Producto</th>
         <th>Presentación</th>
-        <th>Cantidad</th>
+        <th>Cantidad (L)</th>
       </tr>
     </thead>
     <tbody>
@@ -138,71 +206,151 @@
 </div>
 
 <script>
-const GAS_URL = "TU_URL_DEL_GAS_AQUI"; // pon tu URL de GAS aquí
+// REEMPLAZA ESTA URL CON LA URL DE TU GAS
+// Para obtenerla: Publicar -> Implementar como aplicación web
+const GAS_URL = "https://script.google.com/macros/s/AKfycbzxBOK3uT9_9hjZ1detEzQjmFGmg7mD6O9OT41a5U8KTPgaIUqA-j4ptDTuyRiBQSFNuA/exec";
 
-async function fetchJSON(url){
-  const resp = await fetch(url);
-  return await resp.json();
+let stockData = [];
+let fraccionamientosData = [];
+
+// Función para mostrar mensajes
+function showMessage(elementId, message, type = 'info') {
+  const element = document.getElementById(elementId);
+  element.innerHTML = `<div class="${type}">${message}</div>`;
+  if (type === 'success') {
+    setTimeout(() => element.innerHTML = '', 3000);
+  }
 }
 
-async function cargarConfig() {
-  const config = await fetchJSON(`${GAS_URL}?action=config&nocache=${Date.now()}`);
-  return config;
-}
-
+// Cargar stock desde GAS
 async function cargarStock() {
-  const stock = await fetchJSON(`${GAS_URL}?action=stock&nocache=${Date.now()}`);
-  return stock;
+  try {
+    const response = await fetch(`${GAS_URL}?action=stock&nocache=${Date.now()}`);
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    
+    const data = await response.json();
+    
+    if (data.error) {
+      throw new Error(data.error);
+    }
+    
+    stockData = data;
+    return data;
+  } catch (error) {
+    console.error('Error al cargar stock:', error);
+    showMessage('formMessage', `Error al cargar stock: ${error.message}`, 'error');
+    return [];
+  }
 }
 
+// Cargar fraccionamientos desde GAS
 async function cargarFraccionamientos() {
-  const fracs = await fetchJSON(`${GAS_URL}?action=fraccionamientos&nocache=${Date.now()}`);
-  return fracs;
+  try {
+    const loadingElement = document.getElementById('loadingHistorial');
+    const tableElement = document.getElementById('tablaHistorial');
+    
+    const response = await fetch(`${GAS_URL}?action=fraccionamientos&nocache=${Date.now()}`);
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    
+    const data = await response.json();
+    
+    if (data.error) {
+      throw new Error(data.error);
+    }
+    
+    fraccionamientosData = data;
+    
+    // Ocultar loading y mostrar tabla
+    if (loadingElement) loadingElement.style.display = 'none';
+    if (tableElement) tableElement.style.display = 'table';
+    
+    return data;
+  } catch (error) {
+    console.error('Error al cargar fraccionamientos:', error);
+    showMessage('formMessage', `Error al cargar historial: ${error.message}`, 'error');
+    return [];
+  }
 }
 
-function llenarSelects(stock){
+// Llenar dropdown de productos
+function llenarSelects(stock) {
   const productoSelect = document.getElementById("productoSelect");
-  const presentacionSelect = document.getElementById("presentacionSelect");
-  productoSelect.innerHTML = "";
-  presentacionSelect.innerHTML = "";
-  stock.forEach(item => {
-    const optProd = document.createElement("option");
-    optProd.value = item.Producto;
-    optProd.textContent = item.Producto;
-    productoSelect.appendChild(optProd);
-
-    const optPres = document.createElement("option");
-    optPres.value = item.Presentacion;
-    optPres.textContent = item.Presentacion;
-    presentacionSelect.appendChild(optPres);
+  
+  if (stock.length === 0) {
+    productoSelect.innerHTML = '<option value="">No hay productos disponibles</option>';
+    return;
+  }
+  
+  // Limpiar opciones actuales
+  productoSelect.innerHTML = '';
+  
+  // Agregar productos únicos
+  const productosUnicos = [...new Set(stock.map(item => item.Producto))];
+  
+  productosUnicos.forEach(producto => {
+    const option = document.createElement("option");
+    option.value = producto;
+    option.textContent = producto;
+    productoSelect.appendChild(option);
   });
 }
 
-function llenarTabla(fraccionamientos){
+// Llenar tabla de historial
+function llenarTabla(fraccionamientos) {
   const tbody = document.querySelector("#tablaHistorial tbody");
   tbody.innerHTML = "";
+  
+  if (fraccionamientos.length === 0) {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td colspan="5" style="text-align: center; padding: 20px;">No hay registros de fraccionamiento</td>`;
+    tbody.appendChild(tr);
+    return;
+  }
+  
+  // Ordenar por fecha (más reciente primero)
+  fraccionamientos.sort((a, b) => new Date(b.Fecha) - new Date(a.Fecha));
+  
   fraccionamientos.forEach(f => {
     const tr = document.createElement("tr");
+    
+    // Formatear fecha
+    let fechaFormateada = 'Fecha inválida';
+    try {
+      const fecha = new Date(f.Fecha);
+      if (!isNaN(fecha.getTime())) {
+        fechaFormateada = fecha.toLocaleString('es-ES');
+      }
+    } catch (e) {
+      console.warn('Error al formatear fecha:', e);
+    }
+    
     tr.innerHTML = `
-      <td>${f.ID}</td>
-      <td>${new Date(f.Fecha).toLocaleString()}</td>
-      <td>${f.Producto}</td>
-      <td>${f.Presentacion}</td>
-      <td>${f.Cantidad}</td>
+      <td>${f.ID || 'N/A'}</td>
+      <td>${fechaFormateada}</td>
+      <td>${f.Producto || 'N/A'}</td>
+      <td>${f.Presentacion || 'N/A'}</td>
+      <td>${f.Cantidad || 0}</td>
     `;
     tbody.appendChild(tr);
   });
 }
 
-function graficarStock(stock){
+// Crear gráficos
+function graficarStock(stock) {
+  if (stock.length === 0) return;
+  
+  // Destruir gráficos existentes si los hay
+  const chartInstances = Chart.instances;
+  Object.keys(chartInstances).forEach(key => {
+    chartInstances[key].destroy();
+  });
+  
+  // Gráfico de barras para stock
   const ctxEnvases = document.getElementById('stockEnvases').getContext('2d');
-  const ctxCrudos = document.getElementById('stockCrudos').getContext('2d');
-
-  // Grafico de envases (barras)
   new Chart(ctxEnvases, {
     type: 'bar',
     data: {
-      labels: stock.map(s => s.Presentacion),
+      labels: stock.map(s => s.Producto),
       datasets: [{
         label: 'Cantidad de Envases',
         data: stock.map(s => s.Cantidad),
@@ -211,50 +359,154 @@ function graficarStock(stock){
     },
     options: {
       responsive: true,
+      maintainAspectRatio: false,
       plugins: {
-        legend: { display: false }
+        legend: { display: true }
       },
       scales: {
-        y: { beginAtZero: true }
+        y: { 
+          beginAtZero: true,
+          title: {
+            display: true,
+            text: 'Cantidad'
+          }
+        },
+        x: {
+          title: {
+            display: true,
+            text: 'Productos'
+          }
+        }
       }
     }
   });
-
-  // Grafico de crudos (dona)
+  
+  // Gráfico de dona para presentaciones
+  const ctxCrudos = document.getElementById('stockCrudos').getContext('2d');
   new Chart(ctxCrudos, {
     type: 'doughnut',
     data: {
-      labels: stock.map(s => s.Producto),
+      labels: stock.map(s => `${s.Producto} (${s.Presentacion})`),
       datasets: [{
-        label: 'Stock Crudo',
+        label: 'Stock por Producto',
         data: stock.map(s => s.Cantidad),
-        backgroundColor: ['#004080','#0066cc','#3399ff','#66ccff','#99ddff']
+        backgroundColor: [
+          '#004080', '#0066cc', '#3399ff', '#66ccff', '#99ddff',
+          '#003366', '#0055aa', '#1a75ff', '#4d94ff', '#80b3ff'
+        ]
       }]
     },
     options: {
       responsive: true,
+      maintainAspectRatio: false,
       plugins: {
-        legend: { position: 'bottom' }
+        legend: { 
+          position: 'right',
+          labels: {
+            boxWidth: 12,
+            padding: 15
+          }
+        }
       }
     }
   });
 }
 
-document.getElementById("formFraccionamiento").addEventListener("submit", async function(e){
-  e.preventDefault();
-  alert("Funcionalidad de guardado activada (implementa POST al GAS)");
-});
-
-async function init(){
-  const stock = await cargarStock();
-  llenarSelects(stock);
-  graficarStock(stock);
-
-  const fracs = await cargarFraccionamientos();
-  llenarTabla(fracs);
+// Calcular crudo usado automáticamente
+function setupCrudoCalculation() {
+  const cantidadInput = document.getElementById('cantidadLitros');
+  const crudoOutput = document.getElementById('crudoUsado');
+  
+  cantidadInput.addEventListener('input', function() {
+    const litros = parseFloat(this.value) || 0;
+    // Ejemplo: crudo usado = litros * 0.9 (ajusta según tu fórmula)
+    const crudoUsado = litros * 0.9;
+    crudoOutput.value = crudoUsado.toFixed(2);
+  });
 }
 
-init();
+// Guardar fraccionamiento
+async function guardarFraccionamiento(event) {
+  event.preventDefault();
+  
+  const producto = document.getElementById('productoSelect').value;
+  const presentacion = document.getElementById('presentacionSelect').value;
+  const cantidad = document.getElementById('cantidadLitros').value;
+  
+  if (!producto || !presentacion || !cantidad || parseFloat(cantidad) <= 0) {
+    showMessage('formMessage', 'Por favor complete todos los campos correctamente', 'error');
+    return;
+  }
+  
+  const datos = {
+    producto: producto,
+    presentacion: presentacion,
+    cantidad: parseFloat(cantidad)
+  };
+  
+  try {
+    showMessage('formMessage', 'Guardando...', 'info');
+    
+    const response = await fetch(GAS_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(datos)
+    });
+    
+    const result = await response.json();
+    
+    if (result.success) {
+      showMessage('formMessage', '✅ Fraccionamiento guardado exitosamente', 'success');
+      
+      // Limpiar formulario
+      document.getElementById('formFraccionamiento').reset();
+      document.getElementById('crudoUsado').value = '';
+      
+      // Recargar datos
+      await recargarDatos();
+    } else {
+      throw new Error(result.error || 'Error desconocido');
+    }
+    
+  } catch (error) {
+    console.error('Error al guardar:', error);
+    showMessage('formMessage', `❌ Error al guardar: ${error.message}`, 'error');
+  }
+}
+
+// Recargar todos los datos
+async function recargarDatos() {
+  stockData = await cargarStock();
+  if (stockData.length > 0) {
+    llenarSelects(stockData);
+    graficarStock(stockData);
+  }
+  
+  fraccionamientosData = await cargarFraccionamientos();
+  if (fraccionamientosData.length > 0) {
+    llenarTabla(fraccionamientosData);
+  }
+}
+
+// Inicializar aplicación
+async function init() {
+  console.log('Iniciando aplicación...');
+  console.log('URL del GAS:', GAS_URL);
+  
+  // Configurar eventos
+  document.getElementById('formFraccionamiento').addEventListener('submit', guardarFraccionamiento);
+  setupCrudoCalculation();
+  
+  // Cargar datos iniciales
+  await recargarDatos();
+  
+  console.log('Aplicación inicializada correctamente');
+}
+
+// Ejecutar cuando el DOM esté listo
+document.addEventListener('DOMContentLoaded', init);
 </script>
 
 </body>
