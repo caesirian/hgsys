@@ -2,240 +2,255 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Control de Stock</title>
+  <title>Gestión de Stock</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <style>
+    :root {
+      --bg: #0f172a;
+      --panel: #020617;
+      --card: #020617;
+      --border: #1e293b;
+      --accent: #22c55e;
+      --danger: #ef4444;
+      --text: #e5e7eb;
+      --muted: #94a3b8;
+    }
+
+    * {
+      box-sizing: border-box;
+      font-family: system-ui, sans-serif;
+    }
+
     body {
       margin: 0;
-      font-family: Arial, sans-serif;
-      background: #0f172a;
-      color: #e5e7eb;
-    }
-
-    h2 {
-      margin-top: 35px;
-      text-align: center;
-    }
-
-    .panel {
-      max-width: 1100px;
-      margin: auto;
+      background: linear-gradient(180deg, #020617, #0f172a);
+      color: var(--text);
       padding: 20px;
     }
 
-    .cards {
+    h1 {
+      text-align: center;
+      margin-bottom: 25px;
+      font-weight: 600;
+      letter-spacing: 1px;
+    }
+
+    .panel {
+      max-width: 1200px;
+      margin: auto;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 0 25px rgba(0,0,0,.4);
+    }
+
+    .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit,minmax(220px,1fr));
-      gap: 15px;
-      margin-top: 20px;
+      grid-template-columns: repeat(auto-fit,minmax(280px,1fr));
+      gap: 16px;
     }
 
     .card {
-      background: #020617;
-      padding: 18px;
-      border-radius: 14px;
-      text-align: center;
-      box-shadow: 0 0 15px #000;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
     }
 
-    .ok { color:#22c55e; }
-    .bajo { color:#facc15; }
-    .critico { color:#ef4444; }
+    .card h3 {
+      margin: 0 0 10px 0;
+      color: var(--accent);
+      font-size: 16px;
+    }
 
-    table {
+    .item {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 0;
+      border-bottom: 1px dashed var(--border);
+      font-size: 14px;
+    }
+
+    .low {
+      color: var(--danger);
+      font-weight: 600;
+    }
+
+    input, select, button {
       width: 100%;
-      border-collapse: collapse;
-      margin-top: 25px;
-    }
-
-    th, td {
-      border: 1px solid #1e293b;
-      padding: 7px;
-      text-align: center;
-    }
-
-    th {
-      background: #020617;
-    }
-
-    .form-box {
-      max-width: 420px;
-      margin: 40px auto;
-      background: #020617;
-      padding: 22px;
-      border-radius: 14px;
-    }
-
-    .form-box input, .form-box select, .form-box button {
-      width: 100%;
-      padding: 9px;
+      padding: 10px;
       margin-top: 10px;
+      background: #020617;
+      border: 1px solid var(--border);
+      color: white;
       border-radius: 6px;
-      border: none;
     }
 
-    .form-box button {
-      background: #22c55e;
+    button {
+      background: var(--accent);
+      color: #032317;
       font-weight: bold;
       cursor: pointer;
     }
 
-    @media(max-width:700px){
-      .cards{ grid-template-columns:1fr; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    th, td {
+      padding: 8px;
+      border-bottom: 1px solid var(--border);
+      text-align: center;
+    }
+
+    th {
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    footer {
+      text-align: center;
+      margin-top: 30px;
+      font-size: 12px;
+      color: var(--muted);
     }
   </style>
 </head>
 
 <body>
 
+<h1>Sistema de Stock</h1>
+
 <div class="panel">
 
-  <h2>Stock de Productos Crudos</h2>
-  <div class="cards" id="cardsCrudos"></div>
+  <div class="grid">
 
-  <h2>Stock de Envases</h2>
-  <div class="cards" id="cardsEnvases"></div>
+    <div class="card">
+      <h3>📦 Productos</h3>
+      <div id="productos"></div>
+    </div>
 
-  <h2>Registrar Fraccionamiento</h2>
-  <div class="form-box">
-    <select id="producto"></select>
-    <select id="presentacion"></select>
-    <input type="number" id="cantidad" placeholder="Cantidad de unidades">
-    <button onclick="guardar()">Guardar</button>
+    <div class="card">
+      <h3>🧴 Envases</h3>
+      <div id="envases"></div>
+    </div>
+
+    <div class="card">
+      <h3>➕ Registrar Fraccionamiento</h3>
+      <select id="producto"></select>
+      <select id="presentacion"></select>
+      <input type="number" id="cantidad" placeholder="Cantidad">
+      <button onclick="guardar()">Guardar</button>
+    </div>
+
   </div>
 
-  <h2>Historial de Fraccionamientos</h2>
-  <table id="tablaHistorial"></table>
+  <br>
+
+  <div class="card">
+    <h3>📜 Historial</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Producto</th>
+          <th>Presentación</th>
+          <th>Cantidad</th>
+        </tr>
+      </thead>
+      <tbody id="historial"></tbody>
+    </table>
+  </div>
 
 </div>
 
+<footer>
+  Módulo de Stock – HGSys
+</footer>
+
 <script>
-const URL = "https://script.google.com/macros/s/AKfycbzDD0ctHAOcnIsi6et8iObuDmeBPtqUdw3GIS2wjs3vZKVaX8pmu4jb8_SPpDMk2oGb8A/exec";
+const URL = "https://script.google.com/macros/s/AKfycbzOK8cHzapbJmUkr5trKVa92OAJg-ouPrhedjB0qFljwWHTVKwDx-8rQSq_SxctaEgPjg/exec";
 
-// =======================
-// JSONP HELPER
-// =======================
+function init() {
+  loadConfig();
+  loadStock();
+  loadHistorial();
+}
 
-function jsonp(url) {
+function jsonp(url, cb) {
   const s = document.createElement("script");
-  s.src = url + "&callback=" + Math.random().toString().replace(".","");
+  s.src = `${url}&callback=${cb}`;
   document.body.appendChild(s);
 }
 
-// =======================
-// CONFIG
-// =======================
-
-function cargarConfig(data) {
-  producto.innerHTML = "";
-  presentacion.innerHTML = "";
-
-  data.productos.forEach(p=>{
-    producto.innerHTML += `<option>${p[0]}</option>`;
-  });
-
-  data.envases.forEach(e=>{
-    presentacion.innerHTML += `<option>${e[0]}</option>`;
-  });
+function loadConfig() {
+  jsonp(`${URL}?action=config`, "cfg");
 }
 
-window["callback_config"] = cargarConfig;
+function cfg(data) {
+  const p = document.getElementById("producto");
+  const e = document.getElementById("presentacion");
 
-// =======================
-// STOCK
-// =======================
-
-function cargarStock(data) {
-
-  cardsCrudos.innerHTML = "";
-  data.productos.forEach(p=>{
-    cardsCrudos.innerHTML += `
-      <div class="card">
-        <b>${p.nombre}</b><br>
-        ${p.stock.toFixed(2)} L<br>
-        <span class="${p.estado.toLowerCase()}">${p.estado}</span>
-      </div>`;
-  });
-
-  cardsEnvases.innerHTML = "";
-  data.envases.forEach(e=>{
-    cardsEnvases.innerHTML += `
-      <div class="card">
-        <b>${e.nombre}</b><br>
-        ${e.stock} un<br>
-        <span class="${e.estado.toLowerCase()}">${e.estado}</span>
-      </div>`;
-  });
-
+  p.innerHTML = data.productos.map(x => `<option>${x[0]}</option>`).join("");
+  e.innerHTML = data.envases.map(x => `<option>${x[0]}</option>`).join("");
 }
 
-window["callback_stock"] = cargarStock;
-
-// =======================
-// HISTORIAL
-// =======================
-
-function cargarHistorial(data) {
-  let t = `
-  <tr>
-    <th>Fecha</th>
-    <th>Producto</th>
-    <th>Envase</th>
-    <th>Unidades</th>
-    <th>Crudo (L)</th>
-    <th>Agua (L)</th>
-  </tr>`;
-
-  data.forEach(r=>{
-    t += `
-      <tr>
-        <td>${new Date(r.fecha).toLocaleString()}</td>
-        <td>${r.producto}</td>
-        <td>${r.presentacion}</td>
-        <td>${r.cantidad}</td>
-        <td>${r.litrosCrudo.toFixed(2)}</td>
-        <td>${r.litrosAgua.toFixed(2)}</td>
-      </tr>`;
-  });
-
-  tablaHistorial.innerHTML = t;
+function loadStock() {
+  jsonp(`${URL}?action=stock`, "stk");
 }
 
-window["callback_frac"] = cargarHistorial;
+function stk(data) {
+  document.getElementById("productos").innerHTML = data.productos.map(p =>
+    `<div class="item ${p.stock < 10 ? "low" : ""}">
+      <span>${p.nombre}</span>
+      <span>${p.stock}</span>
+    </div>`
+  ).join("");
 
-// =======================
-// GUARDAR
-// =======================
+  document.getElementById("envases").innerHTML = data.envases.map(p =>
+    `<div class="item ${p.stock < 10 ? "low" : ""}">
+      <span>${p.nombre}</span>
+      <span>${p.stock}</span>
+    </div>`
+  ).join("");
+}
+
+function loadHistorial() {
+  jsonp(`${URL}?action=fraccionamientos`, "hist");
+}
+
+function hist(data) {
+  document.getElementById("historial").innerHTML = data.map(r => `
+    <tr>
+      <td>${new Date(r.fecha).toLocaleDateString()}</td>
+      <td>${r.producto}</td>
+      <td>${r.presentacion}</td>
+      <td>${r.cantidad}</td>
+    </tr>
+  `).join("");
+}
 
 function guardar() {
+  const payload = {
+    producto: producto.value,
+    presentacion: presentacion.value,
+    cantidad: cantidad.value
+  };
+
   fetch(URL, {
     method: "POST",
-    body: JSON.stringify({
-      producto: producto.value,
-      presentacion: presentacion.value,
-      cantidad: Number(cantidad.value)
-    })
+    body: JSON.stringify(payload)
+  }).then(() => {
+    loadStock();
+    loadHistorial();
   });
-
-  cantidad.value = "";
-  setTimeout(actualizarTodo,1500);
 }
 
-// =======================
-// ACTUALIZAR
-// =======================
-
-function actualizarTodo() {
-  const ts = Date.now();
-  jsonp(`${URL}?action=config&nocache=${ts}&callback=callback_config`);
-  jsonp(`${URL}?action=stock&nocache=${ts}&callback=callback_stock`);
-  jsonp(`${URL}?action=fraccionamientos&nocache=${ts}&callback=callback_frac`);
-}
-
-actualizarTodo();
-setInterval(actualizarTodo, 8000);
-
+init();
 </script>
 
 </body>
