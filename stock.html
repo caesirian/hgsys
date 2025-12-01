@@ -1,334 +1,96 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>Módulo de Fraccionamiento</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <style>
-    body{
-      font-family: Arial, sans-serif;
-      background:#0f172a;
-      color:#e5e7eb;
-      padding:20px;
-    }
-
-    h2,h3{
-      margin-bottom:10px;
-      color:#93c5fd;
-    }
-
-    .card{
-      background:#020617;
-      border:1px solid #1e3a8a;
-      border-radius:8px;
-      padding:16px;
-      margin-bottom:20px;
-      box-shadow:0 0 10px rgba(30,58,138,.3);
-    }
-
-    label{
-      display:block;
-      margin-top:8px;
-      font-size:14px;
-    }
-
-    select,input,button{
-      width:100%;
-      padding:10px;
-      margin-top:4px;
-      border-radius:4px;
-      border:1px solid #1e3a8a;
-      background:#020617;
-      color:#fff;
-      font-size:15px;
-    }
-
-    button{
-      background:#22c55e;
-      border:none;
-      color:#000;
-      font-weight:bold;
-      cursor:pointer;
-      margin-top:12px;
-    }
-
-    button:hover{
-      background:#16a34a;
-    }
-
-    table{
-      width:100%;
-      border-collapse:collapse;
-      margin-top:10px;
-      font-size:14px;
-    }
-
-    th,td{
-      border:1px solid #1e3a8a;
-      padding:8px;
-      text-align:center;
-    }
-
-    th{
-      background:#020617;
-      color:#93c5fd;
-    }
-
-    .grid{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:10px;
-    }
-
-    .msg{
-      margin-top:10px;
-      color:#4ade80;
-      font-weight:bold;
-    }
-  </style>
+<meta charset="UTF-8">
+<title>Control de Stock</title>
+<style>
+body{font-family:Arial;background:#0e1726;color:#fff;padding:20px}
+table{width:100%;border-collapse:collapse;margin-top:15px}
+th,td{border:1px solid #444;padding:8px;text-align:center}
+input,select,button{padding:8px;margin:5px;width:100%}
+button{background:#1abc9c;border:0;font-weight:bold}
+</style>
 </head>
-
 <body>
 
-<h2>Módulo de Fraccionamiento</h2>
+<h2>Stock Actual</h2>
+<table id="tablaStock"></table>
 
-<!-- ================== STOCK ================== -->
-<div class="card">
-  <h3>Stock Actual</h3>
-  <table id="tablaStock">
-    <thead>
-      <tr>
-        <th>Item</th>
-        <th>Stock</th>
-        <th>Estado</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-</div>
+<h2>Registrar Fraccionamiento</h2>
 
-<!-- ================== FORM ================== -->
-<div class="card">
-  <h3>Registrar Fraccionamiento</h3>
+<select id="producto"></select>
+<select id="presentacion"></select>
 
-  <label>Producto</label>
-  <select id="producto"></select>
+<input type="number" id="litros" placeholder="Litros finales">
+<input type="number" id="unidades" placeholder="Unidades">
+<input type="text" id="lote" placeholder="Lote">
 
-  <label>Presentación / Envase</label>
-  <select id="presentacion"></select>
+<button onclick="guardar()">Guardar Fraccionado</button>
 
-  <div class="grid">
-    <div>
-      <label>Unidades</label>
-      <input id="unidades" placeholder="Ej: 120">
-    </div>
-    <div>
-      <label>Litros Finales</label>
-      <input id="litrosFinales" placeholder="Ej: 45,5">
-    </div>
-  </div>
-
-  <div class="grid">
-    <div>
-      <label>Litros Crudo</label>
-      <input id="litrosCrudo" readonly>
-    </div>
-    <div>
-      <label>Litros Agua</label>
-      <input id="litrosAgua" readonly>
-    </div>
-  </div>
-
-  <label>Lote (opcional)</label>
-  <input id="lote" placeholder="LOTE-001">
-
-  <button onclick="guardar()">Guardar Fraccionamiento</button>
-
-  <div class="msg" id="mensaje"></div>
-</div>
-
-<!-- ================== HISTORIAL ================== -->
-<div class="card">
-  <h3>Historial de Fraccionamientos</h3>
-  <table id="tablaHistorial">
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>Fecha</th>
-        <th>Producto</th>
-        <th>Envase</th>
-        <th>Unidades</th>
-        <th>Lote</th>
-        <th>Crudo</th>
-        <th>Agua</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-</div>
+<h2>Historial</h2>
+<table id="tablaHistorial"></table>
 
 <script>
-/* ============================
-   CONFIGURACIÓN
-============================ */
+const URL = "https://script.google.com/macros/s/AKfycbyZpUVqjmg3rlBkG2ACx3DqBbzg9C4j5bRe9iwJ3-qTXazztGmDNvYfsrSZdVJAovNrSA/exec";
 
-const API_URL = "https://script.google.com/macros/s/AKfycbz9limH6aiZ9Dzvlr2_FgZNebEaA5FrmgaiIRaajibDrDUibGv6rztWud5BR-bPo_4ZEA/exec"; 
-
-let CONFIG = { productos:[], presentaciones:[] };
-
-/* ============================
-   UTILIDADES NUMÉRICAS
-============================ */
-
-function parseAR(v){
-  if(!v) return 0;
-  v = v.replace(/\./g,"").replace(",",".");
-  return Number(v)||0;
-}
-
-function formatAR(n){
-  return Number(n||0).toLocaleString("es-AR",{minimumFractionDigits:2});
-}
-
-/* ============================
-   CARGA INICIAL
-============================ */
-
-async function cargarTodo(){
-  await cargarConfig();
-  await cargarStock();
-  await cargarHistorial();
-}
-
+// ================== CARGAR CONFIG ==================
 async function cargarConfig(){
-  let r = await fetch(API_URL+"?action=config&x="+Date.now());
-  let j = await r.json();
-  CONFIG = j;
+  const res = await fetch(`${URL}?action=config`);
+  const data = await res.json();
 
-  let prodSel = document.getElementById("producto");
-  let presSel = document.getElementById("presentacion");
-
-  prodSel.innerHTML = "";
-  presSel.innerHTML = "";
-
-  j.productos.forEach(p=>{
-    let o=document.createElement("option");
-    o.value=p.codigo;
-    o.text=p.codigo;
-    prodSel.appendChild(o);
-  });
-
-  j.presentaciones.forEach(p=>{
-    let o=document.createElement("option");
-    o.value=p.nombre;
-    o.text=p.nombre+" ("+p.capacidad+" L)";
-    presSel.appendChild(o);
-  });
+  producto.innerHTML = data.productos.map(p=>`<option value="${p.codigo}" data-d="${p.dilucion}">${p.codigo}</option>`).join("");
+  presentacion.innerHTML = data.presentaciones.map(p=>`<option value="${p.litros}">${p.nombre}</option>`).join("");
 }
 
+// ================== CARGAR STOCK ==================
 async function cargarStock(){
-  let r = await fetch(API_URL+"?action=stock&x="+Date.now());
-  let j = await r.json();
-
-  let tb = document.querySelector("#tablaStock tbody");
-  tb.innerHTML = "";
-
-  j.stock.forEach(f=>{
-    tb.innerHTML += `<tr>
-      <td>${f[0]}</td>
-      <td>${formatAR(f[1])}</td>
-      <td>${f[2]}</td>
-    </tr>`;
-  });
+  const res = await fetch(`${URL}?action=stock`);
+  const data = await res.json();
+  tablaStock.innerHTML = data.map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join("")}</tr>`).join("");
 }
 
+// ================== CARGAR HISTORIAL ==================
 async function cargarHistorial(){
-  let r = await fetch(API_URL+"?action=fraccionamientos&x="+Date.now());
-  let j = await r.json();
-
-  let tb = document.querySelector("#tablaHistorial tbody");
-  tb.innerHTML = "";
-
-  j.fraccionamientos.forEach(f=>{
-    tb.innerHTML += `<tr>
-      <td>${f[0]}</td>
-      <td>${new Date(f[1]).toLocaleString()}</td>
-      <td>${f[2]}</td>
-      <td>${f[3]}</td>
-      <td>${f[4]}</td>
-      <td>${f[5]}</td>
-      <td>${formatAR(f[6])}</td>
-      <td>${formatAR(f[7])}</td>
-    </tr>`;
-  });
+  const res = await fetch(`${URL}?action=fraccionamientos`);
+  const data = await res.json();
+  tablaHistorial.innerHTML = data.map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join("")}</tr>`).join("");
 }
 
-/* ============================
-   CÁLCULOS AUTOMÁTICOS
-============================ */
+// ================== AUTO CÁLCULOS ==================
+litros.oninput = ()=>{
+  unidades.value = Math.round(litros.value / presentacion.value);
+};
 
-function recalcular(){
-  let pres = document.getElementById("presentacion").value;
-  let prod = document.getElementById("producto").value;
-  let uni = parseAR(document.getElementById("unidades").value);
-  let lit = parseAR(document.getElementById("litrosFinales").value);
+unidades.oninput = ()=>{
+  litros.value = Math.round(unidades.value * presentacion.value * 100) / 100;
+};
 
-  let cap = CONFIG.presentaciones.find(p=>p.nombre===pres)?.capacidad||0;
-  let dil = CONFIG.productos.find(p=>p.codigo===prod)?.dilucion||0;
-
-  if(uni>0){
-    lit = uni * cap;
-    document.getElementById("litrosFinales").value = lit.toString().replace(".",",");
-  } else if(lit>0){
-    uni = Math.round(lit / cap);
-    document.getElementById("unidades").value = uni;
-  }
-
-  let crudo = lit * (1-dil);
-  let agua  = lit - crudo;
-
-  document.getElementById("litrosCrudo").value = formatAR(crudo);
-  document.getElementById("litrosAgua").value  = formatAR(agua);
-}
-
-document.getElementById("unidades").addEventListener("input",recalcular);
-document.getElementById("litrosFinales").addEventListener("input",recalcular);
-document.getElementById("producto").addEventListener("change",recalcular);
-document.getElementById("presentacion").addEventListener("change",recalcular);
-
-/* ============================
-   GUARDAR
-============================ */
-
+// ================== GUARDAR ==================
 async function guardar(){
-  let data = {
-    producto: producto.value,
-    presentacion: presentacion.value,
-    cantidad: unidades.value,
-    litrosFinal: litrosFinales.value,
-    lote: lote.value
-  };
+  const crudo = litros.value * producto.selectedOptions[0].dataset.d;
+  const agua = litros.value - crudo;
 
-  let r = await fetch(API_URL,{
+  await fetch(URL,{
     method:"POST",
-    body:JSON.stringify(data)
+    body: JSON.stringify({
+      producto:producto.value,
+      presentacion:presentacion.selectedOptions[0].text,
+      unidades:unidades.value,
+      lote:lote.value,
+      crudo:crudo,
+      agua:agua
+    })
   });
 
-  let j = await r.json();
-  mensaje.innerHTML = j.success ? "✅ Fraccionamiento registrado" : "❌ Error";
-
-  await cargarStock();
-  await cargarHistorial();
-
-  unidades.value="";
-  litrosFinales.value="";
-  litrosCrudo.value="";
-  litrosAgua.value="";
-  lote.value="";
+  litros.value=""; unidades.value=""; lote.value="";
+  cargarStock();
+  cargarHistorial();
 }
 
-cargarTodo();
+// ================== INIT ==================
+cargarConfig();
+cargarStock();
+cargarHistorial();
 setInterval(cargarStock, 5000);
 </script>
 
