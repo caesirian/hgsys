@@ -3,12 +3,23 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Desarrollador Web | Soluciones Digitales Premium</title>
-  <meta name="description" content="Plataforma modular con herramientas reales: presupuestos PDF, Google Sheets, automatizaciones y más.">
+
+  <title>Desarrollador Web y Sistemas de Gestión | Automatización para Empresas</title>
+
+  <meta name="description" content="Desarrollador web y administrador. Creo sistemas de gestión, automatización de procesos, presupuestos online y plataformas web para empresas, PyMEs y cooperativas.">
+  <meta name="keywords" content="desarrollador web, sistemas de gestión, automatización, presupuestos online, panel administrativo, google sheets, apps script, programador argentina">
+  <meta name="author" content="Hernán Garbarino">
+
+  <meta property="og:title" content="Sistemas Web y Automatización para Empresas">
+  <meta property="og:description" content="Desarrollo web + gestión administrativa en una sola solución.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://hgsys.vercel.app">
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="alternate icon" type="image/png" href="favicon.png">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+
   <style>
     :root{
       --bg:#0f0f14;--card:#17171f;--primary:#7c5cff;--secondary:#00ffc3;--text:#e8e8f0;--muted:#9ea0b5;--radius:18px
@@ -16,8 +27,13 @@
     *{box-sizing:border-box;margin:0;padding:0}
     body{
       font-family:Inter,system-ui,sans-serif;
-      background:radial-gradient(800px 400px at 10% 0%,rgba(124,92,255,.15),transparent),radial-gradient(800px 400px at 90% 10%,rgba(0,255,195,.12),transparent),var(--bg);
-      color:var(--text);line-height:1.6;overflow-x:hidden;transition:.3s ease
+      background:radial-gradient(800px 400px at 10% 0%,rgba(124,92,255,.15),transparent),
+                 radial-gradient(800px 400px at 90% 10%,rgba(0,255,195,.12),transparent),
+                 var(--bg);
+      color:var(--text);
+      line-height:1.6;
+      overflow-x:hidden;
+      transition:.3s ease
     }
     body.light{--bg:#f4f6fb;--card:#fff;--text:#0f1222;--muted:#5a5f7a;background:var(--bg)}
     a{color:inherit;text-decoration:none}
@@ -31,232 +47,66 @@
 
     .hero{min-height:90vh;display:grid;place-items:center;text-align:center}
     .hero h1{font-size:clamp(2.2rem,5vw,3.6rem);line-height:1.1;margin-bottom:16px}
-    .hero p{max-width:680px;margin:0 auto 32px;color:var(--muted)}
+    .hero p{max-width:720px;margin:0 auto 32px;color:var(--muted)}
 
     .cta-group{display:flex;gap:16px;justify-content:center;flex-wrap:wrap}
-    .btn{padding:14px 28px;border-radius:999px;border:1px solid rgba(255,255,255,.12);background:linear-gradient(135deg,rgba(124,92,255,.2),rgba(0,255,195,.15));color:var(--text);font-weight:600;cursor:pointer;transition:.3s}
+    .btn{padding:14px 28px;border-radius:999px;border:1px solid rgba(255,255,255,.12);
+         background:linear-gradient(135deg,rgba(124,92,255,.2),rgba(0,255,195,.15));
+         color:var(--text);font-weight:600;cursor:pointer;transition:.3s}
     .btn.primary{background:linear-gradient(135deg,var(--primary),var(--secondary));color:#000;border:none}
     .btn:hover{transform:translateY(-2px);box-shadow:0 10px 30px rgba(0,0,0,.3)}
 
     section{padding:96px 0}
     .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
-    .card{background:linear-gradient(180deg,rgba(255,255,255,.04),transparent),var(--card);border-radius:var(--radius);padding:28px;border:1px solid rgba(255,255,255,.06)}
+    .card{background:linear-gradient(180deg,rgba(255,255,255,.04),transparent),var(--card);
+          border-radius:var(--radius);padding:28px;border:1px solid rgba(255,255,255,.06)}
 
-    .highlight{background:linear-gradient(135deg,rgba(124,92,255,.25),rgba(0,255,195,.25));border-radius:var(--radius);padding:48px;text-align:center}
+    .highlight{background:linear-gradient(135deg,rgba(124,92,255,.25),rgba(0,255,195,.25));
+               border-radius:var(--radius);padding:48px;text-align:center}
 
-    footer{padding:64px 0 32px;border-top:1px solid rgba(255,255,255,.05);color:var(--muted);text-align:center;font-size:.85rem}
+    footer{padding:64px 0 32px;border-top:1px solid rgba(255,255,255,.05);
+           color:var(--muted);text-align:center;font-size:.85rem}
 
     .tool-window,#module-container{background:#0b0b10;border-radius:16px;padding:18px;border:1px solid rgba(255,255,255,.14)}
-    #module-container{position:fixed;top:84px;left:50%;transform:translateX(-50%) translateY(-10px);max-width:1100px;width:calc(100% - 24px);z-index:80;box-shadow:0 30px 80px rgba(0,0,0,.6);display:none;opacity:0;transition:.35s ease}
+    #module-container{position:fixed;top:84px;left:50%;transform:translateX(-50%) translateY(-10px);
+      max-width:1100px;width:calc(100% - 24px);z-index:80;
+      box-shadow:0 30px 80px rgba(0,0,0,.6);display:none;opacity:0;transition:.35s ease}
     #module-container.active{display:block;opacity:1;transform:translateX(-50%) translateY(0)}
-    .overlay{position:fixed;inset:0;z-index:70;background:rgba(10,10,18,.55);backdrop-filter:blur(6px);display:none}
+    .overlay{position:fixed;inset:0;z-index:70;background:rgba(10,10,18,.55);
+      backdrop-filter:blur(6px);display:none}
     .overlay.active{display:block}
-    body.light .tool-window{background:#f6f8ff}
 
-    input,textarea,select{width:100%;padding:12px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:#0f0f14;color:var(--text);margin-bottom:12px}
-    body.light input,body.light textarea,body.light select{background:#fff;color:#000}
+    input{width:100%;padding:12px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.1);
+          background:#0f0f14;color:var(--text)}
 
-    .chatbox{position:fixed;bottom:20px;right:20px;width:320px;background:var(--card);border-radius:18px;border:1px solid rgba(255,255,255,.1);overflow:hidden;display:none;flex-direction:column}
-    .chat-header{padding:12px;font-weight:700;background:linear-gradient(135deg,var(--primary),var(--secondary));color:#000}
+    .chatbox{position:fixed;bottom:20px;right:20px;width:320px;background:var(--card);
+      border-radius:18px;border:1px solid rgba(255,255,255,.1);overflow:hidden;
+      display:none;flex-direction:column}
+
+    .chat-header{padding:12px;font-weight:700;
+      background:linear-gradient(135deg,var(--primary),var(--secondary));color:#000}
     .chat-messages{padding:12px;flex:1;overflow-y:auto;font-size:.85rem}
 
-    .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,var(--primary),var(--secondary));color:#000;padding:12px 22px;border-radius:999px;font-weight:600;display:none}
+    .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
+      background:linear-gradient(135deg,var(--primary),var(--secondary));color:#000;
+      padding:12px 22px;border-radius:999px;font-weight:600;display:none}
 
-    @media(max-width:900px){.grid{grid-template-columns:1fr}.nav-links{display:none}section{padding:64px 0}}
-
-
-<style>
-:root{
-  --bg:#0b0d12;
-  --text:#eaeaf0;
-  --accent:#7cf3c0;
-}
-
-body{
-  background:var(--bg);
-  color:var(--text);
-  transition:all .4s ease;
-}
-
-.theme-selector{
-  padding:4rem 1rem;
-  text-align:center;
-  border-top:1px solid rgba(255,255,255,.1);
-}
-
-.theme-selector h2{
-  margin-bottom:10px;
-}
-
-.theme-buttons{
-  display:flex;
-  flex-wrap:wrap;
-  gap:10px;
-  justify-content:center;
-  margin-top:15px;
-}
-
-.theme-buttons button{
-  padding:10px 18px;
-  border-radius:10px;
-  border:none;
-  cursor:pointer;
-  background:var(--accent);
-  color:#000;
-  font-weight:600;
-  transition:.3s;
-}
-
-.theme-buttons button:hover{
-  transform:scale(1.05);
-  opacity:.9;
-}
-
-/* ===== THEMES ===== */
-
-body.theme-art{
-  --bg:#f5efe6;
-  --text:#2a1f16;
-  --accent:#d68c45;
-}
-
-body.theme-music{
-  --bg:#0a0014;
-  --text:#f7e9ff;
-  --accent:#a855f7;
-}
-
-body.theme-law{
-  --bg:#101820;
-  --text:#f2f2f2;
-  --accent:#c7a14a;
-}
-
-body.theme-health{
-  --bg:#ecfdf5;
-  --text:#064e3b;
-  --accent:#10b981;
-}
-
-body.theme-coop{
-  --bg:#1f2937;
-  --text:#f9fafb;
-  --accent:#f59e0b;
-}
-
-body.theme-telecom{
-  --bg:#020617;
-  --text:#e0e7ff;
-  --accent:#2563eb;
-}
-</style>
-
+    @media(max-width:900px){
+      .grid{grid-template-columns:1fr}
+      .nav-links{display:none}
+      section{padding:64px 0}
+    }
   </style>
 </head>
-<!--
-<section class="theme-selector">
-  <h2>Selector de Estilos por Rubro</h2>
-  <p>Probá cómo puede verse tu proyecto en distintos rubros.</p>
-  <div class="theme-buttons">
-    <button onclick="setTheme('dev')">Tech / Programador</button>
-    <button onclick="setTheme('art')">Artista Plástico</button>
-    <button onclick="setTheme('music')">Músico</button>
-    <button onclick="setTheme('law')">Abogado</button>
-    <button onclick="setTheme('health')">ONG de Salud</button>
-    <button onclick="setTheme('coop')">Cooperativa</button>
-    <button onclick="setTheme('telecom')">PyME Telecom</button>
-  </div>
-</section>-->
+
 <body>
-<script>
-function setTheme(theme){
-  document.body.className = "";
-  if(theme !== "dev"){
-    document.body.classList.add("theme-" + theme);
-  }
-}
-</script>
-  <script>
-!function(){
-    var e=atob,
-        t=e("NTQ5MTEzNDc5NjU2Mg=="),
-        n=e("MTg2NTYxMQ=="),
-        o=function(e){
-            // Primero verificar parámetros UTM de la URL actual
-            var urlParams = new URLSearchParams(window.location.search);
-            var utmSource = urlParams.get('utm_source');
-            var utmMedium = urlParams.get('utm_medium');
-            var utmCampaign = urlParams.get('utm_campaign');
-            
-            // Si hay UTM parameters, usarlos
-            if (utmSource) {
-                var utmText = utmSource;
-                if (utmMedium) utmText += ' - ' + utmMedium;
-                if (utmCampaign) utmText += ' - ' + utmCampaign;
-                return 'UTM: ' + utmText;
-            }
-            
-            // Si no hay UTM, usar la lógica original del referrer
-            if(!e) return "Acceso Directo";
-            if(e.includes("web.whatsapp.com")) return "WhatsApp Web";
-            if(e.includes("instagram.com/stories/")) return "Instagram Story";
-            if(e.includes("instagram.com")) return "Instagram";
-            if(e.includes("facebook.com")) return "Facebook";
-            if(e.includes("twitter.com")) return "Twitter";
-            if(e.includes("linkedin.com")) return "LinkedIn";
-            if(e.includes("tiktok.com")) return "TikTok";
-            if(e.includes("google.com")) return "Google";
-            if(e.includes("youtube.com")) return "YouTube";
-            if(e.includes("github.com")) return "GitHub";
-            try{
-                return "Web: "+new URL(e).hostname;
-            }catch(t){
-                return "Enlace Externo";
-            }
-        };
-    
-    fetch("https://ipapi.co/json/")
-        .then(function(e){return e.json();})
-        .then(function(ipData){
-            if("AR"===ipData.country){
-                var a=new Date(),
-                    r=a.toLocaleTimeString("es-AR"),
-                    c=o(document.referrer),
-                    i=encodeURIComponent("📱 NUEVO ACCESO AL index d HGSys :\n📍 País: "+ipData.country_name+"\n🏙️ Ciudad: "+ipData.city+"\n📅 Fecha: "+a.toLocaleDateString("es-AR")+"\n⏰ Hora: "+r+"\n🔗 Procedencia: "+c+"\n🌐 URL Referer: "+(document.referrer||"Ninguna"));
-                
-                // Enviar a WhatsApp
-                fetch("https://api.callmebot.com/whatsapp.php?phone="+t+"&text="+i+"&apikey="+n).catch(function(e){});
-                
-                // Registrar en Google Sheets
-                var sheetData = {
-                    pais: ipData.country_name,
-                    ciudad: ipData.city,
-                    procedencia: c,
-                    referer: document.referrer || "Ninguna",
-                    userAgent: navigator.userAgent,
-                    ip: ipData.ip,
-                    utm_source: new URLSearchParams(window.location.search).get('utm_source') || '',
-                    utm_medium: new URLSearchParams(window.location.search).get('utm_medium') || '',
-                    utm_campaign: new URLSearchParams(window.location.search).get('utm_campaign') || '',
-                    url_completa: window.location.href
-                };
-                
-                // Reemplaza con tu URL de Apps Script
-                fetch('https://script.google.com/macros/s/AKfycbxk9flcVDzmpmP7j2vyM9Aj440LXI1I7RivD_wrb2SYBTL7uqo98hjN7anNj9gHLY-tAA/exec', {
-                    method: 'POST',
-                    body: JSON.stringify(sheetData)
-                }).catch(function(e){});
-            }
-        })
-        .catch(function(e){});
-}();
-</script>
+
 <header class="site-header">
   <div class="container nav">
     <div class="logo">HG<span>Soluciones</span></div>
     <nav class="nav-links">
       <a href="#servicios">Servicios</a>
-      <a href="#tools">Herramientas</a>
+      <a href="#soluciones">Soluciones</a>
       <a href="#contacto">Contacto</a>
     </nav>
     <button class="btn" onclick="toggleTheme()">🌗</button>
@@ -269,85 +119,80 @@ function setTheme(theme){
 
 <section class="hero container">
   <div>
-    <h1>Soluciones Web para tus necesidades</h1>
-    <p>Desarrollo web profesional a medida</p>
+    <h1>Desarrollo Web + Sistemas de Gestión para Empresas Reales</h1>
+    <p>Soy desarrollador web y administrador con más de 18 años de experiencia en gestión, finanzas y procesos. Creo sitios, sistemas y automatizaciones que funcionan en la práctica, no solo en diseño.</p>
     <div class="cta-group">
-  <button class="btn primary" onclick="loadModule('http://hgsys.vercel.app/presupuesto.html')">Pedir Presupuesto</button>
-  <button class="btn primary" onclick="loadModule('http://hgsys.vercel.app/HGSys.html')">Abrir Sistema</button>
-  <button class="btn" onclick="toggleChat()">Abrir Chat</button>
-</div>
+      <button class="btn primary" onclick="loadModule('https://hgsys.vercel.app/presupuesto.html')">Pedir Presupuesto</button>
+      <button class="btn primary" onclick="loadModule('https://hgsys.vercel.app/HGSys.html')">Abrir Sistema</button>
+      <button class="btn" onclick="toggleChat()">Abrir Chat</button>
+    </div>
   </div>
 </section>
 
 <section id="servicios" class="container">
   <div class="grid">
-    <div class="card"><h3>Desarrollo Web</h3><p>Plataformas modernas, rápidas y seguras.</p></div>
-    <div class="card"><h3>Automatización</h3><p>Formularios, envíos, reportes, integraciones.</p></div>
-    <div class="card"><h3>Sistemas</h3><p>Paneles conectados a datos y APIs.</p></div>
+    <div class="card">
+      <h3>Desarrollo Web Profesional</h3>
+      <p>Landing pages, sitios institucionales, catálogos online, portfolios y sistemas web optimizados para velocidad, seguridad y conversión.</p>
+    </div>
+
+    <div class="card">
+      <h3>Automatización Administrativa</h3>
+      <p>Formularios inteligentes, envío automático de presupuestos, reportes, control de datos, flujos de trabajo y reducción de tareas manuales.</p>
+    </div>
+
+    <div class="card">
+      <h3>Sistemas de Gestión</h3>
+      <p>Paneles administrativos, control de clientes, presupuestos, stock, métricas, reportes y visualización de datos en tiempo real.</p>
+    </div>
   </div>
 </section>
 
 <section id="hg" class="container">
   <div class="highlight">
     <h2>HG — Soluciones Digitales</h2>
-    <p>HG representa la visión integral de Hernán Garbarino aplicada al desarrollo web, automatización de procesos y construcción de sistemas digitales robustos. Experiencia en administración, finanzas y tecnología unificadas en una sola solución.</p>
+    <p>HG representa la unión entre desarrollo web, automatización y gestión administrativa. No solo programo sistemas: los pienso desde la lógica real de una empresa. Mi formación en administración, finanzas y procesos me permite crear herramientas útiles, rentables y fáciles de operar.</p>
   </div>
 </section>
 
 <section id="soluciones" class="container">
   <h2 style="text-align:center;margin-bottom:32px">Soluciones HG</h2>
   <div class="grid">
-    <div class="card"><h3>Sitios Web Profesionales</h3><p>Webs institucionales, landing pages comerciales, portfolios profesionales y plataformas administrativas.</p></div>
-    <div class="card"><h3>Sistemas de Gestión</h3><p>Dashboards, paneles internos, control de clientes, presupuestos, reportes automáticos y métricas.</p></div>
-    <div class="card"><h3>Integraciones Avanzadas</h3><p>Google Sheets, Gmail, Drive, APIs externas, WhatsApp, sistemas de notificación y bots.</p></div>
+    <div class="card">
+      <h3>Sitios Web que Venden</h3>
+      <p>Webs institucionales, landing pages de servicios, embudos de contacto, portfolios y sitios optimizados para captar clientes.</p>
+    </div>
+
+    <div class="card">
+      <h3>Sistemas Administrativos</h3>
+      <p>Presupuestos automáticos, control de clientes, seguimiento de pedidos, métricas de ventas y reportes gerenciales.</p>
+    </div>
+
+    <div class="card">
+      <h3>Integraciones Profesionales</h3>
+      <p>WhatsApp, Gmail, Google Sheets, Drive, APIs externas, notificaciones automáticas, bots y flujos inteligentes.</p>
+    </div>
   </div>
-</section>
-
-<section id="proceso" class="container">
-  <h2 style="text-align:center;margin-bottom:32px">Proceso de Trabajo</h2>
-  <div class="grid">
-    <div class="card"><h3>1. Análisis</h3><p>Relevamiento de necesidades reales del proyecto, objetivos de negocio y alcance técnico.</p></div>
-    <div class="card"><h3>2. Desarrollo</h3><p>Construcción modular, segura y escalable con pruebas reales de funcionamiento.</p></div>
-    <div class="card"><h3>3. Implementación</h3><p>Puesta en producción, configuración final y acompañamiento operativo.</p></div>
-  </div>
-</section>
-
-<section id="tecnologias" class="container">
-  <h2 style="text-align:center;margin-bottom:32px">Tecnologías Utilizadas</h2>
-  <div class="grid">
-    <div class="card"><h3>Frontend</h3><p>HTML, CSS, JavaScript moderno, diseño responsive y animaciones.</p></div>
-    <div class="card"><h3>Backend</h3><p>Google Apps Script, Firebase, APIs REST y automatizaciones.</p></div>
-    <div class="card"><h3>Infraestructura</h3><p>Vercel, dominios personalizados, Drive, seguridad y despliegue continuo.</p></div>
-  </div>
-</section>
-
-<section id="tools" class="container">
-  <h2 style="text-align:center">Plataforma Modular</h2>
-  <p style="text-align:center;color:var(--muted)">Los módulos están disponibles dentro del sitio sin recargar la página, manteniendo el header siempre visible.</p>
-
-  <div class="cta-group" style="margin-bottom:40px">
-    <button class="btn primary" onclick="loadModule('http://hgsys.vercel.app/presupuesto.html')">Pedir Presupuesto</button>
-  </div>
-
-  <div id="module-container" class="tool-window" aria-live="polite">Seleccioná una herramienta para comenzar.</div>
 </section>
 
 <section id="contacto" class="container">
   <div class="highlight">
-    <h2>¿Querés este sistema funcionando en tu empresa?</h2>
-    <p>Este sistema puede integrarse con Gmail, Drive y Google Sheets según las necesidades del proyecto.</p>
+    <h2>¿Querés mejorar la gestión de tu empresa con un sistema real?</h2>
+    <p>Diseño herramientas a medida para negocios, cooperativas, profesionales y PyMEs.</p>
     <div class="cta-group" style="margin-top:24px">
-      <a href="http://wa.me/1134796562" class="btn primary">Contactar Ahora</a>
+      <a href="https://wa.me/1134796562" class="btn primary">Contactar Ahora</a>
     </div>
   </div>
 </section>
 
 </main>
 
-<footer><div class="container">© 2025 - Desarrollo Web Premium</div></footer>
+<footer>
+  <div class="container">© 2025 - HG Soluciones Digitales · Desarrollo Web y Sistemas de Gestión</div>
+</footer>
 
 <div class="chatbox" id="chatbox">
-  <div class="chat-header" style="display:flex;align-items:center;justify-content:space-between">Asistente Web <span style="cursor:pointer;font-weight:900" onclick="toggleChat()">✕</span></div>
+  <div class="chat-header">Asistente Web</div>
   <div class="chat-messages" id="messages">Hola 👋 ¿En qué te ayudo?</div>
   <div class="chat-input"><input id="msg" placeholder="Escribí acá..." onkeydown="if(event.key==='Enter') enviar()"></div>
 </div>
@@ -355,7 +200,6 @@ function setTheme(theme){
 <div class="toast" id="toast"></div>
 
 <script>
-// Cache DOM safely after load
 let chatbox, messages, msg;
 window.addEventListener('DOMContentLoaded', () => {
   chatbox = document.getElementById('chatbox');
@@ -363,343 +207,29 @@ window.addEventListener('DOMContentLoaded', () => {
   msg = document.getElementById('msg');
 });
 
-// ---- Modular loader ----
 async function loadModule(url) {
   const container = document.getElementById('module-container');
-  const overlay = document.getElementById('overlay');
   if (!container) return;
-  container.innerHTML = 'Cargando módulo…';
-
-  const safeUrl = url.replace(/^http:\/\//i, 'https://');
-
-  try {
-    const res = await fetch(safeUrl, { cache: 'no-store', mode: 'cors' });
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-
-    const html = await res.text();
-    const doc = new DOMParser().parseFromString(html, 'text/html');
-    const main = doc.querySelector('main');
-
-    if (!main) throw new Error('El módulo no contiene <main>');
-
-    container.innerHTML = main.innerHTML;
-  } catch (e) {
-    console.warn('Fetch bloqueado por CORS o red. Fallback a iframe.', e);
-    container.innerHTML = `
-      <div style="width:100%; height:min(78vh,860px); border-radius:12px; overflow:hidden; border:1px solid rgba(255,255,255,.18)">
-        <iframe src="${safeUrl}" style="width:100%; height:100%; border:0"></iframe>
-      </div>
-    `;
-    toast('El módulo se cargó en modo seguro (iframe)');
-  }
-
-  // Mostrar panel centrado y prioritario
-  document.body.style.overflow = 'hidden';
+  container.innerHTML = 'Cargando módulo...';
   container.classList.add('active');
-  if (overlay) overlay.classList.add('active');
-  container.focus?.();
+  container.innerHTML = `<iframe src="${url}" style="width:100%;height:80vh;border:0"></iframe>`;
 }
 
-// ---- UI ----
-function toggleTheme() {
-  document.body.classList.toggle('light');
+function toggleTheme(){ document.body.classList.toggle('light') }
+
+function toggleChat(){
+  if(!chatbox) return;
+  chatbox.style.display = (chatbox.style.display === 'flex') ? 'none' : 'flex';
 }
 
-function toggleChat() {
-  if (!chatbox) return;
-  const isOpen = chatbox.style.display === 'flex';
-  chatbox.style.display = isOpen ? 'none' : 'flex';
-}
-
-
-function enviar() {
-  if (!messages || !msg || !msg.value) return;
-  messages.innerHTML += '<br><b>Tu:</b> ' + msg.value;
-
-  const respuestas = [
-    'Esta ventana de Chat es una demostración de cómo funcionaría en tu sitio.',
-    'Este asistente responde de forma automática según la lógica definida.',
-    'La experiencia real se adapta completamente a cada proyecto.',
-    'Los flujos de respuesta pueden conectarse con sistemas reales.',
-    'Este chat es solo un ejemplo funcional de demostración.'
-  ];
-
-  window.chatCounter = (window.chatCounter || 0) + 1;
-
-  let respuestaBot;
-  if (window.chatCounter <= 3) {
-    respuestaBot = respuestas[Math.floor(Math.random() * respuestas.length)];
-  } else {
-    respuestaBot = 'Para continuar, podés escribir a hernan.garbarino@gmail.com o enviarme un WhatsApp al 1134796562.';
-  }
-
-  messages.innerHTML += '<br><b>Bot:</b> ' + respuestaBot;
+function enviar(){
+  if(!msg.value) return;
+  messages.innerHTML += '<br><b>Vos:</b> ' + msg.value;
+  messages.innerHTML += '<br><b>Bot:</b> Si querés avanzar con un proyecto real, podés escribirme a hernan.garbarino@gmail.com o por WhatsApp al 1134796562.';
   msg.value = '';
   messages.scrollTop = messages.scrollHeight;
-}
-
-
-function toast(t) {
-  const el = document.getElementById('toast');
-  if (!el) return;
-  el.innerText = t;
-  el.style.display = 'block';
-  setTimeout(() => (el.style.display = 'none'), 2200);
-}
-
-function closeModule(){
-  const container = document.getElementById('module-container');
-  const overlay = document.getElementById('overlay');
-  document.body.style.overflow = '';
-  container?.classList.remove('active');
-  overlay?.classList.remove('active');
 }
 </script>
 
 </body>
 </html>
-
-<!--
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Desarrollador Web | Soluciones Digitales Premium</title>
-  <meta name="description" content="Plataforma modular con herramientas reales: presupuestos PDF, Google Sheets, automatizaciones y más.">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
-  <style>
-    :root{
-      --bg:#0f0f14;--card:#17171f;--primary:#7c5cff;--secondary:#00ffc3;--text:#e8e8f0;--muted:#9ea0b5;--radius:18px
-    }
-    *{box-sizing:border-box;margin:0;padding:0}
-    body{
-      font-family:Inter,system-ui,sans-serif;
-      background:radial-gradient(800px 400px at 10% 0%,rgba(124,92,255,.15),transparent),radial-gradient(800px 400px at 90% 10%,rgba(0,255,195,.12),transparent),var(--bg);
-      color:var(--text);line-height:1.6;overflow-x:hidden;transition:.3s ease
-    }
-    body.light{--bg:#f4f6fb;--card:#fff;--text:#0f1222;--muted:#5a5f7a;background:var(--bg)}
-    a{color:inherit;text-decoration:none}
-    .container{max-width:1200px;margin:0 auto;padding:24px}
-
-    header{position:sticky;top:0;z-index:50;background:rgba(15,15,20,.85);backdrop-filter:blur(12px);border-bottom:1px solid rgba(255,255,255,.05)}
-    .nav{display:flex;align-items:center;justify-content:space-between}
-    .logo{font-weight:800;letter-spacing:1px}
-    .logo span{color:var(--secondary)}
-    .nav-links{display:flex;gap:24px;font-size:.95rem;color:var(--muted)}
-
-    .hero{min-height:90vh;display:grid;place-items:center;text-align:center}
-    .hero h1{font-size:clamp(2.2rem,5vw,3.6rem);line-height:1.1;margin-bottom:16px}
-    .hero p{max-width:680px;margin:0 auto 32px;color:var(--muted)}
-
-    .cta-group{display:flex;gap:16px;justify-content:center;flex-wrap:wrap}
-    .btn{padding:14px 28px;border-radius:999px;border:1px solid rgba(255,255,255,.12);background:linear-gradient(135deg,rgba(124,92,255,.2),rgba(0,255,195,.15));color:var(--text);font-weight:600;cursor:pointer;transition:.3s}
-    .btn.primary{background:linear-gradient(135deg,var(--primary),var(--secondary));color:#000;border:none}
-    .btn:hover{transform:translateY(-2px);box-shadow:0 10px 30px rgba(0,0,0,.3)}
-
-    section{padding:96px 0}
-    .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
-    .card{background:linear-gradient(180deg,rgba(255,255,255,.04),transparent),var(--card);border-radius:var(--radius);padding:28px;border:1px solid rgba(255,255,255,.06)}
-
-    .highlight{background:linear-gradient(135deg,rgba(124,92,255,.25),rgba(0,255,195,.25));border-radius:var(--radius);padding:48px;text-align:center}
-
-    footer{padding:64px 0 32px;border-top:1px solid rgba(255,255,255,.05);color:var(--muted);text-align:center;font-size:.85rem}
-
-    .tool-window,#module-container{background:#0b0b10;border-radius:16px;padding:18px;border:1px solid rgba(255,255,255,.14)}
-    #module-container{position:fixed;top:84px;left:50%;transform:translateX(-50%) translateY(-10px);max-width:1100px;width:calc(100% - 24px);z-index:80;box-shadow:0 30px 80px rgba(0,0,0,.6);display:none;opacity:0;transition:.35s ease}
-    #module-container.active{display:block;opacity:1;transform:translateX(-50%) translateY(0)}
-    .overlay{position:fixed;inset:0;z-index:70;background:rgba(10,10,18,.55);backdrop-filter:blur(6px);display:none}
-    .overlay.active{display:block}
-    body.light .tool-window{background:#f6f8ff}
-
-    input,textarea,select{width:100%;padding:12px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:#0f0f14;color:var(--text);margin-bottom:12px}
-    body.light input,body.light textarea,body.light select{background:#fff;color:#000}
-
-    .chatbox{position:fixed;bottom:20px;right:20px;width:320px;background:var(--card);border-radius:18px;border:1px solid rgba(255,255,255,.1);overflow:hidden;display:none;flex-direction:column}
-    .chat-header{padding:12px;font-weight:700;background:linear-gradient(135deg,var(--primary),var(--secondary));color:#000}
-    .chat-messages{padding:12px;flex:1;overflow-y:auto;font-size:.85rem}
-
-    .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,var(--primary),var(--secondary));color:#000;padding:12px 22px;border-radius:999px;font-weight:600;display:none}
-
-    @media(max-width:900px){.grid{grid-template-columns:1fr}.nav-links{display:none}section{padding:64px 0}}
-  </style>
-</head>
-<body>
-
-<header class="site-header">
-  <div class="container nav">
-    <div class="logo">HG<span>Soluciones</span></div>
-    <nav class="nav-links">
-      <a href="#servicios">Servicios</a>
-      <a href="#tools">Herramientas</a>
-      <a href="#contacto">Contacto</a>
-    </nav>
-    <button class="btn" onclick="toggleTheme()">🌗</button>
-  </div>
-</header>
-
-<div class="overlay" id="overlay" onclick="closeModule()"></div>
-
-<main>
-
-<section class="hero container">
-  <div>
-    <h1>Experiencias Web con Automatización Real</h1>
-    <p>Herramientas profesionales disponibles dentro del sitio para cualquier visitante, integradas como módulos reales.</p>
-<div class="cta-group">
-  <button class="btn primary" onclick="loadModule('http://hgsys.vercel.app/presupuesto.html')">Abrir Presupuesto</button>
-  <button class="btn primary" onclick="loadModule('http://hgsys.vercel.app/HGSys.html')">Abrir Sistema</button>
-  <button class="btn" onclick="toggleChat()">Abrir Chat</button>
-</div>
-
-  </div>
-</section>
-
-<section id="servicios" class="container">
-  <div class="grid">
-    <div class="card"><h3>Desarrollo Web</h3><p>Plataformas modernas, rápidas y seguras.</p></div>
-    <div class="card"><h3>Automatización</h3><p>Formularios, envíos, reportes, integraciones.</p></div>
-    <div class="card"><h3>Sistemas</h3><p>Paneles conectados a datos y APIs.</p></div>
-  </div>
-</section>
-
-<section id="tools" class="container">
-  <h2 style="text-align:center">Plataforma Modular</h2>
-  <p style="text-align:center;color:var(--muted)">Los módulos están disponibles dentro del sitio sin recargar la página, manteniendo el header siempre visible.</p>
-
-  <div class="cta-group" style="margin-bottom:40px">
-    <button class="btn primary" onclick="loadModule('http://hgsys.vercel.app/presupuesto.html')">Módulo Presupuesto</button>
-  </div>
-
-  <div id="module-container" class="tool-window" aria-live="polite">Seleccioná una herramienta para comenzar.</div>
-</section>
-
-<section id="contacto" class="container">
-  <div class="highlight">
-    <h2>¿Querés este sistema funcionando en tu empresa?</h2>
-    <p>Este sistema puede integrarse con Gmail, Drive y Google Sheets según las necesidades del proyecto.</p>
-    <div class="cta-group" style="margin-top:24px">
-      <a href="wa.me/1134796562" class="btn primary">Contactar Ahora</a>
-    </div>
-  </div>
-</section>
-
-</main>
-
-<footer><div class="container">© HG Soluciones 2025 - Desarrollo Web Premium</div></footer>
-
-<div class="chatbox" id="chatbox">
-  <div class="chat-header" style="display:flex;align-items:center;justify-content:space-between">Asistente Web <span style="cursor:pointer;font-weight:900" onclick="toggleChat()">✕</span></div>
-  <div class="chat-messages" id="messages">Hola 👋 ¿En qué te ayudo?</div>
-  <div class="chat-input"><input id="msg" placeholder="Escribí acá..." onkeydown="if(event.key==='Enter') enviar()"></div>
-</div>
-
-<div class="toast" id="toast"></div>
-
-<script>
-// Cache DOM safely after load
-let chatbox, messages, msg;
-window.addEventListener('DOMContentLoaded', () => {
-  chatbox = document.getElementById('chatbox');
-  messages = document.getElementById('messages');
-  msg = document.getElementById('msg');
-});
-
-// ---- Modular loader ----
-async function loadModule(url) {
-  const container = document.getElementById('module-container');
-  const overlay = document.getElementById('overlay');
-  if (!container) return;
-  container.innerHTML = 'Cargando módulo…';
-
-  const safeUrl = url.replace(/^http:\/\//i, 'https://');
-
-  try {
-    const res = await fetch(safeUrl, { cache: 'no-store', mode: 'cors' });
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-
-    const html = await res.text();
-    const doc = new DOMParser().parseFromString(html, 'text/html');
-    const main = doc.querySelector('main');
-
-    if (!main) throw new Error('El módulo no contiene <main>');
-
-    container.innerHTML = main.innerHTML;
-  } catch (e) {
-    console.warn('Fetch bloqueado por CORS o red. Fallback a iframe.', e);
-    container.innerHTML = `
-      <div style="width:100%; height:min(78vh,860px); border-radius:12px; overflow:hidden; border:1px solid rgba(255,255,255,.18)">
-        <iframe src="${safeUrl}" style="width:100%; height:100%; border:0"></iframe>
-      </div>
-    `;
-    toast('El módulo se cargó en modo seguro (iframe)');
-  }
-
-  // Mostrar panel centrado y prioritario
-  document.body.style.overflow = 'hidden';
-  container.classList.add('active');
-  if (overlay) overlay.classList.add('active');
-  container.focus?.();
-}
-
-// ---- UI ----
-function toggleTheme() {
-  document.body.classList.toggle('light');
-}
-
-function toggleChat() {
-  if (!chatbox) return;
-  const isOpen = chatbox.style.display === 'flex';
-  chatbox.style.display = isOpen ? 'none' : 'flex';
-}
-
-
-function enviar() {
-  if (!messages || !msg || !msg.value) return;
-  messages.innerHTML += '<br><b>Tu:</b> ' + msg.value;
-
-  const respuestas = [
-    'Esta ventana de Chat es una demostración de cómo funcionaría en tu sitio.',
-    'Este asistente responde de forma automática según la lógica definida.',
-    'La experiencia real se adapta completamente a cada proyecto.',
-    'Los flujos de respuesta pueden conectarse con sistemas reales.',
-    'Este chat es solo un ejemplo funcional de demostración.'
-  ];
-
-  window.chatCounter = (window.chatCounter || 0) + 1;
-
-  let respuestaBot;
-  if (window.chatCounter <= 3) {
-    respuestaBot = respuestas[Math.floor(Math.random() * respuestas.length)];
-  } else {
-    respuestaBot = 'Para continuar, podés escribir a hernan.garbarino@gmail.com o enviarme un WhatsApp a 1134796562.';
-  }
-
-  messages.innerHTML += '<br><b>Bot:</b> ' + respuestaBot;
-  msg.value = '';
-  messages.scrollTop = messages.scrollHeight;
-}
-
-
-function toast(t) {
-  const el = document.getElementById('toast');
-  if (!el) return;
-  el.innerText = t;
-  el.style.display = 'block';
-  setTimeout(() => (el.style.display = 'none'), 2200);
-}
-
-function closeModule(){
-  const container = document.getElementById('module-container');
-  const overlay = document.getElementById('overlay');
-  document.body.style.overflow = '';
-  container?.classList.remove('active');
-  overlay?.classList.remove('active');
-}
-</script>
-
-</body>
-</html>
--->
