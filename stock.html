@@ -9,6 +9,14 @@
 <!-- DataTables -->
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script>
+function setTheme(theme){
+  document.body.className = "";
+  if(theme !== "dev"){
+    document.body.classList.add("theme-" + theme);
+  }
+}
+</script>
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 
 <style>
@@ -27,7 +35,19 @@ button:hover { background:#16a085; }
 .small-text { font-size:12px; color:#aaa; margin-top:-5px; }
 @media(max-width:600px){ .input-group { flex-direction:column; } }
 </style>
-</head>
+</head><section class="theme-selector">
+  <h2>Selector de Estilos por Rubro</h2>
+  <p>Probá cómo puede verse tu proyecto en distintos rubros.</p>
+  <div class="theme-buttons">
+    <button onclick="setTheme('dev')">Tech / Programador</button>
+    <button onclick="setTheme('art')">Artista Plástico</button>
+    <button onclick="setTheme('music')">Músico</button>
+    <button onclick="setTheme('law')">Abogado</button>
+    <button onclick="setTheme('health')">ONG de Salud</button>
+    <button onclick="setTheme('coop')">Cooperativa</button>
+    <button onclick="setTheme('telecom')">PyME Telecom</button>
+  </div>
+</section>
 <body>
 <div class="container">
 
