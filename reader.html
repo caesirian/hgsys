@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lector de Códigos QR</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: #0f1a2b;
+            color: #e0e0e0;
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .container {
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+        }
+        
+        header {
+            margin-bottom: 30px;
+            padding: 20px;
+        }
+        
+        h1 {
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+            color: #64ffda;
+            text-shadow: 0 0 10px rgba(100, 255, 218, 0.3);
+        }
+        
+        p {
+            font-size: 1.1rem;
+            opacity: 0.8;
+            line-height: 1.6;
+        }
+        
+        .scanner-section {
+            position: relative;
+            width: 100%;
+            border-radius: 15px;
+            overflow: hidden;
+            margin-bottom: 30px;
+            background: #1a2536;
+            padding: 20px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+            border: 1px solid #2a3a52;
+        }
+        
+        .scanner-container {
+            position: relative;
+            width: 100%;
+            height: 300px;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 15px;
+            border: 2px solid #2a3a52;
+            background: #0a0f1a;
+        }
+        
+        #video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        
+        .scan-area {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 220px;
+            height: 220px;
+            border: 2px solid #64ffda;
+            border-radius: 10px;
+            box-shadow: 0 0 0 1000px rgba(10, 15, 26, 0.85);
+            z-index: 10;
+            pointer-events: none;
+        }
+        
+        .scan-area::before, .scan-area::after {
+            content: '';
+            position: absolute;
+            width: 25px;
+            height: 25px;
+            border: 3px solid transparent;
+        }
+        
+        .scan-area::before {
+            top: -3px;
+            left: -3px;
+            border-top-color: #64ffda;
+            border-left-color: #64ffda;
+        }
+        
+        .scan-area::after {
+            bottom: -3px;
+            right: -3px;
+            border-bottom-color: #64ffda;
+            border-right-color: #64ffda;
+        }
+        
+        .scan-line {
+            position: absolute;
+            width: 100%;
+            height: 3px;
+            background: #64ffda;
+            top: 0;
+            animation: scan 2.5s ease-in-out infinite;
+            box-shadow: 0 0 10px rgba(100, 255, 218, 0.8);
+            z-index: 11;
+        }
+        
+        @keyframes scan {
+            0% { top: 0; opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { top: 100%; opacity: 0; }
+        }
+        
+        .controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            background: #1e2b3e;
+            color: #64ffda;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid #2a3a52;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
+        
+        button:hover {
+            background: #64ffda;
+            color: #0f1a2b;
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(100, 255, 218, 0.4);
+        }
+        
+        button:active {
+            transform: translateY(1px);
+        }
+        
+        #startButton {
+            background: #1e2b3e;
+            color: #64ffda;
+        }
+        
+        #startButton:hover {
+            background: #64ffda;
+            color: #0f1a2b;
+        }
+        
+        #switchCamera {
+            background: #1e2b3e;
+            color: #64ffda;
+        }
+        
+        #switchCamera:hover {
+            background: #64ffda;
+            color: #0f1a2b;
+        }
+        
+        .result-container {
+            background: #1a2536;
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 20px;
+            border: 1px solid #2a3a52;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+        
+        .result-container h2 {
+            margin-bottom: 15px;
+            text-align: center;
+            color: #64ffda;
+        }
+        
+        #result {
+            background: #0a0f1a;
+            padding: 15px;
+            border-radius: 8px;
+            min-height: 60px;
+            word-break: break-all;
+            margin-bottom: 15px;
+            border: 1px solid #2a3a52;
+            color: #e0e0e0;
+        }
+        
+        #copyButton {
+            width: 100%;
+            background: #1e2b3e;
+            color: #64ffda;
+        }
+        
+        #copyButton:hover {
+            background: #64ffda;
+            color: #0f1a2b;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .status {
+            margin-top: 10px;
+            font-size: 0.9rem;
+            opacity: 0.8;
+            text-align: center;
+            color: #64ffda;
+        }
+        
+        .instructions {
+            margin-top: 30px;
+            background: #1a2536;
+            border-radius: 15px;
+            padding: 20px;
+            width: 100%;
+            border: 1px solid #2a3a52;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+        
+        .instructions h3 {
+            margin-bottom: 15px;
+            text-align: center;
+            color: #64ffda;
+        }
+        
+        .instructions ul {
+            text-align: left;
+            padding-left: 20px;
+        }
+        
+        .instructions li {
+            margin-bottom: 10px;
+            line-height: 1.5;
+            color: #c0c0c0;
+        }
+        
+        footer {
+            margin-top: 30px;
+            text-align: center;
+            opacity: 0.7;
+            font-size: 0.9rem;
+            color: #64ffda;
+        }
+        
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 1.8rem;
+            }
+            
+            .scan-area {
+                width: 180px;
+                height: 180px;
+            }
+            
+            button {
+                padding: 10px 20px;
+                font-size: 0.9rem;
+            }
+            
+            .scanner-container {
+                height: 250px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Lector de Códigos QR</h1>
+            <p>Enfoca el código dentro del área de escaneo</p>
+        </header>
+        
+        <div class="scanner-section">
+            <div class="scanner-container">
+                <video id="video" playsinline></video>
+                <div class="scan-area">
+                    <div class="scan-line"></div>
+                </div>
+            </div>
+            <div class="status" id="status">Presiona "Iniciar Cámara" para comenzar</div>
+        </div>
+        
+        <div class="controls">
+            <button id="startButton">Iniciar Cámara</button>
+            <button id="switchCamera" class="hidden">Cambiar Cámara</button>
+            <button id="stopButton" class="hidden">Detener Cámara</button>
+        </div>
+        
+        <div class="result-container">
+            <h2>Resultado del Escaneo</h2>
+            <div id="result">Esperando escaneo...</div>
+            <button id="copyButton" class="hidden">Copiar Resultado</button>
+        </div>
+        
+        <div class="instructions">
+            <h3>Instrucciones de Uso</h3>
+            <ul>
+                <li>Haz clic en "Iniciar Cámara" para activar la cámara</li>
+                <li>Coloca el código QR dentro del área de escaneo</li>
+                <li>El código se detectará automáticamente</li>
+                <li>Usa "Cambiar Cámara" para alternar entre cámaras</li>
+                <li>Haz clic en "Copiar Resultado" para guardar el texto</li>
+            </ul>
+        </div>
+        
+        <footer>
+            <p>Compatibilidad: Chrome, Firefox, Safari y otros navegadores modernos</p>
+        </footer>
+    </div>
+
+    <!-- Incluir la librería jsQR para decodificar códigos QR -->
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+    
+    <script>
+        // Elementos del DOM
+        const video = document.getElementById('video');
+        const startButton = document.getElementById('startButton');
+        const switchCameraButton = document.getElementById('switchCamera');
+        const stopButton = document.getElementById('stopButton');
+        const copyButton = document.getElementById('copyButton');
+        const resultDiv = document.getElementById('result');
+        const statusDiv = document.getElementById('status');
+        
+        // Variables de estado
+        let stream = null;
+        let scanning = false;
+        let currentFacingMode = 'environment'; // 'environment' para cámara trasera, 'user' para frontal
+        let canvasElement = document.createElement('canvas');
+        let canvasContext = canvasElement.getContext('2d');
+        
+        // Inicializar la aplicación
+        function init() {
+            startButton.addEventListener('click', startCamera);
+            switchCameraButton.addEventListener('click', switchCamera);
+            stopButton.addEventListener('click', stopCamera);
+            copyButton.addEventListener('click', copyResult);
+            
+            // Verificar si el navegador soporta la API de cámara
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                alert('Tu navegador no soporta el acceso a la cámara. Por favor, usa un navegador más moderno.');
+                startButton.disabled = true;
+                statusDiv.textContent = 'Navegador no compatible con la cámara';
+            }
+        }
+        
+        // Iniciar la cámara
+        async function startCamera() {
+            try {
+                // Detener la cámara anterior si existe
+                if (stream) {
+                    stream.getTracks().forEach(track => track.stop());
+                }
+                
+                // Solicitar acceso a la cámara
+                stream = await navigator.mediaDevices.getUserMedia({
+                    video: { 
+                        facingMode: currentFacingMode,
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    }
+                });
+                
+                // Conectar el stream de video al elemento video
+                video.srcObject = stream;
+                video.setAttribute('playsinline', true); // Importante para iOS
+                await video.play();
+                
+                // Actualizar la interfaz
+                startButton.classList.add('hidden');
+                switchCameraButton.classList.remove('hidden');
+                stopButton.classList.remove('hidden');
+                statusDiv.textContent = 'Cámara activa - Enfoca el código en el área de escaneo';
+                
+                // Iniciar el escaneo
+                scanning = true;
+                requestAnimationFrame(scan);
+                
+            } catch (error) {
+                console.error('Error al acceder a la cámara:', error);
+                statusDiv.textContent = 'Error al acceder a la cámara. Verifica los permisos.';
+                alert('No se pudo acceder a la cámara. Asegúrate de haber concedido los permisos necesarios.');
+            }
+        }
+        
+        // Cambiar entre cámaras frontal y trasera
+        function switchCamera() {
+            if (stream) {
+                // Detener la cámara actual
+                stream.getTracks().forEach(track => track.stop());
+                
+                // Cambiar el modo de la cámara
+                currentFacingMode = currentFacingMode === 'environment' ? 'user' : 'environment';
+                
+                // Reiniciar la cámara con el nuevo modo
+                startCamera();
+            }
+        }
+        
+        // Detener la cámara
+        function stopCamera() {
+            scanning = false;
+            
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                stream = null;
+            }
+            
+            // Actualizar la interfaz
+            startButton.classList.remove('hidden');
+            switchCameraButton.classList.add('hidden');
+            stopButton.classList.add('hidden');
+            copyButton.classList.add('hidden');
+            resultDiv.textContent = 'Esperando escaneo...';
+            statusDiv.textContent = 'Cámara detenida - Presiona "Iniciar Cámara" para comenzar';
+        }
+        
+        // Función de escaneo
+        function scan() {
+            if (!scanning) return;
+            
+            // Verificar si el video está listo
+            if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                // Configurar el canvas con las dimensiones del video
+                canvasElement.width = video.videoWidth;
+                canvasElement.height = video.videoHeight;
+                
+                // Dibujar el frame actual del video en el canvas
+                canvasContext.drawImage(video, 0, 0, canvasElement.width, canvasElement.height);
+                
+                // Obtener los datos de la imagen para el escaneo
+                const imageData = canvasContext.getImageData(0, 0, canvasElement.width, canvasElement.height);
+                
+                // Intentar decodificar un código QR
+                const code = jsQR(imageData.data, imageData.width, imageData.height, {
+                    inversionAttempts: 'dontInvert',
+                });
+                
+                // Si se detecta un código QR
+                if (code) {
+                    resultDiv.textContent = code.data;
+                    copyButton.classList.remove('hidden');
+                    statusDiv.textContent = '¡Código detectado!';
+                    
+                    // Destacar visualmente el área de escaneo por un momento
+                    document.querySelector('.scan-area').style.borderColor = '#ff4081';
+                    document.querySelector('.scan-area').style.boxShadow = '0 0 0 1000px rgba(255, 64, 129, 0.2)';
+                    
+                    setTimeout(() => {
+                        document.querySelector('.scan-area').style.borderColor = '#64ffda';
+                        document.querySelector('.scan-area').style.boxShadow = '0 0 0 1000px rgba(10, 15, 26, 0.85)';
+                    }, 1000);
+                }
+            }
+            
+            // Continuar el escaneo
+            requestAnimationFrame(scan);
+        }
+        
+        // Copiar el resultado al portapapeles
+        function copyResult() {
+            const textToCopy = resultDiv.textContent;
+            
+            // Usar la API del portapapeles moderna
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(textToCopy)
+                    .then(() => {
+                        // Feedback visual
+                        const originalText = copyButton.textContent;
+                        copyButton.textContent = '¡Copiado!';
+                        copyButton.style.background = '#ff4081';
+                        setTimeout(() => {
+                            copyButton.textContent = originalText;
+                            copyButton.style.background = '';
+                        }, 2000);
+                    })
+                    .catch(err => {
+                        console.error('Error al copiar: ', err);
+                        fallbackCopyTextToClipboard(textToCopy);
+                    });
+            } else {
+                // Fallback para navegadores más antiguos
+                fallbackCopyTextToClipboard(textToCopy);
+            }
+        }
+        
+        // Fallback para copiar texto
+        function fallbackCopyTextToClipboard(text) {
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            textArea.style.position = 'fixed';
+            textArea.style.opacity = '0';
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    const originalText = copyButton.textContent;
+                    copyButton.textContent = '¡Copiado!';
+                    copyButton.style.background = '#ff4081';
+                    setTimeout(() => {
+                        copyButton.textContent = originalText;
+                        copyButton.style.background = '';
+                    }, 2000);
+                }
+            } catch (err) {
+                console.error('Fallback: Error al copiar texto: ', err);
+            }
+            
+            document.body.removeChild(textArea);
+        }
+        
+        // Inicializar la aplicación cuando se carga la página
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
