@@ -91,6 +91,17 @@
       background:linear-gradient(135deg,var(--primary),var(--secondary));color:#000;
       padding:12px 22px;border-radius:999px;font-weight:600;display:none}
 
+    /* keep select visually unobtrusive but consistent with .btn */
+    .lang-select {
+      background: transparent;
+      color: var(--text);
+      border-radius: 12px;
+      padding: 8px 12px;
+      border: 1px solid rgba(255,255,255,.08);
+      font-weight:600;
+      cursor:pointer;
+    }
+
     @media(max-width:900px){
       .grid{grid-template-columns:1fr}
       .nav-links{display:none}
@@ -105,11 +116,18 @@
   <div class="container nav">
     <div class="logo">HG<span>Soluciones</span></div>
     <nav class="nav-links">
-      <a href="#servicios">Servicios</a>
-      <a href="#soluciones">Soluciones</a>
-      <a href="#contacto">Contacto</a>
+      <a href="#servicios" data-i18n="nav.services">Servicios</a>
+      <a href="#soluciones" data-i18n="nav.solutions">Soluciones</a>
+      <a href="#contacto" data-i18n="nav.contact">Contacto</a>
     </nav>
-    <button class="btn" onclick="toggleTheme()">🌗</button>
+    <!-- language selector placed next to theme toggle, styled to be unobtrusive -->
+    <div style="display:flex;align-items:center;gap:10px">
+      <select id="langSelector" class="lang-select" aria-label="Selector de idioma" onchange="setLanguage(this.value)">
+        <option value="es">ES</option>
+        <option value="en">EN</option>
+      </select>
+      <button class="btn" id="themeToggle" onclick="toggleTheme()" aria-label="Toggle theme">🌗</button>
+    </div>
   </div>
 </header>
 
@@ -119,12 +137,12 @@
 
 <section class="hero container">
   <div>
-    <h1>Desarrollo Web + Sistemas de Gestión para Empresas Reales</h1>
-    <p>Soy desarrollador web y administrador con más de 18 años de experiencia en gestión, finanzas y procesos. Creo sitios, sistemas y automatizaciones que funcionan en la práctica, no solo en diseño.</p>
+    <h1 data-i18n="hero.title">Desarrollo Web + Sistemas de Gestión para Empresas Reales</h1>
+    <p data-i18n="hero.subtitle">Soy desarrollador web y administrador con más de 18 años de experiencia en gestión, finanzas y procesos. Creo sitios, sistemas y automatizaciones que funcionan en la práctica, no solo en diseño.</p>
     <div class="cta-group">
-      <button class="btn primary" onclick="loadModule('https://hgsys.vercel.app/presupuesto.html')">Pedir Presupuesto</button>
-      <button class="btn primary" onclick="loadModule('https://hgsys.vercel.app/HGSys.html')">Abrir Sistema</button>
-      <button class="btn" onclick="toggleChat()">Abrir Chat</button>
+      <button class="btn primary" onclick="loadModule('https://hgsys.vercel.app/presupuesto.html')" data-i18n="cta.quote">Pedir Presupuesto</button>
+      <button class="btn primary" onclick="loadModule('https://hgsys.vercel.app/HGSys.html')" data-i18n="cta.openSystem">Abrir Sistema</button>
+      <button class="btn" onclick="toggleChat()" data-i18n="cta.openChat">Abrir Chat</button>
     </div>
   </div>
 </section>
@@ -132,55 +150,55 @@
 <section id="servicios" class="container">
   <div class="grid">
     <div class="card">
-      <h3>Desarrollo Web Profesional</h3>
-      <p>Landing pages, sitios institucionales, catálogos online, portfolios y sistemas web optimizados para velocidad, seguridad y conversión.</p>
+      <h3 data-i18n="srv.webTitle">Desarrollo Web Profesional</h3>
+      <p data-i18n="srv.webDesc">Landing pages, sitios institucionales, catálogos online, portfolios y sistemas web optimizados para velocidad, seguridad y conversión.</p>
     </div>
 
     <div class="card">
-      <h3>Automatización Administrativa</h3>
-      <p>Formularios inteligentes, envío automático de presupuestos, reportes, control de datos, flujos de trabajo y reducción de tareas manuales.</p>
+      <h3 data-i18n="srv.autoTitle">Automatización Administrativa</h3>
+      <p data-i18n="srv.autoDesc">Formularios inteligentes, envío automático de presupuestos, reportes, control de datos, flujos de trabajo y reducción de tareas manuales.</p>
     </div>
 
     <div class="card">
-      <h3>Sistemas de Gestión</h3>
-      <p>Paneles administrativos, control de clientes, presupuestos, stock, métricas, reportes y visualización de datos en tiempo real.</p>
+      <h3 data-i18n="srv.sysTitle">Sistemas de Gestión</h3>
+      <p data-i18n="srv.sysDesc">Paneles administrativos, control de clientes, presupuestos, stock, métricas, reportes y visualización de datos en tiempo real.</p>
     </div>
   </div>
 </section>
 
 <section id="hg" class="container">
   <div class="highlight">
-    <h2>HG — Soluciones Digitales</h2>
-    <p>HG representa la unión entre desarrollo web, automatización y gestión administrativa. No solo programo sistemas: los pienso desde la lógica real de una empresa. Mi formación en administración, finanzas y procesos me permite crear herramientas útiles, rentables y fáciles de operar.</p>
+    <h2 data-i18n="hg.title">HG — Soluciones Digitales</h2>
+    <p data-i18n="hg.desc">HG representa la unión entre desarrollo web, automatización y gestión administrativa. No solo programo sistemas: los pienso desde la lógica real de una empresa. Mi formación en administración, finanzas y procesos me permite crear herramientas útiles, rentables y fáciles de operar.</p>
   </div>
 </section>
 
 <section id="soluciones" class="container">
-  <h2 style="text-align:center;margin-bottom:32px">Soluciones HG</h2>
+  <h2 style="text-align:center;margin-bottom:32px" data-i18n="sol.title">Soluciones HG</h2>
   <div class="grid">
     <div class="card">
-      <h3>Sitios Web que Venden</h3>
-      <p>Webs institucionales, landing pages de servicios, embudos de contacto, portfolios y sitios optimizados para captar clientes.</p>
+      <h3 data-i18n="sol.websTitle">Sitios Web que Venden</h3>
+      <p data-i18n="sol.websDesc">Webs institucionales, landing pages de servicios, embudos de contacto, portfolios y sitios optimizados para captar clientes.</p>
     </div>
 
     <div class="card">
-      <h3>Sistemas Administrativos</h3>
-      <p>Presupuestos automáticos, control de clientes, seguimiento de pedidos, métricas de ventas y reportes gerenciales.</p>
+      <h3 data-i18n="sol.adminTitle">Sistemas Administrativos</h3>
+      <p data-i18n="sol.adminDesc">Presupuestos automáticos, control de clientes, seguimiento de pedidos, métricas de ventas y reportes gerenciales.</p>
     </div>
 
     <div class="card">
-      <h3>Integraciones Profesionales</h3>
-      <p>WhatsApp, Gmail, Google Sheets, Drive, APIs externas, notificaciones automáticas, bots y flujos inteligentes.</p>
+      <h3 data-i18n="sol.intTitle">Integraciones Profesionales</h3>
+      <p data-i18n="sol.intDesc">WhatsApp, Gmail, Google Sheets, Drive, APIs externas, notificaciones automáticas, bots y flujos inteligentes.</p>
     </div>
   </div>
 </section>
 
 <section id="contacto" class="container">
   <div class="highlight">
-    <h2>¿Querés mejorar la gestión de tu empresa con un sistema real?</h2>
-    <p>Diseño herramientas a medida para negocios, cooperativas, profesionales y PyMEs.</p>
+    <h2 data-i18n="contact.title">¿Querés mejorar la gestión de tu empresa con un sistema real?</h2>
+    <p data-i18n="contact.desc">Diseño herramientas a medida para negocios, cooperativas, profesionales y PyMEs.</p>
     <div class="cta-group" style="margin-top:24px">
-      <a href="https://wa.me/1134796562" class="btn primary">Contactar Ahora</a>
+      <a href="https://wa.me/1134796562" class="btn primary" data-i18n="contact.cta">Contactar Ahora</a>
     </div>
   </div>
 </section>
@@ -188,46 +206,211 @@
 </main>
 
 <footer>
-  <div class="container">© 2025 - HG Soluciones Digitales · Desarrollo Web y Sistemas de Gestión</div>
+  <div class="container" data-i18n="footer">© 2025 - HG Soluciones Digitales · Desarrollo Web y Sistemas de Gestión</div>
 </footer>
 
 <div class="chatbox" id="chatbox">
-  <div class="chat-header">Asistente Web</div>
-  <div class="chat-messages" id="messages">Hola 👋 ¿En qué te ayudo?</div>
-  <div class="chat-input"><input id="msg" placeholder="Escribí acá..." onkeydown="if(event.key==='Enter') enviar()"></div>
+  <div class="chat-header" data-i18n="chat.header">Asistente Web</div>
+  <div class="chat-messages" id="messages" data-i18n="chat.greeting">Hola 👋 ¿En qué te ayudo?</div>
+  <div class="chat-input"><input id="msg" placeholder="Escribí acá..." data-placeholder-es="Escribí acá..." data-placeholder-en="Write here..." onkeydown="if(event.key==='Enter') enviar()"></div>
 </div>
 
-<div class="toast" id="toast"></div>
+<div class="toast" id="toast" data-i18n="toast.sending" style="display:none">Enviando…</div>
 
 <script>
-let chatbox, messages, msg;
-window.addEventListener('DOMContentLoaded', () => {
-  chatbox = document.getElementById('chatbox');
-  messages = document.getElementById('messages');
-  msg = document.getElementById('msg');
-});
+/* ====== Traducciones ====== */
+const i18n = {
+  es: {
+    'nav.services': 'Servicios',
+    'nav.solutions': 'Soluciones',
+    'nav.contact': 'Contacto',
+    'hero.title': 'Desarrollo Web + Sistemas de Gestión para Empresas Reales',
+    'hero.subtitle': 'Soy desarrollador web y administrador con más de 18 años de experiencia en gestión, finanzas y procesos. Creo sitios, sistemas y automatizaciones que funcionan en la práctica, no solo en diseño.',
+    'cta.quote': 'Pedir Presupuesto',
+    'cta.openSystem': 'Abrir Sistema',
+    'cta.openChat': 'Abrir Chat',
+    'srv.webTitle': 'Desarrollo Web Profesional',
+    'srv.webDesc': 'Landing pages, sitios institucionales, catálogos online, portfolios y sistemas web optimizados para velocidad, seguridad y conversión.',
+    'srv.autoTitle': 'Automatización Administrativa',
+    'srv.autoDesc': 'Formularios inteligentes, envío automático de presupuestos, reportes, control de datos, flujos de trabajo y reducción de tareas manuales.',
+    'srv.sysTitle': 'Sistemas de Gestión',
+    'srv.sysDesc': 'Paneles administrativos, control de clientes, presupuestos, stock, métricas, reportes y visualización de datos en tiempo real.',
+    'hg.title': 'HG — Soluciones Digitales',
+    'hg.desc': 'HG representa la unión entre desarrollo web, automatización y gestión administrativa. No solo programo sistemas: los pienso desde la lógica real de una empresa. Mi formación en administración, finanzas y procesos me permite crear herramientas útiles, rentables y fáciles de operar.',
+    'sol.title': 'Soluciones HG',
+    'sol.websTitle': 'Sitios Web que Venden',
+    'sol.websDesc': 'Webs institucionales, landing pages de servicios, embudos de contacto, portfolios y sitios optimizados para captar clientes.',
+    'sol.adminTitle': 'Sistemas Administrativos',
+    'sol.adminDesc': 'Presupuestos automáticos, control de clientes, seguimiento de pedidos, métricas de ventas y reportes gerenciales.',
+    'sol.intTitle': 'Integraciones Profesionales',
+    'sol.intDesc': 'WhatsApp, Gmail, Google Sheets, Drive, APIs externas, notificaciones automáticas, bots y flujos inteligentes.',
+    'contact.title': '¿Querés mejorar la gestión de tu empresa con un sistema real?',
+    'contact.desc': 'Diseño herramientas a medida para negocios, cooperativas, profesionales y PyMEs.',
+    'contact.cta': 'Contactar Ahora',
+    'footer': '© 2025 - HG Soluciones Digitales · Desarrollo Web y Sistemas de Gestión',
+    'chat.header': 'Asistente Web',
+    'chat.greeting': 'Hola 👋 ¿En qué te ayudo?',
+    'toast.sending': 'Enviando…',
+    'bot.continue': 'Si querés avanzar con un proyecto real, podés escribirme a hernan.garbarino@gmail.com o por WhatsApp al 1134796562.'
+  },
+  en: {
+    'nav.services': 'Services',
+    'nav.solutions': 'Solutions',
+    'nav.contact': 'Contact',
+    'hero.title': 'Web Development + Management Systems for Real Businesses',
+    'hero.subtitle': 'I am a web developer and administrator with over 18 years of experience in management, finance and processes. I build websites, systems and automations that work in practice, not just design.',
+    'cta.quote': 'Request Quote',
+    'cta.openSystem': 'Open System',
+    'cta.openChat': 'Open Chat',
+    'srv.webTitle': 'Professional Web Development',
+    'srv.webDesc': 'Landing pages, institutional sites, online catalogs, portfolios and web systems optimized for speed, security and conversion.',
+    'srv.autoTitle': 'Administrative Automation',
+    'srv.autoDesc': 'Smart forms, automatic quote sending, reports, data control, workflows and reduction of manual tasks.',
+    'srv.sysTitle': 'Management Systems',
+    'srv.sysDesc': 'Admin panels, client control, quotes, stock, metrics, reports and real-time data visualization.',
+    'hg.title': 'HG — Digital Solutions',
+    'hg.desc': 'HG represents the union between web development, automation and administrative management. I don\'t just program systems: I design them from the real logic of a business. My background in administration, finance and processes allows me to create useful, profitable and easy-to-operate tools.',
+    'sol.title': 'HG Solutions',
+    'sol.websTitle': 'Websites That Sell',
+    'sol.websDesc': 'Institutional websites, service landing pages, contact funnels, portfolios and sites optimized to attract clients.',
+    'sol.adminTitle': 'Administrative Systems',
+    'sol.adminDesc': 'Automatic quotes, client control, order tracking, sales metrics and managerial reports.',
+    'sol.intTitle': 'Professional Integrations',
+    'sol.intDesc': 'WhatsApp, Gmail, Google Sheets, Drive, external APIs, automatic notifications, bots and smart flows.',
+    'contact.title': 'Want to improve your company management with a real system?',
+    'contact.desc': 'I design custom tools for businesses, cooperatives, professionals and SMEs.',
+    'contact.cta': 'Contact Now',
+    'footer': '© 2025 - HG Digital Solutions · Web Development & Management Systems',
+    'chat.header': 'Web Assistant',
+    'chat.greeting': 'Hi 👋 How can I help?',
+    'toast.sending': 'Sending…',
+    'bot.continue': 'If you want to move forward with a real project, you can write to me at hernan.garbarino@gmail.com or WhatsApp at 1134796562.'
+  }
+};
 
-async function loadModule(url) {
-  const container = document.getElementById('module-container');
-  if (!container) return;
-  container.innerHTML = 'Cargando módulo...';
-  container.classList.add('active');
-  container.innerHTML = `<iframe src="${url}" style="width:100%;height:80vh;border:0"></iframe>`;
+/* ====== Funciones de i18n y detección ====== */
+function applyTranslations(lang) {
+  // update html lang attribute
+  document.documentElement.lang = (lang === 'es') ? 'es' : 'en';
+
+  // update all elements with data-i18n
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if (i18n[lang] && i18n[lang][key]) {
+      el.innerHTML = i18n[lang][key];
+    }
+  });
+
+  // update placeholder specifically
+  const input = document.getElementById('msg');
+  if (input) {
+    if (lang === 'es') {
+      input.placeholder = input.getAttribute('data-placeholder-es') || 'Escribí acá...';
+    } else {
+      input.placeholder = input.getAttribute('data-placeholder-en') || 'Write here...';
+    }
+  }
+
+  // update lang selector UI if present
+  const sel = document.getElementById('langSelector');
+  if (sel) sel.value = lang;
+
+  // save preference
+  localStorage.setItem('siteLang', lang);
 }
 
-function toggleTheme(){ document.body.classList.toggle('light') }
+function detectAndApplyLanguage() {
+  const saved = localStorage.getItem('siteLang');
+  if (saved) {
+    applyTranslations(saved);
+    return saved;
+  }
+
+  // detect via navigator
+  const nav = (navigator.language || navigator.userLanguage || 'es').toLowerCase();
+  const lang = nav.startsWith('es') ? 'es' : 'en';
+  applyTranslations(lang);
+  return lang;
+}
+
+function setLanguage(lang) {
+  if (!['es','en'].includes(lang)) lang = 'es';
+  applyTranslations(lang);
+}
+
+/* ====== Carga de tema (mantener comportamiento previo) ====== */
+function toggleTheme(){ 
+  document.body.classList.toggle('light');
+  // store theme preference
+  try{ localStorage.setItem('theme', document.body.classList.contains('light') ? 'light' : 'dark') }catch(e){}
+}
+
+/* ====== Carga de tema guardado en inicio ====== */
+(function loadPreferences(){
+  try{
+    const t = localStorage.getItem('theme');
+    if(t === 'light') document.body.classList.add('light');
+  }catch(e){}
+})();
+
+/* ====== Inicialización ====== */
+document.addEventListener('DOMContentLoaded', () => {
+  detectAndApplyLanguage();
+
+  // Cache chat inputs
+  window.chatbox = document.getElementById('chatbox');
+  window.messages = document.getElementById('messages');
+  window.msg = document.getElementById('msg');
+
+  // ensure lang selector matches initial lang
+  const lang = document.documentElement.lang || 'es';
+  const sel = document.getElementById('langSelector');
+  if (sel) sel.value = lang;
+});
+
+/* ====== Módulos existentes (no modificados) ====== */
+async function loadModule(url) {
+  const container = document.getElementById('module-container');
+  if (!container) {
+    // create module container if missing (non-invasive)
+    const m = document.createElement('div');
+    m.id = 'module-container';
+    m.className = 'tool-window';
+    document.body.appendChild(m);
+  }
+  const cont = document.getElementById('module-container');
+  cont.innerHTML = 'Cargando módulo...';
+  cont.classList.add('active');
+  cont.innerHTML = `<iframe src="${url}" style="width:100%;height:80vh;border:0"></iframe>`;
+  const overlay = document.getElementById('overlay');
+  if (overlay) overlay.classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModule(){
+  const container = document.getElementById('module-container');
+  const overlay = document.getElementById('overlay');
+  document.body.style.overflow = '';
+  container?.classList.remove('active');
+  overlay?.classList.remove('active');
+}
 
 function toggleChat(){
-  if(!chatbox) return;
-  chatbox.style.display = (chatbox.style.display === 'flex') ? 'none' : 'flex';
+  const chatboxEl = document.getElementById('chatbox');
+  if(!chatboxEl) return;
+  chatboxEl.style.display = (chatboxEl.style.display === 'flex') ? 'none' : 'flex';
 }
 
 function enviar(){
-  if(!msg.value) return;
-  messages.innerHTML += '<br><b>Vos:</b> ' + msg.value;
-  messages.innerHTML += '<br><b>Bot:</b> Si querés avanzar con un proyecto real, podés escribirme a hernan.garbarino@gmail.com o por WhatsApp al 1134796562.';
-  msg.value = '';
-  messages.scrollTop = messages.scrollHeight;
+  const messagesEl = document.getElementById('messages');
+  const inputEl = document.getElementById('msg');
+  if(!inputEl || !inputEl.value) return;
+  const lang = document.documentElement.lang === 'en' ? 'en' : 'es';
+
+  messagesEl.innerHTML += '<br><b>Vos:</b> ' + inputEl.value;
+  messagesEl.innerHTML += '<br><b>Bot:</b> ' + (i18n[lang]['bot.continue'] || i18n.es['bot.continue']);
+  inputEl.value = '';
+  messagesEl.scrollTop = messagesEl.scrollHeight;
 }
 </script>
 
