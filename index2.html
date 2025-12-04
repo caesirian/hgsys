@@ -468,68 +468,68 @@ function enviar(){
 </div>
 
 
-<script>
+  <script>
 /* ============================
-   CONFIGURACIÓN HG DIGITAL
+   CONFIGURACIÓN DEL ENDPOINT
 ============================ */
 const ENDPOINT_URL = "https://script.google.com/macros/s/AKfycbyFS_dxlBq4hN_D5HHiiL8I2mG1WhGm5-NOgd8THgDAH9U315ltkqw9n3VOoMwi5X08/exec";
 
 /* ============================
-   REFERENCIAS UI
+   UTILIDADES DE UI
 ============================ */
 const hgBtn = document.getElementById("hgBtn");
 const hgWindow = document.getElementById("hgWindow");
 const closeBtn = document.getElementById("closeBtn");
-const expandBtn = document.getElementById("expandBtn");
-
-const hgInput = document.getElementById("hgInput");
 const sendBtn = document.getElementById("sendBtn");
+const hgInput = document.getElementById("hgInput");
 const hgBody = document.getElementById("hgBody");
 
-const hgFull = document.getElementById("hgFull");
-const hgFullBody = document.getElementById("hgFullBody");
-const hgFullInput = document.getElementById("hgFullInput");
-const hgFullSend = document.getElementById("hgFullSend");
-const minimizeFull = document.getElementById("minimizeFull");
+if (hgBtn) {
+  hgBtn.onclick = () => {
+    hgWindow.style.display = "flex";
+  };
+}
 
-const contactHuman = document.getElementById("contactHuman");
+if (closeBtn) {
+  closeBtn.onclick = () => {
+    hgWindow.style.display = "none";
+  };
+}
 
-/* ============================
-   ABRIR / CERRAR CHAT
-============================ */
-hgBtn.onclick = () => {
-  hgWindow.style.display = "flex";
-};
+if (sendBtn) {
+  sendBtn.onclick = sendHgMessage;
+}
 
-closeBtn.onclick = () => {
-  hgWindow.style.display = "none";
-};
-
-expandBtn.onclick = () => {
-  hgFull.style.display = "flex";
-  hgWindow.style.display = "none";
-};
-
-minimizeFull.onclick = () => {
-  hgFull.style.display = "none";
-  hgWindow.style.display = "flex";
-};
-
-/* ============================
-   MOSTRAR MENSAJES
-============================ */
-function addHgMsg(who, text) {
-  const line = `<div style="margin-bottom:8px"><b>${who}:</b> ${text}</div>`;
-  hgBody.innerHTML += line;
-  hgFullBody.innerHTML += line;
-  hgBody.scrollTop = hgBody.scrollHeight;
-  hgFullBody.scrollTop = hgFullBody.scrollHeight;
+if (hgInput) {
+  hgInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") sendHgMessage();
+  });
 }
 
 /* ============================
-   ENVÍO JSONP (100% compatible Vercel)
+   ENVÍO DE MENSAJE PRINCIPAL
 ============================ */
-function sendJSONP(msg) {
+function sendHgMessage() {
+  const msg = hgInput.value.trim();
+  if (!msg) return;
+
+  addHgMsg("Vos", msg);
+  hgInput.value = "";
+
+  fetch(ENDPOINT_URL + "?message=" + encodeURIComponent(msg))
+    .then(res => res.json())
+    .then(data => {
+      addHgMsg("HG", data.reply || "HG no respondió.");
+    })
+    .catch(() => {
+      sendHgMessageJSONP(msg);
+    });
+}
+
+/* ============================
+   FALLBACK JSONP AUTOMÁTICO
+============================ */
+function sendHgMessageJSONP(msg) {
   const callbackName = "hg_cb_" + Date.now();
 
   window[callbackName] = function (data) {
@@ -547,48 +547,23 @@ function sendJSONP(msg) {
 }
 
 /* ============================
-   ENVÍO PRINCIPAL
+   RENDER MENSAJES
 ============================ */
-function sendHgMessageFrom(inputEl) {
-  const msg = inputEl.value.trim();
-  if (!msg) return;
-
-  addHgMsg("Vos", msg);
-  inputEl.value = "";
-
-  sendJSONP(msg);
+function addHgMsg(user, text) {
+  const div = document.createElement("div");
+  div.innerHTML = "<b>" + user + ":</b> " + text;
+  hgBody.appendChild(div);
+  hgBody.scrollTop = hgBody.scrollHeight;
 }
 
 /* ============================
-   EVENTOS DE ENVÍO
+   MENSAJE DE INICIO AUTOMÁTICO
 ============================ */
-sendBtn.onclick = () => sendHgMessageFrom(hgInput);
-hgFullSend.onclick = () => sendHgMessageFrom(hgFullInput);
-
-hgInput.addEventListener("keydown", e => {
-  if (e.key === "Enter") sendHgMessageFrom(hgInput);
-});
-
-hgFullInput.addEventListener("keydown", e => {
-  if (e.key === "Enter") sendHgMessageFrom(hgFullInput);
-});
-
-/* ============================
-   CONTACTO HUMANO
-============================ */
-contactHuman.onclick = () => {
-  window.open("https://wa.me/1134796562", "_blank");
-};
-
-/* ============================
-   MENSAJE INICIAL AUTOMÁTICO
-============================ */
-setTimeout(() => {
-  addHgMsg("HG", "Hola, soy HG Digital. Represento los servicios de Hernán Garbarino. Podés pedirme presupuestos, consultar sistemas o pedir contacto humano.");
-}, 800);
+addHgMsg(
+  "HG",
+  "Hola, soy Hernán Garbarino — versión digital (tipo Max Headroom del Cono Sur). Represento mis servicios de desarrollo web, automatización, sistemas de gestión y asesoramiento tecnológico. ¿En qué te ayudo?"
+);
 </script>
-
-
 
 
 
