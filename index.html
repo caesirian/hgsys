@@ -548,15 +548,16 @@ function openFull(){
 
 async function enviarMensajeHG(texto, generarPdf=false){
   appendSystem("Escribiendo…");
+
   try{
+    const formData = new URLSearchParams();
+    formData.append("message", texto);
+    formData.append("userId", sessionId);
+    formData.append("generatePdf", generarPdf);
+
     const res = await fetch(ENDPOINT_URL, {
-      method:"POST",
-      headers:{ "Content-Type":"application/json" },
-      body: JSON.stringify({
-        message:texto,
-        userId:sessionId,
-        generatePdf:generarPdf
-      })
+      method: "POST",
+      body: formData
     });
 
     const data = await res.json();
@@ -567,6 +568,7 @@ async function enviarMensajeHG(texto, generarPdf=false){
     appendBot("Error de conexión con HG Digital.");
   }
 }
+
 </script>
 
 
