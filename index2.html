@@ -468,104 +468,66 @@ function enviar(){
 </div>
 
 
-  <script>
-/* ============================
-   CONFIGURACIÓN DEL ENDPOINT
-============================ */
+<script>
 const ENDPOINT_URL = "https://script.google.com/macros/s/AKfycbyFS_dxlBq4hN_D5HHiiL8I2mG1WhGm5-NOgd8THgDAH9U315ltkqw9n3VOoMwi5X08/exec";
 
 /* ============================
-   UTILIDADES DE UI
+   ABRIR CHAT
 ============================ */
-const hgBtn = document.getElementById("hgBtn");
-const hgWindow = document.getElementById("hgWindow");
-const closeBtn = document.getElementById("closeBtn");
-const sendBtn = document.getElementById("sendBtn");
-const hgInput = document.getElementById("hgInput");
-const hgBody = document.getElementById("hgBody");
-
-if (hgBtn) {
-  hgBtn.onclick = () => {
-    hgWindow.style.display = "flex";
-  };
-}
-
-if (closeBtn) {
-  closeBtn.onclick = () => {
-    hgWindow.style.display = "none";
-  };
-}
-
-if (sendBtn) {
-  sendBtn.onclick = sendHgMessage;
-}
-
-if (hgInput) {
-  hgInput.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") sendHgMessage();
-  });
+function openChat() {
+  document.getElementById("chat").style.display = "flex";
 }
 
 /* ============================
-   ENVÍO DE MENSAJE PRINCIPAL
+   ENVIAR MENSAJE
 ============================ */
-function sendHgMessage() {
-  const msg = hgInput.value.trim();
+async function sendMessage() {
+  const input = document.getElementById("chatInput");
+  const msg = input.value.trim();
   if (!msg) return;
 
-  addHgMsg("Vos", msg);
-  hgInput.value = "";
+  addMsg("Vos", msg);
+  input.value = "";
 
-  fetch(ENDPOINT_URL + "?message=" + encodeURIComponent(msg))
-    .then(res => res.json())
-    .then(data => {
-      addHgMsg("HG", data.reply || "HG no respondió.");
-    })
-    .catch(() => {
-      sendHgMessageJSONP(msg);
-    });
+  try {
+    const response = await fetch(
+      ENDPOINT_URL + "?message=" + encodeURIComponent(msg)
+    );
+    const data = await response.json();
+    addMsg("HG", data.reply || "HG no respondió.");
+  } catch (err) {
+    addMsg("HG", "Error de conexión con el servidor.");
+  }
 }
 
 /* ============================
-   FALLBACK JSONP AUTOMÁTICO
+   MOSTRAR MENSAJES
 ============================ */
-function sendHgMessageJSONP(msg) {
-  const callbackName = "hg_cb_" + Date.now();
-
-  window[callbackName] = function (data) {
-    addHgMsg("HG", data.reply || "HG no respondió.");
-    delete window[callbackName];
-  };
-
-  const script = document.createElement("script");
-  script.src =
-    ENDPOINT_URL +
-    "?message=" + encodeURIComponent(msg) +
-    "&callback=" + callbackName;
-
-  document.body.appendChild(script);
-}
-
-/* ============================
-   RENDER MENSAJES
-============================ */
-function addHgMsg(user, text) {
+function addMsg(user, text) {
+  const box = document.getElementById("chatBody");
   const div = document.createElement("div");
-  div.innerHTML = "<b>" + user + ":</b> " + text;
-  hgBody.appendChild(div);
-  hgBody.scrollTop = hgBody.scrollHeight;
+  div.innerHTML = `<b>${user}:</b> ${text}`;
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
 }
 
 /* ============================
-   MENSAJE DE INICIO AUTOMÁTICO
+   ENTER PARA ENVIAR
 ============================ */
-addHgMsg(
-  "HG",
-  "Hola, soy Hernán Garbarino — versión digital (tipo Max Headroom del Cono Sur). Represento mis servicios de desarrollo web, automatización, sistemas de gestión y asesoramiento tecnológico. ¿En qué te ayudo?"
-);
+document.getElementById("chatInput").addEventListener("keydown", function (e) {
+  if (e.key === "Enter") sendMessage();
+});
+
+/* ============================
+   PRESENTACIÓN AUTOMÁTICA
+============================ */
+window.onload = function () {
+  addMsg(
+    "HG",
+    "Hola, soy Hernán Garbarino. Esta es mi versión digital, estilo *Max Headroom del Cono Sur*. Puedo brindarte presupuestos, información sobre sistemas, desarrollo web o derivarte a contacto humano. ¿En qué te ayudo?"
+  );
+};
 </script>
-
-
 
   
 </body>
