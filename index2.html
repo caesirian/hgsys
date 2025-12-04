@@ -470,45 +470,66 @@ function enviar(){
 
 <script>
 /* ============================
-   CONFIGURACIÓN OBLIGATORIA
+   CONFIGURACIÓN HG DIGITAL
 ============================ */
 const ENDPOINT_URL = "https://script.google.com/macros/s/AKfycbwMmCWKWgBjVitHosHJ4cm9_A2qeXkiBYmsGMWnRg9hWg1nQ8ZoAe6nGotS9JIs8yVU/exec";
 
 /* ============================
-   ENVÍO DE MENSAJES (HÍBRIDO)
+   REFERENCIAS UI
 ============================ */
-function sendHgMessage() {
-  const input = document.getElementById("hgInput");
-  const msg = input.value.trim();
-  if (!msg) return;
+const hgBtn = document.getElementById("hgBtn");
+const hgWindow = document.getElementById("hgWindow");
+const closeBtn = document.getElementById("closeBtn");
+const expandBtn = document.getElementById("expandBtn");
 
-  addHgMsg("Vos", msg);
-  input.value = "";
+const hgInput = document.getElementById("hgInput");
+const sendBtn = document.getElementById("sendBtn");
+const hgBody = document.getElementById("hgBody");
 
-  // ✅ INTENTO PRINCIPAL: FETCH
-  try {
-    fetch(ENDPOINT_URL + "?message=" + encodeURIComponent(msg))
-      .then(res => {
-        if (!res.ok) throw new Error("Fetch falló");
-        return res.json();
-      })
-      .then(data => {
-        addHgMsg("HG", data.reply || "HG no respondió.");
-      })
-      .catch(() => {
-        // ✅ FALLBACK AUTOMÁTICO A JSONP
-        sendHgMessageJSONP(msg);
-      });
+const hgFull = document.getElementById("hgFull");
+const hgFullBody = document.getElementById("hgFullBody");
+const hgFullInput = document.getElementById("hgFullInput");
+const hgFullSend = document.getElementById("hgFullSend");
+const minimizeFull = document.getElementById("minimizeFull");
 
-  } catch (e) {
-    sendHgMessageJSONP(msg);
-  }
+const contactHuman = document.getElementById("contactHuman");
+
+/* ============================
+   ABRIR / CERRAR CHAT
+============================ */
+hgBtn.onclick = () => {
+  hgWindow.style.display = "flex";
+};
+
+closeBtn.onclick = () => {
+  hgWindow.style.display = "none";
+};
+
+expandBtn.onclick = () => {
+  hgFull.style.display = "flex";
+  hgWindow.style.display = "none";
+};
+
+minimizeFull.onclick = () => {
+  hgFull.style.display = "none";
+  hgWindow.style.display = "flex";
+};
+
+/* ============================
+   MOSTRAR MENSAJES
+============================ */
+function addHgMsg(who, text) {
+  const line = `<div style="margin-bottom:8px"><b>${who}:</b> ${text}</div>`;
+  hgBody.innerHTML += line;
+  hgFullBody.innerHTML += line;
+  hgBody.scrollTop = hgBody.scrollHeight;
+  hgFullBody.scrollTop = hgFullBody.scrollHeight;
 }
 
 /* ============================
-   BACKUP JSONP AUTOMÁTICO
+   ENVÍO JSONP (100% compatible Vercel)
 ============================ */
-function sendHgMessageJSONP(msg) {
+function sendJSONP(msg) {
   const callbackName = "hg_cb_" + Date.now();
 
   window[callbackName] = function (data) {
@@ -526,13 +547,46 @@ function sendHgMessageJSONP(msg) {
 }
 
 /* ============================
-   ESCUCHADOR DE ENTER
+   ENVÍO PRINCIPAL
 ============================ */
-document.getElementById("hgInput").addEventListener("keydown", function (e) {
-  if (e.key === "Enter") sendHgMessage();
-});
-</script>
+function sendHgMessageFrom(inputEl) {
+  const msg = inputEl.value.trim();
+  if (!msg) return;
 
+  addHgMsg("Vos", msg);
+  inputEl.value = "";
+
+  sendJSONP(msg);
+}
+
+/* ============================
+   EVENTOS DE ENVÍO
+============================ */
+sendBtn.onclick = () => sendHgMessageFrom(hgInput);
+hgFullSend.onclick = () => sendHgMessageFrom(hgFullInput);
+
+hgInput.addEventListener("keydown", e => {
+  if (e.key === "Enter") sendHgMessageFrom(hgInput);
+});
+
+hgFullInput.addEventListener("keydown", e => {
+  if (e.key === "Enter") sendHgMessageFrom(hgFullInput);
+});
+
+/* ============================
+   CONTACTO HUMANO
+============================ */
+contactHuman.onclick = () => {
+  window.open("https://wa.me/1134796562", "_blank");
+};
+
+/* ============================
+   MENSAJE INICIAL AUTOMÁTICO
+============================ */
+setTimeout(() => {
+  addHgMsg("HG", "Hola, soy HG Digital. Represento los servicios de Hernán Garbarino. Podés pedirme presupuestos, consultar sistemas o pedir contacto humano.");
+}, 800);
+</script>
 
 
 
