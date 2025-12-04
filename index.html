@@ -467,15 +467,63 @@ function enviar(){
   </div>
 </div>
 
-<script>
-/* REEMPLAZAR por la URL de tu Web App (Apps Script) tras desplegar */
-const ENDPOINT_URL = 'https://script.google.com/macros/s/AKfycbw163jxYVMZc5fYwEaoqpFQjqEXDLzpBP9aq3nsGaXlktPk0hU89QAjLZleJIUSfCqAyw/exec';
+<!-- HG DIGITAL - Chat Flotante (Frontend) -->
+<style>
+/* (igual que el bloque que te pasé antes; pegar exactamente si ya lo tenías) */
+.hg-chat-btn{position:fixed;right:18px;bottom:18px;z-index:99999;background:linear-gradient(135deg,#7c5cff,#00ffc3);border:none;border-radius:50%;width:64px;height:64px;box-shadow:0 10px 30px rgba(0,0,0,.3);cursor:pointer;color:#000;font-weight:700}
+.hg-chat-window{position:fixed;right:18px;bottom:96px;width:360px;height:520px;background:var(--card,#0b0b10);border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.5);z-index:99999;display:none;flex-direction:column;overflow:hidden}
+.hg-chat-header{padding:12px;background:linear-gradient(135deg,#7c5cff,#00ffc3);color:#000;font-weight:700;display:flex;align-items:center;justify-content:space-between}
+.hg-chat-body{padding:12px;flex:1;overflow:auto;background:linear-gradient(180deg,rgba(255,255,255,.02),transparent)}
+.hg-chat-input{display:flex;padding:12px;border-top:1px solid rgba(255,255,255,.04);background:transparent}
+.hg-chat-input input{flex:1;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,.08);margin-right:8px;background:transparent;color:var(--text)}
+.hg-fullscreen{position:fixed;inset:0;background:var(--bg);z-index:100000;display:none;flex-direction:column}
+.hg-fullscreen .inner{max-width:1100px;margin:40px auto;background:var(--card);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;height:80vh}
+.hg-actions{display:flex;gap:8px;padding:8px;flex-wrap:wrap}
+.hg-mini{font-size:13px;color:var(--muted)}
+</style>
 
-/* Estado local */
+<button id="hgBtn" class="hg-chat-btn" aria-label="Abrir chat HG">HG</button>
+
+<div id="hgWindow" class="hg-chat-window" role="dialog" aria-modal="false" aria-label="HG Digital chat">
+  <div class="hg-chat-header">
+    <div>HG Digital</div>
+    <div style="display:flex;gap:8px">
+      <button id="expandBtn" class="btn">↗</button>
+      <button id="closeBtn" class="btn">✕</button>
+    </div>
+  </div>
+  <div id="hgBody" class="hg-chat-body"></div>
+  <div class="hg-chat-input">
+    <input id="hgInput" placeholder="Escribí tu pregunta..." />
+    <button id="sendBtn" class="btn primary">Enviar</button>
+  </div>
+</div>
+
+<div id="hgFull" class="hg-fullscreen" aria-hidden="true">
+  <div class="inner">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:12px;background:linear-gradient(135deg,#7c5cff,#00ffc3)">
+      <div><b>HG Digital — Conversación</b><div class="hg-mini">Presupuestos, consultas técnicas y más. También podés pedir contacto humano.</div></div>
+      <div style="display:flex;gap:8px">
+        <button id="sendPdfBtn" class="btn">Generar PDF & Enviar</button>
+        <button id="contactHuman" class="btn">Contactar Humano</button>
+        <button id="minimizeFull" class="btn">_</button>
+      </div>
+    </div>
+    <div id="hgFullBody" style="padding:18px;flex:1;overflow:auto;background:linear-gradient(180deg,rgba(255,255,255,.02),transparent)"></div>
+    <div style="padding:12px;border-top:1px solid rgba(255,255,255,.04);display:flex;gap:8px">
+      <input id="hgFullInput" style="flex:1;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,.08);background:transparent;color:var(--text)" placeholder="Continuá la conversación..." />
+      <button id="hgFullSend" class="btn primary">Enviar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* REEMPLAZAR por la URL del Web App */
+const ENDPOINT_URL = 'https://script.google.com/macros/s/AKfycbxVbHC_2rXhrs46Vf9f2ErRo46yxSXQNp5XMYGkusjQ3dDSYChPOzmztaJQ_4jjRH-L/exec';
+
 let sessionId = 's_' + Math.random().toString(36).slice(2,9);
 let memory = [];
 
-/* UI binding */
 const hgBtn = document.getElementById('hgBtn');
 const hgWindow = document.getElementById('hgWindow');
 const hgBody = document.getElementById('hgBody');
@@ -504,9 +552,10 @@ hgFullSend.addEventListener('click', ()=> sendMessage(hgFullInput.value, true));
 contactHuman.addEventListener('click', ()=> {
   const w = confirm('¿Querés que te conecte vía WhatsApp con la versión humana (Hernán)?');
   if(w){
-    window.open('https://wa.me/5491134796562?text=Hola%20Hern%C3%A1n%20quiero%20hablar', '_blank');
+    const wa = getScriptPropClient('WHATSAPP_NUMBER') || '54911XXXXXXXX';
+    window.open('https://wa.me/' + wa + '?text=Hola%20Hern%C3%A1n%20quiero%20hablar', '_blank');
   } else {
-    window.location.href = 'mailto:hernan.garbarino@gmail.com?subject=Contacto%20desde%20HG%20Digital';
+    window.location.href = 'mailto:' + (getScriptPropClient('OWNER_EMAIL') || 'hernan.garbarino@gmail.com') + '?subject=Contacto%20desde%20HG%20Digital';
   }
 });
 
@@ -517,7 +566,6 @@ sendPdfBtn.addEventListener('click', ()=> {
   alert('Se ha solicitado la generación y envío del PDF. Te llegará pronto.');
 });
 
-/* helpers UI */
 function appendSystem(text){
   hgBody.innerHTML += `<div style="margin:8px 0;color:var(--muted);font-size:13px">${text}</div>`;
   hgBody.scrollTop = hgBody.scrollHeight;
@@ -538,7 +586,6 @@ function appendBot(text){
 }
 function escapeHtml(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-/* Send message orchestration */
 function sendMessage(text, toFull){
   if(!text || !text.trim()) return;
   appendUser(text);
@@ -549,18 +596,16 @@ function sendMessage(text, toFull){
   callBackend(text, {generatePdf:false});
 }
 
-/* Open full-screen chat */
 function openFull(){
   hgFull.style.display = 'flex';
   hgWindow.style.display = 'none';
 }
 
-/* Call backend proxy (Apps Script) */
-async function callBackend(text, opts = {}) {
+async function callBackend(text, opts = {}){
   const payload = {
     sessionId,
-    userName: '', // opcional
-    userEmail: '', // opcional
+    userName: '',
+    userEmail: '',
     text,
     action: 'chat',
     generatePdf: !!opts.generatePdf
@@ -573,7 +618,6 @@ async function callBackend(text, opts = {}) {
       body: JSON.stringify(payload)
     });
     const j = await r.json();
-    // remove last system "Escribiendo…"
     hgBody.innerHTML = hgBody.innerHTML.replace('Escribiendo…','');
     if(j && j.ok){
       memory.push({role:'bot', content:j.response, provider:j.provider, ts:Date.now()});
@@ -590,7 +634,6 @@ async function callBackend(text, opts = {}) {
   }
 }
 
-/* Detectar intención de cierre/presupuesto */
 function detectCloseIntent(text) {
   const t = text.toLowerCase();
   return t.includes('presup') || t.includes('cotiz') || t.includes('contratar') || t.includes('precio') || t.includes('comenzar');
@@ -605,18 +648,16 @@ function suggestHumanContact(){
 function contactHumanClick(){
   const ok = confirm('¿Querés que te conecte con la versión humana (Hernán)?');
   if(ok) {
-    window.open('https://wa.me/5491134796562?text=Hola%20Hern%C3%A1n%20quiero%20hablar', '_blank');
+    window.open('https://wa.me/5491130000000?text=Hola%20Hern%C3%A1n%20quiero%20hablar', '_blank');
   } else {
     window.location.href = 'mailto:hernan.garbarino@gmail.com?subject=Contacto%20desde%20HG%20Digital';
   }
 }
 
-/* Exponer sesión para debug */
 window.hgSession = {sessionId, memory};
-
-/* Onboarding */
 appendSystem('HG Digital listo. Hacé click en el botón para iniciar la conversación.');
 </script>
+
 
 
   
