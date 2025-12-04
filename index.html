@@ -589,7 +589,7 @@ async function enviarMensajeHG(texto, generarPdf = false) {
   const userId = localStorage.getItem("hg_user") || Date.now().toString();
   localStorage.setItem("hg_user", userId);
 
-  const res = await fetch("PEGÁ_ACÁ_TU_URL_DEL_SCRIPT", {
+  const res = await fetch("https://script.google.com/macros/s/AKfycbwr3i_bywnyvgib4-zFMYGUM5L7gcVntsAB__FmcBk-t0iIf9vomnxWSoIBXYKjmP9V/exec", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
