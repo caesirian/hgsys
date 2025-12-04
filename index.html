@@ -468,11 +468,13 @@ function enviar(){
 </div>
 
 
+<!-- SOLO REEMPLAZÁ TODO TU ÚLTIMO <script> POR ESTE -->
 <script>
-/* REEMPLAZAR por la URL del Web App */
-const ENDPOINT_URL = 'https://script.google.com/macros/s/AKfycbxVbHC_2rXhrs46Vf9f2ErRo46yxSXQNp5XMYGkusjQ3dDSYChPOzmztaJQ_4jjRH-L/exec';
+const ENDPOINT_URL = "https://script.google.com/macros/s/AKfycbxVbHC_2rXhrs46Vf9f2ErRo46yxSXQNp5XMYGkusjQ3dDSYChPOzmztaJQ_4jjRH-L/exec";
 
-let sessionId = 's_' + Math.random().toString(36).slice(2,9);
+let sessionId = localStorage.getItem("hg_user") || Date.now().toString();
+localStorage.setItem("hg_user", sessionId);
+
 let memory = [];
 
 const hgBtn = document.getElementById('hgBtn');
@@ -490,141 +492,81 @@ const sendPdfBtn = document.getElementById('sendPdfBtn');
 const contactHuman = document.getElementById('contactHuman');
 const minimizeFull = document.getElementById('minimizeFull');
 
-hgBtn.addEventListener('click', ()=> {
+hgBtn.onclick = () => {
   hgWindow.style.display = 'flex';
-  appendSystem('Hola, soy HG Digital. ¿En qué puedo ayudarte?');
-});
-closeBtn.addEventListener('click', ()=> hgWindow.style.display='none');
-expandBtn.addEventListener('click', openFull);
-minimizeFull.addEventListener('click', ()=> { hgFull.style.display='none'; hgWindow.style.display='flex'; });
-sendBtn.addEventListener('click', ()=> sendMessage(hgInput.value, false));
-hgFullSend.addEventListener('click', ()=> sendMessage(hgFullInput.value, true));
+  appendSystem("Hola, soy HG Digital. ¿En qué puedo ayudarte?");
+};
+closeBtn.onclick = () => hgWindow.style.display = 'none';
+expandBtn.onclick = openFull;
+minimizeFull.onclick = () => { hgFull.style.display='none'; hgWindow.style.display='flex'; };
+sendBtn.onclick = () => sendMessage(hgInput.value);
+hgFullSend.onclick = () => sendMessage(hgFullInput.value);
 
-contactHuman.addEventListener('click', ()=> {
-  const w = confirm('¿Querés que te conecte vía WhatsApp con la versión humana (Hernán)?');
-  if(w){
-    const wa = getScriptPropClient('WHATSAPP_NUMBER') || '54911XXXXXXXX';
-    window.open('https://wa.me/' + wa + '?text=Hola%20Hern%C3%A1n%20quiero%20hablar', '_blank');
-  } else {
-    window.location.href = 'mailto:' + (getScriptPropClient('OWNER_EMAIL') || 'hernan.garbarino@gmail.com') + '?subject=Contacto%20desde%20HG%20Digital';
-  }
-});
-
-sendPdfBtn.addEventListener('click', ()=> {
+sendPdfBtn.onclick = async () => {
   const lastUser = memory.filter(m=>m.role==='user').slice(-1)[0];
-  const text = lastUser ? lastUser.content : 'Solicitud de presupuesto';
-  callBackend(text, {generatePdf:true});
-  alert('Se ha solicitado la generación y envío del PDF. Te llegará pronto.');
-});
+  const text = lastUser?.content || "Solicitud de presupuesto";
+  await enviarMensajeHG(text, true);
+  alert("PDF generado y enviado.");
+};
+
+contactHuman.onclick = () => {
+  if(confirm("¿Querés hablar con Hernán por WhatsApp?")){
+    window.open("https://wa.me/5491130000000?text=Hola%20Hern%C3%A1n", "_blank");
+  }
+};
 
 function appendSystem(text){
-  hgBody.innerHTML += `<div style="margin:8px 0;color:var(--muted);font-size:13px">${text}</div>`;
+  hgBody.innerHTML += `<div style="color:#aaa;margin:6px 0">${text}</div>`;
   hgBody.scrollTop = hgBody.scrollHeight;
 }
-function appendUser(text){
-  const el = `<div style="margin:8px 0;text-align:right"><div style="display:inline-block;background:linear-gradient(135deg,#7c5cff,#00ffc3);color:#000;padding:10px;border-radius:10px;max-width:78%">${escapeHtml(text)}</div></div>`;
-  hgBody.innerHTML += el;
-  hgFullBody.innerHTML += el;
-  hgBody.scrollTop = hgBody.scrollHeight;
-  hgFullBody.scrollTop = hgFullBody.scrollHeight;
-}
-function appendBot(text){
-  const el = `<div style="margin:8px 0;text-align:left"><div style="display:inline-block;background:rgba(255,255,255,0.03);color:var(--text);padding:10px;border-radius:10px;max-width:78%">${escapeHtml(text)}</div></div>`;
-  hgBody.innerHTML += el;
-  hgFullBody.innerHTML += el;
-  hgBody.scrollTop = hgBody.scrollHeight;
-  hgFullBody.scrollTop = hgFullBody.scrollHeight;
-}
-function escapeHtml(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-function sendMessage(text, toFull){
-  if(!text || !text.trim()) return;
+function appendUser(text){
+  const el = `<div style="text-align:right;margin:8px 0"><b>Vos:</b> ${text}</div>`;
+  hgBody.innerHTML += el;
+  hgFullBody.innerHTML += el;
+}
+
+function appendBot(text){
+  const el = `<div style="text-align:left;margin:8px 0"><b>HG:</b> ${text}</div>`;
+  hgBody.innerHTML += el;
+  hgFullBody.innerHTML += el;
+}
+
+function sendMessage(text){
+  if(!text.trim()) return;
   appendUser(text);
-  memory.push({role:'user', content:text, ts:Date.now()});
-  hgInput.value = '';
-  hgFullInput.value = '';
-  if(memory.filter(m=>m.role==='user').length >= 3) openFull();
-  callBackend(text, {generatePdf:false});
+  memory.push({role:'user', content:text});
+  hgInput.value="";
+  hgFullInput.value="";
+  enviarMensajeHG(text,false);
 }
 
 function openFull(){
-  hgFull.style.display = 'flex';
-  hgWindow.style.display = 'none';
+  hgFull.style.display='flex';
+  hgWindow.style.display='none';
 }
 
-async function callBackend(text, opts = {}){
-  const payload = {
-    sessionId,
-    userName: '',
-    userEmail: '',
-    text,
-    action: 'chat',
-    generatePdf: !!opts.generatePdf
-  };
-  appendSystem('Escribiendo…');
-  try {
-    const r = await fetch(ENDPOINT_URL, {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify(payload)
+async function enviarMensajeHG(texto, generarPdf=false){
+  appendSystem("Escribiendo…");
+  try{
+    const res = await fetch(ENDPOINT_URL, {
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body: JSON.stringify({
+        message:texto,
+        userId:sessionId,
+        generatePdf:generarPdf
+      })
     });
-    const j = await r.json();
-    hgBody.innerHTML = hgBody.innerHTML.replace('Escribiendo…','');
-    if(j && j.ok){
-      memory.push({role:'bot', content:j.response, provider:j.provider, ts:Date.now()});
-      appendBot(j.response);
-      if(detectCloseIntent(text + ' ' + j.response)) suggestHumanContact();
-    } else {
-      appendBot('Lo siento, hubo un error al procesar tu solicitud.');
-      console.error(j);
-    }
-  } catch(err) {
-    hgBody.innerHTML = hgBody.innerHTML.replace('Escribiendo…','');
-    appendBot('Error de conexión. Intentá nuevamente.');
-    console.error(err);
+
+    const data = await res.json();
+    appendBot(data.reply);
+    memory.push({role:'bot', content:data.reply});
+
+  }catch(e){
+    appendBot("Error de conexión con HG Digital.");
   }
 }
-
-async function enviarMensajeHG(texto, generarPdf = false) {
-  const userId = localStorage.getItem("hg_user") || Date.now().toString();
-  localStorage.setItem("hg_user", userId);
-
-  const res = await fetch("https://script.google.com/macros/s/AKfycbwr3i_bywnyvgib4-zFMYGUM5L7gcVntsAB__FmcBk-t0iIf9vomnxWSoIBXYKjmP9V/exec", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      message: texto,
-      userId: userId,
-      generatePdf: generarPdf
-    })
-  });
-
-  const data = await res.json();
-  return data.reply;
-}
-  
-function detectCloseIntent(text) {
-  const t = text.toLowerCase();
-  return t.includes('presup') || t.includes('cotiz') || t.includes('contratar') || t.includes('precio') || t.includes('comenzar');
-}
-
-function suggestHumanContact(){
-  const el = document.createElement('div');
-  el.innerHTML = `<div style="margin:8px 0"><button class="btn primary" onclick="contactHumanClick()">Hablar con Hernán</button></div>`;
-  hgBody.appendChild(el);
-  hgFullBody.appendChild(el.cloneNode(true));
-}
-function contactHumanClick(){
-  const ok = confirm('¿Querés que te conecte con la versión humana (Hernán)?');
-  if(ok) {
-    window.open('https://wa.me/5491130000000?text=Hola%20Hern%C3%A1n%20quiero%20hablar', '_blank');
-  } else {
-    window.location.href = 'mailto:hernan.garbarino@gmail.com?subject=Contacto%20desde%20HG%20Digital';
-  }
-}
-
-window.hgSession = {sessionId, memory};
-appendSystem('HG Digital listo. Hacé click en el botón para iniciar la conversación.');
 </script>
 
 
