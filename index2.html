@@ -480,7 +480,7 @@ function addHgMsg(user, text) {
   box.scrollTop = box.scrollHeight;
 }
 
-async function sendHgMessage() {
+function sendHgMessage() {
   const input = document.getElementById("hgInput");
   const msg = input.value.trim();
   if (!msg) return;
@@ -488,16 +488,21 @@ async function sendHgMessage() {
   addHgMsg("Vos", msg);
   input.value = "";
 
-  try {
-    const response = await fetch(
-      ENDPOINT_URL + "?message=" + encodeURIComponent(msg)
-    );
-    const data = await response.json();
+  const callbackName = "hgCallback_" + Math.floor(Math.random() * 999999);
+
+  window[callbackName] = function (data) {
     addHgMsg("HG", data.reply);
-  } catch (err) {
-    addHgMsg("HG", "❌ Error de conexión con el servidor.");
-  }
+    delete window[callbackName];
+  };
+
+  const script = document.createElement("script");
+  script.src = ENDPOINT_URL +
+    "?message=" + encodeURIComponent(msg) +
+    "&callback=" + callbackName;
+
+  document.body.appendChild(script);
 }
+
 
 /* BOTONES */
 document.getElementById("sendBtn").onclick = sendHgMessage;
