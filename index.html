@@ -469,47 +469,55 @@ function enviar(){
 
 
 <script>
-const ENDPOINT_URL = "https://script.google.com/macros/s/AKfycbw3g7-sRZkkzHz2tODWQTLll6rPAuYm9AEt3jTg5L_7jxGv5BoumjSl8myTDSINogg3Ug/exec"; // 🚨 pegás tu URL real acá
-function openChat() {
-  document.getElementById("chat").style.display = "flex";
+const ENDPOINT_URL = "https://script.google.com/macros/s/AKfycbw3g7-sRZkkzHz2tODWQTLll6rPAuYm9AEt3jTg5L_7jxGv5BoumjSl8myTDSINogg3Ug/exec";
+
+function addHgMsg(user, text) {
+  const box = document.getElementById("hgBody");
+  const div = document.createElement("div");
+  div.style.marginBottom = "10px";
+  div.innerHTML = `<b>${user}:</b> ${text}`;
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
 }
 
-async function sendMessage() {
-  const input = document.getElementById("chatInput");
+async function sendHgMessage() {
+  const input = document.getElementById("hgInput");
   const msg = input.value.trim();
   if (!msg) return;
 
-  addMsg("Vos", msg);
+  addHgMsg("Vos", msg);
   input.value = "";
 
   try {
     const response = await fetch(
       ENDPOINT_URL + "?message=" + encodeURIComponent(msg)
     );
-
     const data = await response.json();
-    addMsg("HG", data.reply);
+    addHgMsg("HG", data.reply);
   } catch (err) {
-    addMsg("HG", "Error de conexión con HG Digital.");
+    addHgMsg("HG", "❌ Error de conexión con el servidor.");
   }
 }
 
-function addMsg(user, text) {
-  const box = document.getElementById("chatBody");
-  const div = document.createElement("div");
-  div.innerHTML = `<b>${user}:</b> ${text}`;
-  box.appendChild(div);
-  box.scrollTop = box.scrollHeight;
-}
+/* BOTONES */
+document.getElementById("sendBtn").onclick = sendHgMessage;
 
-/* ✅ ACTIVAMOS ENTER CUANDO EL DOM YA ESTÁ LISTO */
-document.addEventListener("DOMContentLoaded", function () {
-  const chatInput = document.getElementById("chatInput");
-  chatInput.addEventListener("keydown", function (e) {
-    if (e.key === "Enter") sendMessage();
-  });
+/* ENTER */
+document.getElementById("hgInput").addEventListener("keydown", function(e) {
+  if (e.key === "Enter") sendHgMessage();
 });
+
+/* ABRIR / CERRAR CHAT */
+document.getElementById("hgBtn").onclick = function() {
+  const win = document.getElementById("hgWindow");
+  win.style.display = win.style.display === "flex" ? "none" : "flex";
+};
+
+document.getElementById("closeBtn").onclick = function() {
+  document.getElementById("hgWindow").style.display = "none";
+};
 </script>
+
 
 
 
