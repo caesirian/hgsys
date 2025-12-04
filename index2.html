@@ -472,16 +472,13 @@ function enviar(){
 const ENDPOINT_URL = "https://script.google.com/macros/s/AKfycbyFS_dxlBq4hN_D5HHiiL8I2mG1WhGm5-NOgd8THgDAH9U315ltkqw9n3VOoMwi5X08/exec";
 
 /* ============================
-   ABRIR CHAT
+   HACER FUNCIONES GLOBALES
 ============================ */
-function openChat() {
+window.openChat = function () {
   document.getElementById("chat").style.display = "flex";
-}
+};
 
-/* ============================
-   ENVIAR MENSAJE
-============================ */
-async function sendMessage() {
+window.sendMessage = async function () {
   const input = document.getElementById("chatInput");
   const msg = input.value.trim();
   if (!msg) return;
@@ -498,11 +495,8 @@ async function sendMessage() {
   } catch (err) {
     addMsg("HG", "Error de conexión con el servidor.");
   }
-}
+};
 
-/* ============================
-   MOSTRAR MENSAJES
-============================ */
 function addMsg(user, text) {
   const box = document.getElementById("chatBody");
   const div = document.createElement("div");
@@ -514,19 +508,19 @@ function addMsg(user, text) {
 /* ============================
    ENTER PARA ENVIAR
 ============================ */
-document.getElementById("chatInput").addEventListener("keydown", function (e) {
-  if (e.key === "Enter") sendMessage();
-});
+document.addEventListener("DOMContentLoaded", function () {
+  document.getElementById("chatInput").addEventListener("keydown", function (e) {
+    if (e.key === "Enter") window.sendMessage();
+  });
 
-/* ============================
-   PRESENTACIÓN AUTOMÁTICA
-============================ */
-window.onload = function () {
+  /* ============================
+     PRESENTACIÓN AUTOMÁTICA
+  ============================ */
   addMsg(
     "HG",
-    "Hola, soy Hernán Garbarino. Esta es mi versión digital, estilo *Max Headroom del Cono Sur*. Puedo brindarte presupuestos, información sobre sistemas, desarrollo web o derivarte a contacto humano. ¿En qué te ayudo?"
+    "Hola, soy Hernán Garbarino. Esta es mi versión digital, una especie de Max Headroom sudamericano. Puedo ayudarte con presupuestos, desarrollo web, sistemas y automatización, o derivarte a contacto humano real. ¿Qué necesitás?"
   );
-};
+});
 </script>
 
   
