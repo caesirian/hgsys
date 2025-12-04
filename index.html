@@ -468,56 +468,81 @@ function enviar(){
 </div>
 
 <script>
-/* ----- CONFIG: pegar URL del Web App de Google Apps Script ----- */
+/* ===== CONFIG ===== */
 const ENDPOINT_URL = "https://script.google.com/macros/s/AKfycbwqmlyEEscjs-mq5Sj4xH6ME-cMVzannJGGFJtSieoWlW0MW-cXwLBkPb1B2p9k5yrp/exec";
 
-/* Sesión local para identificar al usuario */
 let sessionId = localStorage.getItem("hg_user");
-if(!sessionId){ sessionId = 's_' + Date.now().toString(36); localStorage.setItem("hg_user", sessionId); }
-
-function openChat() {
-  document.getElementById("chat").style.display = "flex";
+if (!sessionId) {
+  sessionId = "s_" + Date.now().toString(36);
+  localStorage.setItem("hg_user", sessionId);
 }
 
-/* Añade mensaje a la UI */
+/* ===== ABRIR / CERRAR CHAT ===== */
+const hgBtn = document.getElementById("hgBtn");
+const hgWindow = document.getElementById("hgWindow");
+const closeBtn = document.getElementById("closeBtn");
+const expandBtn = document.getElementById("expandBtn");
+const hgFull = document.getElementById("hgFull");
+
+hgBtn.onclick = () => {
+  hgWindow.style.display = "flex";
+};
+
+closeBtn.onclick = () => {
+  hgWindow.style.display = "none";
+};
+
+expandBtn.onclick = () => {
+  hgFull.style.display = "flex";
+};
+
+document.getElementById("minimizeFull").onclick = () => {
+  hgFull.style.display = "none";
+};
+
+/* ===== MENSAJES ===== */
+const hgBody = document.getElementById("hgBody");
+const hgInput = document.getElementById("hgInput");
+const sendBtn = document.getElementById("sendBtn");
+
 function addMsg(user, text) {
-  const box = document.getElementById("chatBody");
   const div = document.createElement("div");
   div.innerHTML = `<b>${user}:</b> ${text}`;
-  box.appendChild(div);
-  box.scrollTop = box.scrollHeight;
+  div.style.marginBottom = "8px";
+  hgBody.appendChild(div);
+  hgBody.scrollTop = hgBody.scrollHeight;
 }
 
-/* Envía al backend usando GET (evita CORS preflight en GAS) */
+/* ===== ENVÍO A GEMINI ===== */
 async function sendMessage() {
-  const input = document.getElementById("chatInput");
-  const msg = input.value.trim();
+  const msg = hgInput.value.trim();
   if (!msg) return;
 
   addMsg("Vos", msg);
-  input.value = "";
+  hgInput.value = "";
 
   try {
-    const url = ENDPOINT_URL + "?message=" + encodeURIComponent(msg) + "&userId=" + encodeURIComponent(sessionId);
-    const res = await fetch(url, { method: "GET", cache: "no-store" });
+    const url = ENDPOINT_URL +
+      "?message=" + encodeURIComponent(msg) +
+      "&userId=" + encodeURIComponent(sessionId);
+
+    const res = await fetch(url);
     const data = await res.json();
+
     addMsg("HG", data.reply || "Sin respuesta.");
   } catch (err) {
-    console.error("Error fetch:", err);
+    console.error(err);
     addMsg("HG", "Error de conexión con HG Digital.");
   }
 }
 
-/* ENTER para enviar (escritorio) */
-document.addEventListener("DOMContentLoaded", () => {
-  const chatInput = document.getElementById("chatInput");
-  if(chatInput){
-    chatInput.addEventListener("keydown", function (e) {
-      if (e.key === "Enter") {
-        e.preventDefault();
-        sendMessage();
-      }
-    });
+/* ===== CLICK + ENTER ===== */
+sendBtn.onclick = sendMessage;
+
+hgInput.addEventListener("keydown", function (e) {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    sendMessage();
   }
 });
 </script>
