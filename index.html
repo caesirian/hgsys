@@ -467,9 +467,9 @@ function enviar(){
   </div>
 </div>
 
+
 <script>
 const ENDPOINT_URL = "https://script.google.com/macros/s/AKfycbw3g7-sRZkkzHz2tODWQTLll6rPAuYm9AEt3jTg5L_7jxGv5BoumjSl8myTDSINogg3Ug/exec"; // 🚨 pegás tu URL real acá
-
 function openChat() {
   document.getElementById("chat").style.display = "flex";
 }
@@ -488,10 +488,9 @@ async function sendMessage() {
     );
 
     const data = await response.json();
-    addMsg("HG", data.reply || "Sin respuesta del servidor.");
+    addMsg("HG", data.reply);
   } catch (err) {
-    console.error(err);
-    addMsg("HG", "❌ Error de conexión con el servidor.");
+    addMsg("HG", "Error de conexión con HG Digital.");
   }
 }
 
@@ -503,15 +502,15 @@ function addMsg(user, text) {
   box.scrollTop = box.scrollHeight;
 }
 
-// ✅ ENTER PARA ENVIAR
-const chatInput = document.getElementById("chatInput");
-chatInput.addEventListener("keydown", function (e) {
-  if (e.key === "Enter") {
-    e.preventDefault();
-    sendMessage();
-  
-};
+/* ✅ ACTIVAMOS ENTER CUANDO EL DOM YA ESTÁ LISTO */
+document.addEventListener("DOMContentLoaded", function () {
+  const chatInput = document.getElementById("chatInput");
+  chatInput.addEventListener("keydown", function (e) {
+    if (e.key === "Enter") sendMessage();
+  });
+});
 </script>
+
 
 
 
