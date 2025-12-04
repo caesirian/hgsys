@@ -585,6 +585,24 @@ async function callBackend(text, opts = {}){
   }
 }
 
+async function enviarMensajeHG(texto, generarPdf = false) {
+  const userId = localStorage.getItem("hg_user") || Date.now().toString();
+  localStorage.setItem("hg_user", userId);
+
+  const res = await fetch("PEGÁ_ACÁ_TU_URL_DEL_SCRIPT", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      message: texto,
+      userId: userId,
+      generatePdf: generarPdf
+    })
+  });
+
+  const data = await res.json();
+  return data.reply;
+}
+  
 function detectCloseIntent(text) {
   const t = text.toLowerCase();
   return t.includes('presup') || t.includes('cotiz') || t.includes('contratar') || t.includes('precio') || t.includes('comenzar');
