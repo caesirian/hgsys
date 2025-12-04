@@ -467,55 +467,6 @@ function enviar(){
   </div>
 </div>
 
-<!-- HG DIGITAL - Chat Flotante (Frontend) -->
-<style>
-/* (igual que el bloque que te pasé antes; pegar exactamente si ya lo tenías) */
-.hg-chat-btn{position:fixed;right:18px;bottom:18px;z-index:99999;background:linear-gradient(135deg,#7c5cff,#00ffc3);border:none;border-radius:50%;width:64px;height:64px;box-shadow:0 10px 30px rgba(0,0,0,.3);cursor:pointer;color:#000;font-weight:700}
-.hg-chat-window{position:fixed;right:18px;bottom:96px;width:360px;height:520px;background:var(--card,#0b0b10);border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.5);z-index:99999;display:none;flex-direction:column;overflow:hidden}
-.hg-chat-header{padding:12px;background:linear-gradient(135deg,#7c5cff,#00ffc3);color:#000;font-weight:700;display:flex;align-items:center;justify-content:space-between}
-.hg-chat-body{padding:12px;flex:1;overflow:auto;background:linear-gradient(180deg,rgba(255,255,255,.02),transparent)}
-.hg-chat-input{display:flex;padding:12px;border-top:1px solid rgba(255,255,255,.04);background:transparent}
-.hg-chat-input input{flex:1;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,.08);margin-right:8px;background:transparent;color:var(--text)}
-.hg-fullscreen{position:fixed;inset:0;background:var(--bg);z-index:100000;display:none;flex-direction:column}
-.hg-fullscreen .inner{max-width:1100px;margin:40px auto;background:var(--card);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;height:80vh}
-.hg-actions{display:flex;gap:8px;padding:8px;flex-wrap:wrap}
-.hg-mini{font-size:13px;color:var(--muted)}
-</style>
-
-<button id="hgBtn" class="hg-chat-btn" aria-label="Abrir chat HG">HG</button>
-
-<div id="hgWindow" class="hg-chat-window" role="dialog" aria-modal="false" aria-label="HG Digital chat">
-  <div class="hg-chat-header">
-    <div>HG Digital</div>
-    <div style="display:flex;gap:8px">
-      <button id="expandBtn" class="btn">↗</button>
-      <button id="closeBtn" class="btn">✕</button>
-    </div>
-  </div>
-  <div id="hgBody" class="hg-chat-body"></div>
-  <div class="hg-chat-input">
-    <input id="hgInput" placeholder="Escribí tu pregunta..." />
-    <button id="sendBtn" class="btn primary">Enviar</button>
-  </div>
-</div>
-
-<div id="hgFull" class="hg-fullscreen" aria-hidden="true">
-  <div class="inner">
-    <div style="display:flex;justify-content:space-between;align-items:center;padding:12px;background:linear-gradient(135deg,#7c5cff,#00ffc3)">
-      <div><b>HG Digital — Conversación</b><div class="hg-mini">Presupuestos, consultas técnicas y más. También podés pedir contacto humano.</div></div>
-      <div style="display:flex;gap:8px">
-        <button id="sendPdfBtn" class="btn">Generar PDF & Enviar</button>
-        <button id="contactHuman" class="btn">Contactar Humano</button>
-        <button id="minimizeFull" class="btn">_</button>
-      </div>
-    </div>
-    <div id="hgFullBody" style="padding:18px;flex:1;overflow:auto;background:linear-gradient(180deg,rgba(255,255,255,.02),transparent)"></div>
-    <div style="padding:12px;border-top:1px solid rgba(255,255,255,.04);display:flex;gap:8px">
-      <input id="hgFullInput" style="flex:1;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,.08);background:transparent;color:var(--text)" placeholder="Continuá la conversación..." />
-      <button id="hgFullSend" class="btn primary">Enviar</button>
-    </div>
-  </div>
-</div>
 
 <script>
 /* REEMPLAZAR por la URL del Web App */
