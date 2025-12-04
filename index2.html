@@ -469,17 +469,14 @@ function enviar(){
 
 
 <script>
-const ENDPOINT_URL = "https://script.google.com/macros/s/AKfycbzTgdgPHVXQUAFr5mWcwZEOV982BqIorU4FoJ7w6odEfKo4jTPU_xvarHlqFWzixOsQ/exec";
+/* ============================
+   CONFIGURACIÓN OBLIGATORIA
+============================ */
+const ENDPOINT_URL = "PEGAR_AQUI_TU_URL_DEL_SCRIPT";
 
-function addHgMsg(user, text) {
-  const box = document.getElementById("hgBody");
-  const div = document.createElement("div");
-  div.style.marginBottom = "10px";
-  div.innerHTML = `<b>${user}:</b> ${text}`;
-  box.appendChild(div);
-  box.scrollTop = box.scrollHeight;
-}
-
+/* ============================
+   ENVÍO DE MENSAJES (HÍBRIDO)
+============================ */
 function sendHgMessage() {
   const input = document.getElementById("hgInput");
   const msg = input.value.trim();
@@ -488,39 +485,52 @@ function sendHgMessage() {
   addHgMsg("Vos", msg);
   input.value = "";
 
-  const callbackName = "hgCallback_" + Math.floor(Math.random() * 999999);
+  // ✅ INTENTO PRINCIPAL: FETCH
+  try {
+    fetch(ENDPOINT_URL + "?message=" + encodeURIComponent(msg))
+      .then(res => {
+        if (!res.ok) throw new Error("Fetch falló");
+        return res.json();
+      })
+      .then(data => {
+        addHgMsg("HG", data.reply || "HG no respondió.");
+      })
+      .catch(() => {
+        // ✅ FALLBACK AUTOMÁTICO A JSONP
+        sendHgMessageJSONP(msg);
+      });
+
+  } catch (e) {
+    sendHgMessageJSONP(msg);
+  }
+}
+
+/* ============================
+   BACKUP JSONP AUTOMÁTICO
+============================ */
+function sendHgMessageJSONP(msg) {
+  const callbackName = "hg_cb_" + Date.now();
 
   window[callbackName] = function (data) {
-    addHgMsg("HG", data.reply);
+    addHgMsg("HG", data.reply || "HG no respondió.");
     delete window[callbackName];
   };
 
   const script = document.createElement("script");
-  script.src = ENDPOINT_URL +
+  script.src =
+    ENDPOINT_URL +
     "?message=" + encodeURIComponent(msg) +
     "&callback=" + callbackName;
 
   document.body.appendChild(script);
 }
 
-
-/* BOTONES */
-document.getElementById("sendBtn").onclick = sendHgMessage;
-
-/* ENTER */
-document.getElementById("hgInput").addEventListener("keydown", function(e) {
+/* ============================
+   ESCUCHADOR DE ENTER
+============================ */
+document.getElementById("hgInput").addEventListener("keydown", function (e) {
   if (e.key === "Enter") sendHgMessage();
 });
-
-/* ABRIR / CERRAR CHAT */
-document.getElementById("hgBtn").onclick = function() {
-  const win = document.getElementById("hgWindow");
-  win.style.display = win.style.display === "flex" ? "none" : "flex";
-};
-
-document.getElementById("closeBtn").onclick = function() {
-  document.getElementById("hgWindow").style.display = "none";
-};
 </script>
 
 
