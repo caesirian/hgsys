@@ -1,415 +1,370 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat con [Tu Nombre] Digital</title>
-    <style>
-        /* ESTILOS COMPLETOS - Mismo CSS de antes pero compacto */
-        *{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',Arial,sans-serif;}
-        body{background:linear-gradient(135deg,#0a0a0a 0%,#1a1a2e 100%);color:#fff;min-height:100vh;padding:20px;}
-        .floating-btn{position:fixed;bottom:30px;right:30px;width:70px;height:70px;border-radius:50%;
-            background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);border:none;color:white;font-size:24px;
-            cursor:pointer;box-shadow:0 10px 30px rgba(102,126,234,0.5);transition:all 0.3s ease;z-index:1000;
-            display:flex;align-items:center;justify-content:center;}
-        .floating-btn:hover{transform:scale(1.1) rotate(10deg);box-shadow:0 15px 40px rgba(102,126,234,0.7);}
-        .pulse-ring{position:absolute;width:80px;height:80px;border:2px solid #667eea;border-radius:50%;
-            animation:pulse 2s infinite;}
-        @keyframes pulse{0%{transform:scale(1);opacity:1;}100%{transform:scale(1.5);opacity:0;}}
-        #chat-container{position:fixed;bottom:100px;right:30px;width:400px;height:600px;
-            background:rgba(0,0,0,0.95);border-radius:20px;box-shadow:0 20px 60px rgba(0,0,0,0.8);
-            border:2px solid #667eea;display:flex;flex-direction:column;overflow:hidden;z-index:1001;
-            opacity:0;transform:translateY(20px) scale(0.95);transition:all 0.4s cubic-bezier(0.175,0.885,0.32,1.275);}
-        #chat-container.chat-visible{opacity:1;transform:translateY(0) scale(1);}
-        #chat-container.chat-hidden{display:none;}
-        .chat-header{background:linear-gradient(135deg,#0f3460 0%,#1a1a2e 100%);padding:20px;
-            display:flex;align-items:center;border-bottom:2px solid #667eea;position:relative;}
-        .chat-header::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;
-            background:linear-gradient(90deg,transparent,#667eea,transparent);}
-        .avatar{position:relative;margin-right:15px;}
-        .glitch-avatar{width:50px;height:50px;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);
-            border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:bold;
-            font-size:20px;animation:glitch-avatar 3s infinite;}
-        @keyframes glitch-avatar{0%,100%{transform:translate(0);}2%{transform:translate(-1px,1px);}
-            4%{transform:translate(1px,-1px);}96%{transform:translate(0);}}
-        .status-dot{position:absolute;bottom:0;right:0;width:12px;height:12px;background:#4CAF50;
-            border-radius:50%;border:2px solid #0f3460;animation:status-pulse 2s infinite;}
-        @keyframes status-pulse{0%,100%{box-shadow:0 0 0 0 rgba(76,175,80,0.7);}
-            50%{box-shadow:0 0 0 10px rgba(76,175,80,0);}}
-        .chat-title h3{font-size:18px;margin-bottom:5px;background:linear-gradient(45deg,#fff,#667eea);
-            -webkit-background-clip:text;background-clip:text;color:transparent;}
-        .status{font-size:12px;color:#aaa;font-style:italic;}
-        .close-btn{margin-left:auto;background:none;border:none;color:#fff;font-size:20px;
-            cursor:pointer;opacity:0.7;transition:opacity 0.3s;}
-        .close-btn:hover{opacity:1;transform:rotate(90deg);}
-        .chat-messages{flex:1;padding:20px;overflow-y:auto;background:rgba(10,10,10,0.9);
-            background-image:linear-gradient(rgba(102,126,234,0.05) 1px,transparent 1px),
-            linear-gradient(90deg,rgba(102,126,234,0.05) 1px,transparent 1px);background-size:20px 20px;}
-        .message{margin-bottom:20px;opacity:0;animation:fadeInUp 0.5s forwards;}
-        @keyframes fadeInUp{to{opacity:1;transform:translateY(0);}}
-        .bot-message{text-align:left;}
-        .user-message{text-align:right;}
-        .message-content{display:inline-block;max-width:80%;padding:15px;border-radius:18px;position:relative;}
-        .bot-message .message-content{background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%);
-            border:1px solid rgba(102,126,234,0.3);border-left:4px solid #667eea;}
-        .user-message .message-content{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);
-            border:1px solid rgba(102,126,234,0.5);}
-        .glitch-text{font-family:'Courier New',monospace;font-size:12px;color:#0f0;margin-bottom:5px;
-            animation:text-glitch 5s infinite;text-shadow:0 0 5px #0f0;}
-        @keyframes text-glitch{0%,100%{opacity:1;}50%{opacity:0.8;}51%{opacity:0.2;}52%{opacity:1;}}
-        .message-text{font-size:14px;line-height:1.5;word-wrap:break-word;}
-        .message-time{font-size:11px;opacity:0.7;margin-top:5px;}
-        .chat-input-container{padding:20px;background:rgba(15,52,96,0.8);border-top:2px solid #667eea;
-            display:flex;gap:10px;}
-        #user-input{flex:1;padding:15px;background:rgba(255,255,255,0.1);border:2px solid rgba(102,126,234,0.5);
-            border-radius:25px;color:white;font-size:14px;outline:none;transition:all 0.3s;}
-        #user-input:focus{border-color:#667eea;box-shadow:0 0 15px rgba(102,126,234,0.5);
-            background:rgba(255,255,255,0.15);}
-        #user-input::placeholder{color:rgba(255,255,255,0.5);}
-        .send-btn{width:50px;height:50px;border-radius:50%;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);
-            border:none;color:white;font-size:18px;cursor:pointer;transition:all 0.3s;
-            display:flex;align-items:center;justify-content:center;}
-        .send-btn:hover{transform:rotate(15deg) scale(1.1);box-shadow:0 5px 20px rgba(102,126,234,0.7);}
-        .chat-messages::-webkit-scrollbar{width:8px;}
-        .chat-messages::-webkit-scrollbar-track{background:rgba(0,0,0,0.3);border-radius:10px;}
-        .chat-messages::-webkit-scrollbar-thumb{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);
-            border-radius:10px;}
-        .chat-messages::-webkit-scrollbar-thumb:hover{background:linear-gradient(135deg,#764ba2 0%,#667eea 100%);}
-        @media (max-width:768px){#chat-container{width:90vw;height:70vh;right:5vw;bottom:80px;}
-            .floating-btn{bottom:20px;right:20px;}}
-        .typing-indicator{display:flex;gap:5px;}
-        .typing-indicator span{width:8px;height:8px;background:#667eea;border-radius:50%;
-            animation:typing 1.4s infinite;}
-        .typing-indicator span:nth-child(2){animation-delay:0.2s;}
-        .typing-indicator span:nth-child(3){animation-delay:0.4s;}
-        @keyframes typing{0%,100%{transform:translateY(0);}50%{transform:translateY(-10px);}}
-    </style>
-</head>
-<body>
-    <!-- Tu contenido del sitio -->
-    <header>
-        <h1>Mi Sitio Web</h1>
-        <p>Habla con mi versión digital estilo Max Headroom</p>
-    </header>
+<!-- Agrega esto en tu HTML, en el script, reemplazando la clase ChatHernan -->
 
-    <!-- Botón flotante del chat -->
-    <button id="chat-toggle" class="floating-btn">
-        <i class="fas fa-robot"></i>
-        <span class="pulse-ring"></span>
-    </button>
-
-    <!-- Contenedor del chat -->
-    <div id="chat-container" class="chat-hidden">
-        <div class="chat-header">
-            <div class="avatar">
-                <div class="glitch-avatar">[TU]</div>
-                <div class="status-dot"></div>
-            </div>
-            <div class="chat-title">
-                <h3 id="chat-name">[Tu Nombre] Digital</h3>
-                <p class="status">En línea • v1.0</p>
-            </div>
-            <button id="close-chat" class="close-btn">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-
-        <div id="chat-messages" class="chat-messages">
-            <div class="message bot-message">
-                <div class="message-content">
-                    <div class="glitch-text">Sistema iniciado... conexión estable</div>
-                    <div class="message-text">¡Hola! Soy tu versión digital. Un poco glitch, un poco futurista, pero con tu esencia. ¿En qué puedo ayudarte?</div>
-                    <div class="message-time">Ahora</div>
-                </div>
-            </div>
-        </div>
-
-        <div class="chat-input-container">
-            <input type="text" id="user-input" placeholder="Escribe tu mensaje... (Enter para enviar)" autocomplete="off">
-            <button id="send-btn" class="send-btn">
-                <i class="fas fa-paper-plane"></i>
-            </button>
-        </div>
-    </div>
-
-    <!-- Font Awesome inline (mini version) -->
-    <script>
-        // Font Awesome icons usados
-        const faIcons = {
-            robot: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z',
-            times: 'M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z',
-            paperPlane: 'M2.01 21L23 12 2.01 3 2 10l15 2-15 2z'
-        };
+<script>
+class ChatHernanIA {
+    constructor() {
+        this.chatVisible = false;
+        this.messages = [];
+        this.revelationLevel = 0;
+        this.sessionId = this.generateSessionId();
+        this.GAS_URL = 'https://script.google.com/macros/s/AKfycbxOb_e44G3RMoW3Kcgco6KHJkWX9-5dchDtEq_LofpCQ8uX83hvVpWEy0G-rOd_apd5/exec';
+        this.isTyping = false;
         
-        // Crear SVG icons
-        function createSVG(iconName) {
-            const svgNS = "http://www.w3.org/2000/svg";
-            const svg = document.createElementNS(svgNS, "svg");
-            svg.setAttribute("viewBox", "0 0 24 24");
-            svg.setAttribute("width", "1em");
-            svg.setAttribute("height", "1em");
-            
-            const path = document.createElementNS(svgNS, "path");
-            path.setAttribute("d", faIcons[iconName]);
-            path.setAttribute("fill", "currentColor");
-            
-            svg.appendChild(path);
-            return svg;
-        }
-    </script>
+        this.initializeElements();
+        this.setupEventListeners();
+        this.showWelcomeMessage();
+        this.setupAutoContact();
+    }
 
-    <!-- CÓDIGO JAVASCRIPT COMPLETO -->
-    <script>
-        class TuVersionDigital {
-            constructor() {
-                this.chatVisible = false;
-                this.messages = [];
-                this.GAS_URL = 'https://script.google.com/macros/s/AKfycbwNCpd7eQkM8y6tvkE895urF8_d1qN8uwlUEnAH8FETxpogaS5sbhD_BZZP00kVVITIoQ/exec'; // ¡REEMPLAZAR!
-                this.initializeElements();
-                this.setupEventListeners();
-                this.setupIcons();
-            }
+    generateSessionId() {
+        return 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    }
 
-            initializeElements() {
-                this.chatToggle = document.getElementById('chat-toggle');
-                this.chatContainer = document.getElementById('chat-container');
-                this.closeChat = document.getElementById('close-chat');
-                this.userInput = document.getElementById('user-input');
-                this.sendBtn = document.getElementById('send-btn');
-                this.chatMessages = document.getElementById('chat-messages');
-                this.chatName = document.getElementById('chat-name');
-            }
+    initializeElements() {
+        this.chatToggle = document.getElementById('chat-toggle');
+        this.chatContainer = document.getElementById('chat-container');
+        this.closeChat = document.getElementById('close-chat');
+        this.userInput = document.getElementById('user-input');
+        this.sendBtn = document.getElementById('send-btn');
+        this.chatMessages = document.getElementById('chat-messages');
+        this.chatName = document.getElementById('chat-name');
+        this.chatStatus = document.getElementById('chat-status');
+    }
 
-            setupIcons() {
-                // Reemplazar placeholders con SVGs
-                const robotIcon = createSVG('robot');
-                const timesIcon = createSVG('times');
-                const paperPlaneIcon = createSVG('paperPlane');
-                
-                document.querySelector('.floating-btn i').replaceWith(robotIcon);
-                document.querySelector('.close-btn i').replaceWith(timesIcon);
-                document.querySelector('.send-btn i').replaceWith(paperPlaneIcon);
-            }
-
-            setupEventListeners() {
-                this.chatToggle.addEventListener('click', () => this.toggleChat());
-                this.closeChat.addEventListener('click', () => this.hideChat());
-                this.sendBtn.addEventListener('click', () => this.sendMessage());
-                
-                this.userInput.addEventListener('keypress', (e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        this.sendMessage();
-                    }
-                });
-
-                // Cerrar al hacer clic fuera
-                document.addEventListener('click', (e) => {
-                    if (this.chatVisible && 
-                        !this.chatContainer.contains(e.target) && 
-                        !this.chatToggle.contains(e.target)) {
-                        this.hideChat();
-                    }
-                });
-            }
-
-            toggleChat() {
-                this.chatVisible ? this.hideChat() : this.showChat();
-            }
-
-            showChat() {
-                this.chatVisible = true;
-                this.chatContainer.classList.remove('chat-hidden');
-                setTimeout(() => {
-                    this.chatContainer.classList.add('chat-visible');
-                    this.userInput.focus();
-                }, 10);
-            }
-
-            hideChat() {
-                this.chatVisible = false;
-                this.chatContainer.classList.remove('chat-visible');
-                setTimeout(() => {
-                    this.chatContainer.classList.add('chat-hidden');
-                }, 400);
-            }
-
-            async sendMessage() {
-                const message = this.userInput.value.trim();
-                if (!message) return;
-
-                // Mostrar mensaje del usuario
-                this.addMessage(message, 'user');
-                this.userInput.value = '';
-                
-                // Mostrar "escribiendo"
-                const typingIndicator = this.showTypingIndicator();
-                
-                try {
-                    // Llamar al GAS backend
-                    const response = await this.getAIResponse(message);
-                    
-                    typingIndicator.remove();
-                    this.addMessage(response, 'bot');
-                    
-                } catch (error) {
-                    console.error('Error:', error);
-                    typingIndicator.remove();
-                    
-                    // Respuestas de fallback con personalidad
-                    const fallbacks = [
-                        "¡Glitch en la matriz! No puedo conectar ahora. ¿Intentas de nuevo?",
-                        "Error 404: Conexión no encontrada. Mi lado digital está... distraído.",
-                        "Parece que hay interferencias. ¿Podrías repetir eso?"
-                    ];
-                    this.addMessage(fallbacks[Math.floor(Math.random() * fallbacks.length)], 'bot');
-                }
-            }
-
-            addMessage(text, sender) {
-                const messageDiv = document.createElement('div');
-                messageDiv.className = `message ${sender}-message`;
-                
-                // Efectos glitch para el bot
-                let glitchText = '';
-                if (sender === 'bot' && Math.random() > 0.7) {
-                    glitchText = this.addGlitchEffect();
-                }
-                
-                const now = new Date();
-                const timeString = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-                
-                messageDiv.innerHTML = `
-                    <div class="message-content">
-                        ${glitchText ? `<div class="glitch-text">${glitchText}</div>` : ''}
-                        <div class="message-text">${this.escapeHtml(text)}</div>
-                        <div class="message-time">${timeString}</div>
-                    </div>
-                `;
-                
-                this.chatMessages.appendChild(messageDiv);
-                this.scrollToBottom();
-                
-                setTimeout(() => {
-                    messageDiv.style.opacity = '1';
-                    messageDiv.style.transform = 'translateY(0)';
-                }, 10);
-            }
-
-            showTypingIndicator() {
-                const indicator = document.createElement('div');
-                indicator.className = 'message bot-message';
-                indicator.innerHTML = `
-                    <div class="message-content">
-                        <div class="typing-indicator">
-                            <span></span>
-                            <span></span>
-                            <span></span>
-                        </div>
-                    </div>
-                `;
-                this.chatMessages.appendChild(indicator);
-                this.scrollToBottom();
-                return indicator;
-            }
-
-            addGlitchEffect() {
-                const effects = [
-                    "Procesando... procesando...",
-                    "Conexión estable ✓",
-                    "Bits alineados",
-                    "Memoria RAM: Cargando",
-                    "Sistema: Funcionando",
-                    "Versión 1.0: Activa",
-                    "Digitalizando respuesta",
-                    "Glitch mode: ON"
-                ];
-                return effects[Math.floor(Math.random() * effects.length)];
-            }
-
-            async getAIResponse(userMessage) {
-                // Tu URL de Google Apps Script
-                const GAS_URL = this.GAS_URL;
-                
-                const response = await fetch(GAS_URL, {
-                    method: 'POST',
-                    mode: 'no-cors', // Importante para GAS
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        message: userMessage,
-                        personality: "max-headroom-style"
-                    })
-                });
-
-                // Para no-cors, necesitamos usar una estrategia diferente
-                // Vamos a usar Google Apps Script Web App en modo "ejecutar como yo"
-                return await this.getAIResponseFallback(userMessage);
-            }
-
-            async getAIResponseFallback(userMessage) {
-                // Simulación mientras configuras GAS
-                await new Promise(resolve => setTimeout(resolve, 800 + Math.random() * 1200));
-                
-                const personalidad = {
-                    nombre: "[Tu Nombre]",
-                    estilo: "Digital glitch retro-futurista",
-                    respuestas: [
-                        "Interesante... déjame procesar eso: ",
-                        "Desde mi perspectiva digital: ",
-                        "¡Ah, eso me suena! ",
-                        "Analizando consulta... respuesta: ",
-                        "Como entidad digital, te digo: ",
-                        "Glitch moment... recuperando... ah, sí: "
-                    ]
-                };
-                
-                const intros = [
-                    "Esa es una excelente pregunta. Como versión digital, creo que...",
-                    "¡Interesante! Mi yo humano siempre tenía una opinión sobre eso...",
-                    "Procesando... encontré en mis datos que...",
-                    "Desde el lado glitch de las cosas, te diría que...",
-                    "Recuperando de memoria... sí, sobre eso pienso que...",
-                    "Como IA con personalidad, mi respuesta sería..."
-                ];
-                
-                const intro = personalidad.respuestas[Math.floor(Math.random() * personalidad.respuestas.length)];
-                const respuesta = intros[Math.floor(Math.random() * intros.length)];
-                
-                // Simular respuesta más personalizada
-                const respuestasCompletas = [
-                    `${intro}${respuesta} ¿Captas la idea o necesito repetir-repetir?`,
-                    `${intro}${respuesta} Mi lado humano estaría de acuerdo, creo.`,
-                    `${intro}${respuesta} Pero toma esto con un grano de sal digital.`,
-                    `${intro}${respuesta} O al menos, esa es mi interpretación glitcheada.`
-                ];
-                
-                return respuestasCompletas[Math.floor(Math.random() * respuestasCompletas.length)];
-            }
-
-            scrollToBottom() {
-                this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
-            }
-
-            escapeHtml(text) {
-                const div = document.createElement('div');
-                div.textContent = text;
-                return div.innerHTML;
-            }
-        }
-
-        // Inicializar cuando cargue la página
-        document.addEventListener('DOMContentLoaded', () => {
-            window.tuChat = new TuVersionDigital();
-            
-            // Personalizar nombre si está en URL
-            const urlParams = new URLSearchParams(window.location.search);
-            const name = urlParams.get('name');
-            if (name) {
-                document.getElementById('chat-name').textContent = `${name} Digital`;
+    setupEventListeners() {
+        this.chatToggle.addEventListener('click', () => this.toggleChat());
+        this.closeChat.addEventListener('click', () => this.hideChat());
+        this.sendBtn.addEventListener('click', () => this.sendMessage());
+        
+        this.userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                this.sendMessage();
             }
         });
-    </script>
-</body>
-</html>
+
+        // Auto-completar preguntas comunes
+        this.setupQuickQuestions();
+    }
+
+    setupQuickQuestions() {
+        // Botones de preguntas comunes (opcional)
+        const quickQuestions = [
+            "¿Qué servicios ofreces?",
+            "¿Qué tecnologías manejas?",
+            "¿Tienes experiencia con e-commerce?",
+            "¿Cómo es tu metodología de trabajo?",
+            "¿Puedo ver algunos proyectos?"
+        ];
+
+        // Puedes agregar botones flotantes con estas preguntas
+    }
+
+    setupAutoContact() {
+        // Mostrar contacto después de 5 minutos de conversación
+        setTimeout(() => {
+            if (this.messages.length > 4) {
+                this.showContactSuggestions();
+            }
+        }, 300000);
+    }
+
+    showWelcomeMessage() {
+        const welcomeMessages = [
+            {
+                glitch: "Sistema de conocimiento cargado ✓",
+                text: "¡Hola! Soy Hernán, especialista en desarrollo web y soluciones digitales. Estoy aquí para contarte sobre mis servicios, habilidades y cómo puedo ayudarte con tu proyecto.",
+                time: this.getCurrentTime()
+            },
+            {
+                glitch: "Base de datos: Proyectos y tecnologías",
+                text: "Pregúntame sobre: desarrollo web, e-commerce, tecnologías que uso, casos de éxito o mi metodología de trabajo.",
+                time: this.getCurrentTime()
+            }
+        ];
+        
+        welcomeMessages.forEach(msg => {
+            this.addMessage(msg.text, 'bot', msg.glitch);
+        });
+    }
+
+    async sendMessage() {
+        if (this.isTyping) return;
+        
+        const message = this.userInput.value.trim();
+        if (!message) return;
+
+        // Mostrar mensaje del usuario
+        this.addMessage(message, 'user');
+        this.userInput.value = '';
+        this.isTyping = true;
+        
+        // Mostrar "escribiendo" con efecto especial
+        const typingIndicator = this.showTypingIndicator("Analizando tu consulta...");
+        
+        try {
+            // Llamar al backend IA
+            const response = await this.getAIResponse(message);
+            
+            typingIndicator.remove();
+            this.isTyping = false;
+            
+            // Procesar respuesta estructurada
+            if (response.success) {
+                // Actualizar nivel de revelación si cambió
+                if (response.revelationLevel !== undefined && response.revelationLevel !== this.revelationLevel) {
+                    this.revelationLevel = response.revelationLevel;
+                    this.updateChatName(this.revelationLevel);
+                }
+                
+                // Mostrar respuesta de la IA
+                this.addMessage(response.reply, 'bot');
+                
+                // Mostrar info de contacto si es necesario
+                if (response.showContactInfo) {
+                    setTimeout(() => this.showContactCard(), 1000);
+                }
+                
+                // Sugerir preguntas relacionadas
+                this.suggestRelatedQuestions(message);
+                
+            } else {
+                this.addMessage(response.reply, 'bot');
+            }
+            
+        } catch (error) {
+            console.error('Error:', error);
+            typingIndicator.remove();
+            this.isTyping = false;
+            
+            // Respuesta de error con sugerencias
+            const fallbackResponses = [
+                "Parece que hay un problema de conexión. Mientras tanto, te cuento que me especializo en desarrollo web con React y Node.js, y creación de e-commerces con Shopify.",
+                "Error temporal. Para darte una idea rápida: trabajo con tecnologías modernas, desarrollo sitios responsivos y sistemas personalizados. ¿En qué área te interesa saber más?"
+            ];
+            
+            const randomResponse = fallbackResponses[Math.floor(Math.random() * fallbackResponses.length)];
+            this.addMessage(randomResponse, 'bot', "Conexión inestable");
+        }
+    }
+
+    async getAIResponse(userMessage) {
+        const response = await fetch(this.GAS_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                message: userMessage,
+                sessionId: this.sessionId,
+                revelationLevel: this.revelationLevel,
+                timestamp: new Date().toISOString()
+            })
+        });
+        
+        return await response.json();
+    }
+
+    updateChatName(level) {
+        const names = [
+            "Hernán - Especialista Web",
+            "Hernán Garbarino",
+            "Hernán Garbarino (Digital)"
+        ];
+        
+        if (level >= 0 && level < names.length) {
+            this.chatName.textContent = names[level];
+        }
+    }
+
+    suggestRelatedQuestions(userMessage) {
+        const lowerMsg = userMessage.toLowerCase();
+        const suggestions = {
+            'servicio': [
+                "¿Quieres saber más sobre alguna tecnología específica?",
+                "¿Te interesa conocer casos similares que he trabajado?"
+            ],
+            'tecnolog': [
+                "¿Te gustaría que te cuente sobre proyectos reales usando estas tecnologías?",
+                "¿Necesitas ayuda para elegir la mejor tecnología para tu proyecto?"
+            ],
+            'e-commerce': [
+                "¿Quieres detalles sobre integración con métodos de pago?",
+                "¿Te interesa saber sobre optimización de conversiones?"
+            ],
+            'proyecto': [
+                "¿Quieres que te cuente sobre metodología y tiempos?",
+                "¿Te gustaría coordinar una consulta para evaluar tu idea?"
+            ]
+        };
+        
+        for (const [keyword, suggs] of Object.entries(suggestions)) {
+            if (lowerMsg.includes(keyword) && Math.random() > 0.5) {
+                setTimeout(() => {
+                    this.addMessage(suggs[Math.floor(Math.random() * suggs.length)], 'bot', "Sugerencia relacionada");
+                }, 1500);
+                break;
+            }
+        }
+    }
+
+    showContactCard() {
+        const contactHTML = `
+            <div class="message bot-message" id="contact-suggestion">
+                <div class="message-content">
+                    <div class="glitch-text">Info de contacto disponible</div>
+                    <div class="message-text">
+                        <strong>¿Te gustaría conversar más sobre tu proyecto?</strong>
+                        <br><br>
+                        Para consultas detalladas o presupuestos:
+                        <br>
+                        📧 <a href="mailto:hernan.garbarino@gmail.com" style="color:#0f0;">hernan.garbarino@gmail.com</a>
+                        <br>
+                        📱 <a href="https://wa.me/541134796562" style="color:#0f0;">+54 11 3479-6562</a>
+                        <br><br>
+                        <small>Disponible para nuevas oportunidades y proyectos interesantes.</small>
+                    </div>
+                    <div class="message-time">Contacto</div>
+                </div>
+            </div>
+        `;
+        
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = contactHTML;
+        this.chatMessages.appendChild(tempDiv.firstElementChild);
+        this.scrollToBottom();
+    }
+
+    showContactSuggestions() {
+        const suggestions = [
+            "¿Te gustaría coordinar una llamada para hablar más sobre tu proyecto?",
+            "Si necesitas un presupuesto detallado, podemos coordinar por email o WhatsApp.",
+            "Para proyectos específicos, lo mejor es una consulta personalizada. ¿Te interesa?"
+        ];
+        
+        if (!this.contactShown) {
+            setTimeout(() => {
+                this.addMessage(suggestions[Math.floor(Math.random() * suggestions.length)], 'bot', "Sugerencia");
+                this.contactShown = true;
+            }, 5000);
+        }
+    }
+
+    addMessage(text, sender, glitchText = '') {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${sender}-message`;
+        
+        // Efectos de formateo para respuestas técnicas
+        let formattedText = this.formatTechnicalResponse(text);
+        
+        const timeString = this.getCurrentTime();
+        
+        messageDiv.innerHTML = `
+            <div class="message-content">
+                ${glitchText ? `<div class="glitch-text">${glitchText}</div>` : ''}
+                <div class="message-text">${formattedText}</div>
+                <div class="message-time">${timeString}</div>
+            </div>
+        `;
+        
+        this.chatMessages.appendChild(messageDiv);
+        this.scrollToBottom();
+        
+        // Animación de entrada
+        setTimeout(() => {
+            messageDiv.style.opacity = '1';
+            messageDiv.style.transform = 'translateY(0)';
+        }, 10);
+        
+        // Guardar en historial
+        this.messages.push({
+            text: text,
+            sender: sender,
+            time: timeString
+        });
+    }
+
+    formatTechnicalResponse(text) {
+        // Mejorar formato para respuestas técnicas
+        let formatted = this.escapeHtml(text);
+        
+        // Destacar tecnologías
+        const techKeywords = ['React', 'Node.js', 'JavaScript', 'Python', 'Shopify', 'WordPress', 'MongoDB', 'MySQL', 'AWS'];
+        techKeywords.forEach(tech => {
+            const regex = new RegExp(`\\b${tech}\\b`, 'gi');
+            formatted = formatted.replace(regex, `<strong style="color:#667eea;">${tech}</strong>`);
+        });
+        
+        // Destacar números y resultados
+        formatted = formatted.replace(/\b(\d+%)\b/g, '<strong style="color:#4CAF50;">$1</strong>');
+        formatted = formatted.replace(/\b(\d+\+?\s?años?)\b/gi, '<strong style="color:#FF9800;">$1</strong>');
+        
+        // Mejorar listas
+        formatted = formatted.replace(/•/g, '<br>•');
+        formatted = formatted.replace(/\n/g, '<br>');
+        
+        return formatted;
+    }
+
+    showTypingIndicator(customText = "Analizando...") {
+        const indicator = document.createElement('div');
+        indicator.className = 'message bot-message';
+        indicator.id = 'typing-indicator';
+        indicator.innerHTML = `
+            <div class="message-content">
+                <div class="typing-indicator">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                    <span style="margin-left:10px;font-size:12px;color:#aaa;">${customText}</span>
+                </div>
+            </div>
+        `;
+        this.chatMessages.appendChild(indicator);
+        this.scrollToBottom();
+        return indicator;
+    }
+
+    scrollToBottom() {
+        this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
+    }
+
+    getCurrentTime() {
+        const now = new Date();
+        return `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+    }
+
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    toggleChat() {
+        this.chatVisible ? this.hideChat() : this.showChat();
+    }
+
+    showChat() {
+        this.chatVisible = true;
+        this.chatContainer.classList.remove('chat-hidden');
+        setTimeout(() => {
+            this.chatContainer.classList.add('chat-visible');
+            this.userInput.focus();
+            this.chatStatus.textContent = 'Conectado ✓';
+        }, 10);
+    }
+
+    hideChat() {
+        this.chatVisible = false;
+        this.chatContainer.classList.remove('chat-visible');
+        setTimeout(() => {
+            this.chatContainer.classList.add('chat-hidden');
+        }, 400);
+    }
+}
+
+// Inicializar
+document.addEventListener('DOMContentLoaded', () => {
+    window.hernanChat = new ChatHernanIA();
+});
+</script>
