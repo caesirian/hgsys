@@ -583,356 +583,408 @@
 
     <!-- CÓDIGO JAVASCRIPT COMPLETO -->
     <script>
-        class ChatHernanIA {
-            constructor() {
-                this.chatVisible = false;
-                this.messages = [];
-                this.revelationLevel = 0;
-                this.sessionId = this.generateSessionId();
-                // ¡IMPORTANTE! Reemplaza esta URL con la de tu Google Apps Script
-                this.GAS_URL = 'https://script.google.com/macros/s/AKfycbxex8rKGzh-vh5xDsWnhpINMzEP9vIRfwdSNG-3EeF_yDiqN2DeT330ak1Nztp_3p_h/exec';
-                this.isTyping = false;
-                this.contactShown = false;
-                
-                this.initializeElements();
-                this.setupEventListeners();
-                this.showWelcomeMessage();
-                this.setupAutoContact();
+        // REEMPLAZA TODO TU SCRIPT CON ESTO
+class ChatHernanIA {
+    constructor() {
+        // URL de tu GAS NUEVO
+        this.GAS_URL = 'https://script.google.com/macros/s/AKfycbxex8rKGzh-vh5xDsWnhpINMzEP9vIRfwdSNG-3EeF_yDiqN2DeT330ak1Nztp_3p_h/exec';
+        
+        this.chatVisible = false;
+        this.messages = [];
+        this.revelationLevel = 0;
+        this.sessionId = 'chat_' + Date.now();
+        this.isProcessing = false;
+        
+        this.init();
+    }
+    
+    init() {
+        console.log('🚀 Chat inicializando...');
+        this.cacheElements();
+        this.bindEvents();
+        this.showWelcome();
+        
+        // Probar conexión
+        setTimeout(() => this.testConnection(), 1000);
+    }
+    
+    testConnection() {
+        console.log('🔧 Probando conexión con GAS...');
+        
+        // Método 1: GET simple
+        fetch(this.GAS_URL + '?message=test&timestamp=' + Date.now())
+            .then(response => response.json())
+            .then(data => {
+                console.log('✅ Conexión GET exitosa:', data);
+                this.updateStatus('Conectado ✓');
+            })
+            .catch(error => {
+                console.warn('❌ GET falló, probando JSONP...', error);
+                this.testJSONP();
+            });
+    }
+    
+    testJSONP() {
+        return new Promise((resolve) => {
+            const callbackName = 'testCallback_' + Date.now();
+            window[callbackName] = (data) => {
+                delete window[callbackName];
+                console.log('✅ JSONP funciona:', data);
+                this.updateStatus('Conectado (JSONP) ✓');
+                resolve(data);
+            };
+            
+            const script = document.createElement('script');
+            script.src = `${this.GAS_URL}?message=test&callback=${callbackName}`;
+            script.onerror = () => {
+                delete window[callbackName];
+                console.warn('❌ JSONP también falló, usando modo local');
+                this.updateStatus('Modo local (sin IA)');
+                resolve(null);
+            };
+            
+            document.head.appendChild(script);
+        });
+    }
+    
+    cacheElements() {
+        this.elements = {
+            toggle: document.getElementById('chat-toggle'),
+            container: document.getElementById('chat-container'),
+            close: document.getElementById('close-chat'),
+            input: document.getElementById('user-input'),
+            send: document.getElementById('send-btn'),
+            messages: document.getElementById('chat-messages'),
+            name: document.getElementById('chat-name'),
+            status: document.getElementById('chat-status')
+        };
+    }
+    
+    bindEvents() {
+        this.elements.toggle.addEventListener('click', () => this.toggleChat());
+        this.elements.close.addEventListener('click', () => this.hideChat());
+        this.elements.send.addEventListener('click', () => this.sendMessage());
+        this.elements.input.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                this.sendMessage();
             }
-
-            generateSessionId() {
-                return 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-            }
-
-            initializeElements() {
-                this.chatToggle = document.getElementById('chat-toggle');
-                this.chatContainer = document.getElementById('chat-container');
-                this.closeChat = document.getElementById('close-chat');
-                this.userInput = document.getElementById('user-input');
-                this.sendBtn = document.getElementById('send-btn');
-                this.chatMessages = document.getElementById('chat-messages');
-                this.chatName = document.getElementById('chat-name');
-                this.chatStatus = document.getElementById('chat-status');
-            }
-
-            setupEventListeners() {
-                this.chatToggle.addEventListener('click', () => this.toggleChat());
-                this.closeChat.addEventListener('click', () => this.hideChat());
-                this.sendBtn.addEventListener('click', () => this.sendMessage());
-                
-                this.userInput.addEventListener('keypress', (e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        this.sendMessage();
-                    }
-                });
-
-                // Auto-completar preguntas comunes (opcional, puedes implementarlo si quieres)
-                // this.setupQuickQuestions();
-            }
-
-            setupAutoContact() {
-                // Mostrar contacto después de 5 minutos de conversación
-                setTimeout(() => {
-                    if (this.messages.length > 4) {
-                        this.showContactSuggestions();
-                    }
-                }, 300000);
-            }
-
-            showWelcomeMessage() {
-                const welcomeMessages = [
-                    {
-                        glitch: "Sistema de conocimiento cargado ✓",
-                        text: "¡Hola! Soy Hernán, especialista en desarrollo web y soluciones digitales. Estoy aquí para contarte sobre mis servicios, habilidades y cómo puedo ayudarte con tu proyecto.",
-                        time: this.getCurrentTime()
-                    },
-                    {
-                        glitch: "Base de datos: Proyectos y tecnologías",
-                        text: "Pregúntame sobre: desarrollo web, e-commerce, tecnologías que uso, casos de éxito o mi metodología de trabajo.",
-                        time: this.getCurrentTime()
-                    }
-                ];
-                
-                welcomeMessages.forEach(msg => {
-                    this.addMessage(msg.text, 'bot', msg.glitch);
-                });
-            }
-
-            async sendMessage() {
-                if (this.isTyping) return;
-                
-                const message = this.userInput.value.trim();
-                if (!message) return;
-
-                // Mostrar mensaje del usuario
-                this.addMessage(message, 'user');
-                this.userInput.value = '';
-                this.isTyping = true;
-                
-                // Mostrar "escribiendo" con efecto especial
-                const typingIndicator = this.showTypingIndicator("Analizando tu consulta...");
-                
-                try {
-                    // Llamar al backend IA
-                    const response = await this.getAIResponse(message);
-                    
-                    typingIndicator.remove();
-                    this.isTyping = false;
-                    
-                    // Procesar respuesta estructurada
-                    if (response.success) {
-                        // Actualizar nivel de revelación si cambió
-                        if (response.revelationLevel !== undefined && response.revelationLevel !== this.revelationLevel) {
-                            this.revelationLevel = response.revelationLevel;
-                            this.updateChatName(this.revelationLevel);
-                        }
-                        
-                        // Mostrar respuesta de la IA
-                        this.addMessage(response.reply, 'bot');
-                        
-                        // Mostrar info de contacto si es necesario
-                        if (response.showContactInfo) {
-                            setTimeout(() => this.showContactCard(), 1000);
-                        }
-                        
-                        // Sugerir preguntas relacionadas
-                        this.suggestRelatedQuestions(message);
-                        
-                    } else {
-                        this.addMessage(response.reply, 'bot');
-                    }
-                    
-                } catch (error) {
-                    console.error('Error:', error);
-                    typingIndicator.remove();
-                    this.isTyping = false;
-                    
-                    // Respuesta de error con sugerencias
-                    const fallbackResponses = [
-                        "Parece que hay un problema de conexión. Mientras tanto, te cuento que me especializo en desarrollo web con React y Node.js, y creación de e-commerces con Shopify.",
-                        "Error temporal. Para darte una idea rápida: trabajo con tecnologías modernas, desarrollo sitios responsivos y sistemas personalizados. ¿En qué área te interesa saber más?"
-                    ];
-                    
-                    const randomResponse = fallbackResponses[Math.floor(Math.random() * fallbackResponses.length)];
-                    this.addMessage(randomResponse, 'bot', "Conexión inestable");
-                }
-            }
-
-            async getAIResponse(userMessage) {
-                const response = await fetch(this.GAS_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        message: userMessage,
-                        sessionId: this.sessionId,
-                        revelationLevel: this.revelationLevel,
-                        timestamp: new Date().toISOString()
-                    })
-                });
-                
-                return await response.json();
-            }
-
-            updateChatName(level) {
-                const names = [
-                    "Hernán - Especialista Web",
-                    "Hernán Garbarino",
-                    "Hernán Garbarino (Digital)"
-                ];
-                
-                if (level >= 0 && level < names.length) {
-                    this.chatName.textContent = names[level];
-                }
-            }
-
-            suggestRelatedQuestions(userMessage) {
-                const lowerMsg = userMessage.toLowerCase();
-                const suggestions = {
-                    'servicio': [
-                        "¿Quieres saber más sobre alguna tecnología específica?",
-                        "¿Te interesa conocer casos similares que he trabajado?"
-                    ],
-                    'tecnolog': [
-                        "¿Te gustaría que te cuente sobre proyectos reales usando estas tecnologías?",
-                        "¿Necesitas ayuda para elegir la mejor tecnología para tu proyecto?"
-                    ],
-                    'e-commerce': [
-                        "¿Quieres detalles sobre integración con métodos de pago?",
-                        "¿Te interesa saber sobre optimización de conversiones?"
-                    ],
-                    'proyecto': [
-                        "¿Quieres que te cuente sobre metodología y tiempos?",
-                        "¿Te gustaría coordinar una consulta para evaluar tu idea?"
-                    ]
-                };
-                
-                for (const [keyword, suggs] of Object.entries(suggestions)) {
-                    if (lowerMsg.includes(keyword) && Math.random() > 0.5) {
-                        setTimeout(() => {
-                            this.addMessage(suggs[Math.floor(Math.random() * suggs.length)], 'bot', "Sugerencia relacionada");
-                        }, 1500);
-                        break;
-                    }
-                }
-            }
-
-            showContactCard() {
-                const contactHTML = `
-                    <div class="message bot-message" id="contact-suggestion">
-                        <div class="message-content">
-                            <div class="glitch-text">Info de contacto disponible</div>
-                            <div class="message-text">
-                                <strong>¿Te gustaría conversar más sobre tu proyecto?</strong>
-                                <br><br>
-                                Para consultas detalladas o presupuestos:
-                                <br>
-                                📧 <a href="mailto:hernan.garbarino@gmail.com" style="color:#0f0; text-decoration: none;">hernan.garbarino@gmail.com</a>
-                                <br>
-                                📱 <a href="https://wa.me/541134796562" style="color:#0f0; text-decoration: none;">+54 11 3479-6562</a>
-                                <br><br>
-                                <small>Disponible para nuevas oportunidades y proyectos interesantes.</small>
-                            </div>
-                            <div class="message-time">Contacto</div>
-                        </div>
-                    </div>
-                `;
-                
-                const tempDiv = document.createElement('div');
-                tempDiv.innerHTML = contactHTML;
-                this.chatMessages.appendChild(tempDiv.firstElementChild);
-                this.scrollToBottom();
-            }
-
-            showContactSuggestions() {
-                const suggestions = [
-                    "¿Te gustaría coordinar una llamada para hablar más sobre tu proyecto?",
-                    "Si necesitas un presupuesto detallado, podemos coordinar por email o WhatsApp.",
-                    "Para proyectos específicos, lo mejor es una consulta personalizada. ¿Te interesa?"
-                ];
-                
-                if (!this.contactShown) {
-                    setTimeout(() => {
-                        this.addMessage(suggestions[Math.floor(Math.random() * suggestions.length)], 'bot', "Sugerencia");
-                        this.contactShown = true;
-                    }, 5000);
-                }
-            }
-
-            addMessage(text, sender, glitchText = '') {
-                const messageDiv = document.createElement('div');
-                messageDiv.className = `message ${sender}-message`;
-                
-                // Efectos de formateo para respuestas técnicas
-                let formattedText = this.formatTechnicalResponse(text);
-                
-                const timeString = this.getCurrentTime();
-                
-                messageDiv.innerHTML = `
-                    <div class="message-content">
-                        ${glitchText ? `<div class="glitch-text">${glitchText}</div>` : ''}
-                        <div class="message-text">${formattedText}</div>
-                        <div class="message-time">${timeString}</div>
-                    </div>
-                `;
-                
-                this.chatMessages.appendChild(messageDiv);
-                this.scrollToBottom();
-                
-                // Animación de entrada
-                setTimeout(() => {
-                    messageDiv.style.opacity = '1';
-                    messageDiv.style.transform = 'translateY(0)';
-                }, 10);
-                
-                // Guardar en historial
-                this.messages.push({
-                    text: text,
-                    sender: sender,
-                    time: timeString
-                });
-            }
-
-            formatTechnicalResponse(text) {
-                // Mejorar formato para respuestas técnicas
-                let formatted = this.escapeHtml(text);
-                
-                // Destacar tecnologías
-                const techKeywords = ['React', 'Node.js', 'JavaScript', 'Python', 'Shopify', 'WordPress', 'MongoDB', 'MySQL', 'AWS'];
-                techKeywords.forEach(tech => {
-                    const regex = new RegExp(`\\b${tech}\\b`, 'gi');
-                    formatted = formatted.replace(regex, `<strong style="color:#667eea;">${tech}</strong>`);
-                });
-                
-                // Destacar números y resultados
-                formatted = formatted.replace(/\b(\d+%)\b/g, '<strong style="color:#4CAF50;">$1</strong>');
-                formatted = formatted.replace(/\b(\d+\+?\s?años?)\b/gi, '<strong style="color:#FF9800;">$1</strong>');
-                
-                // Mejorar listas
-                formatted = formatted.replace(/•/g, '<br>•');
-                formatted = formatted.replace(/\n/g, '<br>');
-                
-                return formatted;
-            }
-
-            showTypingIndicator(customText = "Analizando...") {
-                const indicator = document.createElement('div');
-                indicator.className = 'message bot-message';
-                indicator.id = 'typing-indicator';
-                indicator.innerHTML = `
-                    <div class="message-content">
-                        <div class="typing-indicator">
-                            <span></span>
-                            <span></span>
-                            <span></span>
-                            <span style="margin-left:10px;font-size:12px;color:#aaa;">${customText}</span>
-                        </div>
-                    </div>
-                `;
-                this.chatMessages.appendChild(indicator);
-                this.scrollToBottom();
-                return indicator;
-            }
-
-            scrollToBottom() {
-                this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
-            }
-
-            getCurrentTime() {
-                const now = new Date();
-                return `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-            }
-
-            escapeHtml(text) {
-                const div = document.createElement('div');
-                div.textContent = text;
-                return div.innerHTML;
-            }
-
-            toggleChat() {
-                this.chatVisible ? this.hideChat() : this.showChat();
-            }
-
-            showChat() {
-                this.chatVisible = true;
-                this.chatContainer.classList.remove('chat-hidden');
-                setTimeout(() => {
-                    this.chatContainer.classList.add('chat-visible');
-                    this.userInput.focus();
-                    this.chatStatus.textContent = 'Conectado ✓';
-                }, 10);
-            }
-
-            hideChat() {
-                this.chatVisible = false;
-                this.chatContainer.classList.remove('chat-visible');
-                setTimeout(() => {
-                    this.chatContainer.classList.add('chat-hidden');
-                }, 400);
-            }
+        });
+    }
+    
+    toggleChat() {
+        if (this.chatVisible) {
+            this.hideChat();
+        } else {
+            this.showChat();
         }
+    }
+    
+    showChat() {
+        this.chatVisible = true;
+        this.elements.container.classList.remove('hidden');
+        setTimeout(() => {
+            this.elements.container.classList.add('visible');
+            this.elements.input.focus();
+        }, 10);
+    }
+    
+    hideChat() {
+        this.chatVisible = false;
+        this.elements.container.classList.remove('visible');
+        setTimeout(() => {
+            this.elements.container.classList.add('hidden');
+        }, 300);
+    }
+    
+    updateStatus(text) {
+        if (this.elements.status) {
+            this.elements.status.textContent = text;
+        }
+    }
+    
+    showWelcome() {
+        this.addMessage(
+            "¡Hola! Soy Hernán, especialista en desarrollo web. Pregúntame sobre mis servicios, tecnologías que manejo, proyectos o metodología de trabajo.",
+            'bot'
+        );
+    }
+    
+    async sendMessage() {
+        if (this.isProcessing) return;
+        
+        const userInput = this.elements.input.value.trim();
+        if (!userInput) return;
+        
+        // Mostrar mensaje del usuario
+        this.addMessage(userInput, 'user');
+        this.elements.input.value = '';
+        this.isProcessing = true;
+        
+        // Mostrar typing
+        this.showTyping();
+        
+        try {
+            // Intentar conectar con IA
+            const response = await this.getAIResponse(userInput);
+            
+            // Remover typing
+            this.removeTyping();
+            
+            if (response && response.success) {
+                this.addMessage(response.reply, 'bot');
+                
+                // Si se menciona contacto, mostrar info
+                if (this.shouldShowContact(userInput)) {
+                    setTimeout(() => this.showContactInfo(), 1000);
+                }
+            } else {
+                // Usar respuestas locales
+                const localResponse = this.getLocalResponse(userInput);
+                this.addMessage(localResponse, 'bot');
+            }
+            
+        } catch (error) {
+            console.error('Error:', error);
+            this.removeTyping();
+            
+            const localResponse = this.getLocalResponse(userInput);
+            this.addMessage(localResponse, 'bot');
+        }
+        
+        this.isProcessing = false;
+    }
+    
+    async getAIResponse(message) {
+        // INTENTAR 3 MÉTODOS DIFERENTES
+        
+        // Método 1: JSONP (evita CORS completamente)
+        try {
+            const jsonpResponse = await this.getAIResponseViaJSONP(message);
+            if (jsonpResponse && jsonpResponse.success) {
+                return jsonpResponse;
+            }
+        } catch (error) {
+            console.log('JSONP falló:', error);
+        }
+        
+        // Método 2: GET simple
+        try {
+            const getResponse = await this.getAIResponseViaGET(message);
+            if (getResponse && getResponse.success) {
+                return getResponse;
+            }
+        } catch (error) {
+            console.log('GET falló:', error);
+        }
+        
+        // Método 3: POST con form data (evita preflight)
+        try {
+            const postResponse = await this.getAIResponseViaPOST(message);
+            if (postResponse && postResponse.success) {
+                return postResponse;
+            }
+        } catch (error) {
+            console.log('POST falló:', error);
+        }
+        
+        throw new Error('Todos los métodos fallaron');
+    }
+    
+    async getAIResponseViaJSONP(message) {
+        return new Promise((resolve) => {
+            const callbackName = 'callback_' + Date.now();
+            window[callbackName] = (data) => {
+                delete window[callbackName];
+                document.head.removeChild(script);
+                resolve(data);
+            };
+            
+            const script = document.createElement('script');
+            const params = new URLSearchParams({
+                message: encodeURIComponent(message),
+                sessionId: this.sessionId,
+                revelationLevel: this.revelationLevel,
+                callback: callbackName
+            });
+            
+            script.src = `${this.GAS_URL}?${params}`;
+            script.onerror = () => {
+                delete window[callbackName];
+                if (script.parentNode) {
+                    document.head.removeChild(script);
+                }
+                resolve(null);
+            };
+            
+            document.head.appendChild(script);
+            
+            // Timeout
+            setTimeout(() => {
+                if (window[callbackName]) {
+                    delete window[callbackName];
+                    if (script.parentNode) {
+                        document.head.removeChild(script);
+                    }
+                    resolve(null);
+                }
+            }, 8000);
+        });
+    }
+    
+    async getAIResponseViaGET(message) {
+        const params = new URLSearchParams({
+            message: encodeURIComponent(message),
+            sessionId: this.sessionId,
+            revelationLevel: this.revelationLevel,
+            t: Date.now() // Evitar caché
+        });
+        
+        const url = `${this.GAS_URL}?${params}`;
+        
+        const response = await fetch(url, {
+            method: 'GET',
+            mode: 'no-cors' // Esto permite la petición aunque no podamos leer la respuesta
+        });
+        
+        // Con mode: 'no-cors', no podemos leer el cuerpo de la respuesta
+        // Pero si la petición llega al servidor, funcionará
+        // Usaremos JSONP para leer la respuesta
+        
+        return null; // Devolver null para intentar otro método
+    }
+    
+    async getAIResponseViaPOST(message) {
+        const formData = new FormData();
+        formData.append('message', message);
+        formData.append('sessionId', this.sessionId);
+        formData.append('revelationLevel', this.revelationLevel);
+        
+        const response = await fetch(this.GAS_URL, {
+            method: 'POST',
+            body: formData,
+            mode: 'no-cors'
+        });
+        
+        return null; // Con mode: 'no-cors', no podemos leer la respuesta
+    }
+    
+    getLocalResponse(message) {
+        const lowerMsg = message.toLowerCase();
+        
+        if (lowerMsg.includes('servicio') || lowerMsg.includes('qué haces') || lowerMsg.includes('que haces')) {
+            return "Ofrezco desarrollo web completo: sitios corporativos, e-commerce (Shopify/WooCommerce), aplicaciones personalizadas, chatbots y consultoría técnica. Trabajo con React, Node.js, Python, y otras tecnologías modernas.";
+        }
+        
+        if (lowerMsg.includes('tecnolog') || lowerMsg.includes('stack') || lowerMsg.includes('herramienta')) {
+            return "Mis tecnologías principales: Frontend: React, Vue, JavaScript. Backend: Node.js, Python, PHP. Bases de datos: MySQL, MongoDB. E-commerce: Shopify, WooCommerce. Cloud: AWS, Google Cloud.";
+        }
+        
+        if (lowerMsg.includes('e-commerce') || lowerMsg.includes('tienda') || lowerMsg.includes('shopify')) {
+            return "Especialista en e-commerce: desarrollo tiendas online con Shopify, WooCommerce o soluciones personalizadas. Integración con MercadoPago, PayPal, sistemas de inventario y logística.";
+        }
+        
+        if (lowerMsg.includes('contacto') || lowerMsg.includes('email') || lowerMsg.includes('whatsapp') || lowerMsg.includes('teléfono')) {
+            return "Para conversaciones extensas o proyectos, contáctame directamente: 📧 hernan.garbarino@gmail.com 📱 +54 11 34796562";
+        }
+        
+        if (lowerMsg.includes('proyecto') || lowerMsg.includes('trabajo') || lowerMsg.includes('portafolio')) {
+            return "Algunos proyectos destacados: sistema médico con telemedicina, e-commerce de moda sostenible (+200% ventas), plataforma educativa con 10k+ usuarios. ¿Te interesa algún tipo de proyecto en particular?";
+        }
+        
+        if (lowerMsg.includes('precio') || lowerMsg.includes('costo') || lowerMsg.includes('presupuesto')) {
+            return "Los costos varían según el proyecto, complejidad y tiempo. Lo mejor es coordinar una consulta para evaluar tus necesidades específicas y darte un presupuesto preciso.";
+        }
+        
+        if (lowerMsg.includes('hola') || lowerMsg.includes('buenas') || lowerMsg.includes('hi')) {
+            return "¡Hola! Soy Hernán, especialista en desarrollo web. ¿En qué puedo ayudarte hoy?";
+        }
+        
+        // Respuesta genérica
+        const generic = [
+            "Interesante pregunta. Como desarrollador web, te diría que...",
+            "Buena consulta. Desde mi experiencia en desarrollo...",
+            "Voy a analizar eso. En base a mis conocimientos técnicos...",
+            "Como especialista en soluciones digitales, considero que..."
+        ];
+        
+        return generic[Math.floor(Math.random() * generic.length)];
+    }
+    
+    shouldShowContact(message) {
+        const lowerMsg = message.toLowerCase();
+        const keywords = ['contratar', 'trabajar juntos', 'colaborar', 'proyecto', 'presupuesto', 'contactar'];
+        return keywords.some(keyword => lowerMsg.includes(keyword));
+    }
+    
+    showContactInfo() {
+        const contactMsg = "Si quieres discutir un proyecto en detalle o necesitas un presupuesto, contáctame directamente: 📧 hernan.garbarino@gmail.com 📱 +54 11 34796562";
+        this.addMessage(contactMsg, 'bot');
+    }
+    
+    addMessage(text, sender) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${sender}-message`;
+        
+        const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        
+        messageDiv.innerHTML = `
+            <div class="message-content">
+                <div class="message-text">${this.escapeHtml(text)}</div>
+                <div class="message-time">${time}</div>
+            </div>
+        `;
+        
+        this.elements.messages.appendChild(messageDiv);
+        this.scrollToBottom();
+        
+        // Animación
+        setTimeout(() => {
+            messageDiv.style.opacity = '1';
+            messageDiv.style.transform = 'translateY(0)';
+        }, 10);
+    }
+    
+    showTyping() {
+        const typingDiv = document.createElement('div');
+        typingDiv.className = 'message bot-message';
+        typingDiv.id = 'typing-indicator';
+        typingDiv.innerHTML = `
+            <div class="message-content">
+                <div class="typing-indicator">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            </div>
+        `;
+        this.elements.messages.appendChild(typingDiv);
+        this.scrollToBottom();
+    }
+    
+    removeTyping() {
+        const typing = document.getElementById('typing-indicator');
+        if (typing) {
+            typing.remove();
+        }
+    }
+    
+    scrollToBottom() {
+        this.elements.messages.scrollTop = this.elements.messages.scrollHeight;
+    }
+    
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+}
+
+// Inicializar
+document.addEventListener('DOMContentLoaded', () => {
+    window.chat = new ChatHernanIA();
+    console.log('✅ Chat listo para usar');
+});
 
         // Inicializar
         document.addEventListener('DOMContentLoaded', () => {
