@@ -469,214 +469,69 @@ function enviar(){
 
 
 <script>
-/* ============================
-  HG DIGITAL — SCRIPT ÚNICO Y ROBUSTO
-  Pegar antes de </body>
-  Reemplaza cualquier script HG previo
-============================ */
+// =========================================
+// URL DEL SCRIPT
+// =========================================
+const HG_SERVER = "https://script.google.com/macros/s/AKfycbyFS_dxlBq4hN_D5HHiiL8I2mG1WhGm5-NOgd8THgDAH9U315ltkqw9n3VOoMwi5X08/exec";
 
-/* CONFIG: pegá tu URL del Apps Script aquí */
-const ENDPOINT_URL = "https://script.google.com/macros/s/AKfycbyFS_dxlBq4hN_D5HHiiL8I2mG1WhGm5-NOgd8THgDAH9U315ltkqw9n3VOoMwi5X08/exec";
+// -----------------------------------------
+//  ABRIR CHAT HG DIGITAL
+// -----------------------------------------
+document.getElementById("hg-digital").addEventListener("click", () => {
+  const chat = document.getElementById("hg-chat");
+  chat.style.display = "flex";
 
-/* Pequeño panel de estado visible (útil en móviles) */
-(function createStatus() {
-  if (document.getElementById('hgStatus')) return;
-  const s = document.createElement('div');
-  s.id = 'hgStatus';
-  s.style.position = 'fixed';
-  s.style.right = '12px';
-  s.style.top = '12px';
-  s.style.zIndex = '999999';
-  s.style.padding = '8px 10px';
-  s.style.background = 'linear-gradient(90deg,#7c5cff,#00ffc3)';
-  s.style.color = '#000';
-  s.style.borderRadius = '10px';
-  s.style.fontSize = '13px';
-  s.style.fontWeight = '700';
-  s.style.boxShadow = '0 6px 20px rgba(0,0,0,.3)';
-  s.innerText = 'HG: iniciando...';
-  document.body.appendChild(s);
-})();
-function setStatus(text, ok = true) {
-  const s = document.getElementById('hgStatus');
-  if (!s) return;
-  s.innerText = 'HG: ' + text;
-  s.style.opacity = ok ? '1' : '0.85';
+  enviarMensajeHG(""); // inicia presentación
+});
+
+// -----------------------------------------
+//  BOTÓN ENVIAR
+// -----------------------------------------
+document.getElementById("hg-send").addEventListener("click", () => {
+  const input = document.getElementById("hg-input");
+  const mensaje = input.value.trim();
+  if (mensaje === "") return;
+
+  agregarMensaje("Vos", mensaje);
+  enviarMensajeHG(mensaje);
+  input.value = "";
+});
+
+// -----------------------------------------
+//  AGREGAR MENSAJES AL CHAT
+// -----------------------------------------
+function agregarMensaje(autor, texto) {
+  const body = document.getElementById("hg-body");
+  const div = document.createElement("div");
+  div.className = autor === "HG" ? "msg-hg" : "msg-user";
+  div.innerText = autor + ": " + texto;
+  body.appendChild(div);
+  body.scrollTop = body.scrollHeight;
 }
 
-/* UTIL: localizar elementos seguros según múltiples posibles IDs / clases */
-function $(selectors) {
-  for (const sel of selectors) {
-    const el = document.querySelector(sel);
-    if (el) return el;
-  }
-  return null;
-}
+// -----------------------------------------
+//  JSONP REQUEST
+// -----------------------------------------
+function enviarMensajeHG(texto) {
+  const callbackName = "cb_" + Math.random().toString(36).substring(2);
 
-/* Buscamos variantes de elementos que tu HTML podría tener */
-const SELECTORS = {
-  openButtons: ['#hgBtn', '.hg-chat-btn', '.chat-btn', '[data-hg-open]'],
-  chatContainers: ['#hgWindow', '#chat', '.hg-chat-window', '#chatbox'],
-  chatBody: ['#hgBody', '#chatBody', '#messages', '.hg-chat-body', '.chat-messages'],
-  chatInput: ['#hgInput', '#chatInput', '#msg', '.hg-chat-input input'],
-  sendButtons: ['#sendBtn', '.send-btn', 'button[aria-label="Enviar"]', '.hg-chat-input .btn', '.chat-input button']
-};
-
-/* Element references (will be resolved on DOMContentLoaded) */
-let elOpenBtns = [], elChatContainer = null, elChatBody = null, elChatInput = null, elSendBtns = [];
-
-/* Expose global functions so inline onclick="openChat()" from HTML works */
-window.openChat = function() { 
-  const c = elChatContainer || $(SELECTORS.chatContainers);
-  if (!c) { setStatus('Chat no encontrado', false); return; }
-  c.style.display = 'flex';
-  setStatus('Chat abierto');
-  // focus input if available
-  setTimeout(()=> { const i = elChatInput || $(SELECTORS.chatInput); if(i) i.focus(); }, 200);
-};
-
-/* Global sendMessage for inline onclick compatibility */
-window.sendMessage = async function() {
-  const input = elChatInput || $(SELECTORS.chatInput);
-  if (!input) { setStatus('Input no encontrado', false); return; }
-  const msg = (input.value || '').trim();
-  if (!msg) return;
-  addMsg('Vos', msg);
-  input.value = '';
-  setStatus('enviando...');
-  try {
-    // Intento fetch
-    const res = await fetch(ENDPOINT_URL + '?message=' + encodeURIComponent(msg), {cache:'no-store'});
-    if (!res.ok) throw new Error('fetch fail');
-    const json = await res.json();
-    const reply = (json && json.reply) ? json.reply : 'HG no respondió';
-    addMsg('HG', reply);
-    setStatus('respuesta recibida');
-  } catch (err) {
-    // fallback JSONP
-    setStatus('fetch falló — JSONP fallback');
-    sendJSONP(msg);
-  }
-};
-
-/* JSONP fallback implementation */
-function sendJSONP(msg) {
-  const cb = 'hg_cb_' + Date.now() + '_' + Math.floor(Math.random()*9999);
-  window[cb] = function(data) {
-    try {
-      const reply = (data && data.reply) ? data.reply : 'HG no respondió';
-      addMsg('HG', reply);
-      setStatus('respuesta JSONP');
-    } finally {
-      // cleanup
-      try { delete window[cb]; } catch(e){}
-      const s = document.getElementById(cb);
-      if (s) s.remove();
+  window[callbackName] = function (res) {
+    if (res && res.hg_response) {
+      agregarMensaje("HG", res.hg_response);
+    } else {
+      agregarMensaje("HG", "Hubo un problema al procesar la respuesta.");
     }
+    delete window[callbackName];
   };
-  const script = document.createElement('script');
-  script.id = cb;
-  script.src = ENDPOINT_URL + '?message=' + encodeURIComponent(msg) + '&callback=' + cb;
-  script.onerror = function(){ addMsg('HG','Error JSONP'); setStatus('error JSONP', false); };
+
+  const script = document.createElement("script");
+  script.src = `${HG_SERVER}?msg=${encodeURIComponent(texto)}&callback=${callbackName}`;
+  script.onerror = () => {
+    agregarMensaje("HG", "Error de conexión con el servidor.");
+  };
+
   document.body.appendChild(script);
 }
-
-/* Render de mensajes en pantalla (seguro para varias variantes) */
-function addMsg(user, text) {
-  // encontrar contenedor de mensajes
-  elChatBody = elChatBody || $(SELECTORS.chatBody);
-  if (!elChatBody) {
-    // crear zona temporal si no existe
-    elChatBody = document.createElement('div');
-    elChatBody.style.padding = '12px';
-    document.body.appendChild(elChatBody);
-  }
-  const d = document.createElement('div');
-  d.style.marginBottom = '8px';
-  d.innerHTML = '<b>' + user + ':</b> ' + (text || '');
-  elChatBody.appendChild(d);
-  elChatBody.scrollTop = elChatBody.scrollHeight;
-}
-
-/* Attach listeners robustamente */
-function attachListeners() {
-  // resolve elements
-  elOpenBtns = Array.from(document.querySelectorAll(SELECTORS.openButtons.join(',')));
-  if (elOpenBtns.length === 0) {
-    // try to find any button with text HG
-    const allBtns = Array.from(document.getElementsByTagName('button'));
-    allBtns.forEach(b => {
-      if ((b.innerText || '').trim().toUpperCase() === 'HG') elOpenBtns.push(b);
-    });
-  }
-
-  elChatContainer = $(SELECTORS.chatContainers);
-  elChatBody = $(SELECTORS.chatBody);
-  elChatInput = $(SELECTORS.chatInput);
-  elSendBtns = Array.from(document.querySelectorAll(SELECTORS.sendButtons.join(',')));
-
-  // If there is a legacy inline onclick="openChat()", ensure global exists
-  window.openChat = window.openChat || function(){ if(elChatContainer) elChatContainer.style.display='flex'; setStatus('Chat abierto'); };
-
-  // bind open buttons
-  elOpenBtns.forEach(b => {
-    try {
-      b.removeEventListener && b.removeEventListener('click', window.openChat);
-    } catch(e){}
-    b.addEventListener('click', window.openChat);
-    b.style.cursor = 'pointer';
-  });
-
-  // bind send buttons - attach to sendMessage global
-  if (elSendBtns.length === 0) {
-    // try find button inside module
-    const maybe = document.querySelectorAll('[data-send], button[type="submit"]');
-    maybe.forEach(m => elSendBtns.push(m));
-  }
-  elSendBtns.forEach(btn => {
-    btn.addEventListener('click', function(e){
-      e.preventDefault && e.preventDefault();
-      window.sendMessage();
-    });
-    btn.style.cursor = 'pointer';
-  });
-
-  // bind Enter key in input
-  if (elChatInput) {
-    elChatInput.addEventListener('keydown', function(e){
-      if (e.key === 'Enter') {
-        e.preventDefault && e.preventDefault();
-        window.sendMessage();
-      }
-    });
-  }
-
-  // final status
-  setStatus('listeners activos');
-}
-
-/* DOM ready attachment */
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => {
-    attachListeners();
-    // presentacion inicial visible en chat body
-    setTimeout(()=> {
-      addMsg('HG', 'Hola, soy Hernán Garbarino — versión digital (Max Headroom sudamericano). Puedo darte presupuestos, explicar sistemas o derivarte a Hernán. Escribí algo para empezar.');
-      setStatus('listo');
-    }, 200);
-  });
-} else {
-  attachListeners();
-  addMsg('HG', 'Hola, soy Hernán Garbarino — versión digital (Max Headroom sudamericano). Puedo darte presupuestos, explicar sistemas o derivarte a Hernán. Escribí algo para empezar.');
-  setStatus('listo');
-}
-
-/* Seguridad: expongo las funciones por si HTML las llama directamente */
-window.hg = {
-  openChat: window.openChat,
-  sendMessage: window.sendMessage,
-  sendJSONP: sendJSONP
-};
 </script>
 
   
