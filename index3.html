@@ -3,471 +3,190 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat con Hernán</title>
+    <title>Chat con Hernán - Desarrollador Web</title>
     <style>
-        /* ESTILOS GLITCH - Versión mejorada */
-        :root {
-            --primary: #667eea;
-            --secondary: #764ba2;
-            --glitch-green: #0f0;
-            --retro-pink: #ff00ff;
-            --dark-bg: #0a0a0a;
+        /* ESTILOS CHAT */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', sans-serif;
         }
-        
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Arial, sans-serif; }
         
         body {
-            background: linear-gradient(135deg, var(--dark-bg) 0%, #1a1a2e 100%);
-            color: #fff;
-            min-height: 100vh;
+            background: #0a0a0a;
+            color: white;
             padding: 20px;
-            position: relative;
-            overflow-x: hidden;
+            min-height: 100vh;
         }
         
-        /* Efecto scanlines */
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(transparent 50%, rgba(0, 255, 0, 0.03) 50%);
-            background-size: 100% 4px;
-            pointer-events: none;
-            z-index: 1;
-        }
-        
-        /* Botón flotante */
-        .floating-btn {
+        /* Botón flotante del chat */
+        #chat-toggle {
             position: fixed;
             bottom: 30px;
             right: 30px;
             width: 70px;
             height: 70px;
             border-radius: 50%;
-            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            background: linear-gradient(135deg, #667eea, #764ba2);
             border: none;
             color: white;
             font-size: 24px;
             cursor: pointer;
-            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.5);
-            transition: all 0.3s ease;
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.5);
             z-index: 1000;
             display: flex;
             align-items: center;
             justify-content: center;
-            overflow: hidden;
+            transition: all 0.3s ease;
         }
         
-        .floating-btn::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
-            transform: rotate(45deg);
-            animation: shine 3s infinite;
-        }
-        
-        @keyframes shine {
-            0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
-            100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
-        }
-        
-        .floating-btn:hover {
-            transform: scale(1.1) rotate(15deg);
-            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.7);
-        }
-        
-        .pulse-ring {
-            position: absolute;
-            width: 80px;
-            height: 80px;
-            border: 2px solid var(--primary);
-            border-radius: 50%;
-            animation: pulse 2s infinite;
-        }
-        
-        @keyframes pulse {
-            0% { transform: scale(1); opacity: 1; }
-            100% { transform: scale(1.5); opacity: 0; }
+        #chat-toggle:hover {
+            transform: scale(1.1);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.7);
         }
         
         /* Contenedor del chat */
         #chat-container {
             position: fixed;
-            bottom: 100px;
+            bottom: 120px;
             right: 30px;
             width: 400px;
-            height: 600px;
+            height: 500px;
             background: rgba(0, 0, 0, 0.95);
-            border-radius: 20px;
-            box-shadow: 
-                0 20px 60px rgba(0, 0, 0, 0.8),
-                0 0 0 1px rgba(102, 126, 234, 0.3),
-                inset 0 0 20px rgba(0, 255, 0, 0.1);
-            border: 2px solid var(--primary);
+            border-radius: 15px;
+            border: 2px solid #667eea;
             display: flex;
             flex-direction: column;
             overflow: hidden;
             z-index: 1001;
-            opacity: 0;
-            transform: translateY(20px) scale(0.95);
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-        
-        #chat-container.chat-visible {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-        }
-        
-        #chat-container.chat-hidden {
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
             display: none;
         }
         
-        /* Efecto VHS */
-        .vhs-effect {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
-            background-size: 100% 4px;
-            pointer-events: none;
-            z-index: 1;
-        }
-        
-        /* Header del chat */
         .chat-header {
-            background: linear-gradient(135deg, #0f3460 0%, #1a1a2e 100%);
-            padding: 20px;
+            background: linear-gradient(135deg, #0f3460, #1a1a2e);
+            padding: 15px;
             display: flex;
+            justify-content: space-between;
             align-items: center;
-            border-bottom: 2px solid var(--primary);
-            position: relative;
-            z-index: 2;
+            border-bottom: 1px solid #667eea;
         }
         
-        .chat-header::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, var(--primary), transparent);
-        }
-        
-        .avatar {
-            position: relative;
-            margin-right: 15px;
-        }
-        
-        .glitch-avatar {
-            width: 50px;
-            height: 50px;
-            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 20px;
-            animation: glitch-avatar 3s infinite;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .glitch-avatar::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
-            animation: avatar-shine 2s infinite;
-        }
-        
-        @keyframes avatar-shine {
-            0% { transform: translateX(-100%); }
-            100% { transform: translateX(100%); }
-        }
-        
-        @keyframes glitch-avatar {
-            0%, 100% { transform: translate(0); filter: hue-rotate(0deg); }
-            2% { transform: translate(-1px, 1px) skew(1deg); filter: hue-rotate(90deg); }
-            4% { transform: translate(1px, -1px) skew(-1deg); filter: hue-rotate(180deg); }
-            96% { transform: translate(0); filter: hue-rotate(0deg); }
-        }
-        
-        .status-dot {
-            position: absolute;
-            bottom: 0;
-            right: 0;
-            width: 12px;
-            height: 12px;
-            background: #4CAF50;
-            border-radius: 50%;
-            border: 2px solid #0f3460;
-            animation: status-pulse 2s infinite;
-            box-shadow: 0 0 10px #4CAF50;
-        }
-        
-        @keyframes status-pulse {
-            0%, 100% { 
-                box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7),
-                            0 0 0 0 rgba(76, 175, 80, 0.4);
-            }
-            50% { 
-                box-shadow: 0 0 0 10px rgba(76, 175, 80, 0),
-                            0 0 0 20px rgba(76, 175, 80, 0);
-            }
-        }
-        
-        .chat-title h3 {
+        .chat-header h3 {
+            color: white;
             font-size: 18px;
-            margin-bottom: 5px;
-            background: linear-gradient(45deg, #fff, var(--primary));
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-            text-shadow: 0 0 10px rgba(102, 126, 234, 0.3);
         }
         
-        .status {
-            font-size: 12px;
-            color: #aaa;
-            font-style: italic;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-        
-        .status::before {
-            content: '';
-            width: 6px;
-            height: 6px;
-            background: #4CAF50;
-            border-radius: 50%;
-            animation: blink 1s infinite;
-        }
-        
-        @keyframes blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.3; }
-        }
-        
-        .close-btn {
-            margin-left: auto;
+        #close-chat {
             background: none;
             border: none;
-            color: #fff;
+            color: white;
             font-size: 20px;
             cursor: pointer;
-            opacity: 0.7;
-            transition: all 0.3s;
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            padding: 5px;
         }
         
-        .close-btn:hover {
-            opacity: 1;
-            transform: rotate(90deg);
-            background: rgba(255,255,255,0.1);
+        #close-chat:hover {
+            color: #667eea;
         }
         
-        /* Mensajes */
         .chat-messages {
             flex: 1;
-            padding: 20px;
+            padding: 15px;
             overflow-y: auto;
             background: rgba(10, 10, 10, 0.9);
-            background-image: 
-                linear-gradient(rgba(102, 126, 234, 0.05) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(102, 126, 234, 0.05) 1px, transparent 1px);
-            background-size: 20px 20px;
-            position: relative;
-            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
         
         .message {
-            margin-bottom: 20px;
-            opacity: 0;
-            animation: fadeInUp 0.5s forwards;
-            position: relative;
-        }
-        
-        @keyframes fadeInUp {
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        
-        .bot-message { text-align: left; }
-        .user-message { text-align: right; }
-        
-        .message-content {
-            display: inline-block;
-            max-width: 80%;
-            padding: 15px;
+            padding: 12px 16px;
             border-radius: 18px;
-            position: relative;
-            backdrop-filter: blur(5px);
+            max-width: 85%;
+            word-wrap: break-word;
+            animation: fadeIn 0.3s ease;
         }
         
-        .bot-message .message-content {
-            background: linear-gradient(135deg, rgba(26, 26, 46, 0.9) 0%, rgba(22, 33, 62, 0.9) 100%);
-            border: 1px solid rgba(102, 126, 234, 0.3);
-            border-left: 4px solid var(--primary);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
         
-        .user-message .message-content {
-            background: linear-gradient(135deg, rgba(102, 126, 234, 0.9) 0%, rgba(118, 75, 162, 0.9) 100%);
-            border: 1px solid rgba(102, 126, 234, 0.5);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        .bot-message {
+            background: rgba(26, 26, 46, 0.9);
+            border-left: 4px solid #667eea;
+            align-self: flex-start;
         }
         
-        .glitch-text {
-            font-family: 'Courier New', monospace;
-            font-size: 11px;
-            color: var(--glitch-green);
-            margin-bottom: 5px;
-            animation: text-glitch 5s infinite;
-            text-shadow: 0 0 5px #0f0;
-            letter-spacing: 1px;
-        }
-        
-        @keyframes text-glitch {
-            0%, 100% { 
-                opacity: 1;
-                transform: translateX(0);
-            }
-            25% { 
-                opacity: 0.8;
-                transform: translateX(-1px);
-            }
-            50% { 
-                opacity: 0.9;
-                transform: translateX(1px);
-            }
-            75% { 
-                opacity: 0.7;
-                transform: translateX(0);
-            }
-            80% { 
-                opacity: 0.2;
-                transform: translateX(2px);
-            }
-            82% { 
-                opacity: 1;
-                transform: translateX(0);
-            }
+        .user-message {
+            background: rgba(102, 126, 234, 0.9);
+            align-self: flex-end;
         }
         
         .message-text {
             font-size: 14px;
             line-height: 1.5;
-            word-wrap: break-word;
         }
         
         .message-time {
             font-size: 11px;
             opacity: 0.7;
             margin-top: 5px;
-            font-family: 'Courier New', monospace;
+            text-align: right;
         }
         
-        /* Input */
         .chat-input-container {
-            padding: 20px;
+            padding: 15px;
             background: rgba(15, 52, 96, 0.8);
-            border-top: 2px solid var(--primary);
+            border-top: 1px solid #667eea;
             display: flex;
             gap: 10px;
-            position: relative;
-            z-index: 2;
         }
         
         #user-input {
             flex: 1;
-            padding: 15px 20px;
+            padding: 12px 15px;
             background: rgba(255, 255, 255, 0.1);
-            border: 2px solid rgba(102, 126, 234, 0.5);
+            border: 1px solid rgba(102, 126, 234, 0.5);
             border-radius: 25px;
             color: white;
             font-size: 14px;
             outline: none;
-            transition: all 0.3s;
-            font-family: 'Segoe UI', sans-serif;
         }
         
         #user-input:focus {
-            border-color: var(--primary);
-            box-shadow: 
-                0 0 15px rgba(102, 126, 234, 0.5),
-                inset 0 0 10px rgba(102, 126, 234, 0.2);
+            border-color: #667eea;
             background: rgba(255, 255, 255, 0.15);
-            transform: translateY(-1px);
         }
         
         #user-input::placeholder {
             color: rgba(255, 255, 255, 0.5);
-            font-style: italic;
         }
         
-        .send-btn {
+        #send-btn {
             width: 50px;
             height: 50px;
             border-radius: 50%;
-            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            background: linear-gradient(135deg, #667eea, #764ba2);
             border: none;
             color: white;
             font-size: 18px;
             cursor: pointer;
             transition: all 0.3s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            overflow: hidden;
         }
         
-        .send-btn::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.2), transparent);
-            transform: translateX(-100%);
-            transition: transform 0.6s;
+        #send-btn:hover {
+            transform: scale(1.05);
         }
         
-        .send-btn:hover::before {
-            transform: translateX(100%);
+        #send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
         
-        .send-btn:hover {
-            transform: rotate(15deg) scale(1.1);
-            box-shadow: 
-                0 5px 20px rgba(102, 126, 234, 0.7),
-                0 0 30px rgba(102, 126, 234, 0.4);
-        }
-        
-        /* Typing indicator */
+        /* Indicador de escritura */
         .typing-indicator {
             display: flex;
             gap: 5px;
@@ -477,7 +196,7 @@
         .typing-indicator span {
             width: 8px;
             height: 8px;
-            background: var(--primary);
+            background: #667eea;
             border-radius: 50%;
             animation: typing 1.4s infinite;
         }
@@ -490,23 +209,18 @@
             50% { transform: translateY(-10px); }
         }
         
-        /* Scrollbar personalizado */
+        /* Scrollbar */
         .chat-messages::-webkit-scrollbar {
-            width: 8px;
+            width: 6px;
         }
         
         .chat-messages::-webkit-scrollbar-track {
             background: rgba(0, 0, 0, 0.3);
-            border-radius: 10px;
         }
         
         .chat-messages::-webkit-scrollbar-thumb {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-            border-radius: 10px;
-        }
-        
-        .chat-messages::-webkit-scrollbar-thumb:hover {
-            background: linear-gradient(135deg, var(--secondary) 0%, var(--primary) 100%);
+            background: #667eea;
+            border-radius: 3px;
         }
         
         /* Responsive */
@@ -515,481 +229,377 @@
                 width: 90vw;
                 height: 70vh;
                 right: 5vw;
-                bottom: 80px;
+                bottom: 100px;
             }
             
-            .floating-btn {
+            #chat-toggle {
                 bottom: 20px;
                 right: 20px;
-                width: 60px;
-                height: 60px;
-                font-size: 20px;
             }
         }
+        
+        /* Estilo para los enlaces de contacto */
+        .contact-link {
+            color: #667eea;
+            text-decoration: underline;
+            cursor: pointer;
+        }
     </style>
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-    <!-- Tu contenido del sitio -->
+    <!-- Contenido de tu sitio -->
     <header style="text-align: center; padding: 40px 0;">
-        <h1 style="font-size: 2.5em; margin-bottom: 10px; background: linear-gradient(45deg, #667eea, #764ba2); -webkit-background-clip: text; background-clip: text; color: transparent;">
-            Mi Sitio Web
+        <h1 style="font-size: 2.5em; margin-bottom: 10px; color: #667eea;">
+            Hernán Garbarino - Desarrollador Web
         </h1>
-        <p style="opacity: 0.8; font-size: 1.1em;">Haz clic en el botón para conversar</p>
+        <p style="opacity: 0.8; font-size: 1.2em;">Especialista en desarrollo web, e-commerce y soluciones digitales</p>
     </header>
 
-    <!-- Botón flotante del chat -->
-    <button id="chat-toggle" class="floating-btn" title="Abrir chat">
-        <i class="fas fa-robot"></i>
-        <span class="pulse-ring"></span>
-    </button>
-
-    <!-- Contenedor del chat -->
-    <div id="chat-container" class="chat-hidden">
-        <div class="vhs-effect"></div>
+    <main style="max-width: 800px; margin: 0 auto; padding: 20px;">
+        <section style="margin-bottom: 40px;">
+            <h2 style="color: #667eea; margin-bottom: 15px;">Mis Servicios</h2>
+            <p>Desarrollo web completo, e-commerce, aplicaciones personalizadas y consultoría técnica.</p>
+        </section>
         
+        <section style="margin-bottom: 40px;">
+            <h2 style="color: #667eea; margin-bottom: 15px;">Tecnologías</h2>
+            <p>React, Vue, Node.js, Python, PHP, Shopify, MySQL, MongoDB, AWS y más.</p>
+        </section>
+    </main>
+
+    <!-- Botón del chat -->
+    <button id="chat-toggle">💬</button>
+
+    <!-- Chat container -->
+    <div id="chat-container">
         <div class="chat-header">
-            <div class="avatar">
-                <div class="glitch-avatar">H</div>
-                <div class="status-dot"></div>
-            </div>
-            <div class="chat-title">
-                <h3 id="chat-name">Hernán - Especialista Web</h3>
-                <p class="status" id="chat-status">Conectando...</p>
-            </div>
-            <button id="close-chat" class="close-btn" title="Cerrar chat">
-                <i class="fas fa-times"></i>
-            </button>
+            <h3>Hernán - Desarrollador Web</h3>
+            <button id="close-chat">✕</button>
         </div>
-
-        <div id="chat-messages" class="chat-messages">
-            <!-- Mensajes se cargarán aquí -->
-        </div>
-
+        <div id="chat-messages"></div>
         <div class="chat-input-container">
-            <input 
-                type="text" 
-                id="user-input" 
-                placeholder="Escribe tu mensaje aquí... (Enter para enviar)"
-                autocomplete="off"
-                maxlength="500"
-            >
-            <button id="send-btn" class="send-btn" title="Enviar mensaje">
-                <i class="fas fa-paper-plane"></i>
-            </button>
+            <input type="text" id="user-input" placeholder="Escribe tu pregunta sobre desarrollo web...">
+            <button id="send-btn">➤</button>
         </div>
     </div>
 
-    <!-- CÓDIGO JAVASCRIPT COMPLETO -->
+    <!-- SCRIPT COMPLETO CON IA -->
     <script>
-        // REEMPLAZA TODO TU SCRIPT CON ESTO
-class ChatHernanIA {
-    constructor() {
-        // URL de tu GAS NUEVO
-        this.GAS_URL = 'https://script.google.com/macros/s/AKfycbxex8rKGzh-vh5xDsWnhpINMzEP9vIRfwdSNG-3EeF_yDiqN2DeT330ak1Nztp_3p_h/exec';
+        // URL de tu Google Apps Script - ¡REMPLAZAR CON LA TUYA!
+        const GAS_URL = 'https://script.google.com/macros/s/AKfycbzz3Sq0HqvgmZgIWgd_BQTz8-0MZ14OKpNvTI7VT5z0rTaUFMgdYNgg60QsWEoTWNFntw/exec';
         
-        this.chatVisible = false;
-        this.messages = [];
-        this.revelationLevel = 0;
-        this.sessionId = 'chat_' + Date.now();
-        this.isProcessing = false;
+        // Estado del chat
+        let chatVisible = false;
+        let isProcessing = false;
+        let revelationLevel = 0;
+        let sessionId = 'chat_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
         
-        this.init();
-    }
-    
-    init() {
-        console.log('🚀 Chat inicializando...');
-        this.cacheElements();
-        this.bindEvents();
-        this.showWelcome();
+        // Elementos del DOM
+        const chatToggle = document.getElementById('chat-toggle');
+        const chatContainer = document.getElementById('chat-container');
+        const closeChat = document.getElementById('close-chat');
+        const userInput = document.getElementById('user-input');
+        const sendBtn = document.getElementById('send-btn');
+        const chatMessages = document.getElementById('chat-messages');
         
-        // Probar conexión
-        setTimeout(() => this.testConnection(), 1000);
-    }
-    
-    testConnection() {
-        console.log('🔧 Probando conexión con GAS...');
+        // Inicializar el chat
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Chat inicializado');
+            showWelcomeMessage();
+            setupEventListeners();
+        });
         
-        // Método 1: GET simple
-        fetch(this.GAS_URL + '?message=test&timestamp=' + Date.now())
-            .then(response => response.json())
-            .then(data => {
-                console.log('✅ Conexión GET exitosa:', data);
-                this.updateStatus('Conectado ✓');
-            })
-            .catch(error => {
-                console.warn('❌ GET falló, probando JSONP...', error);
-                this.testJSONP();
+        // Configurar event listeners
+        function setupEventListeners() {
+            // Botón para abrir/cerrar chat
+            chatToggle.addEventListener('click', toggleChat);
+            
+            // Botón para cerrar chat
+            closeChat.addEventListener('click', function() {
+                chatContainer.style.display = 'none';
+                chatVisible = false;
             });
-    }
-    
-    testJSONP() {
-        return new Promise((resolve) => {
-            const callbackName = 'testCallback_' + Date.now();
-            window[callbackName] = (data) => {
-                delete window[callbackName];
-                console.log('✅ JSONP funciona:', data);
-                this.updateStatus('Conectado (JSONP) ✓');
-                resolve(data);
-            };
             
-            const script = document.createElement('script');
-            script.src = `${this.GAS_URL}?message=test&callback=${callbackName}`;
-            script.onerror = () => {
-                delete window[callbackName];
-                console.warn('❌ JSONP también falló, usando modo local');
-                this.updateStatus('Modo local (sin IA)');
-                resolve(null);
-            };
+            // Botón para enviar mensaje
+            sendBtn.addEventListener('click', sendMessage);
             
-            document.head.appendChild(script);
-        });
-    }
-    
-    cacheElements() {
-        this.elements = {
-            toggle: document.getElementById('chat-toggle'),
-            container: document.getElementById('chat-container'),
-            close: document.getElementById('close-chat'),
-            input: document.getElementById('user-input'),
-            send: document.getElementById('send-btn'),
-            messages: document.getElementById('chat-messages'),
-            name: document.getElementById('chat-name'),
-            status: document.getElementById('chat-status')
-        };
-    }
-    
-    bindEvents() {
-        this.elements.toggle.addEventListener('click', () => this.toggleChat());
-        this.elements.close.addEventListener('click', () => this.hideChat());
-        this.elements.send.addEventListener('click', () => this.sendMessage());
-        this.elements.input.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                this.sendMessage();
-            }
-        });
-    }
-    
-    toggleChat() {
-        if (this.chatVisible) {
-            this.hideChat();
-        } else {
-            this.showChat();
-        }
-    }
-    
-    showChat() {
-        this.chatVisible = true;
-        this.elements.container.classList.remove('hidden');
-        setTimeout(() => {
-            this.elements.container.classList.add('visible');
-            this.elements.input.focus();
-        }, 10);
-    }
-    
-    hideChat() {
-        this.chatVisible = false;
-        this.elements.container.classList.remove('visible');
-        setTimeout(() => {
-            this.elements.container.classList.add('hidden');
-        }, 300);
-    }
-    
-    updateStatus(text) {
-        if (this.elements.status) {
-            this.elements.status.textContent = text;
-        }
-    }
-    
-    showWelcome() {
-        this.addMessage(
-            "¡Hola! Soy Hernán, especialista en desarrollo web. Pregúntame sobre mis servicios, tecnologías que manejo, proyectos o metodología de trabajo.",
-            'bot'
-        );
-    }
-    
-    async sendMessage() {
-        if (this.isProcessing) return;
-        
-        const userInput = this.elements.input.value.trim();
-        if (!userInput) return;
-        
-        // Mostrar mensaje del usuario
-        this.addMessage(userInput, 'user');
-        this.elements.input.value = '';
-        this.isProcessing = true;
-        
-        // Mostrar typing
-        this.showTyping();
-        
-        try {
-            // Intentar conectar con IA
-            const response = await this.getAIResponse(userInput);
-            
-            // Remover typing
-            this.removeTyping();
-            
-            if (response && response.success) {
-                this.addMessage(response.reply, 'bot');
-                
-                // Si se menciona contacto, mostrar info
-                if (this.shouldShowContact(userInput)) {
-                    setTimeout(() => this.showContactInfo(), 1000);
+            // Enter para enviar mensaje
+            userInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
                 }
+            });
+            
+            // Cerrar chat al hacer clic fuera
+            document.addEventListener('click', function(e) {
+                if (chatVisible && 
+                    !chatContainer.contains(e.target) && 
+                    !chatToggle.contains(e.target)) {
+                    chatContainer.style.display = 'none';
+                    chatVisible = false;
+                }
+            });
+        }
+        
+        // Mostrar/ocultar chat
+        function toggleChat() {
+            if (chatVisible) {
+                chatContainer.style.display = 'none';
+                chatVisible = false;
             } else {
-                // Usar respuestas locales
-                const localResponse = this.getLocalResponse(userInput);
-                this.addMessage(localResponse, 'bot');
-            }
-            
-        } catch (error) {
-            console.error('Error:', error);
-            this.removeTyping();
-            
-            const localResponse = this.getLocalResponse(userInput);
-            this.addMessage(localResponse, 'bot');
-        }
-        
-        this.isProcessing = false;
-    }
-    
-    async getAIResponse(message) {
-        // INTENTAR 3 MÉTODOS DIFERENTES
-        
-        // Método 1: JSONP (evita CORS completamente)
-        try {
-            const jsonpResponse = await this.getAIResponseViaJSONP(message);
-            if (jsonpResponse && jsonpResponse.success) {
-                return jsonpResponse;
-            }
-        } catch (error) {
-            console.log('JSONP falló:', error);
-        }
-        
-        // Método 2: GET simple
-        try {
-            const getResponse = await this.getAIResponseViaGET(message);
-            if (getResponse && getResponse.success) {
-                return getResponse;
-            }
-        } catch (error) {
-            console.log('GET falló:', error);
-        }
-        
-        // Método 3: POST con form data (evita preflight)
-        try {
-            const postResponse = await this.getAIResponseViaPOST(message);
-            if (postResponse && postResponse.success) {
-                return postResponse;
-            }
-        } catch (error) {
-            console.log('POST falló:', error);
-        }
-        
-        throw new Error('Todos los métodos fallaron');
-    }
-    
-    async getAIResponseViaJSONP(message) {
-        return new Promise((resolve) => {
-            const callbackName = 'callback_' + Date.now();
-            window[callbackName] = (data) => {
-                delete window[callbackName];
-                document.head.removeChild(script);
-                resolve(data);
-            };
-            
-            const script = document.createElement('script');
-            const params = new URLSearchParams({
-                message: encodeURIComponent(message),
-                sessionId: this.sessionId,
-                revelationLevel: this.revelationLevel,
-                callback: callbackName
-            });
-            
-            script.src = `${this.GAS_URL}?${params}`;
-            script.onerror = () => {
-                delete window[callbackName];
-                if (script.parentNode) {
-                    document.head.removeChild(script);
+                chatContainer.style.display = 'flex';
+                chatVisible = true;
+                userInput.focus();
+                
+                // Si no hay mensajes, mostrar bienvenida
+                if (chatMessages.children.length === 0) {
+                    showWelcomeMessage();
                 }
-                resolve(null);
-            };
+            }
+        }
+        
+        // Mostrar mensaje de bienvenida
+        function showWelcomeMessage() {
+            addMessage('¡Hola! Soy Hernán, desarrollador web con 15+ años de experiencia. ¿En qué puedo ayudarte? Puedes preguntarme sobre mis servicios, tecnologías que manejo, proyectos o metodología de trabajo.', 'bot');
+        }
+        
+        // Enviar mensaje
+        async function sendMessage() {
+            if (isProcessing) return;
             
-            document.head.appendChild(script);
+            const message = userInput.value.trim();
+            if (!message) return;
             
-            // Timeout
-            setTimeout(() => {
-                if (window[callbackName]) {
+            // Mostrar mensaje del usuario
+            addMessage(message, 'user');
+            userInput.value = '';
+            isProcessing = true;
+            sendBtn.disabled = true;
+            
+            // Mostrar indicador de escritura
+            showTypingIndicator();
+            
+            try {
+                // Obtener respuesta de la IA
+                const response = await getAIResponse(message);
+                
+                // Ocultar indicador de escritura
+                removeTypingIndicator();
+                
+                // Mostrar respuesta
+                addMessage(response, 'bot');
+                
+                // Mostrar sugerencia de contacto si es apropiado
+                if (shouldShowContact(message)) {
+                    setTimeout(() => showContactSuggestion(), 1000);
+                }
+                
+            } catch (error) {
+                console.error('Error:', error);
+                removeTypingIndicator();
+                
+                // Respuesta de fallback
+                const fallbackResponse = getFallbackResponse(message);
+                addMessage(fallbackResponse, 'bot');
+            }
+            
+            isProcessing = false;
+            sendBtn.disabled = false;
+        }
+        
+        // Obtener respuesta de la IA
+        async function getAIResponse(message) {
+            // Método JSONP para evitar problemas de CORS
+            return new Promise((resolve, reject) => {
+                const callbackName = 'callback_' + Date.now();
+                
+                // Crear función de callback
+                window[callbackName] = function(data) {
                     delete window[callbackName];
                     if (script.parentNode) {
                         document.head.removeChild(script);
                     }
-                    resolve(null);
-                }
-            }, 8000);
-        });
-    }
-    
-    async getAIResponseViaGET(message) {
-        const params = new URLSearchParams({
-            message: encodeURIComponent(message),
-            sessionId: this.sessionId,
-            revelationLevel: this.revelationLevel,
-            t: Date.now() // Evitar caché
-        });
-        
-        const url = `${this.GAS_URL}?${params}`;
-        
-        const response = await fetch(url, {
-            method: 'GET',
-            mode: 'no-cors' // Esto permite la petición aunque no podamos leer la respuesta
-        });
-        
-        // Con mode: 'no-cors', no podemos leer el cuerpo de la respuesta
-        // Pero si la petición llega al servidor, funcionará
-        // Usaremos JSONP para leer la respuesta
-        
-        return null; // Devolver null para intentar otro método
-    }
-    
-    async getAIResponseViaPOST(message) {
-        const formData = new FormData();
-        formData.append('message', message);
-        formData.append('sessionId', this.sessionId);
-        formData.append('revelationLevel', this.revelationLevel);
-        
-        const response = await fetch(this.GAS_URL, {
-            method: 'POST',
-            body: formData,
-            mode: 'no-cors'
-        });
-        
-        return null; // Con mode: 'no-cors', no podemos leer la respuesta
-    }
-    
-    getLocalResponse(message) {
-        const lowerMsg = message.toLowerCase();
-        
-        if (lowerMsg.includes('servicio') || lowerMsg.includes('qué haces') || lowerMsg.includes('que haces')) {
-            return "Ofrezco desarrollo web completo: sitios corporativos, e-commerce (Shopify/WooCommerce), aplicaciones personalizadas, chatbots y consultoría técnica. Trabajo con React, Node.js, Python, y otras tecnologías modernas.";
+                    
+                    if (data && data.success) {
+                        // Actualizar nivel de revelación si es necesario
+                        if (data.revelationLevel !== undefined) {
+                            revelationLevel = data.revelationLevel;
+                        }
+                        
+                        resolve(data.reply);
+                    } else {
+                        reject(new Error('Respuesta no exitosa'));
+                    }
+                };
+                
+                // Crear script para JSONP
+                const script = document.createElement('script');
+                const params = new URLSearchParams({
+                    message: encodeURIComponent(message),
+                    sessionId: sessionId,
+                    revelationLevel: revelationLevel,
+                    callback: callbackName,
+                    timestamp: Date.now()
+                });
+                
+                script.src = `${GAS_URL}?${params}`;
+                
+                script.onerror = function() {
+                    delete window[callbackName];
+                    if (script.parentNode) {
+                        document.head.removeChild(script);
+                    }
+                    reject(new Error('Error de conexión'));
+                };
+                
+                document.head.appendChild(script);
+                
+                // Timeout
+                setTimeout(() => {
+                    if (window[callbackName]) {
+                        delete window[callbackName];
+                        if (script.parentNode) {
+                            document.head.removeChild(script);
+                        }
+                        reject(new Error('Timeout'));
+                    }
+                }, 15000);
+            });
         }
         
-        if (lowerMsg.includes('tecnolog') || lowerMsg.includes('stack') || lowerMsg.includes('herramienta')) {
-            return "Mis tecnologías principales: Frontend: React, Vue, JavaScript. Backend: Node.js, Python, PHP. Bases de datos: MySQL, MongoDB. E-commerce: Shopify, WooCommerce. Cloud: AWS, Google Cloud.";
+        // Respuestas de fallback
+        function getFallbackResponse(message) {
+            const lowerMsg = message.toLowerCase();
+            
+            if (lowerMsg.includes('servicio') || lowerMsg.includes('qué haces') || lowerMsg.includes('que haces')) {
+                return "Ofrezco desarrollo web completo: sitios corporativos, e-commerce (Shopify/WooCommerce), aplicaciones personalizadas, chatbots y consultoría técnica. ¿Te interesa algún servicio en particular?";
+            }
+            
+            if (lowerMsg.includes('tecnolog') || lowerMsg.includes('stack') || lowerMsg.includes('herramienta')) {
+                return "Manejo React, Vue, JavaScript (ES6+), Node.js, Python, PHP, MySQL, MongoDB, Shopify, AWS, Google Cloud, Docker, Git. ¿Quieres detalles de alguna tecnología específica?";
+            }
+            
+            if (lowerMsg.includes('e-commerce') || lowerMsg.includes('tienda') || lowerMsg.includes('shopify')) {
+                return "Especialista en e-commerce: desarrollo tiendas con Shopify, WooCommerce o soluciones personalizadas. Integración con MercadoPago, PayPal, sistemas de inventario y logística. Último proyecto logró +200% en ventas online.";
+            }
+            
+            if (lowerMsg.includes('contacto') || lowerMsg.includes('email') || lowerMsg.includes('whatsapp') || lowerMsg.includes('teléfono')) {
+                return "Para conversaciones extensas o proyectos, puedes contactarme directamente: 📧 hernan.garbarino@gmail.com 📱 +54 11 34796562";
+            }
+            
+            if (lowerMsg.includes('proyecto') || lowerMsg.includes('portafolio') || lowerMsg.includes('trabajo')) {
+                return "Algunos proyectos recientes: sistema médico con telemedicina, e-commerce de moda sostenible, plataforma educativa con 10k+ usuarios, dashboard analytics para logística. ¿Te interesa algún tipo de proyecto específico?";
+            }
+            
+            if (lowerMsg.includes('precio') || lowerMsg.includes('costo') || lowerMsg.includes('presupuesto')) {
+                return "Los costos varían según la complejidad y alcance del proyecto. Para un presupuesto preciso, lo mejor es coordinar una consulta donde analicemos tus necesidades específicas.";
+            }
+            
+            if (lowerMsg.includes('hola') || lowerMsg.includes('buenas') || lowerMsg.includes('hi') || lowerMsg.includes('hello')) {
+                return "¡Hola! Soy Hernán, desarrollador web full stack. ¿En qué puedo ayudarte hoy?";
+            }
+            
+            if (lowerMsg.includes('quién eres') || lowerMsg.includes('quien eres')) {
+                return "Soy Hernán, desarrollador web con más de 15 años de experiencia. Me especializo en crear soluciones digitales que realmente funcionan para negocios.";
+            }
+            
+            // Respuesta genérica
+            const generic = [
+                "Entiendo tu pregunta. Como desarrollador web, te recomendaría...",
+                "Interesante consulta. Desde mi experiencia en desarrollo...",
+                "Voy a analizar eso. En base a lo que sé sobre desarrollo web...",
+                "Buena pregunta. Como especialista en soluciones digitales..."
+            ];
+            
+            return generic[Math.floor(Math.random() * generic.length)] + " ¿Hay algo más específico que quieras saber?";
         }
         
-        if (lowerMsg.includes('e-commerce') || lowerMsg.includes('tienda') || lowerMsg.includes('shopify')) {
-            return "Especialista en e-commerce: desarrollo tiendas online con Shopify, WooCommerce o soluciones personalizadas. Integración con MercadoPago, PayPal, sistemas de inventario y logística.";
+        // Determinar si mostrar sugerencia de contacto
+        function shouldShowContact(message) {
+            const lowerMsg = message.toLowerCase();
+            const keywords = ['contratar', 'trabajar juntos', 'colaborar', 'proyecto', 'presupuesto', 'contactar', 'llamar'];
+            return keywords.some(keyword => lowerMsg.includes(keyword));
         }
         
-        if (lowerMsg.includes('contacto') || lowerMsg.includes('email') || lowerMsg.includes('whatsapp') || lowerMsg.includes('teléfono')) {
-            return "Para conversaciones extensas o proyectos, contáctame directamente: 📧 hernan.garbarino@gmail.com 📱 +54 11 34796562";
+        // Mostrar sugerencia de contacto
+        function showContactSuggestion() {
+            const contactMsg = "Si quieres discutir un proyecto en detalle o necesitas un presupuesto personalizado, contáctame directamente: 📧 hernan.garbarino@gmail.com 📱 +54 11 34796562";
+            addMessage(contactMsg, 'bot');
         }
         
-        if (lowerMsg.includes('proyecto') || lowerMsg.includes('trabajo') || lowerMsg.includes('portafolio')) {
-            return "Algunos proyectos destacados: sistema médico con telemedicina, e-commerce de moda sostenible (+200% ventas), plataforma educativa con 10k+ usuarios. ¿Te interesa algún tipo de proyecto en particular?";
-        }
-        
-        if (lowerMsg.includes('precio') || lowerMsg.includes('costo') || lowerMsg.includes('presupuesto')) {
-            return "Los costos varían según el proyecto, complejidad y tiempo. Lo mejor es coordinar una consulta para evaluar tus necesidades específicas y darte un presupuesto preciso.";
-        }
-        
-        if (lowerMsg.includes('hola') || lowerMsg.includes('buenas') || lowerMsg.includes('hi')) {
-            return "¡Hola! Soy Hernán, especialista en desarrollo web. ¿En qué puedo ayudarte hoy?";
-        }
-        
-        // Respuesta genérica
-        const generic = [
-            "Interesante pregunta. Como desarrollador web, te diría que...",
-            "Buena consulta. Desde mi experiencia en desarrollo...",
-            "Voy a analizar eso. En base a mis conocimientos técnicos...",
-            "Como especialista en soluciones digitales, considero que..."
-        ];
-        
-        return generic[Math.floor(Math.random() * generic.length)];
-    }
-    
-    shouldShowContact(message) {
-        const lowerMsg = message.toLowerCase();
-        const keywords = ['contratar', 'trabajar juntos', 'colaborar', 'proyecto', 'presupuesto', 'contactar'];
-        return keywords.some(keyword => lowerMsg.includes(keyword));
-    }
-    
-    showContactInfo() {
-        const contactMsg = "Si quieres discutir un proyecto en detalle o necesitas un presupuesto, contáctame directamente: 📧 hernan.garbarino@gmail.com 📱 +54 11 34796562";
-        this.addMessage(contactMsg, 'bot');
-    }
-    
-    addMessage(text, sender) {
-        const messageDiv = document.createElement('div');
-        messageDiv.className = `message ${sender}-message`;
-        
-        const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        
-        messageDiv.innerHTML = `
-            <div class="message-content">
-                <div class="message-text">${this.escapeHtml(text)}</div>
+        // Agregar mensaje al chat
+        function addMessage(text, sender) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}-message`;
+            
+            const time = new Date().toLocaleTimeString([], { 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            });
+            
+            messageDiv.innerHTML = `
+                <div class="message-text">${escapeHtml(text)}</div>
                 <div class="message-time">${time}</div>
-            </div>
-        `;
+            `;
+            
+            chatMessages.appendChild(messageDiv);
+            scrollToBottom();
+        }
         
-        this.elements.messages.appendChild(messageDiv);
-        this.scrollToBottom();
-        
-        // Animación
-        setTimeout(() => {
-            messageDiv.style.opacity = '1';
-            messageDiv.style.transform = 'translateY(0)';
-        }, 10);
-    }
-    
-    showTyping() {
-        const typingDiv = document.createElement('div');
-        typingDiv.className = 'message bot-message';
-        typingDiv.id = 'typing-indicator';
-        typingDiv.innerHTML = `
-            <div class="message-content">
+        // Mostrar indicador de escritura
+        function showTypingIndicator() {
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'message bot-message';
+            typingDiv.id = 'typing-indicator';
+            typingDiv.innerHTML = `
                 <div class="typing-indicator">
                     <span></span>
                     <span></span>
                     <span></span>
                 </div>
-            </div>
-        `;
-        this.elements.messages.appendChild(typingDiv);
-        this.scrollToBottom();
-    }
-    
-    removeTyping() {
-        const typing = document.getElementById('typing-indicator');
-        if (typing) {
-            typing.remove();
+            `;
+            chatMessages.appendChild(typingDiv);
+            scrollToBottom();
         }
-    }
-    
-    scrollToBottom() {
-        this.elements.messages.scrollTop = this.elements.messages.scrollHeight;
-    }
-    
-    escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    }
-}
-
-// Inicializar
-document.addEventListener('DOMContentLoaded', () => {
-    window.chat = new ChatHernanIA();
-    console.log('✅ Chat listo para usar');
-});
-
-        // Inicializar
-        document.addEventListener('DOMContentLoaded', () => {
-            window.hernanChat = new ChatHernanIA();
-        });
+        
+        // Ocultar indicador de escritura
+        function removeTypingIndicator() {
+            const typing = document.getElementById('typing-indicator');
+            if (typing) {
+                typing.remove();
+            }
+        }
+        
+        // Scroll al final del chat
+        function scrollToBottom() {
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        
+        // Escapar HTML para seguridad
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        // Función para probar la conexión (opcional)
+        function testConnection() {
+            console.log('🔧 Probando conexión...');
+            
+            // Intentar conectar con GAS
+            fetch(GAS_URL + '?message=test&timestamp=' + Date.now())
+                .then(response => response.text())
+                .then(data => {
+                    console.log('✅ Conexión exitosa:', data.substring(0, 100));
+                })
+                .catch(error => {
+                    console.warn('⚠️ Conexión fallida, usando modo local:', error.message);
+                });
+        }
+        
+        // Probar conexión al cargar
+        setTimeout(testConnection, 2000);
     </script>
 </body>
 </html>
