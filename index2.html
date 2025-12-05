@@ -1,539 +1,187 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-  <title>Desarrollador Web y Sistemas de Gestión | Automatización para Empresas</title>
-
-  <meta name="description" content="Desarrollador web y administrador. Creo sistemas de gestión, automatización de procesos, presupuestos online y plataformas web para empresas, PyMEs y cooperativas.">
-  <meta name="keywords" content="desarrollador web, sistemas de gestión, automatización, presupuestos online, panel administrativo, google sheets, apps script, programador argentina">
-  <meta name="author" content="Hernán Garbarino">
-
-  <meta property="og:title" content="Sistemas Web y Automatización para Empresas">
-  <meta property="og:description" content="Desarrollo web + gestión administrativa en una sola solución.">
-  <meta property="og:type" content="website">
-  <meta property="og:url" content="https://hgsys.vercel.app">
-
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="alternate icon" type="image/png" href="favicon.png">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
-
+  <meta charset="UTF-8">
+  <title>HG Digital - Desarrollador Web</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    :root{
-      --bg:#0f0f14;--card:#17171f;--primary:#7c5cff;--secondary:#00ffc3;--text:#e8e8f0;--muted:#9ea0b5;--radius:18px
-    }
-    *{box-sizing:border-box;margin:0;padding:0}
-    body{
-      font-family:Inter,system-ui,sans-serif;
-      background:radial-gradient(800px 400px at 10% 0%,rgba(124,92,255,.15),transparent),
-                 radial-gradient(800px 400px at 90% 10%,rgba(0,255,195,.12),transparent),
-                 var(--bg);
-      color:var(--text);
-      line-height:1.6;
-      overflow-x:hidden;
-      transition:.3s ease
-    }
-    body.light{--bg:#f4f6fb;--card:#fff;--text:#0f1222;--muted:#5a5f7a;background:var(--bg)}
-    a{color:inherit;text-decoration:none}
-    .container{max-width:1200px;margin:0 auto;padding:24px}
-
-    header{position:sticky;top:0;z-index:50;background:rgba(15,15,20,.85);backdrop-filter:blur(12px);border-bottom:1px solid rgba(255,255,255,.05)}
-    .nav{display:flex;align-items:center;justify-content:space-between}
-    .logo{font-weight:800;letter-spacing:1px}
-    .logo span{color:var(--secondary)}
-    .nav-links{display:flex;gap:24px;font-size:.95rem;color:var(--muted)}
-
-    .hero{min-height:90vh;display:grid;place-items:center;text-align:center}
-    .hero h1{font-size:clamp(2.2rem,5vw,3.6rem);line-height:1.1;margin-bottom:16px}
-    .hero p{max-width:720px;margin:0 auto 32px;color:var(--muted)}
-
-    .cta-group{display:flex;gap:16px;justify-content:center;flex-wrap:wrap}
-    .btn{padding:14px 28px;border-radius:999px;border:1px solid rgba(255,255,255,.12);
-         background:linear-gradient(135deg,rgba(124,92,255,.2),rgba(0,255,195,.15));
-         color:var(--text);font-weight:600;cursor:pointer;transition:.3s}
-    .btn.primary{background:linear-gradient(135deg,var(--primary),var(--secondary));color:#000;border:none}
-    .btn:hover{transform:translateY(-2px);box-shadow:0 10px 30px rgba(0,0,0,.3)}
-
-    section{padding:96px 0}
-    .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
-    .card{background:linear-gradient(180deg,rgba(255,255,255,.04),transparent),var(--card);
-          border-radius:var(--radius);padding:28px;border:1px solid rgba(255,255,255,.06)}
-
-    .highlight{background:linear-gradient(135deg,rgba(124,92,255,.25),rgba(0,255,195,.25));
-               border-radius:var(--radius);padding:48px;text-align:center}
-
-    footer{padding:64px 0 32px;border-top:1px solid rgba(255,255,255,.05);
-           color:var(--muted);text-align:center;font-size:.85rem}
-
-    .tool-window,#module-container{background:#0b0b10;border-radius:16px;padding:18px;border:1px solid rgba(255,255,255,.14)}
-    #module-container{position:fixed;top:84px;left:50%;transform:translateX(-50%) translateY(-10px);
-      max-width:1100px;width:calc(100% - 24px);z-index:80;
-      box-shadow:0 30px 80px rgba(0,0,0,.6);display:none;opacity:0;transition:.35s ease}
-    #module-container.active{display:block;opacity:1;transform:translateX(-50%) translateY(0)}
-    .overlay{position:fixed;inset:0;z-index:70;background:rgba(10,10,18,.55);
-      backdrop-filter:blur(6px);display:none}
-    .overlay.active{display:block}
-
-    input{width:100%;padding:12px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.1);
-          background:#0f0f14;color:var(--text)}
-
-    .chatbox{position:fixed;bottom:20px;right:20px;width:320px;background:var(--card);
-      border-radius:18px;border:1px solid rgba(255,255,255,.1);overflow:hidden;
-      display:none;flex-direction:column}
-
-    .chat-header{padding:12px;font-weight:700;
-      background:linear-gradient(135deg,var(--primary),var(--secondary));color:#000}
-    .chat-messages{padding:12px;flex:1;overflow-y:auto;font-size:.85rem}
-
-    .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
-      background:linear-gradient(135deg,var(--primary),var(--secondary));color:#000;
-      padding:12px 22px;border-radius:999px;font-weight:600;display:none}
-
-    /* keep select visually unobtrusive but consistent with .btn */
-    .lang-select {
-      background: transparent;
-      color: var(--text);
-      border-radius: 12px;
-      padding: 8px 12px;
-      border: 1px solid rgba(255,255,255,.08);
-      font-weight:600;
-      cursor:pointer;
+    body { 
+      font-family: Arial, sans-serif; 
+      margin: 0; 
+      background: #0f0f0f; 
+      color: #eee; 
     }
 
-    @media(max-width:900px){
-      .grid{grid-template-columns:1fr}
-      .nav-links{display:none}
-      section{padding:64px 0}
+    header { 
+      text-align: center; 
+      padding: 40px 20px; 
+      background: linear-gradient(135deg,#1f1f1f,#2c2c2c); 
+    }
+
+    section { 
+      padding: 40px 20px; 
+      max-width: 1100px; 
+      margin: auto; 
+    }
+
+    .grid { 
+      display: grid; 
+      grid-template-columns: repeat(auto-fit,minmax(250px,1fr)); 
+      gap: 20px; 
+    }
+
+    .card { 
+      background: #1a1a1a; 
+      padding: 20px; 
+      border-radius: 16px; 
+      box-shadow: 0 0 15px #000; 
+    }
+
+    .chat-btn { 
+      position: fixed; 
+      bottom: 20px; 
+      right: 20px; 
+      background: #00ffc3; 
+      border: none; 
+      padding: 16px 20px; 
+      border-radius: 50px; 
+      font-weight: bold; 
+      cursor: pointer; 
+      z-index: 9999;
+    }
+
+    .chat { 
+      position: fixed; 
+      inset: 0; 
+      background: #0b0b0b; 
+      display: none; 
+      flex-direction: column; 
+      z-index: 9998;
+    }
+
+    .chat-header { 
+      background: #111; 
+      padding: 12px; 
+      text-align: center; 
+      font-weight: bold;
+    }
+
+    .chat-body { 
+      flex: 1; 
+      overflow-y: auto; 
+      padding: 20px; 
+    }
+
+    .chat-input { 
+      display: flex; 
+      border-top: 1px solid #222;
+    }
+
+    .chat-input input { 
+      flex: 1; 
+      padding: 14px; 
+      border: none; 
+      outline: none; 
+      background: #111; 
+      color: #fff;
+    }
+
+    .chat-input button { 
+      padding: 14px 20px; 
+      background: #00ffc3; 
+      border: none; 
+      cursor: pointer; 
+      font-weight: bold;
     }
   </style>
 </head>
 
 <body>
 
-<header class="site-header">
-  <div class="container nav">
-    <div class="logo">HG<span>Soluciones</span></div>
-    <nav class="nav-links">
-      <a href="#servicios" data-i18n="nav.services">Servicios</a>
-      <a href="#soluciones" data-i18n="nav.solutions">Soluciones</a>
-      <a href="#contacto" data-i18n="nav.contact">Contacto</a>
-    </nav>
-    <!-- language selector placed next to theme toggle, styled to be unobtrusive -->
-    <div style="display:flex;align-items:center;gap:10px">
-      <select id="langSelector" class="lang-select" aria-label="Selector de idioma" onchange="setLanguage(this.value)">
-        <option value="es">ES</option>
-        <option value="en">EN</option>
-      </select>
-      <button class="btn" id="themeToggle" onclick="toggleTheme()" aria-label="Toggle theme">🌗</button>
-    </div>
-  </div>
+<header>
+  <h1>HG Digital</h1>
+  <p>Administrador Sr. & Desarrollador Web</p>
 </header>
 
-<div class="overlay" id="overlay" onclick="closeModule()"></div>
-
-<main>
-
-<section class="hero container">
-  <div>
-    <h1 data-i18n="hero.title">Desarrollo Web + Sistemas de Gestión para Empresas</h1>
-    <p data-i18n="hero.subtitle">Soy desarrollador web y administrador con más de 18 años de experiencia en gestión, finanzas y procesos. Creo sitios, sistemas y automatizaciones que funcionan en la práctica, no solo en diseño.</p>
-    <div class="cta-group">
-      <button class="btn primary" onclick="loadModule('https://hgsys.vercel.app/presupuesto.html')" data-i18n="cta.quote">Pedir Presupuesto</button>
-      <button class="btn primary" onclick="loadModule('https://hgsys.vercel.app/HGSys.html')" data-i18n="cta.openSystem">Abrir Sistema</button>
-      <button class="btn primary" onclick="loadModule('https://hgsys.vercel.app/reader.html')" data-i18n="cta.openReader">Lector QR</button>
-      <button class="btn" onclick="toggleChat()" data-i18n="cta.openChat">Abrir Chat</button>
-    </div>
-  </div>
-</section>
-
-<section id="servicios" class="container">
+<section>
+  <h2>Servicios</h2>
   <div class="grid">
-    <div class="card">
-      <h3 data-i18n="srv.webTitle">Desarrollo Web Profesional</h3>
-      <p data-i18n="srv.webDesc">Landing pages, sitios institucionales, catálogos online, portfolios y sistemas web optimizados para velocidad, seguridad y conversión.</p>
-    </div>
-
-    <div class="card">
-      <h3 data-i18n="srv.autoTitle">Automatización Administrativa</h3>
-      <p data-i18n="srv.autoDesc">Formularios inteligentes, envío automático de presupuestos, reportes, control de datos, flujos de trabajo y reducción de tareas manuales.</p>
-    </div>
-
-    <div class="card">
-      <h3 data-i18n="srv.sysTitle">Sistemas de Gestión</h3>
-      <p data-i18n="srv.sysDesc">Paneles administrativos, control de clientes, presupuestos, stock, métricas, reportes y visualización de datos en tiempo real.</p>
-    </div>
+    <div class="card">Armado de Sitio Web</div>
+    <div class="card">Automatizaciones</div>
+    <div class="card">Sistemas de Gestión</div>
+    <div class="card">Asesoramiento Administrativo</div>
   </div>
 </section>
 
-<section id="hg" class="container">
-  <div class="highlight">
-    <h2 data-i18n="hg.title">HG — Soluciones Digitales</h2>
-    <p data-i18n="hg.desc">HG representa la unión entre desarrollo web, automatización y gestión administrativa. No solo programo sistemas: los pienso desde la lógica real de una empresa. Mi formación en administración, finanzas y procesos me permite crear herramientas útiles, rentables y fáciles de operar.</p>
+<!-- BOTÓN HG -->
+<button class="chat-btn" onclick="openChat()">HG</button>
+
+<!-- VENTANA DE CHAT -->
+<div class="chat" id="chat">
+  <div class="chat-header">HG Digital IA</div>
+  <div class="chat-body" id="chatBody"></div>
+  <div class="chat-input">
+    <input id="chatInput" placeholder="Escribí tu mensaje...">
+    <button onclick="sendMessage()">Enviar</button>
   </div>
-</section>
-
-<section id="soluciones" class="container">
-  <h2 style="text-align:center;margin-bottom:32px" data-i18n="sol.title">Soluciones HG</h2>
-  <div class="grid">
-    <div class="card">
-      <h3 data-i18n="sol.websTitle">Sitios Web que Venden</h3>
-      <p data-i18n="sol.websDesc">Webs institucionales, landing pages de servicios, embudos de contacto, portfolios y sitios optimizados para captar clientes.</p>
-    </div>
-
-    <div class="card">
-      <h3 data-i18n="sol.adminTitle">Sistemas Administrativos</h3>
-      <p data-i18n="sol.adminDesc">Presupuestos automáticos, control de clientes, seguimiento de pedidos, métricas de ventas y reportes gerenciales.</p>
-    </div>
-
-    <div class="card">
-      <h3 data-i18n="sol.intTitle">Integraciones Profesionales</h3>
-      <p data-i18n="sol.intDesc">WhatsApp, Gmail, Google Sheets, Drive, APIs externas, notificaciones automáticas, bots y flujos inteligentes.</p>
-    </div>
-  </div>
-</section>
-
-<section id="contacto" class="container">
-  <div class="highlight">
-    <h2 data-i18n="contact.title">¿Querés mejorar la gestión de tu empresa con un sistema real?</h2>
-    <p data-i18n="contact.desc">Diseño herramientas a medida para negocios, cooperativas, profesionales y PyMEs.</p>
-    <div class="cta-group" style="margin-top:24px">
-      <a href="https://wa.me/1134796562" class="btn primary" data-i18n="contact.cta">Contactar Ahora</a>
-    </div>
-  </div>
-</section>
-
-</main>
-
-<footer>
-  <div class="container" data-i18n="footer">© 2025 - HG Soluciones Digitales · Desarrollo Web y Sistemas de Gestión</div>
-</footer>
-
-<div class="chatbox" id="chatbox">
-  <div class="chat-header" data-i18n="chat.header">Asistente Web</div>
-  <div class="chat-messages" id="messages" data-i18n="chat.greeting">Hola 👋 ¿En qué te ayudo?</div>
-  <div class="chat-input"><input id="msg" placeholder="Escribí acá..." data-placeholder-es="Escribí acá..." data-placeholder-en="Write here..." onkeydown="if(event.key==='Enter') enviar()"></div>
 </div>
-
-<div class="toast" id="toast" data-i18n="toast.sending" style="display:none">Enviando…</div>
 
 <script>
-/* ====== Traducciones ====== */
-const i18n = {
-  es: {
-    'nav.services': 'Servicios',
-    'nav.solutions': 'Soluciones',
-    'nav.contact': 'Contacto',
-    'hero.title': 'Desarrollo Web + Sistemas de Gestión para Empresas',
-    'hero.subtitle': 'Soy desarrollador web y administrador con más de 18 años de experiencia en gestión, finanzas y procesos. Creo sitios, sistemas y automatizaciones que funcionan en la práctica, no solo en diseño.',
-    'cta.quote': 'Pedir Presupuesto',
-    'cta.openSystem': 'Abrir Sistema',
-    'cta.openReader': 'Lector QR',
-    'cta.openChat': 'Abrir Chat',
-    'srv.webTitle': 'Desarrollo Web Profesional',
-    'srv.webDesc': 'Landing pages, sitios institucionales, catálogos online, portfolios y sistemas web optimizados para velocidad, seguridad y conversión.',
-    'srv.autoTitle': 'Automatización Administrativa',
-    'srv.autoDesc': 'Formularios inteligentes, envío automático de presupuestos, reportes, control de datos, flujos de trabajo y reducción de tareas manuales.',
-    'srv.sysTitle': 'Sistemas de Gestión',
-    'srv.sysDesc': 'Paneles administrativos, control de clientes, presupuestos, stock, métricas, reportes y visualización de datos en tiempo real.',
-    'hg.title': 'HG — Soluciones Digitales',
-    'hg.desc': 'HG representa la unión entre desarrollo web, automatización y gestión administrativa. No solo programo sistemas: los pienso desde la lógica real de una empresa. Mi formación en administración, finanzas y procesos me permite crear herramientas útiles, rentables y fáciles de operar.',
-    'sol.title': 'Soluciones HG',
-    'sol.websTitle': 'Sitios Web que Venden',
-    'sol.websDesc': 'Webs institucionales, landing pages de servicios, embudos de contacto, portfolios y sitios optimizados para captar clientes.',
-    'sol.adminTitle': 'Sistemas Administrativos',
-    'sol.adminDesc': 'Presupuestos automáticos, control de clientes, seguimiento de pedidos, métricas de ventas y reportes gerenciales.',
-    'sol.intTitle': 'Integraciones Profesionales',
-    'sol.intDesc': 'WhatsApp, Gmail, Google Sheets, Drive, APIs externas, notificaciones automáticas, bots y flujos inteligentes.',
-    'contact.title': '¿Querés mejorar la gestión de tu empresa con un sistema real?',
-    'contact.desc': 'Diseño herramientas a medida para negocios, cooperativas, profesionales y PyMEs.',
-    'contact.cta': 'Contactar Ahora',
-    'footer': '© 2025 - HG Soluciones Digitales · Desarrollo Web y Sistemas de Gestión',
-    'chat.header': 'Asistente Web',
-    'chat.greeting': 'Hola 👋 ¿En qué te ayudo?',
-    'toast.sending': 'Enviando…',
-    'bot.continue': 'Si querés avanzar con un proyecto real, podés escribirme a hernan.garbarino@gmail.com o por WhatsApp al 1134796562.'
-  },
-  en: {
-    'nav.services': 'Services',
-    'nav.solutions': 'Solutions',
-    'nav.contact': 'Contact',
-    'hero.title': 'Web Development + Management Systems for Real Businesses',
-    'hero.subtitle': 'I am a web developer and administrator with over 18 years of experience in management, finance and processes. I build websites, systems and automations that work in practice, not just design.',
-    'cta.quote': 'Request Quote',
-    'cta.openSystem': 'Open System',
-    'cta.openReader': 'Open QR Reader',
-    'cta.openChat': 'Open Chat',
-    'srv.webTitle': 'Professional Web Development',
-    'srv.webDesc': 'Landing pages, institutional sites, online catalogs, portfolios and web systems optimized for speed, security and conversion.',
-    'srv.autoTitle': 'Administrative Automation',
-    'srv.autoDesc': 'Smart forms, automatic quote sending, reports, data control, workflows and reduction of manual tasks.',
-    'srv.sysTitle': 'Management Systems',
-    'srv.sysDesc': 'Admin panels, client control, quotes, stock, metrics, reports and real-time data visualization.',
-    'hg.title': 'HG — Digital Solutions',
-    'hg.desc': 'HG represents the union between web development, automation and administrative management. I don\'t just program systems: I design them from the real logic of a business. My background in administration, finance and processes allows me to create useful, profitable and easy-to-operate tools.',
-    'sol.title': 'HG Solutions',
-    'sol.websTitle': 'Websites That Sell',
-    'sol.websDesc': 'Institutional websites, service landing pages, contact funnels, portfolios and sites optimized to attract clients.',
-    'sol.adminTitle': 'Administrative Systems',
-    'sol.adminDesc': 'Automatic quotes, client control, order tracking, sales metrics and managerial reports.',
-    'sol.intTitle': 'Professional Integrations',
-    'sol.intDesc': 'WhatsApp, Gmail, Google Sheets, Drive, external APIs, automatic notifications, bots and smart flows.',
-    'contact.title': 'Want to improve your company management with a real system?',
-    'contact.desc': 'I design custom tools for businesses, cooperatives, professionals and SMEs.',
-    'contact.cta': 'Contact Now',
-    'footer': '© 2025 - HG Digital Solutions · Web Development & Management Systems',
-    'chat.header': 'Web Assistant',
-    'chat.greeting': 'Hi 👋 How can I help?',
-    'toast.sending': 'Sending…',
-    'bot.continue': 'If you want to move forward with a real project, you can write to me at hernan.garbarino@gmail.com or WhatsApp at 1134796562.'
-  }
-};
+// ============================
+// CONFIG
+// ============================
+const ENDPOINT_URL = "https://script.google.com/macros/s/AKfycbyFS_dxlBq4hN_D5HHiiL8I2mG1WhGm5-NOgd8THgDAH9U315ltkqw9n3VOoMwi5X08/exec";
 
-/* ====== Funciones de i18n y detección ====== */
-function applyTranslations(lang) {
-  // update html lang attribute
-  document.documentElement.lang = (lang === 'es') ? 'es' : 'en';
-
-  // update all elements with data-i18n
-  document.querySelectorAll('[data-i18n]').forEach(el => {
-    const key = el.getAttribute('data-i18n');
-    if (i18n[lang] && i18n[lang][key]) {
-      el.innerHTML = i18n[lang][key];
-    }
-  });
-
-  // update placeholder specifically
-  const input = document.getElementById('msg');
-  if (input) {
-    if (lang === 'es') {
-      input.placeholder = input.getAttribute('data-placeholder-es') || 'Escribí acá...';
-    } else {
-      input.placeholder = input.getAttribute('data-placeholder-en') || 'Write here...';
-    }
-  }
-
-  // update lang selector UI if present
-  const sel = document.getElementById('langSelector');
-  if (sel) sel.value = lang;
-
-  // save preference
-  localStorage.setItem('siteLang', lang);
+// ============================
+// ABRIR CHAT
+// ============================
+function openChat() {
+  document.getElementById("chat").style.display = "flex";
 }
 
-function detectAndApplyLanguage() {
-  const saved = localStorage.getItem('siteLang');
-  if (saved) {
-    applyTranslations(saved);
-    return saved;
-  }
+// ============================
+// ENVIAR MENSAJE (JSONP)
+// ============================
+function sendMessage() {
+  const input = document.getElementById("chatInput");
+  const msg = input.value.trim();
+  if (!msg) return;
 
-  // detect via navigator
-  const nav = (navigator.language || navigator.userLanguage || 'es').toLowerCase();
-  const lang = nav.startsWith('es') ? 'es' : 'en';
-  applyTranslations(lang);
-  return lang;
-}
-
-function setLanguage(lang) {
-  if (!['es','en'].includes(lang)) lang = 'es';
-  applyTranslations(lang);
-}
-
-/* ====== Carga de tema (mantener comportamiento previo) ====== */
-function toggleTheme(){ 
-  document.body.classList.toggle('light');
-  // store theme preference
-  try{ localStorage.setItem('theme', document.body.classList.contains('light') ? 'light' : 'dark') }catch(e){}
-}
-
-/* ====== Carga de tema guardado en inicio ====== */
-(function loadPreferences(){
-  try{
-    const t = localStorage.getItem('theme');
-    if(t === 'light') document.body.classList.add('light');
-  }catch(e){}
-})();
-
-/* ====== Inicialización ====== */
-document.addEventListener('DOMContentLoaded', () => {
-  detectAndApplyLanguage();
-
-  // Cache chat inputs
-  window.chatbox = document.getElementById('chatbox');
-  window.messages = document.getElementById('messages');
-  window.msg = document.getElementById('msg');
-
-  // ensure lang selector matches initial lang
-  const lang = document.documentElement.lang || 'es';
-  const sel = document.getElementById('langSelector');
-  if (sel) sel.value = lang;
-});
-
-/* ====== Módulos existentes (no modificados) ====== */
-async function loadModule(url) {
-  const container = document.getElementById('module-container');
-  if (!container) {
-    // create module container if missing (non-invasive)
-    const m = document.createElement('div');
-    m.id = 'module-container';
-    m.className = 'tool-window';
-    document.body.appendChild(m);
-  }
-  const cont = document.getElementById('module-container');
-  cont.innerHTML = 'Cargando módulo...';
-  cont.classList.add('active');
-  cont.innerHTML = `<iframe src="${url}" style="width:100%;height:80vh;border:0"></iframe>`;
-  const overlay = document.getElementById('overlay');
-  if (overlay) overlay.classList.add('active');
-  document.body.style.overflow = 'hidden';
-}
-
-function closeModule(){
-  const container = document.getElementById('module-container');
-  const overlay = document.getElementById('overlay');
-  document.body.style.overflow = '';
-  container?.classList.remove('active');
-  overlay?.classList.remove('active');
-}
-
-function toggleChat(){
-  const chatboxEl = document.getElementById('chatbox');
-  if(!chatboxEl) return;
-  chatboxEl.style.display = (chatboxEl.style.display === 'flex') ? 'none' : 'flex';
-}
-
-function enviar(){
-  const messagesEl = document.getElementById('messages');
-  const inputEl = document.getElementById('msg');
-  if(!inputEl || !inputEl.value) return;
-  const lang = document.documentElement.lang === 'en' ? 'en' : 'es';
-
-  messagesEl.innerHTML += '<br><b>Vos:</b> ' + inputEl.value;
-  messagesEl.innerHTML += '<br><b>Bot:</b> ' + (i18n[lang]['bot.continue'] || i18n.es['bot.continue']);
-  inputEl.value = '';
-  messagesEl.scrollTop = messagesEl.scrollHeight;
-}
-</script>
-
-
-<!-- HG DIGITAL - Chat Flotante (Frontend) -->
-<style>
-.hg-chat-btn{position:fixed;right:18px;bottom:18px;z-index:99999;background:linear-gradient(135deg,#7c5cff,#00ffc3);border:none;border-radius:50%;width:64px;height:64px;box-shadow:0 10px 30px rgba(0,0,0,.3);cursor:pointer;color:#000;font-weight:700}
-.hg-chat-window{position:fixed;right:18px;bottom:96px;width:360px;height:520px;background:var(--card,#0b0b10);border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.5);z-index:99999;display:none;flex-direction:column;overflow:hidden}
-.hg-chat-header{padding:12px;background:linear-gradient(135deg,#7c5cff,#00ffc3);color:#000;font-weight:700;display:flex;align-items:center;justify-content:space-between}
-.hg-chat-body{padding:12px;flex:1;overflow:auto;background:linear-gradient(180deg,rgba(255,255,255,.02),transparent)}
-.hg-chat-input{display:flex;padding:12px;border-top:1px solid rgba(255,255,255,.04);background:transparent}
-.hg-chat-input input{flex:1;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,.08);margin-right:8px;background:transparent;color:var(--text)}
-.hg-fullscreen{position:fixed;inset:0;background:var(--bg);z-index:100000;display:none;flex-direction:column}
-.hg-fullscreen .inner{max-width:1100px;margin:40px auto;background:var(--card);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;height:80vh}
-.hg-actions{display:flex;gap:8px;padding:8px;flex-wrap:wrap}
-.hg-mini{font-size:13px;color:var(--muted)}
-</style>
-
-<button id="hgBtn" class="hg-chat-btn" aria-label="Abrir chat HG">HG</button>
-
-<div id="hgWindow" class="hg-chat-window" role="dialog" aria-modal="false" aria-label="HG Digital chat">
-  <div class="hg-chat-header">
-    <div>HG Digital</div>
-    <div style="display:flex;gap:8px">
-      <button id="expandBtn" class="btn">↗</button>
-      <button id="closeBtn" class="btn">✕</button>
-    </div>
-  </div>
-  <div id="hgBody" class="hg-chat-body"></div>
-  <div class="hg-chat-input">
-    <input id="hgInput" placeholder="Escribí tu pregunta..." />
-    <button id="sendBtn" class="btn primary">Enviar</button>
-  </div>
-</div>
-
-<div id="hgFull" class="hg-fullscreen" aria-hidden="true">
-  <div class="inner">
-    <div style="display:flex;justify-content:space-between;align-items:center;padding:12px;background:linear-gradient(135deg,#7c5cff,#00ffc3)">
-      <div><b>HG Digital — Conversación</b><div class="hg-mini">Presupuestos, consultas técnicas y más. También podés pedir contacto humano.</div></div>
-      <div style="display:flex;gap:8px">
-        <button id="sendPdfBtn" class="btn">Generar PDF & Enviar</button>
-        <button id="contactHuman" class="btn">Contactar Humano</button>
-        <button id="minimizeFull" class="btn">_</button>
-      </div>
-    </div>
-    <div id="hgFullBody" style="padding:18px;flex:1;overflow:auto;background:linear-gradient(180deg,rgba(255,255,255,.02),transparent)"></div>
-    <div style="padding:12px;border-top:1px solid rgba(255,255,255,.04);display:flex;gap:8px">
-      <input id="hgFullInput" style="flex:1;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,.08);background:transparent;color:var(--text)" placeholder="Continuá la conversación..." />
-      <button id="hgFullSend" class="btn primary">Enviar</button>
-    </div>
-  </div>
-</div>
-
-
-<script>
-// =========================================
-// URL DEL SCRIPT
-// =========================================
-const HG_SERVER = "https://script.google.com/macros/s/AKfycbwWHPcxyNFGUUAA9sKyym6cnziauxSQL2WGIBTojy7CD5yK9URwLvrOoonoDpx7z32Y/exec";
-
-// -----------------------------------------
-//  ABRIR CHAT HG DIGITAL
-// -----------------------------------------
-document.getElementById("hg-digital").addEventListener("click", () => {
-  const chat = document.getElementById("hg-chat");
-  chat.style.display = "flex";
-
-  enviarMensajeHG(""); // inicia presentación
-});
-
-// -----------------------------------------
-//  BOTÓN ENVIAR
-// -----------------------------------------
-document.getElementById("hg-send").addEventListener("click", () => {
-  const input = document.getElementById("hg-input");
-  const mensaje = input.value.trim();
-  if (mensaje === "") return;
-
-  agregarMensaje("Vos", mensaje);
-  enviarMensajeHG(mensaje);
+  addMsg("Vos", msg);
   input.value = "";
-});
 
-// -----------------------------------------
-//  AGREGAR MENSAJES AL CHAT
-// -----------------------------------------
-function agregarMensaje(autor, texto) {
-  const body = document.getElementById("hg-body");
-  const div = document.createElement("div");
-  div.className = autor === "HG" ? "msg-hg" : "msg-user";
-  div.innerText = autor + ": " + texto;
-  body.appendChild(div);
-  body.scrollTop = body.scrollHeight;
-}
+  const callbackName = "cb" + Math.floor(Math.random() * 999999);
 
-// -----------------------------------------
-//  JSONP REQUEST
-// -----------------------------------------
-function enviarMensajeHG(texto) {
-  const callbackName = "cb_" + Math.random().toString(36).substring(2);
-
-  window[callbackName] = function (res) {
-    if (res && res.hg_response) {
-      agregarMensaje("HG", res.hg_response);
-    } else {
-      agregarMensaje("HG", "Hubo un problema al procesar la respuesta.");
-    }
+  window[callbackName] = function(data) {
+    addMsg("HG", data.reply);
     delete window[callbackName];
   };
 
-  const script = document.createElement("script");
-  script.src = `${HG_SERVER}?msg=${encodeURIComponent(texto)}&callback=${callbackName}`;
-  script.onerror = () => {
-    agregarMensaje("HG", "Error de conexión con el servidor.");
-  };
-
-  document.body.appendChild(script);
+  const s = document.createElement("script");
+  s.src = `${ENDPOINT_URL}?message=${encodeURIComponent(msg)}&callback=${callbackName}`;
+  document.body.appendChild(s);
 }
+
+// ============================
+// AGREGAR MENSAJE
+// ============================
+function addMsg(user, text) {
+  const box = document.getElementById("chatBody");
+  const div = document.createElement("div");
+  div.innerHTML = `<b>${user}:</b> ${text}`;
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+}
+
+// ============================
+// ENTER PARA ENVIAR
+// ============================
+document.addEventListener("DOMContentLoaded", () => {
+  document.getElementById("chatInput").addEventListener("keydown", e => {
+    if (e.key === "Enter") sendMessage();
+  });
+});
 </script>
 
-  
 </body>
 </html>
