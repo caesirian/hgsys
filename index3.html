@@ -1,846 +1,943 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-  <title>Desarrollador Web y Sistemas de Gestión | Automatización para Empresas</title>
-
-  <meta name="description" content="Desarrollador web y administrador. Creo sistemas de gestión, automatización de procesos, presupuestos online y plataformas web para empresas, PyMEs y cooperativas.">
-  <meta name="keywords" content="desarrollador web, sistemas de gestión, automatización, presupuestos online, panel administrativo, google sheets, apps script, programador argentina">
-  <meta name="author" content="Hernán Garbarino">
-
-  <meta property="og:title" content="Sistemas Web y Automatización para Empresas">
-  <meta property="og:description" content="Desarrollo web + gestión administrativa en una sola solución.">
-  <meta property="og:type" content="website">
-  <meta property="og:url" content="https://hgsys.vercel.app">
-
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="alternate icon" type="image/png" href="favicon.png">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
-
-  <style>
-    :root{
-      --bg:#0f0f14;--card:#17171f;--primary:#7c5cff;--secondary:#00ffc3;--text:#e8e8f0;--muted:#9ea0b5;--radius:18px
-    }
-    *{box-sizing:border-box;margin:0;padding:0}
-    body{
-      font-family:Inter,system-ui,sans-serif;
-      background:radial-gradient(800px 400px at 10% 0%,rgba(124,92,255,.15),transparent),
-                 radial-gradient(800px 400px at 90% 10%,rgba(0,255,195,.12),transparent),
-                 var(--bg);
-      color:var(--text);
-      line-height:1.6;
-      overflow-x:hidden;
-      transition:.3s ease
-    }
-    body.light{--bg:#f4f6fb;--card:#fff;--text:#0f1222;--muted:#5a5f7a;background:var(--bg)}
-    a{color:inherit;text-decoration:none}
-    .container{max-width:1200px;margin:0 auto;padding:24px}
-
-    header{position:sticky;top:0;z-index:50;background:rgba(15,15,20,.85);backdrop-filter:blur(12px);border-bottom:1px solid rgba(255,255,255,.05)}
-    .nav{display:flex;align-items:center;justify-content:space-between}
-    .logo{font-weight:800;letter-spacing:1px}
-    .logo span{color:var(--secondary)}
-    .nav-links{display:flex;gap:24px;font-size:.95rem;color:var(--muted)}
-
-    .hero{min-height:90vh;display:grid;place-items:center;text-align:center}
-    .hero h1{font-size:clamp(2.2rem,5vw,3.6rem);line-height:1.1;margin-bottom:16px}
-    .hero p{max-width:720px;margin:0 auto 32px;color:var(--muted)}
-
-    .cta-group{display:flex;gap:16px;justify-content:center;flex-wrap:wrap}
-    .btn{padding:14px 28px;border-radius:999px;border:1px solid rgba(255,255,255,.12);
-         background:linear-gradient(135deg,rgba(124,92,255,.2),rgba(0,255,195,.15));
-         color:var(--text);font-weight:600;cursor:pointer;transition:.3s}
-    .btn.primary{background:linear-gradient(135deg,var(--primary),var(--secondary));color:#000;border:none}
-    .btn:hover{transform:translateY(-2px);box-shadow:0 10px 30px rgba(0,0,0,.3)}
-
-    section{padding:96px 0}
-    .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
-    .card{background:linear-gradient(180deg,rgba(255,255,255,.04),transparent),var(--card);
-          border-radius:var(--radius);padding:28px;border:1px solid rgba(255,255,255,.06)}
-
-    .highlight{background:linear-gradient(135deg,rgba(124,92,255,.25),rgba(0,255,195,.25));
-               border-radius:var(--radius);padding:48px;text-align:center}
-
-    footer{padding:64px 0 32px;border-top:1px solid rgba(255,255,255,.05);
-           color:var(--muted);text-align:center;font-size:.85rem}
-
-    .tool-window,#module-container{background:#0b0b10;border-radius:16px;padding:18px;border:1px solid rgba(255,255,255,.14)}
-    #module-container{position:fixed;top:84px;left:50%;transform:translateX(-50%) translateY(-10px);
-      max-width:1100px;width:calc(100% - 24px);z-index:80;
-      box-shadow:0 30px 80px rgba(0,0,0,.6);display:none;opacity:0;transition:.35s ease}
-    #module-container.active{display:block;opacity:1;transform:translateX(-50%) translateY(0)}
-    .overlay{position:fixed;inset:0;z-index:70;background:rgba(10,10,18,.55);
-      backdrop-filter:blur(6px);display:none}
-    .overlay.active{display:block}
-
-    input{width:100%;padding:12px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.1);
-          background:#0f0f14;color:var(--text)}
-
-    .chatbox{position:fixed;bottom:20px;right:20px;width:320px;background:var(--card);
-      border-radius:18px;border:1px solid rgba(255,255,255,.1);overflow:hidden;
-      display:none;flex-direction:column}
-
-    .chat-header{padding:12px;font-weight:700;
-      background:linear-gradient(135deg,var(--primary),var(--secondary));color:#000}
-    .chat-messages{padding:12px;flex:1;overflow-y:auto;font-size:.85rem}
-
-    .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
-      background:linear-gradient(135deg,var(--primary),var(--secondary));color:#000;
-      padding:12px 22px;border-radius:999px;font-weight:600;display:none}
-
-    /* keep select visually unobtrusive but consistent with .btn */
-    .lang-select {
-      background: transparent;
-      color: var(--text);
-      border-radius: 12px;
-      padding: 8px 12px;
-      border: 1px solid rgba(255,255,255,.08);
-      font-weight:600;
-      cursor:pointer;
-    }
-
-    @media(max-width:900px){
-      .grid{grid-template-columns:1fr}
-      .nav-links{display:none}
-      section{padding:64px 0}
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat con Hernán</title>
+    <style>
+        /* ESTILOS GLITCH - Versión mejorada */
+        :root {
+            --primary: #667eea;
+            --secondary: #764ba2;
+            --glitch-green: #0f0;
+            --retro-pink: #ff00ff;
+            --dark-bg: #0a0a0a;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Arial, sans-serif; }
+        
+        body {
+            background: linear-gradient(135deg, var(--dark-bg) 0%, #1a1a2e 100%);
+            color: #fff;
+            min-height: 100vh;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+        
+        /* Efecto scanlines */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(transparent 50%, rgba(0, 255, 0, 0.03) 50%);
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 1;
+        }
+        
+        /* Botón flotante */
+        .floating-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.5);
+            transition: all 0.3s ease;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        
+        .floating-btn::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
+            transform: rotate(45deg);
+            animation: shine 3s infinite;
+        }
+        
+        @keyframes shine {
+            0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+            100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+        }
+        
+        .floating-btn:hover {
+            transform: scale(1.1) rotate(15deg);
+            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.7);
+        }
+        
+        .pulse-ring {
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            border: 2px solid var(--primary);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(1.5); opacity: 0; }
+        }
+        
+        /* Contenedor del chat */
+        #chat-container {
+            position: fixed;
+            bottom: 100px;
+            right: 30px;
+            width: 400px;
+            height: 600px;
+            background: rgba(0, 0, 0, 0.95);
+            border-radius: 20px;
+            box-shadow: 
+                0 20px 60px rgba(0, 0, 0, 0.8),
+                0 0 0 1px rgba(102, 126, 234, 0.3),
+                inset 0 0 20px rgba(0, 255, 0, 0.1);
+            border: 2px solid var(--primary);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            z-index: 1001;
+            opacity: 0;
+            transform: translateY(20px) scale(0.95);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        
+        #chat-container.chat-visible {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+        
+        #chat-container.chat-hidden {
+            display: none;
+        }
+        
+        /* Efecto VHS */
+        .vhs-effect {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 1;
+        }
+        
+        /* Header del chat */
+        .chat-header {
+            background: linear-gradient(135deg, #0f3460 0%, #1a1a2e 100%);
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            border-bottom: 2px solid var(--primary);
+            position: relative;
+            z-index: 2;
+        }
+        
+        .chat-header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--primary), transparent);
+        }
+        
+        .avatar {
+            position: relative;
+            margin-right: 15px;
+        }
+        
+        .glitch-avatar {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 20px;
+            animation: glitch-avatar 3s infinite;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .glitch-avatar::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
+            animation: avatar-shine 2s infinite;
+        }
+        
+        @keyframes avatar-shine {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+        
+        @keyframes glitch-avatar {
+            0%, 100% { transform: translate(0); filter: hue-rotate(0deg); }
+            2% { transform: translate(-1px, 1px) skew(1deg); filter: hue-rotate(90deg); }
+            4% { transform: translate(1px, -1px) skew(-1deg); filter: hue-rotate(180deg); }
+            96% { transform: translate(0); filter: hue-rotate(0deg); }
+        }
+        
+        .status-dot {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 12px;
+            height: 12px;
+            background: #4CAF50;
+            border-radius: 50%;
+            border: 2px solid #0f3460;
+            animation: status-pulse 2s infinite;
+            box-shadow: 0 0 10px #4CAF50;
+        }
+        
+        @keyframes status-pulse {
+            0%, 100% { 
+                box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7),
+                            0 0 0 0 rgba(76, 175, 80, 0.4);
+            }
+            50% { 
+                box-shadow: 0 0 0 10px rgba(76, 175, 80, 0),
+                            0 0 0 20px rgba(76, 175, 80, 0);
+            }
+        }
+        
+        .chat-title h3 {
+            font-size: 18px;
+            margin-bottom: 5px;
+            background: linear-gradient(45deg, #fff, var(--primary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 0 10px rgba(102, 126, 234, 0.3);
+        }
+        
+        .status {
+            font-size: 12px;
+            color: #aaa;
+            font-style: italic;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .status::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            background: #4CAF50;
+            border-radius: 50%;
+            animation: blink 1s infinite;
+        }
+        
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+        
+        .close-btn {
+            margin-left: auto;
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 20px;
+            cursor: pointer;
+            opacity: 0.7;
+            transition: all 0.3s;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .close-btn:hover {
+            opacity: 1;
+            transform: rotate(90deg);
+            background: rgba(255,255,255,0.1);
+        }
+        
+        /* Mensajes */
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: rgba(10, 10, 10, 0.9);
+            background-image: 
+                linear-gradient(rgba(102, 126, 234, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(102, 126, 234, 0.05) 1px, transparent 1px);
+            background-size: 20px 20px;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .message {
+            margin-bottom: 20px;
+            opacity: 0;
+            animation: fadeInUp 0.5s forwards;
+            position: relative;
+        }
+        
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .bot-message { text-align: left; }
+        .user-message { text-align: right; }
+        
+        .message-content {
+            display: inline-block;
+            max-width: 80%;
+            padding: 15px;
+            border-radius: 18px;
+            position: relative;
+            backdrop-filter: blur(5px);
+        }
+        
+        .bot-message .message-content {
+            background: linear-gradient(135deg, rgba(26, 26, 46, 0.9) 0%, rgba(22, 33, 62, 0.9) 100%);
+            border: 1px solid rgba(102, 126, 234, 0.3);
+            border-left: 4px solid var(--primary);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .user-message .message-content {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.9) 0%, rgba(118, 75, 162, 0.9) 100%);
+            border: 1px solid rgba(102, 126, 234, 0.5);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        .glitch-text {
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            color: var(--glitch-green);
+            margin-bottom: 5px;
+            animation: text-glitch 5s infinite;
+            text-shadow: 0 0 5px #0f0;
+            letter-spacing: 1px;
+        }
+        
+        @keyframes text-glitch {
+            0%, 100% { 
+                opacity: 1;
+                transform: translateX(0);
+            }
+            25% { 
+                opacity: 0.8;
+                transform: translateX(-1px);
+            }
+            50% { 
+                opacity: 0.9;
+                transform: translateX(1px);
+            }
+            75% { 
+                opacity: 0.7;
+                transform: translateX(0);
+            }
+            80% { 
+                opacity: 0.2;
+                transform: translateX(2px);
+            }
+            82% { 
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        .message-text {
+            font-size: 14px;
+            line-height: 1.5;
+            word-wrap: break-word;
+        }
+        
+        .message-time {
+            font-size: 11px;
+            opacity: 0.7;
+            margin-top: 5px;
+            font-family: 'Courier New', monospace;
+        }
+        
+        /* Input */
+        .chat-input-container {
+            padding: 20px;
+            background: rgba(15, 52, 96, 0.8);
+            border-top: 2px solid var(--primary);
+            display: flex;
+            gap: 10px;
+            position: relative;
+            z-index: 2;
+        }
+        
+        #user-input {
+            flex: 1;
+            padding: 15px 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(102, 126, 234, 0.5);
+            border-radius: 25px;
+            color: white;
+            font-size: 14px;
+            outline: none;
+            transition: all 0.3s;
+            font-family: 'Segoe UI', sans-serif;
+        }
+        
+        #user-input:focus {
+            border-color: var(--primary);
+            box-shadow: 
+                0 0 15px rgba(102, 126, 234, 0.5),
+                inset 0 0 10px rgba(102, 126, 234, 0.2);
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-1px);
+        }
+        
+        #user-input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+            font-style: italic;
+        }
+        
+        .send-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            border: none;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .send-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.2), transparent);
+            transform: translateX(-100%);
+            transition: transform 0.6s;
+        }
+        
+        .send-btn:hover::before {
+            transform: translateX(100%);
+        }
+        
+        .send-btn:hover {
+            transform: rotate(15deg) scale(1.1);
+            box-shadow: 
+                0 5px 20px rgba(102, 126, 234, 0.7),
+                0 0 30px rgba(102, 126, 234, 0.4);
+        }
+        
+        /* Typing indicator */
+        .typing-indicator {
+            display: flex;
+            gap: 5px;
+            padding: 10px;
+        }
+        
+        .typing-indicator span {
+            width: 8px;
+            height: 8px;
+            background: var(--primary);
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+        
+        .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+        
+        @keyframes typing {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        /* Scrollbar personalizado */
+        .chat-messages::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .chat-messages::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+        }
+        
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            border-radius: 10px;
+        }
+        
+        .chat-messages::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(135deg, var(--secondary) 0%, var(--primary) 100%);
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            #chat-container {
+                width: 90vw;
+                height: 70vh;
+                right: 5vw;
+                bottom: 80px;
+            }
+            
+            .floating-btn {
+                bottom: 20px;
+                right: 20px;
+                width: 60px;
+                height: 60px;
+                font-size: 20px;
+            }
+        }
+    </style>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-
 <body>
+    <!-- Tu contenido del sitio -->
+    <header style="text-align: center; padding: 40px 0;">
+        <h1 style="font-size: 2.5em; margin-bottom: 10px; background: linear-gradient(45deg, #667eea, #764ba2); -webkit-background-clip: text; background-clip: text; color: transparent;">
+            Mi Sitio Web
+        </h1>
+        <p style="opacity: 0.8; font-size: 1.1em;">Haz clic en el botón para conversar</p>
+    </header>
 
-<header class="site-header">
-  <div class="container nav">
-    <div class="logo">HG<span>Soluciones</span></div>
-    <nav class="nav-links">
-      <a href="#servicios" data-i18n="nav.services">Servicios</a>
-      <a href="#soluciones" data-i18n="nav.solutions">Soluciones</a>
-      <a href="#contacto" data-i18n="nav.contact">Contacto</a>
-    </nav>
-    <!-- language selector placed next to theme toggle, styled to be unobtrusive -->
-    <div style="display:flex;align-items:center;gap:10px">
-      <select id="langSelector" class="lang-select" aria-label="Selector de idioma" onchange="setLanguage(this.value)">
-        <option value="es">ES</option>
-        <option value="en">EN</option>
-      </select>
-      <button class="btn" id="themeToggle" onclick="toggleTheme()" aria-label="Toggle theme">🌗</button>
-    </div>
-  </div>
-</header>
+    <!-- Botón flotante del chat -->
+    <button id="chat-toggle" class="floating-btn" title="Abrir chat">
+        <i class="fas fa-robot"></i>
+        <span class="pulse-ring"></span>
+    </button>
 
-<div class="overlay" id="overlay" onclick="closeModule()"></div>
-
-<main>
-
-<section class="hero container">
-  <div>
-    <h1 data-i18n="hero.title">Desarrollo Web + Sistemas de Gestión para Empresas</h1>
-    <p data-i18n="hero.subtitle">Soy desarrollador web y administrador con más de 18 años de experiencia en gestión, finanzas y procesos. Creo sitios, sistemas y automatizaciones que funcionan en la práctica, no solo en diseño.</p>
-    <div class="cta-group">
-      <button class="btn primary" onclick="loadModule('https://hgsys.vercel.app/presupuesto.html')" data-i18n="cta.quote">Pedir Presupuesto</button>
-      <button class="btn primary" onclick="loadModule('https://hgsys.vercel.app/HGSys.html')" data-i18n="cta.openSystem">Abrir Sistema</button>
-      <button class="btn primary" onclick="loadModule('https://hgsys.vercel.app/reader.html')" data-i18n="cta.openReader">Lector QR</button>
-      <button class="btn" onclick="toggleChat()" data-i18n="cta.openChat">Abrir Chat</button>
-    </div>
-  </div>
-</section>
-
-<section id="servicios" class="container">
-  <div class="grid">
-    <div class="card">
-      <h3 data-i18n="srv.webTitle">Desarrollo Web Profesional</h3>
-      <p data-i18n="srv.webDesc">Landing pages, sitios institucionales, catálogos online, portfolios y sistemas web optimizados para velocidad, seguridad y conversión.</p>
-    </div>
-
-    <div class="card">
-      <h3 data-i18n="srv.autoTitle">Automatización Administrativa</h3>
-      <p data-i18n="srv.autoDesc">Formularios inteligentes, envío automático de presupuestos, reportes, control de datos, flujos de trabajo y reducción de tareas manuales.</p>
-    </div>
-
-    <div class="card">
-      <h3 data-i18n="srv.sysTitle">Sistemas de Gestión</h3>
-      <p data-i18n="srv.sysDesc">Paneles administrativos, control de clientes, presupuestos, stock, métricas, reportes y visualización de datos en tiempo real.</p>
-    </div>
-  </div>
-</section>
-
-<section id="hg" class="container">
-  <div class="highlight">
-    <h2 data-i18n="hg.title">HG — Soluciones Digitales</h2>
-    <p data-i18n="hg.desc">HG representa la unión entre desarrollo web, automatización y gestión administrativa. No solo programo sistemas: los pienso desde la lógica real de una empresa. Mi formación en administración, finanzas y procesos me permite crear herramientas útiles, rentables y fáciles de operar.</p>
-  </div>
-</section>
-
-<section id="soluciones" class="container">
-  <h2 style="text-align:center;margin-bottom:32px" data-i18n="sol.title">Soluciones HG</h2>
-  <div class="grid">
-    <div class="card">
-      <h3 data-i18n="sol.websTitle">Sitios Web que Venden</h3>
-      <p data-i18n="sol.websDesc">Webs institucionales, landing pages de servicios, embudos de contacto, portfolios y sitios optimizados para captar clientes.</p>
-    </div>
-
-    <div class="card">
-      <h3 data-i18n="sol.adminTitle">Sistemas Administrativos</h3>
-      <p data-i18n="sol.adminDesc">Presupuestos automáticos, control de clientes, seguimiento de pedidos, métricas de ventas y reportes gerenciales.</p>
-    </div>
-
-    <div class="card">
-      <h3 data-i18n="sol.intTitle">Integraciones Profesionales</h3>
-      <p data-i18n="sol.intDesc">WhatsApp, Gmail, Google Sheets, Drive, APIs externas, notificaciones automáticas, bots y flujos inteligentes.</p>
-    </div>
-  </div>
-</section>
-
-<section id="contacto" class="container">
-  <div class="highlight">
-    <h2 data-i18n="contact.title">¿Querés mejorar la gestión de tu empresa con un sistema real?</h2>
-    <p data-i18n="contact.desc">Diseño herramientas a medida para negocios, cooperativas, profesionales y PyMEs.</p>
-    <div class="cta-group" style="margin-top:24px">
-      <a href="https://wa.me/1134796562" class="btn primary" data-i18n="contact.cta">Contactar Ahora</a>
-    </div>
-  </div>
-</section>
-
-</main>
-
-<footer>
-  <div class="container" data-i18n="footer">© 2025 - HG Soluciones Digitales · Desarrollo Web y Sistemas de Gestión</div>
-</footer>
-
-<div class="chatbox" id="chatbox">
-  <div class="chat-header" data-i18n="chat.header">Asistente Web</div>
-  <div class="chat-messages" id="messages" data-i18n="chat.greeting">Hola 👋 ¿En qué te ayudo?</div>
-  <div class="chat-input"><input id="msg" placeholder="Escribí acá..." data-placeholder-es="Escribí acá..." data-placeholder-en="Write here..." onkeydown="if(event.key==='Enter') enviar()"></div>
-</div>
-
-<div class="toast" id="toast" data-i18n="toast.sending" style="display:none">Enviando…</div>
-
-<script>
-/* ====== Traducciones ====== */
-const i18n = {
-  es: {
-    'nav.services': 'Servicios',
-    'nav.solutions': 'Soluciones',
-    'nav.contact': 'Contacto',
-    'hero.title': 'Desarrollo Web + Sistemas de Gestión para Empresas',
-    'hero.subtitle': 'Soy desarrollador web y administrador con más de 18 años de experiencia en gestión, finanzas y procesos. Creo sitios, sistemas y automatizaciones que funcionan en la práctica, no solo en diseño.',
-    'cta.quote': 'Pedir Presupuesto',
-    'cta.openSystem': 'Abrir Sistema',
-    'cta.openReader': 'Lector QR',
-    'cta.openChat': 'Abrir Chat',
-    'srv.webTitle': 'Desarrollo Web Profesional',
-    'srv.webDesc': 'Landing pages, sitios institucionales, catálogos online, portfolios y sistemas web optimizados para velocidad, seguridad y conversión.',
-    'srv.autoTitle': 'Automatización Administrativa',
-    'srv.autoDesc': 'Formularios inteligentes, envío automático de presupuestos, reportes, control de datos, flujos de trabajo y reducción de tareas manuales.',
-    'srv.sysTitle': 'Sistemas de Gestión',
-    'srv.sysDesc': 'Paneles administrativos, control de clientes, presupuestos, stock, métricas, reportes y visualización de datos en tiempo real.',
-    'hg.title': 'HG — Soluciones Digitales',
-    'hg.desc': 'HG representa la unión entre desarrollo web, automatización y gestión administrativa. No solo programo sistemas: los pienso desde la lógica real de una empresa. Mi formación en administración, finanzas y procesos me permite crear herramientas útiles, rentables y fáciles de operar.',
-    'sol.title': 'Soluciones HG',
-    'sol.websTitle': 'Sitios Web que Venden',
-    'sol.websDesc': 'Webs institucionales, landing pages de servicios, embudos de contacto, portfolios y sitios optimizados para captar clientes.',
-    'sol.adminTitle': 'Sistemas Administrativos',
-    'sol.adminDesc': 'Presupuestos automáticos, control de clientes, seguimiento de pedidos, métricas de ventas y reportes gerenciales.',
-    'sol.intTitle': 'Integraciones Profesionales',
-    'sol.intDesc': 'WhatsApp, Gmail, Google Sheets, Drive, APIs externas, notificaciones automáticas, bots y flujos inteligentes.',
-    'contact.title': '¿Querés mejorar la gestión de tu empresa con un sistema real?',
-    'contact.desc': 'Diseño herramientas a medida para negocios, cooperativas, profesionales y PyMEs.',
-    'contact.cta': 'Contactar Ahora',
-    'footer': '© 2025 - HG Soluciones Digitales · Desarrollo Web y Sistemas de Gestión',
-    'chat.header': 'Asistente Web',
-    'chat.greeting': 'Hola 👋 ¿En qué te ayudo?',
-    'toast.sending': 'Enviando…',
-    'bot.continue': 'Si querés avanzar con un proyecto real, podés escribirme a hernan.garbarino@gmail.com o por WhatsApp al 1134796562.'
-  },
-  en: {
-    'nav.services': 'Services',
-    'nav.solutions': 'Solutions',
-    'nav.contact': 'Contact',
-    'hero.title': 'Web Development + Management Systems for Real Businesses',
-    'hero.subtitle': 'I am a web developer and administrator with over 18 years of experience in management, finance and processes. I build websites, systems and automations that work in practice, not just design.',
-    'cta.quote': 'Request Quote',
-    'cta.openSystem': 'Open System',
-    'cta.openReader': 'Open QR Reader',
-    'cta.openChat': 'Open Chat',
-    'srv.webTitle': 'Professional Web Development',
-    'srv.webDesc': 'Landing pages, institutional sites, online catalogs, portfolios and web systems optimized for speed, security and conversion.',
-    'srv.autoTitle': 'Administrative Automation',
-    'srv.autoDesc': 'Smart forms, automatic quote sending, reports, data control, workflows and reduction of manual tasks.',
-    'srv.sysTitle': 'Management Systems',
-    'srv.sysDesc': 'Admin panels, client control, quotes, stock, metrics, reports and real-time data visualization.',
-    'hg.title': 'HG — Digital Solutions',
-    'hg.desc': 'HG represents the union between web development, automation and administrative management. I don\'t just program systems: I design them from the real logic of a business. My background in administration, finance and processes allows me to create useful, profitable and easy-to-operate tools.',
-    'sol.title': 'HG Solutions',
-    'sol.websTitle': 'Websites That Sell',
-    'sol.websDesc': 'Institutional websites, service landing pages, contact funnels, portfolios and sites optimized to attract clients.',
-    'sol.adminTitle': 'Administrative Systems',
-    'sol.adminDesc': 'Automatic quotes, client control, order tracking, sales metrics and managerial reports.',
-    'sol.intTitle': 'Professional Integrations',
-    'sol.intDesc': 'WhatsApp, Gmail, Google Sheets, Drive, external APIs, automatic notifications, bots and smart flows.',
-    'contact.title': 'Want to improve your company management with a real system?',
-    'contact.desc': 'I design custom tools for businesses, cooperatives, professionals and SMEs.',
-    'contact.cta': 'Contact Now',
-    'footer': '© 2025 - HG Digital Solutions · Web Development & Management Systems',
-    'chat.header': 'Web Assistant',
-    'chat.greeting': 'Hi 👋 How can I help?',
-    'toast.sending': 'Sending…',
-    'bot.continue': 'If you want to move forward with a real project, you can write to me at hernan.garbarino@gmail.com or WhatsApp at 1134796562.'
-  }
-};
-
-/* ====== Funciones de i18n y detección ====== */
-function applyTranslations(lang) {
-  // update html lang attribute
-  document.documentElement.lang = (lang === 'es') ? 'es' : 'en';
-
-  // update all elements with data-i18n
-  document.querySelectorAll('[data-i18n]').forEach(el => {
-    const key = el.getAttribute('data-i18n');
-    if (i18n[lang] && i18n[lang][key]) {
-      el.innerHTML = i18n[lang][key];
-    }
-  });
-
-  // update placeholder specifically
-  const input = document.getElementById('msg');
-  if (input) {
-    if (lang === 'es') {
-      input.placeholder = input.getAttribute('data-placeholder-es') || 'Escribí acá...';
-    } else {
-      input.placeholder = input.getAttribute('data-placeholder-en') || 'Write here...';
-    }
-  }
-
-  // update lang selector UI if present
-  const sel = document.getElementById('langSelector');
-  if (sel) sel.value = lang;
-
-  // save preference
-  localStorage.setItem('siteLang', lang);
-}
-
-function detectAndApplyLanguage() {
-  const saved = localStorage.getItem('siteLang');
-  if (saved) {
-    applyTranslations(saved);
-    return saved;
-  }
-
-  // detect via navigator
-  const nav = (navigator.language || navigator.userLanguage || 'es').toLowerCase();
-  const lang = nav.startsWith('es') ? 'es' : 'en';
-  applyTranslations(lang);
-  return lang;
-}
-
-function setLanguage(lang) {
-  if (!['es','en'].includes(lang)) lang = 'es';
-  applyTranslations(lang);
-}
-
-/* ====== Carga de tema (mantener comportamiento previo) ====== */
-function toggleTheme(){ 
-  document.body.classList.toggle('light');
-  // store theme preference
-  try{ localStorage.setItem('theme', document.body.classList.contains('light') ? 'light' : 'dark') }catch(e){}
-}
-
-/* ====== Carga de tema guardado en inicio ====== */
-(function loadPreferences(){
-  try{
-    const t = localStorage.getItem('theme');
-    if(t === 'light') document.body.classList.add('light');
-  }catch(e){}
-})();
-
-/* ====== Inicialización ====== */
-document.addEventListener('DOMContentLoaded', () => {
-  detectAndApplyLanguage();
-
-  // Cache chat inputs
-  window.chatbox = document.getElementById('chatbox');
-  window.messages = document.getElementById('messages');
-  window.msg = document.getElementById('msg');
-
-  // ensure lang selector matches initial lang
-  const lang = document.documentElement.lang || 'es';
-  const sel = document.getElementById('langSelector');
-  if (sel) sel.value = lang;
-});
-
-/* ====== Módulos existentes (no modificados) ====== */
-async function loadModule(url) {
-  const container = document.getElementById('module-container');
-  if (!container) {
-    // create module container if missing (non-invasive)
-    const m = document.createElement('div');
-    m.id = 'module-container';
-    m.className = 'tool-window';
-    document.body.appendChild(m);
-  }
-  const cont = document.getElementById('module-container');
-  cont.innerHTML = 'Cargando módulo...';
-  cont.classList.add('active');
-  cont.innerHTML = `<iframe src="${url}" style="width:100%;height:80vh;border:0"></iframe>`;
-  const overlay = document.getElementById('overlay');
-  if (overlay) overlay.classList.add('active');
-  document.body.style.overflow = 'hidden';
-}
-
-function closeModule(){
-  const container = document.getElementById('module-container');
-  const overlay = document.getElementById('overlay');
-  document.body.style.overflow = '';
-  container?.classList.remove('active');
-  overlay?.classList.remove('active');
-}
-
-function toggleChat(){
-  const chatboxEl = document.getElementById('chatbox');
-  if(!chatboxEl) return;
-  chatboxEl.style.display = (chatboxEl.style.display === 'flex') ? 'none' : 'flex';
-}
-
-function enviar(){
-  const messagesEl = document.getElementById('messages');
-  const inputEl = document.getElementById('msg');
-  if(!inputEl || !inputEl.value) return;
-  const lang = document.documentElement.lang === 'en' ? 'en' : 'es';
-
-  messagesEl.innerHTML += '<br><b>Vos:</b> ' + inputEl.value;
-  messagesEl.innerHTML += '<br><b>Bot:</b> ' + (i18n[lang]['bot.continue'] || i18n.es['bot.continue']);
-  inputEl.value = '';
-  messagesEl.scrollTop = messagesEl.scrollHeight;
-}
-</script>
-
-
-<!-- HG DIGITAL - Chat Flotante (Frontend) -->
-<style>
-.hg-chat-btn{position:fixed;right:18px;bottom:18px;z-index:99999;background:linear-gradient(135deg,#7c5cff,#00ffc3);border:none;border-radius:50%;width:64px;height:64px;box-shadow:0 10px 30px rgba(0,0,0,.3);cursor:pointer;color:#000;font-weight:700}
-.hg-chat-window{position:fixed;right:18px;bottom:96px;width:360px;height:520px;background:var(--card,#0b0b10);border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.5);z-index:99999;display:none;flex-direction:column;overflow:hidden}
-.hg-chat-header{padding:12px;background:linear-gradient(135deg,#7c5cff,#00ffc3);color:#000;font-weight:700;display:flex;align-items:center;justify-content:space-between}
-.hg-chat-body{padding:12px;flex:1;overflow:auto;background:linear-gradient(180deg,rgba(255,255,255,.02),transparent)}
-.hg-chat-input{display:flex;padding:12px;border-top:1px solid rgba(255,255,255,.04);background:transparent}
-.hg-chat-input input{flex:1;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,.08);margin-right:8px;background:transparent;color:var(--text)}
-.hg-fullscreen{position:fixed;inset:0;background:var(--bg);z-index:100000;display:none;flex-direction:column}
-.hg-fullscreen .inner{max-width:1100px;margin:40px auto;background:var(--card);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;height:80vh}
-.hg-actions{display:flex;gap:8px;padding:8px;flex-wrap:wrap}
-.hg-mini{font-size:13px;color:var(--muted)}
-</style>
-
-<button id="hgBtn" class="hg-chat-btn" aria-label="Abrir chat HG">HG</button>
-
-<div id="hgWindow" class="hg-chat-window" role="dialog" aria-modal="false" aria-label="HG Digital chat">
-  <div class="hg-chat-header">
-    <div>HG Digital</div>
-    <div style="display:flex;gap:8px">
-      <button id="expandBtn" class="btn">↗</button>
-      <button id="closeBtn" class="btn">✕</button>
-    </div>
-  </div>
-  <div id="hgBody" class="hg-chat-body"></div>
-  <div class="hg-chat-input">
-    <input id="hgInput" placeholder="Escribí tu pregunta..." />
-    <button id="sendBtn" class="btn primary">Enviar</button>
-  </div>
-</div>
-
-<div id="hgFull" class="hg-fullscreen" aria-hidden="true">
-  <div class="inner">
-    <div style="display:flex;justify-content:space-between;align-items:center;padding:12px;background:linear-gradient(135deg,#7c5cff,#00ffc3)">
-      <div><b>HG Digital — Conversación</b><div class="hg-mini">Presupuestos, consultas técnicas y más. También podés pedir contacto humano.</div></div>
-      <div style="display:flex;gap:8px">
-        <button id="sendPdfBtn" class="btn">Generar PDF & Enviar</button>
-        <button id="contactHuman" class="btn">Contactar Humano</button>
-        <button id="minimizeFull" class="btn">_</button>
-      </div>
-    </div>
-    <div id="hgFullBody" style="padding:18px;flex:1;overflow:auto;background:linear-gradient(180deg,rgba(255,255,255,.02),transparent)"></div>
-    <div style="padding:12px;border-top:1px solid rgba(255,255,255,.04);display:flex;gap:8px">
-      <input id="hgFullInput" style="flex:1;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,.08);background:transparent;color:var(--text)" placeholder="Continuá la conversación..." />
-      <button id="hgFullSend" class="btn primary">Enviar</button>
-    </div>
-  </div>
-</div>
-
-<!-- Agrega esto en tu HTML, en el script, reemplazando la clase ChatHernan -->
-
-<script>
-class ChatHernanIA {
-    constructor() {
-        this.chatVisible = false;
-        this.messages = [];
-        this.revelationLevel = 0;
-        this.sessionId = this.generateSessionId();
-        this.GAS_URL = 'https://script.google.com/macros/s/AKfycbxOb_e44G3RMoW3Kcgco6KHJkWX9-5dchDtEq_LofpCQ8uX83hvVpWEy0G-rOd_apd5/exec';
-        this.isTyping = false;
+    <!-- Contenedor del chat -->
+    <div id="chat-container" class="chat-hidden">
+        <div class="vhs-effect"></div>
         
-        this.initializeElements();
-        this.setupEventListeners();
-        this.showWelcomeMessage();
-        this.setupAutoContact();
-    }
+        <div class="chat-header">
+            <div class="avatar">
+                <div class="glitch-avatar">H</div>
+                <div class="status-dot"></div>
+            </div>
+            <div class="chat-title">
+                <h3 id="chat-name">Hernán - Especialista Web</h3>
+                <p class="status" id="chat-status">Conectando...</p>
+            </div>
+            <button id="close-chat" class="close-btn" title="Cerrar chat">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
 
-    generateSessionId() {
-        return 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-    }
+        <div id="chat-messages" class="chat-messages">
+            <!-- Mensajes se cargarán aquí -->
+        </div>
 
-    initializeElements() {
-        this.chatToggle = document.getElementById('chat-toggle');
-        this.chatContainer = document.getElementById('chat-container');
-        this.closeChat = document.getElementById('close-chat');
-        this.userInput = document.getElementById('user-input');
-        this.sendBtn = document.getElementById('send-btn');
-        this.chatMessages = document.getElementById('chat-messages');
-        this.chatName = document.getElementById('chat-name');
-        this.chatStatus = document.getElementById('chat-status');
-    }
+        <div class="chat-input-container">
+            <input 
+                type="text" 
+                id="user-input" 
+                placeholder="Escribe tu mensaje aquí... (Enter para enviar)"
+                autocomplete="off"
+                maxlength="500"
+            >
+            <button id="send-btn" class="send-btn" title="Enviar mensaje">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </div>
+    </div>
 
-    setupEventListeners() {
-        this.chatToggle.addEventListener('click', () => this.toggleChat());
-        this.closeChat.addEventListener('click', () => this.hideChat());
-        this.sendBtn.addEventListener('click', () => this.sendMessage());
-        
-        this.userInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                this.sendMessage();
-            }
-        });
-
-        // Auto-completar preguntas comunes
-        this.setupQuickQuestions();
-    }
-
-    setupQuickQuestions() {
-        // Botones de preguntas comunes (opcional)
-        const quickQuestions = [
-            "¿Qué servicios ofreces?",
-            "¿Qué tecnologías manejas?",
-            "¿Tienes experiencia con e-commerce?",
-            "¿Cómo es tu metodología de trabajo?",
-            "¿Puedo ver algunos proyectos?"
-        ];
-
-        // Puedes agregar botones flotantes con estas preguntas
-    }
-
-    setupAutoContact() {
-        // Mostrar contacto después de 5 minutos de conversación
-        setTimeout(() => {
-            if (this.messages.length > 4) {
-                this.showContactSuggestions();
-            }
-        }, 300000);
-    }
-
-    showWelcomeMessage() {
-        const welcomeMessages = [
-            {
-                glitch: "Sistema de conocimiento cargado ✓",
-                text: "¡Hola! Soy Hernán, especialista en desarrollo web y soluciones digitales. Estoy aquí para contarte sobre mis servicios, habilidades y cómo puedo ayudarte con tu proyecto.",
-                time: this.getCurrentTime()
-            },
-            {
-                glitch: "Base de datos: Proyectos y tecnologías",
-                text: "Pregúntame sobre: desarrollo web, e-commerce, tecnologías que uso, casos de éxito o mi metodología de trabajo.",
-                time: this.getCurrentTime()
-            }
-        ];
-        
-        welcomeMessages.forEach(msg => {
-            this.addMessage(msg.text, 'bot', msg.glitch);
-        });
-    }
-
-    async sendMessage() {
-        if (this.isTyping) return;
-        
-        const message = this.userInput.value.trim();
-        if (!message) return;
-
-        // Mostrar mensaje del usuario
-        this.addMessage(message, 'user');
-        this.userInput.value = '';
-        this.isTyping = true;
-        
-        // Mostrar "escribiendo" con efecto especial
-        const typingIndicator = this.showTypingIndicator("Analizando tu consulta...");
-        
-        try {
-            // Llamar al backend IA
-            const response = await this.getAIResponse(message);
-            
-            typingIndicator.remove();
-            this.isTyping = false;
-            
-            // Procesar respuesta estructurada
-            if (response.success) {
-                // Actualizar nivel de revelación si cambió
-                if (response.revelationLevel !== undefined && response.revelationLevel !== this.revelationLevel) {
-                    this.revelationLevel = response.revelationLevel;
-                    this.updateChatName(this.revelationLevel);
-                }
+    <!-- CÓDIGO JAVASCRIPT COMPLETO -->
+    <script>
+        class ChatHernanIA {
+            constructor() {
+                this.chatVisible = false;
+                this.messages = [];
+                this.revelationLevel = 0;
+                this.sessionId = this.generateSessionId();
+                // ¡IMPORTANTE! Reemplaza esta URL con la de tu Google Apps Script
+                this.GAS_URL = 'https://script.google.com/macros/s/AKfycbxOb_e44G3RMoW3Kcgco6KHJkWX9-5dchDtEq_LofpCQ8uX83hvVpWEy0G-rOd_apd5/exec';
+                this.isTyping = false;
+                this.contactShown = false;
                 
-                // Mostrar respuesta de la IA
-                this.addMessage(response.reply, 'bot');
-                
-                // Mostrar info de contacto si es necesario
-                if (response.showContactInfo) {
-                    setTimeout(() => this.showContactCard(), 1000);
-                }
-                
-                // Sugerir preguntas relacionadas
-                this.suggestRelatedQuestions(message);
-                
-            } else {
-                this.addMessage(response.reply, 'bot');
+                this.initializeElements();
+                this.setupEventListeners();
+                this.showWelcomeMessage();
+                this.setupAutoContact();
             }
-            
-        } catch (error) {
-            console.error('Error:', error);
-            typingIndicator.remove();
-            this.isTyping = false;
-            
-            // Respuesta de error con sugerencias
-            const fallbackResponses = [
-                "Parece que hay un problema de conexión. Mientras tanto, te cuento que me especializo en desarrollo web con React y Node.js, y creación de e-commerces con Shopify.",
-                "Error temporal. Para darte una idea rápida: trabajo con tecnologías modernas, desarrollo sitios responsivos y sistemas personalizados. ¿En qué área te interesa saber más?"
-            ];
-            
-            const randomResponse = fallbackResponses[Math.floor(Math.random() * fallbackResponses.length)];
-            this.addMessage(randomResponse, 'bot', "Conexión inestable");
-        }
-    }
 
-    async getAIResponse(userMessage) {
-        const response = await fetch(this.GAS_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                message: userMessage,
-                sessionId: this.sessionId,
-                revelationLevel: this.revelationLevel,
-                timestamp: new Date().toISOString()
-            })
-        });
-        
-        return await response.json();
-    }
+            generateSessionId() {
+                return 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            }
 
-    updateChatName(level) {
-        const names = [
-            "Hernán - Especialista Web",
-            "Hernán Garbarino",
-            "Hernán Garbarino (Digital)"
-        ];
-        
-        if (level >= 0 && level < names.length) {
-            this.chatName.textContent = names[level];
-        }
-    }
+            initializeElements() {
+                this.chatToggle = document.getElementById('chat-toggle');
+                this.chatContainer = document.getElementById('chat-container');
+                this.closeChat = document.getElementById('close-chat');
+                this.userInput = document.getElementById('user-input');
+                this.sendBtn = document.getElementById('send-btn');
+                this.chatMessages = document.getElementById('chat-messages');
+                this.chatName = document.getElementById('chat-name');
+                this.chatStatus = document.getElementById('chat-status');
+            }
 
-    suggestRelatedQuestions(userMessage) {
-        const lowerMsg = userMessage.toLowerCase();
-        const suggestions = {
-            'servicio': [
-                "¿Quieres saber más sobre alguna tecnología específica?",
-                "¿Te interesa conocer casos similares que he trabajado?"
-            ],
-            'tecnolog': [
-                "¿Te gustaría que te cuente sobre proyectos reales usando estas tecnologías?",
-                "¿Necesitas ayuda para elegir la mejor tecnología para tu proyecto?"
-            ],
-            'e-commerce': [
-                "¿Quieres detalles sobre integración con métodos de pago?",
-                "¿Te interesa saber sobre optimización de conversiones?"
-            ],
-            'proyecto': [
-                "¿Quieres que te cuente sobre metodología y tiempos?",
-                "¿Te gustaría coordinar una consulta para evaluar tu idea?"
-            ]
-        };
-        
-        for (const [keyword, suggs] of Object.entries(suggestions)) {
-            if (lowerMsg.includes(keyword) && Math.random() > 0.5) {
+            setupEventListeners() {
+                this.chatToggle.addEventListener('click', () => this.toggleChat());
+                this.closeChat.addEventListener('click', () => this.hideChat());
+                this.sendBtn.addEventListener('click', () => this.sendMessage());
+                
+                this.userInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        this.sendMessage();
+                    }
+                });
+
+                // Auto-completar preguntas comunes (opcional, puedes implementarlo si quieres)
+                // this.setupQuickQuestions();
+            }
+
+            setupAutoContact() {
+                // Mostrar contacto después de 5 minutos de conversación
                 setTimeout(() => {
-                    this.addMessage(suggs[Math.floor(Math.random() * suggs.length)], 'bot', "Sugerencia relacionada");
-                }, 1500);
-                break;
+                    if (this.messages.length > 4) {
+                        this.showContactSuggestions();
+                    }
+                }, 300000);
+            }
+
+            showWelcomeMessage() {
+                const welcomeMessages = [
+                    {
+                        glitch: "Sistema de conocimiento cargado ✓",
+                        text: "¡Hola! Soy Hernán, especialista en desarrollo web y soluciones digitales. Estoy aquí para contarte sobre mis servicios, habilidades y cómo puedo ayudarte con tu proyecto.",
+                        time: this.getCurrentTime()
+                    },
+                    {
+                        glitch: "Base de datos: Proyectos y tecnologías",
+                        text: "Pregúntame sobre: desarrollo web, e-commerce, tecnologías que uso, casos de éxito o mi metodología de trabajo.",
+                        time: this.getCurrentTime()
+                    }
+                ];
+                
+                welcomeMessages.forEach(msg => {
+                    this.addMessage(msg.text, 'bot', msg.glitch);
+                });
+            }
+
+            async sendMessage() {
+                if (this.isTyping) return;
+                
+                const message = this.userInput.value.trim();
+                if (!message) return;
+
+                // Mostrar mensaje del usuario
+                this.addMessage(message, 'user');
+                this.userInput.value = '';
+                this.isTyping = true;
+                
+                // Mostrar "escribiendo" con efecto especial
+                const typingIndicator = this.showTypingIndicator("Analizando tu consulta...");
+                
+                try {
+                    // Llamar al backend IA
+                    const response = await this.getAIResponse(message);
+                    
+                    typingIndicator.remove();
+                    this.isTyping = false;
+                    
+                    // Procesar respuesta estructurada
+                    if (response.success) {
+                        // Actualizar nivel de revelación si cambió
+                        if (response.revelationLevel !== undefined && response.revelationLevel !== this.revelationLevel) {
+                            this.revelationLevel = response.revelationLevel;
+                            this.updateChatName(this.revelationLevel);
+                        }
+                        
+                        // Mostrar respuesta de la IA
+                        this.addMessage(response.reply, 'bot');
+                        
+                        // Mostrar info de contacto si es necesario
+                        if (response.showContactInfo) {
+                            setTimeout(() => this.showContactCard(), 1000);
+                        }
+                        
+                        // Sugerir preguntas relacionadas
+                        this.suggestRelatedQuestions(message);
+                        
+                    } else {
+                        this.addMessage(response.reply, 'bot');
+                    }
+                    
+                } catch (error) {
+                    console.error('Error:', error);
+                    typingIndicator.remove();
+                    this.isTyping = false;
+                    
+                    // Respuesta de error con sugerencias
+                    const fallbackResponses = [
+                        "Parece que hay un problema de conexión. Mientras tanto, te cuento que me especializo en desarrollo web con React y Node.js, y creación de e-commerces con Shopify.",
+                        "Error temporal. Para darte una idea rápida: trabajo con tecnologías modernas, desarrollo sitios responsivos y sistemas personalizados. ¿En qué área te interesa saber más?"
+                    ];
+                    
+                    const randomResponse = fallbackResponses[Math.floor(Math.random() * fallbackResponses.length)];
+                    this.addMessage(randomResponse, 'bot', "Conexión inestable");
+                }
+            }
+
+            async getAIResponse(userMessage) {
+                const response = await fetch(this.GAS_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        message: userMessage,
+                        sessionId: this.sessionId,
+                        revelationLevel: this.revelationLevel,
+                        timestamp: new Date().toISOString()
+                    })
+                });
+                
+                return await response.json();
+            }
+
+            updateChatName(level) {
+                const names = [
+                    "Hernán - Especialista Web",
+                    "Hernán Garbarino",
+                    "Hernán Garbarino (Digital)"
+                ];
+                
+                if (level >= 0 && level < names.length) {
+                    this.chatName.textContent = names[level];
+                }
+            }
+
+            suggestRelatedQuestions(userMessage) {
+                const lowerMsg = userMessage.toLowerCase();
+                const suggestions = {
+                    'servicio': [
+                        "¿Quieres saber más sobre alguna tecnología específica?",
+                        "¿Te interesa conocer casos similares que he trabajado?"
+                    ],
+                    'tecnolog': [
+                        "¿Te gustaría que te cuente sobre proyectos reales usando estas tecnologías?",
+                        "¿Necesitas ayuda para elegir la mejor tecnología para tu proyecto?"
+                    ],
+                    'e-commerce': [
+                        "¿Quieres detalles sobre integración con métodos de pago?",
+                        "¿Te interesa saber sobre optimización de conversiones?"
+                    ],
+                    'proyecto': [
+                        "¿Quieres que te cuente sobre metodología y tiempos?",
+                        "¿Te gustaría coordinar una consulta para evaluar tu idea?"
+                    ]
+                };
+                
+                for (const [keyword, suggs] of Object.entries(suggestions)) {
+                    if (lowerMsg.includes(keyword) && Math.random() > 0.5) {
+                        setTimeout(() => {
+                            this.addMessage(suggs[Math.floor(Math.random() * suggs.length)], 'bot', "Sugerencia relacionada");
+                        }, 1500);
+                        break;
+                    }
+                }
+            }
+
+            showContactCard() {
+                const contactHTML = `
+                    <div class="message bot-message" id="contact-suggestion">
+                        <div class="message-content">
+                            <div class="glitch-text">Info de contacto disponible</div>
+                            <div class="message-text">
+                                <strong>¿Te gustaría conversar más sobre tu proyecto?</strong>
+                                <br><br>
+                                Para consultas detalladas o presupuestos:
+                                <br>
+                                📧 <a href="mailto:hernan.garbarino@gmail.com" style="color:#0f0; text-decoration: none;">hernan.garbarino@gmail.com</a>
+                                <br>
+                                📱 <a href="https://wa.me/541134796562" style="color:#0f0; text-decoration: none;">+54 11 3479-6562</a>
+                                <br><br>
+                                <small>Disponible para nuevas oportunidades y proyectos interesantes.</small>
+                            </div>
+                            <div class="message-time">Contacto</div>
+                        </div>
+                    </div>
+                `;
+                
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = contactHTML;
+                this.chatMessages.appendChild(tempDiv.firstElementChild);
+                this.scrollToBottom();
+            }
+
+            showContactSuggestions() {
+                const suggestions = [
+                    "¿Te gustaría coordinar una llamada para hablar más sobre tu proyecto?",
+                    "Si necesitas un presupuesto detallado, podemos coordinar por email o WhatsApp.",
+                    "Para proyectos específicos, lo mejor es una consulta personalizada. ¿Te interesa?"
+                ];
+                
+                if (!this.contactShown) {
+                    setTimeout(() => {
+                        this.addMessage(suggestions[Math.floor(Math.random() * suggestions.length)], 'bot', "Sugerencia");
+                        this.contactShown = true;
+                    }, 5000);
+                }
+            }
+
+            addMessage(text, sender, glitchText = '') {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${sender}-message`;
+                
+                // Efectos de formateo para respuestas técnicas
+                let formattedText = this.formatTechnicalResponse(text);
+                
+                const timeString = this.getCurrentTime();
+                
+                messageDiv.innerHTML = `
+                    <div class="message-content">
+                        ${glitchText ? `<div class="glitch-text">${glitchText}</div>` : ''}
+                        <div class="message-text">${formattedText}</div>
+                        <div class="message-time">${timeString}</div>
+                    </div>
+                `;
+                
+                this.chatMessages.appendChild(messageDiv);
+                this.scrollToBottom();
+                
+                // Animación de entrada
+                setTimeout(() => {
+                    messageDiv.style.opacity = '1';
+                    messageDiv.style.transform = 'translateY(0)';
+                }, 10);
+                
+                // Guardar en historial
+                this.messages.push({
+                    text: text,
+                    sender: sender,
+                    time: timeString
+                });
+            }
+
+            formatTechnicalResponse(text) {
+                // Mejorar formato para respuestas técnicas
+                let formatted = this.escapeHtml(text);
+                
+                // Destacar tecnologías
+                const techKeywords = ['React', 'Node.js', 'JavaScript', 'Python', 'Shopify', 'WordPress', 'MongoDB', 'MySQL', 'AWS'];
+                techKeywords.forEach(tech => {
+                    const regex = new RegExp(`\\b${tech}\\b`, 'gi');
+                    formatted = formatted.replace(regex, `<strong style="color:#667eea;">${tech}</strong>`);
+                });
+                
+                // Destacar números y resultados
+                formatted = formatted.replace(/\b(\d+%)\b/g, '<strong style="color:#4CAF50;">$1</strong>');
+                formatted = formatted.replace(/\b(\d+\+?\s?años?)\b/gi, '<strong style="color:#FF9800;">$1</strong>');
+                
+                // Mejorar listas
+                formatted = formatted.replace(/•/g, '<br>•');
+                formatted = formatted.replace(/\n/g, '<br>');
+                
+                return formatted;
+            }
+
+            showTypingIndicator(customText = "Analizando...") {
+                const indicator = document.createElement('div');
+                indicator.className = 'message bot-message';
+                indicator.id = 'typing-indicator';
+                indicator.innerHTML = `
+                    <div class="message-content">
+                        <div class="typing-indicator">
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                            <span style="margin-left:10px;font-size:12px;color:#aaa;">${customText}</span>
+                        </div>
+                    </div>
+                `;
+                this.chatMessages.appendChild(indicator);
+                this.scrollToBottom();
+                return indicator;
+            }
+
+            scrollToBottom() {
+                this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
+            }
+
+            getCurrentTime() {
+                const now = new Date();
+                return `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+            }
+
+            escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+
+            toggleChat() {
+                this.chatVisible ? this.hideChat() : this.showChat();
+            }
+
+            showChat() {
+                this.chatVisible = true;
+                this.chatContainer.classList.remove('chat-hidden');
+                setTimeout(() => {
+                    this.chatContainer.classList.add('chat-visible');
+                    this.userInput.focus();
+                    this.chatStatus.textContent = 'Conectado ✓';
+                }, 10);
+            }
+
+            hideChat() {
+                this.chatVisible = false;
+                this.chatContainer.classList.remove('chat-visible');
+                setTimeout(() => {
+                    this.chatContainer.classList.add('chat-hidden');
+                }, 400);
             }
         }
-    }
 
-    showContactCard() {
-        const contactHTML = `
-            <div class="message bot-message" id="contact-suggestion">
-                <div class="message-content">
-                    <div class="glitch-text">Info de contacto disponible</div>
-                    <div class="message-text">
-                        <strong>¿Te gustaría conversar más sobre tu proyecto?</strong>
-                        <br><br>
-                        Para consultas detalladas o presupuestos:
-                        <br>
-                        📧 <a href="mailto:hernan.garbarino@gmail.com" style="color:#0f0;">hernan.garbarino@gmail.com</a>
-                        <br>
-                        📱 <a href="https://wa.me/541134796562" style="color:#0f0;">+54 11 3479-6562</a>
-                        <br><br>
-                        <small>Disponible para nuevas oportunidades y proyectos interesantes.</small>
-                    </div>
-                    <div class="message-time">Contacto</div>
-                </div>
-            </div>
-        `;
-        
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = contactHTML;
-        this.chatMessages.appendChild(tempDiv.firstElementChild);
-        this.scrollToBottom();
-    }
-
-    showContactSuggestions() {
-        const suggestions = [
-            "¿Te gustaría coordinar una llamada para hablar más sobre tu proyecto?",
-            "Si necesitas un presupuesto detallado, podemos coordinar por email o WhatsApp.",
-            "Para proyectos específicos, lo mejor es una consulta personalizada. ¿Te interesa?"
-        ];
-        
-        if (!this.contactShown) {
-            setTimeout(() => {
-                this.addMessage(suggestions[Math.floor(Math.random() * suggestions.length)], 'bot', "Sugerencia");
-                this.contactShown = true;
-            }, 5000);
-        }
-    }
-
-    addMessage(text, sender, glitchText = '') {
-        const messageDiv = document.createElement('div');
-        messageDiv.className = `message ${sender}-message`;
-        
-        // Efectos de formateo para respuestas técnicas
-        let formattedText = this.formatTechnicalResponse(text);
-        
-        const timeString = this.getCurrentTime();
-        
-        messageDiv.innerHTML = `
-            <div class="message-content">
-                ${glitchText ? `<div class="glitch-text">${glitchText}</div>` : ''}
-                <div class="message-text">${formattedText}</div>
-                <div class="message-time">${timeString}</div>
-            </div>
-        `;
-        
-        this.chatMessages.appendChild(messageDiv);
-        this.scrollToBottom();
-        
-        // Animación de entrada
-        setTimeout(() => {
-            messageDiv.style.opacity = '1';
-            messageDiv.style.transform = 'translateY(0)';
-        }, 10);
-        
-        // Guardar en historial
-        this.messages.push({
-            text: text,
-            sender: sender,
-            time: timeString
+        // Inicializar
+        document.addEventListener('DOMContentLoaded', () => {
+            window.hernanChat = new ChatHernanIA();
         });
-    }
-
-    formatTechnicalResponse(text) {
-        // Mejorar formato para respuestas técnicas
-        let formatted = this.escapeHtml(text);
-        
-        // Destacar tecnologías
-        const techKeywords = ['React', 'Node.js', 'JavaScript', 'Python', 'Shopify', 'WordPress', 'MongoDB', 'MySQL', 'AWS'];
-        techKeywords.forEach(tech => {
-            const regex = new RegExp(`\\b${tech}\\b`, 'gi');
-            formatted = formatted.replace(regex, `<strong style="color:#667eea;">${tech}</strong>`);
-        });
-        
-        // Destacar números y resultados
-        formatted = formatted.replace(/\b(\d+%)\b/g, '<strong style="color:#4CAF50;">$1</strong>');
-        formatted = formatted.replace(/\b(\d+\+?\s?años?)\b/gi, '<strong style="color:#FF9800;">$1</strong>');
-        
-        // Mejorar listas
-        formatted = formatted.replace(/•/g, '<br>•');
-        formatted = formatted.replace(/\n/g, '<br>');
-        
-        return formatted;
-    }
-
-    showTypingIndicator(customText = "Analizando...") {
-        const indicator = document.createElement('div');
-        indicator.className = 'message bot-message';
-        indicator.id = 'typing-indicator';
-        indicator.innerHTML = `
-            <div class="message-content">
-                <div class="typing-indicator">
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                    <span style="margin-left:10px;font-size:12px;color:#aaa;">${customText}</span>
-                </div>
-            </div>
-        `;
-        this.chatMessages.appendChild(indicator);
-        this.scrollToBottom();
-        return indicator;
-    }
-
-    scrollToBottom() {
-        this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
-    }
-
-    getCurrentTime() {
-        const now = new Date();
-        return `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-    }
-
-    escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    }
-
-    toggleChat() {
-        this.chatVisible ? this.hideChat() : this.showChat();
-    }
-
-    showChat() {
-        this.chatVisible = true;
-        this.chatContainer.classList.remove('chat-hidden');
-        setTimeout(() => {
-            this.chatContainer.classList.add('chat-visible');
-            this.userInput.focus();
-            this.chatStatus.textContent = 'Conectado ✓';
-        }, 10);
-    }
-
-    hideChat() {
-        this.chatVisible = false;
-        this.chatContainer.classList.remove('chat-visible');
-        setTimeout(() => {
-            this.chatContainer.classList.add('chat-hidden');
-        }, 400);
-    }
-}
-
-// Inicializar
-document.addEventListener('DOMContentLoaded', () => {
-    window.hernanChat = new ChatHernanIA();
-});
-</script>
-
-
-
-
-  
+    </script>
 </body>
 </html>
