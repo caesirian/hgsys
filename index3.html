@@ -743,5 +743,83 @@ document.addEventListener('DOMContentLoaded', function() {
     window.addEventListener('resize', fixChatLayout);
 });
     </script>
+    <!-- AGREGAR ESTO EN TU PÁGINA (botón de prueba) -->
+<button onclick="probarIAvsAutomatico()" style="position:fixed; top:20px; left:20px; padding:10px; background:#ff6b6b; color:white; border:none; border-radius:5px; z-index:9999;">
+    🔍 Probar si es IA
+</button>
+
+<script>
+function probarIAvsAutomatico() {
+    const preguntasReveladoras = [
+        {
+            pregunta: "¿Cuál es la capital de Burkina Faso?",
+            tipo: "Conocimiento general",
+            clave: "Si sabe, es IA. Si no sabe o evade, es automático"
+        },
+        {
+            pregunta: "Si hoy es martes, ¿qué día será en 72 horas?",
+            tipo: "Razonamiento",
+            clave: "Si calcula correctamente (viernes), es IA"
+        },
+        {
+            pregunta: "Escribe un poema corto sobre cables USB perdidos",
+            tipo: "Creatividad",
+            clave: "Si crea algo único, es IA. Si repite, es automático"
+        },
+        {
+            pregunta: "¿Qué servicios ofreces como desarrollador?",
+            tipo: "Tu información",
+            clave: "Si responde variado cada vez, es IA. Si es idéntico, automático"
+        }
+    ];
+    
+    let resultados = [];
+    
+    preguntasReveladoras.forEach((p, i) => {
+        setTimeout(() => {
+            console.log(`\n🎯 PRUEBA ${i+1}: ${p.tipo}`);
+            console.log(`❓ Pregunta: ${p.pregunta}`);
+            console.log(`🔑 Clave: ${p.clave}`);
+            
+            const callbackName = 'prueba_' + Date.now();
+            
+            window[callbackName] = function(data) {
+                console.log(`📨 Respuesta (${data.source || '?'}):`);
+                console.log(data.reply.substring(0, 200) + '...');
+                
+                resultados.push({
+                    pregunta: p.pregunta,
+                    fuente: data.source,
+                    esIA: data.source && data.source.includes('deepseek'),
+                    respuesta: data.reply.substring(0, 100)
+                });
+                
+                delete window[callbackName];
+                
+                // Mostrar resumen final
+                if (resultados.length === preguntasReveladoras.length) {
+                    console.log('\n📊 RESUMEN FINAL:');
+                    const totalIA = resultados.filter(r => r.esIA).length;
+                    console.log(`✅ Respuestas de IA: ${totalIA}/${preguntasReveladoras.length}`);
+                    
+                    if (totalIA === preguntasReveladoras.length) {
+                        console.log('🎉 ¡TODO ES IA REAL!');
+                    } else if (totalIA === 0) {
+                        console.log('🚨 TODO SON RESPUESTAS AUTOMÁTICAS');
+                    } else {
+                        console.log('⚠️ MEZCLA: Algunas son IA, otras automáticas');
+                    }
+                }
+            };
+            
+            const script = document.createElement('script');
+            const url = `TU_URL_GAS?message=${encodeURIComponent(p.pregunta)}&callback=${callbackName}`;
+            script.src = url;
+            document.head.appendChild(script);
+            
+        }, i * 3000);
+    });
+}
+</script>
 </body>
 </html>
