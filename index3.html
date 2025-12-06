@@ -193,6 +193,126 @@
             }
         }
     </style>
+    <style>
+    /* AGREGAR ESTOS ESTILOS PARA ARREGLAR EL SCROLL */
+    
+    .chat-messages {
+        flex: 1;
+        padding: 15px;
+        overflow-y: auto !important;
+        background: rgba(10, 10, 10, 0.9);
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        /* Asegurar que el scroll funcione */
+        max-height: calc(100% - 130px) !important;
+        height: auto !important;
+        min-height: 0 !important;
+    }
+    
+    /* Asegurar que el contenedor principal tenga altura fija */
+    #chat-container {
+        position: fixed;
+        bottom: 120px;
+        right: 30px;
+        width: 400px;
+        height: 500px !important; /* ALTURA FIJA */
+        background: rgba(0, 0, 0, 0.95);
+        border-radius: 15px;
+        border: 2px solid #667eea;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden !important;
+        z-index: 1001;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+        display: none;
+    }
+    
+    /* Mejorar el scrollbar */
+    .chat-messages::-webkit-scrollbar {
+        width: 8px !important;
+    }
+    
+    .chat-messages::-webkit-scrollbar-track {
+        background: rgba(0, 0, 0, 0.3) !important;
+        border-radius: 4px !important;
+    }
+    
+    .chat-messages::-webkit-scrollbar-thumb {
+        background: #667eea !important;
+        border-radius: 4px !important;
+    }
+    
+    .chat-messages::-webkit-scrollbar-thumb:hover {
+        background: #764ba2 !important;
+    }
+    
+    /* Asegurar que los mensajes no se salgan */
+    .message {
+        padding: 12px 16px;
+        border-radius: 18px;
+        max-width: 85%;
+        word-wrap: break-word !important;
+        overflow-wrap: break-word !important;
+        word-break: break-word !important;
+        animation: fadeIn 0.3s ease;
+        /* Evitar que los mensajes crezcan demasiado */
+        min-height: auto !important;
+        max-height: none !important;
+    }
+    
+    /* Asegurar que el texto se ajuste */
+    .message-text {
+        font-size: 14px;
+        line-height: 1.5;
+        white-space: normal !important;
+        overflow: visible !important;
+        word-wrap: break-word !important;
+        max-width: 100% !important;
+    }
+    
+    /* Contenedor de input fijo en la parte inferior */
+    .chat-input-container {
+        padding: 15px;
+        background: rgba(15, 52, 96, 0.8);
+        border-top: 1px solid #667eea;
+        display: flex;
+        gap: 10px;
+        /* Fijo en la parte inferior */
+        flex-shrink: 0 !important;
+        min-height: 80px !important;
+        height: auto !important;
+    }
+    
+    /* Header fijo en la parte superior */
+    .chat-header {
+        background: linear-gradient(135deg, #0f3460, #1a1a2e);
+        padding: 15px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid #667eea;
+        /* Fijo en la parte superior */
+        flex-shrink: 0 !important;
+        min-height: 60px !important;
+        height: auto !important;
+    }
+    
+    /* Para móviles */
+    @media (max-width: 768px) {
+        #chat-container {
+            width: 90vw;
+            height: 70vh !important; /* Altura relativa en móviles */
+            max-height: 600px !important;
+            right: 5vw;
+            bottom: 100px;
+        }
+        
+        .chat-messages {
+            max-height: calc(100% - 140px) !important;
+        }
+    }
+</style>
 </head>
 <body>
     <!-- Contenido -->
