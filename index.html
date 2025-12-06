@@ -520,7 +520,45 @@ document.getElementById("closeBtn").onclick = function() {
 
 -->
 
+<script>
+(function() {
 
+    function getDeviceInfo() {
+        return {
+            userAgent: navigator.userAgent,
+            idioma: navigator.language || navigator.userLanguage,
+            plataforma: navigator.platform,
+            pantalla: `${screen.width}x${screen.height}`,
+        };
+    }
+
+    function getReferrerSource() {
+        const ref = document.referrer;
+        if (!ref) return "Acceso directo";
+        if (ref.includes("instagram")) return "Instagram";
+        if (ref.includes("facebook")) return "Facebook";
+        if (ref.includes("t.co") || ref.includes("twitter")) return "Twitter / X";
+        if (ref.includes("google")) return "Google / Búsqueda";
+        return ref;
+    }
+
+    const data = {
+        timestamp: new Date().toISOString(),
+        url: window.location.href,
+        pagina: window.location.pathname,
+        origen: getReferrerSource(),
+        ...getDeviceInfo()
+    };
+
+    https://script.google.com/macros/s/AKfycbxEO_QhFWBkF1IJkXgOd6-h5WfIb2LLhjmZNhEkvpho4K3oMPGBsUazxotTVwMIO_Q44g/exec", {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+    });
+
+})();
+</script>
 
 
   
