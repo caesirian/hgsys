@@ -614,6 +614,134 @@
             
             document.head.appendChild(script);
         }
+        // AGREGAR ESTE CÓDIGO AL FINAL DE TU SCRIPT EXISTENTE
+// NO REEMPLACES TODO, SOLO AGREGA ESTO:
+
+function fixChatLayout() {
+    console.log('🔧 Ajustando layout del chat...');
+    
+    // Asegurar que el contenedor tenga altura fija
+    const chatContainer = document.getElementById('chat-container');
+    if (chatContainer) {
+        chatContainer.style.height = '500px';
+        chatContainer.style.maxHeight = '80vh';
+    }
+    
+    // Forzar redimensionamiento de mensajes
+    const chatMessages = document.getElementById('chat-messages');
+    if (chatMessages) {
+        // Limpiar y restaurar estilos
+        chatMessages.style.cssText = `
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto !important;
+            background: rgba(10, 10, 10, 0.9);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-height: calc(100% - 130px) !important;
+            height: auto !important;
+            min-height: 0 !important;
+        `;
+        
+        // Asegurar scroll al fondo
+        setTimeout(() => {
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }, 100);
+    }
+    
+    // Aplicar estilos a todos los mensajes existentes
+    document.querySelectorAll('.message').forEach(msg => {
+        msg.style.maxWidth = '85%';
+        msg.style.wordWrap = 'break-word';
+        msg.style.overflowWrap = 'break-word';
+    });
+    
+    console.log('✅ Layout ajustado');
+}
+
+// Ejecutar cuando se abra el chat
+function toggleChat() {
+    if (chatVisible) {
+        chatContainer.style.display = 'none';
+        chatVisible = false;
+    } else {
+        chatContainer.style.display = 'flex';
+        chatVisible = true;
+        userInput.focus();
+        
+        // Arreglar layout cuando se abre
+        setTimeout(fixChatLayout, 50);
+    }
+}
+
+// También ejecutar al añadir mensajes
+function addMessage(text, sender) {
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message ${sender}-message`;
+    
+    const time = new Date().toLocaleTimeString([], { 
+        hour: '2-digit', 
+        minute: '2-digit' 
+    });
+    
+    // Formatear texto básico
+    let formattedText = escapeHtml(text);
+    formattedText = formattedText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    formattedText = formattedText.replace(/\n/g, '<br>');
+    
+    messageDiv.innerHTML = `
+        <div class="message-text">${formattedText}</div>
+        <div class="message-time">${time}</div>
+    `;
+    
+    // Aplicar estilos de ajuste
+    messageDiv.style.cssText = `
+        padding: 12px 16px;
+        border-radius: 18px;
+        max-width: 85%;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        word-break: break-word;
+        animation: fadeIn 0.3s ease;
+    `;
+    
+    chatMessages.appendChild(messageDiv);
+    
+    // Forzar scroll al fondo y arreglar layout
+    setTimeout(() => {
+        scrollToBottom();
+        fixChatLayout();
+    }, 10);
+}
+
+// Reemplazar tu función scrollToBottom con esta mejorada
+function scrollToBottom() {
+    const chatMessages = document.getElementById('chat-messages');
+    if (chatMessages) {
+        // Métodos múltiples para asegurar el scroll
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+        
+        setTimeout(() => {
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }, 50);
+        
+        setTimeout(() => {
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }, 100);
+    }
+}
+
+// Inicializar arreglos al cargar
+document.addEventListener('DOMContentLoaded', function() {
+    // ... tu código existente ...
+    
+    // Arreglar layout después de cargar
+    setTimeout(fixChatLayout, 1000);
+    
+    // También arreglar cuando cambie el tamaño de la ventana
+    window.addEventListener('resize', fixChatLayout);
+});
     </script>
 </body>
 </html>
