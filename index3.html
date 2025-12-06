@@ -5,158 +5,185 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chat con Hernán Garbarino</title>
     <style>
+        /* ESTILOS MÍNIMOS Y FUNCIONALES */
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Segoe UI', sans-serif;
+            font-family: Arial, sans-serif;
         }
         
         body {
-            background: #0a0a0a;
-            color: white;
             padding: 20px;
-            min-height: 100vh;
+            background: #f5f5f5;
+            color: #333;
         }
         
-        /* Botón del chat */
+        h1 {
+            margin-bottom: 20px;
+            color: #2c3e50;
+        }
+        
+        /* BOTÓN FLOTANTE DEL CHAT */
         #chat-toggle {
             position: fixed;
-            bottom: 30px;
-            right: 30px;
-            width: 70px;
-            height: 70px;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            border: none;
-            color: white;
-            font-size: 24px;
-            cursor: pointer;
-            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.5);
-            z-index: 1000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        #chat-toggle:hover {
-            transform: scale(1.05);
-        }
-        
-        /* Contenedor del chat */
-        #chat-container {
-            position: fixed;
-            bottom: 120px;
-            right: 30px;
-            width: 400px;
-            height: 500px;
-            background: rgba(0, 0, 0, 0.95);
-            border-radius: 15px;
-            border: 2px solid #667eea;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            z-index: 1001;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
-            display: none;
-        }
-        
-        .chat-header {
-            background: linear-gradient(135deg, #0f3460, #1a1a2e);
-            padding: 15px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid #667eea;
-        }
-        
-        .chat-header h3 {
-            color: white;
-            font-size: 18px;
-        }
-        
-        .chat-status {
-            font-size: 12px;
-            color: #4CAF50;
-        }
-        
-        #close-chat {
-            background: none;
+            background: #3498db;
             border: none;
             color: white;
             font-size: 20px;
             cursor: pointer;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+            z-index: 1000;
         }
         
-        .chat-messages {
+        #chat-toggle:hover {
+            background: #2980b9;
+            transform: scale(1.05);
+        }
+        
+        /* CONTENEDOR DEL CHAT - ARREGLADO EL SCROLL */
+        #chat-container {
+            position: fixed;
+            bottom: 90px;
+            right: 20px;
+            width: 400px;
+            height: 500px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            z-index: 1001;
+            display: none;
+        }
+        
+        /* HEADER FIJADO ARRIBA */
+        .chat-header {
+            background: #2c3e50;
+            color: white;
+            padding: 15px;
+            flex-shrink: 0;
+        }
+        
+        .chat-header h3 {
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+        
+        #chat-status {
+            font-size: 12px;
+            color: #2ecc71;
+        }
+        
+        #close-chat {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+        }
+        
+        /* ÁREA DE MENSAJES CON SCROLL FUNCIONAL */
+        #chat-messages {
             flex: 1;
             padding: 15px;
-            overflow-y: auto;
-            background: rgba(10, 10, 10, 0.9);
+            overflow-y: auto !important;
+            overflow-x: hidden !important;
             display: flex;
             flex-direction: column;
             gap: 10px;
+            min-height: 0; /* CRÍTICO para el scroll */
         }
         
+        /* ESTILO DE MENSAJES */
         .message {
-            padding: 12px 16px;
-            border-radius: 18px;
+            padding: 10px 14px;
+            border-radius: 15px;
             max-width: 85%;
             word-wrap: break-word;
+            overflow-wrap: break-word;
+            line-height: 1.4;
+            font-size: 14px;
             animation: fadeIn 0.3s ease;
         }
         
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
+            from { opacity: 0; transform: translateY(5px); }
             to { opacity: 1; transform: translateY(0); }
         }
         
         .bot-message {
-            background: rgba(26, 26, 46, 0.9);
-            border-left: 4px solid #667eea;
+            background: #f1f8ff;
+            border-left: 4px solid #3498db;
             align-self: flex-start;
         }
         
         .user-message {
-            background: rgba(102, 126, 234, 0.9);
+            background: #3498db;
+            color: white;
             align-self: flex-end;
         }
         
-        .message-text {
-            font-size: 14px;
-            line-height: 1.5;
+        .message-time {
+            font-size: 11px;
+            opacity: 0.7;
+            margin-top: 5px;
+            text-align: right;
         }
         
+        /* INPUT FIJADO ABAJO */
         .chat-input-container {
             padding: 15px;
-            background: rgba(15, 52, 96, 0.8);
-            border-top: 1px solid #667eea;
+            background: #ecf0f1;
+            border-top: 1px solid #ddd;
+            flex-shrink: 0;
             display: flex;
             gap: 10px;
         }
         
         #user-input {
             flex: 1;
-            padding: 12px 15px;
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(102, 126, 234, 0.5);
-            border-radius: 25px;
-            color: white;
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
             font-size: 14px;
             outline: none;
         }
         
+        #user-input:focus {
+            border-color: #3498db;
+        }
+        
         #send-btn {
-            width: 50px;
-            height: 50px;
+            width: 45px;
+            height: 45px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            background: #3498db;
             border: none;
             color: white;
-            font-size: 18px;
+            font-size: 16px;
             cursor: pointer;
         }
         
+        #send-btn:hover:not(:disabled) {
+            background: #2980b9;
+        }
+        
+        #send-btn:disabled {
+            background: #95a5a6;
+            cursor: not-allowed;
+        }
+        
+        /* TYPING INDICATOR */
         .typing-indicator {
             display: flex;
             gap: 5px;
@@ -166,7 +193,7 @@
         .typing-indicator span {
             width: 8px;
             height: 8px;
-            background: #667eea;
+            background: #3498db;
             border-radius: 50%;
             animation: typing 1.4s infinite;
         }
@@ -176,162 +203,72 @@
         
         @keyframes typing {
             0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-10px); }
+            50% { transform: translateY(-5px); }
         }
         
+        /* SCROLLBAR PERSONALIZADO */
+        #chat-messages::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        #chat-messages::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+        
+        #chat-messages::-webkit-scrollbar-thumb {
+            background: #3498db;
+            border-radius: 3px;
+        }
+        
+        #chat-messages::-webkit-scrollbar-thumb:hover {
+            background: #2980b9;
+        }
+        
+        /* RESPONSIVE */
         @media (max-width: 768px) {
             #chat-container {
-                width: 90vw;
+                width: calc(100vw - 40px);
                 height: 70vh;
-                right: 5vw;
-                bottom: 100px;
+                right: 20px;
+                bottom: 80px;
             }
             
             #chat-toggle {
-                bottom: 20px;
-                right: 20px;
+                bottom: 15px;
+                right: 15px;
             }
         }
-    </style>
-    <style>
-    /* AGREGAR ESTOS ESTILOS PARA ARREGLAR EL SCROLL */
-    
-    .chat-messages {
-        flex: 1;
-        padding: 15px;
-        overflow-y: auto !important;
-        background: rgba(10, 10, 10, 0.9);
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-        /* Asegurar que el scroll funcione */
-        max-height: calc(100% - 130px) !important;
-        height: auto !important;
-        min-height: 0 !important;
-    }
-    
-    /* Asegurar que el contenedor principal tenga altura fija */
-    #chat-container {
-        position: fixed;
-        bottom: 120px;
-        right: 30px;
-        width: 400px;
-        height: 500px !important; /* ALTURA FIJA */
-        background: rgba(0, 0, 0, 0.95);
-        border-radius: 15px;
-        border: 2px solid #667eea;
-        display: flex;
-        flex-direction: column;
-        overflow: hidden !important;
-        z-index: 1001;
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
-        display: none;
-    }
-    
-    /* Mejorar el scrollbar */
-    .chat-messages::-webkit-scrollbar {
-        width: 8px !important;
-    }
-    
-    .chat-messages::-webkit-scrollbar-track {
-        background: rgba(0, 0, 0, 0.3) !important;
-        border-radius: 4px !important;
-    }
-    
-    .chat-messages::-webkit-scrollbar-thumb {
-        background: #667eea !important;
-        border-radius: 4px !important;
-    }
-    
-    .chat-messages::-webkit-scrollbar-thumb:hover {
-        background: #764ba2 !important;
-    }
-    
-    /* Asegurar que los mensajes no se salgan */
-    .message {
-        padding: 12px 16px;
-        border-radius: 18px;
-        max-width: 85%;
-        word-wrap: break-word !important;
-        overflow-wrap: break-word !important;
-        word-break: break-word !important;
-        animation: fadeIn 0.3s ease;
-        /* Evitar que los mensajes crezcan demasiado */
-        min-height: auto !important;
-        max-height: none !important;
-    }
-    
-    /* Asegurar que el texto se ajuste */
-    .message-text {
-        font-size: 14px;
-        line-height: 1.5;
-        white-space: normal !important;
-        overflow: visible !important;
-        word-wrap: break-word !important;
-        max-width: 100% !important;
-    }
-    
-    /* Contenedor de input fijo en la parte inferior */
-    .chat-input-container {
-        padding: 15px;
-        background: rgba(15, 52, 96, 0.8);
-        border-top: 1px solid #667eea;
-        display: flex;
-        gap: 10px;
-        /* Fijo en la parte inferior */
-        flex-shrink: 0 !important;
-        min-height: 80px !important;
-        height: auto !important;
-    }
-    
-    /* Header fijo en la parte superior */
-    .chat-header {
-        background: linear-gradient(135deg, #0f3460, #1a1a2e);
-        padding: 15px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        border-bottom: 1px solid #667eea;
-        /* Fijo en la parte superior */
-        flex-shrink: 0 !important;
-        min-height: 60px !important;
-        height: auto !important;
-    }
-    
-    /* Para móviles */
-    @media (max-width: 768px) {
-        #chat-container {
-            width: 90vw;
-            height: 70vh !important; /* Altura relativa en móviles */
-            max-height: 600px !important;
-            right: 5vw;
-            bottom: 100px;
-        }
         
-        .chat-messages {
-            max-height: calc(100% - 140px) !important;
+        /* CONTENIDO PRINCIPAL (opcional) */
+        .main-content {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
         }
-    }
-</style>
+    </style>
 </head>
 <body>
-    <!-- Contenido -->
-    <h1>Hernán Garbarino - Desarrollador Web</h1>
-    <p>Chat con respuestas inteligentes sobre desarrollo web</p>
-
-    <!-- Botón del chat -->
+    <div class="main-content">
+        <h1>Hernán Garbarino - Desarrollador Web</h1>
+        <p>Desarrollador full stack con 15+ años de experiencia. Especialista en React, Node.js, Shopify y aplicaciones web.</p>
+        <p><strong>Servicios:</strong> Desarrollo web, E-commerce, Aplicaciones personalizadas, Consultoría técnica</p>
+        <p><strong>Contacto:</strong> hernan.garbarino@gmail.com | +54 11 34796562</p>
+    </div>
+    
+    <!-- Botón flotante del chat -->
     <button id="chat-toggle">💬</button>
-
-    <!-- Chat container -->
+    
+    <!-- Contenedor del chat -->
     <div id="chat-container">
         <div class="chat-header">
-            <div>
-                <h3>Hernán Garbarino</h3>
-                <div class="chat-status" id="chat-status">● Inicializando...</div>
-            </div>
+            <h3>Chat con Hernán Garbarino</h3>
+            <div id="chat-status">● Conectando...</div>
             <button id="close-chat">✕</button>
         </div>
+        
         <div id="chat-messages"></div>
+        
         <div class="chat-input-container">
             <input type="text" id="user-input" placeholder="Escribe tu pregunta...">
             <button id="send-btn">➤</button>
@@ -340,14 +277,17 @@
 
     <script>
         // ============================================
-        // CONFIGURACIÓN SIMPLE Y ROBUSTA
+        // CONFIGURACIÓN
         // ============================================
+        // REEMPLAZA ESTA URL CON LA TUYA DESPUÉS DE DEPLOY
         const GAS_URL = 'https://script.google.com/macros/s/AKfycbwl7J7yoyYz8p_J8TBoLtMMQiqXrujf4b67ddh4cBMxoInSljaWuWT65zNkn7xRFTzonA/exec';
         
         let chatVisible = false;
         let isProcessing = false;
         
-        // Elementos DOM
+        // ============================================
+        // ELEMENTOS DOM
+        // ============================================
         const chatToggle = document.getElementById('chat-toggle');
         const chatContainer = document.getElementById('chat-container');
         const closeChat = document.getElementById('close-chat');
@@ -360,29 +300,23 @@
         // INICIALIZACIÓN
         // ============================================
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('🚀 Chat inicializado - URL GAS:', GAS_URL);
+            console.log('Chat inicializado - URL:', GAS_URL);
             
-            // Event listeners simples
+            // Event Listeners
             chatToggle.addEventListener('click', toggleChat);
-            closeChat.addEventListener('click', () => {
-                chatContainer.style.display = 'none';
-                chatVisible = false;
-            });
-            
+            closeChat.addEventListener('click', hideChat);
             sendBtn.addEventListener('click', sendMessage);
             
-            userInput.addEventListener('keypress', (e) => {
+            userInput.addEventListener('keypress', function(e) {
                 if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
                     sendMessage();
                 }
             });
             
-            // Mostrar bienvenida
-            setTimeout(() => {
-                addMessage('¡Hola! Soy Hernán Garbarino, desarrollador web. Pregúntame sobre mis servicios, tecnologías o proyectos.', 'bot');
-                testConnection();
-            }, 500);
+            // Mensaje de bienvenida
+            setTimeout(showWelcomeMessage, 300);
+            testConnection();
         });
         
         // ============================================
@@ -390,13 +324,23 @@
         // ============================================
         function toggleChat() {
             if (chatVisible) {
-                chatContainer.style.display = 'none';
-                chatVisible = false;
+                hideChat();
             } else {
-                chatContainer.style.display = 'flex';
-                chatVisible = true;
-                userInput.focus();
+                showChat();
             }
+        }
+        
+        function showChat() {
+            chatContainer.style.display = 'flex';
+            chatVisible = true;
+            userInput.focus();
+            // Asegurar que el scroll esté al fondo
+            setTimeout(scrollToBottom, 100);
+        }
+        
+        function hideChat() {
+            chatContainer.style.display = 'none';
+            chatVisible = false;
         }
         
         async function sendMessage() {
@@ -411,92 +355,88 @@
             isProcessing = true;
             sendBtn.disabled = true;
             
-            // Mostrar indicador de escritura
+            // Mostrar "escribiendo..."
             showTyping();
             
             try {
-                // Conectar con GAS
-                const response = await getGASResponse(message);
+                // Llamar a GAS
+                const response = await callGASAPI(message);
                 
-                // Ocultar typing
+                // Ocultar "escribiendo..."
                 removeTyping();
                 
-                // SIEMPRE mostrar respuesta (incluso si success: false)
-                if (response && response.reply) {
+                // Procesar respuesta
+                if (response.success) {
+                    // Éxito: mostrar respuesta de IA
                     addMessage(response.reply, 'bot');
-                    
-                    // Actualizar estado
-                    if (response.source === 'deepseek') {
-                        chatStatus.textContent = '● IA DeepSeek';
-                        chatStatus.style.color = '#4CAF50';
-                    } else if (response.source === 'intelligent') {
-                        chatStatus.textContent = '● Respuestas inteligentes';
-                        chatStatus.style.color = '#FF9800';
-                    } else {
-                        chatStatus.textContent = '● Conectado';
-                        chatStatus.style.color = '#4CAF50';
-                    }
+                    updateStatus(response.source || 'unknown', true);
                 } else {
-                    // Respuesta de emergencia
-                    addMessage('¡Hola! Como desarrollador web, puedo ayudarte con desarrollo, e-commerce y consultoría técnica. ¿En qué puedo asistirte?', 'bot');
-                    chatStatus.textContent = '● Modo básico';
-                    chatStatus.style.color = '#ff6b6b';
+                    // Error: mostrar mensaje de error
+                    addMessage(`⚠️ ${response.reply}`, 'bot');
+                    updateStatus('error', false);
                 }
                 
             } catch (error) {
                 console.error('Error:', error);
                 removeTyping();
                 
-                // Respuesta local garantizada
-                addMessage('Como desarrollador web especializado, ofrezco servicios de desarrollo, e-commerce y consultoría. ¿Qué necesitas?', 'bot');
-                chatStatus.textContent = '● Sin conexión';
-                chatStatus.style.color = '#ff6b6b';
+                // Fallback local
+                addMessage('Como desarrollador web, ofrezco servicios de desarrollo, e-commerce (Shopify) y aplicaciones personalizadas. ¿En qué puedo ayudarte?', 'bot');
+                updateStatus('offline', false);
             }
             
             isProcessing = false;
             sendBtn.disabled = false;
+            scrollToBottom();
         }
         
-        async function getGASResponse(message) {
-            return new Promise((resolve, reject) => {
-                const callbackName = 'gas_' + Date.now();
+        // ============================================
+        // FUNCIÓN PRINCIPAL PARA LLAMAR AL GAS
+        // ============================================
+        function callGASAPI(message) {
+            return new Promise((resolve) => {
+                const callbackName = 'cb_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
                 
+                // Crear función callback global
                 window[callbackName] = function(data) {
+                    // Limpiar
                     delete window[callbackName];
                     if (script.parentNode) {
                         document.head.removeChild(script);
                     }
                     
-                    // ¡ACEPTAR CUALQUIER RESPUESTA!
-                    resolve(data);
+                    // Siempre resolver (incluso si hay error)
+                    resolve(data || { 
+                        success: false, 
+                        reply: 'Error en la conexión',
+                        source: 'network_error' 
+                    });
                 };
                 
+                // Crear script JSONP
                 const script = document.createElement('script');
-                const params = new URLSearchParams({
-                    message: encodeURIComponent(message),
-                    callback: callbackName,
-                    _: Date.now() // Evitar caché
-                });
+                const url = `${GAS_URL}?` + 
+                           `callback=${encodeURIComponent(callbackName)}&` +
+                           `message=${encodeURIComponent(message)}&` +
+                           `_=${Date.now()}`; // Evitar caché
                 
-                script.src = `${GAS_URL}?${params}`;
+                script.src = url;
                 
+                // Manejar errores de carga
                 script.onerror = function() {
                     delete window[callbackName];
                     if (script.parentNode) {
                         document.head.removeChild(script);
                     }
                     
-                    // ¡NO RECHAZAR! Devolver respuesta local
                     resolve({
-                        success: true,
-                        reply: '¡Hola! Estoy aquí para ayudarte con desarrollo web. ¿Qué necesitas?',
-                        source: 'local_fallback'
+                        success: false,
+                        reply: 'No se pudo conectar con el servidor',
+                        source: 'connection_error'
                     });
                 };
                 
-                document.head.appendChild(script);
-                
-                // Timeout con respuesta local
+                // Timeout de seguridad
                 setTimeout(() => {
                     if (window[callbackName]) {
                         delete window[callbackName];
@@ -505,12 +445,15 @@
                         }
                         
                         resolve({
-                            success: true,
-                            reply: 'Como desarrollador web, trabajo con React, Node.js, Shopify y otras tecnologías. ¿En qué puedo asistirte?',
-                            source: 'timeout_fallback'
+                            success: false,
+                            reply: 'Tiempo de espera agotado',
+                            source: 'timeout'
                         });
                     }
-                }, 10000);
+                }, 15000); // 15 segundos timeout
+                
+                // Ejecutar
+                document.head.appendChild(script);
             });
         }
         
@@ -526,7 +469,7 @@
                 minute: '2-digit' 
             });
             
-            // Formatear texto básico
+            // Formatear texto (marcdown básico)
             let formattedText = escapeHtml(text);
             formattedText = formattedText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
             formattedText = formattedText.replace(/\n/g, '<br>');
@@ -561,7 +504,36 @@
         }
         
         function scrollToBottom() {
-            chatMessages.scrollTop = chatMessages.scrollHeight;
+            // Método robusto para scroll al fondo
+            setTimeout(() => {
+                if (chatMessages) {
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                }
+            }, 50);
+            
+            setTimeout(() => {
+                if (chatMessages) {
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                }
+            }, 150);
+        }
+        
+        function updateStatus(source, isSuccess) {
+            const statusMap = {
+                'deepseek': { text: '● IA DeepSeek', color: '#2ecc71' },
+                'welcome': { text: '● Conectado', color: '#2ecc71' },
+                'error': { text: '● Error temporal', color: '#e74c3c' },
+                'config_error': { text: '● Error de configuración', color: '#e74c3c' },
+                'offline': { text: '● Modo local', color: '#f39c12' }
+            };
+            
+            const status = statusMap[source] || { 
+                text: isSuccess ? '● Conectado' : '● Error', 
+                color: isSuccess ? '#2ecc71' : '#e74c3c' 
+            };
+            
+            chatStatus.textContent = status.text;
+            chatStatus.style.color = status.color;
         }
         
         function escapeHtml(text) {
@@ -570,256 +542,43 @@
             return div.innerHTML;
         }
         
-        // ============================================
-        // PRUEBA DE CONEXIÓN
-        // ============================================
+        function showWelcomeMessage() {
+            addMessage('¡Hola! Soy Hernán Garbarino, desarrollador web. ¿En qué puedo ayudarte hoy? Puedes preguntarme sobre mis servicios, tecnologías o proyectos.', 'bot');
+        }
+        
         function testConnection() {
-            console.log('🔧 Probando conexión...');
-            chatStatus.textContent = '● Probando...';
-            chatStatus.style.color = '#FF9800';
+            console.log('Probando conexión...');
+            chatStatus.textContent = '● Probando conexión...';
+            chatStatus.style.color = '#f39c12';
             
-            const testCallback = 'test_' + Date.now();
-            
-            window[testCallback] = function(data) {
-                console.log('✅ Respuesta de prueba:', data);
-                delete window[testCallback];
+            // Prueba simple
+            callGASAPI('Hola').then(response => {
+                console.log('Respuesta de prueba:', response);
                 
-                // ¡NO IMPORTAN LOS ERRORES! Siempre funciona
-                if (data && data.reply) {
+                if (response.success) {
                     chatStatus.textContent = '● Conectado ✓';
-                    chatStatus.style.color = '#4CAF50';
-                    
-                    if (data.source === 'deepseek') {
-                        console.log('🎉 ¡DeepSeek funcionando!');
-                    } else {
-                        console.log('ℹ️ Usando respuestas inteligentes');
-                    }
+                    chatStatus.style.color = '#2ecc71';
                 } else {
-                    chatStatus.textContent = '● Básico ✓';
-                    chatStatus.style.color = '#FF9800';
-                    console.log('⚠️ Modo básico activado');
+                    chatStatus.textContent = '● Modo limitado';
+                    chatStatus.style.color = '#f39c12';
                 }
-            };
-            
-            const script = document.createElement('script');
-            const url = `${GAS_URL}?message=Hola&callback=${testCallback}`;
-            script.src = url;
-            
-            script.onerror = function() {
-                console.log('🔄 Usando respuestas locales');
-                delete window[testCallback];
-                chatStatus.textContent = '● Local ✓';
-                chatStatus.style.color = '#FF9800';
-            };
-            
-            document.head.appendChild(script);
+            }).catch(() => {
+                chatStatus.textContent = '● Sin conexión';
+                chatStatus.style.color = '#e74c3c';
+            });
         }
-        // AGREGAR ESTE CÓDIGO AL FINAL DE TU SCRIPT EXISTENTE
-// NO REEMPLACES TODO, SOLO AGREGA ESTO:
-
-function fixChatLayout() {
-    console.log('🔧 Ajustando layout del chat...');
-    
-    // Asegurar que el contenedor tenga altura fija
-    const chatContainer = document.getElementById('chat-container');
-    if (chatContainer) {
-        chatContainer.style.height = '500px';
-        chatContainer.style.maxHeight = '80vh';
-    }
-    
-    // Forzar redimensionamiento de mensajes
-    const chatMessages = document.getElementById('chat-messages');
-    if (chatMessages) {
-        // Limpiar y restaurar estilos
-        chatMessages.style.cssText = `
-            flex: 1;
-            padding: 15px;
-            overflow-y: auto !important;
-            background: rgba(10, 10, 10, 0.9);
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            max-height: calc(100% - 130px) !important;
-            height: auto !important;
-            min-height: 0 !important;
-        `;
         
-        // Asegurar scroll al fondo
-        setTimeout(() => {
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-        }, 100);
-    }
-    
-    // Aplicar estilos a todos los mensajes existentes
-    document.querySelectorAll('.message').forEach(msg => {
-        msg.style.maxWidth = '85%';
-        msg.style.wordWrap = 'break-word';
-        msg.style.overflowWrap = 'break-word';
-    });
-    
-    console.log('✅ Layout ajustado');
-}
-
-// Ejecutar cuando se abra el chat
-function toggleChat() {
-    if (chatVisible) {
-        chatContainer.style.display = 'none';
-        chatVisible = false;
-    } else {
-        chatContainer.style.display = 'flex';
-        chatVisible = true;
-        userInput.focus();
-        
-        // Arreglar layout cuando se abre
-        setTimeout(fixChatLayout, 50);
-    }
-}
-
-// También ejecutar al añadir mensajes
-function addMessage(text, sender) {
-    const messageDiv = document.createElement('div');
-    messageDiv.className = `message ${sender}-message`;
-    
-    const time = new Date().toLocaleTimeString([], { 
-        hour: '2-digit', 
-        minute: '2-digit' 
-    });
-    
-    // Formatear texto básico
-    let formattedText = escapeHtml(text);
-    formattedText = formattedText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-    formattedText = formattedText.replace(/\n/g, '<br>');
-    
-    messageDiv.innerHTML = `
-        <div class="message-text">${formattedText}</div>
-        <div class="message-time">${time}</div>
-    `;
-    
-    // Aplicar estilos de ajuste
-    messageDiv.style.cssText = `
-        padding: 12px 16px;
-        border-radius: 18px;
-        max-width: 85%;
-        word-wrap: break-word;
-        overflow-wrap: break-word;
-        word-break: break-word;
-        animation: fadeIn 0.3s ease;
-    `;
-    
-    chatMessages.appendChild(messageDiv);
-    
-    // Forzar scroll al fondo y arreglar layout
-    setTimeout(() => {
-        scrollToBottom();
-        fixChatLayout();
-    }, 10);
-}
-
-// Reemplazar tu función scrollToBottom con esta mejorada
-function scrollToBottom() {
-    const chatMessages = document.getElementById('chat-messages');
-    if (chatMessages) {
-        // Métodos múltiples para asegurar el scroll
-        chatMessages.scrollTop = chatMessages.scrollHeight;
-        
-        setTimeout(() => {
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-        }, 50);
-        
-        setTimeout(() => {
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-        }, 100);
-    }
-}
-
-// Inicializar arreglos al cargar
-document.addEventListener('DOMContentLoaded', function() {
-    // ... tu código existente ...
-    
-    // Arreglar layout después de cargar
-    setTimeout(fixChatLayout, 1000);
-    
-    // También arreglar cuando cambie el tamaño de la ventana
-    window.addEventListener('resize', fixChatLayout);
-});
+        // ============================================
+        // FUNCIÓN DE DEPURACIÓN (opcional)
+        // ============================================
+        window.debugChat = function() {
+            console.log('=== DEBUG CHAT ===');
+            console.log('Chat visible:', chatVisible);
+            console.log('Procesando:', isProcessing);
+            console.log('Mensajes:', chatMessages.children.length);
+            console.log('Altura chat-messages:', chatMessages.scrollHeight);
+            console.log('Scroll top:', chatMessages.scrollTop);
+        };
     </script>
-    <!-- AGREGAR ESTO EN TU PÁGINA (botón de prueba) -->
-<button onclick="probarIAvsAutomatico()" style="position:fixed; top:20px; left:20px; padding:10px; background:#ff6b6b; color:white; border:none; border-radius:5px; z-index:9999;">
-    🔍 Probar si es IA
-</button>
-
-<script>
-function probarIAvsAutomatico() {
-    const preguntasReveladoras = [
-        {
-            pregunta: "¿Cuál es la capital de Burkina Faso?",
-            tipo: "Conocimiento general",
-            clave: "Si sabe, es IA. Si no sabe o evade, es automático"
-        },
-        {
-            pregunta: "Si hoy es martes, ¿qué día será en 72 horas?",
-            tipo: "Razonamiento",
-            clave: "Si calcula correctamente (viernes), es IA"
-        },
-        {
-            pregunta: "Escribe un poema corto sobre cables USB perdidos",
-            tipo: "Creatividad",
-            clave: "Si crea algo único, es IA. Si repite, es automático"
-        },
-        {
-            pregunta: "¿Qué servicios ofreces como desarrollador?",
-            tipo: "Tu información",
-            clave: "Si responde variado cada vez, es IA. Si es idéntico, automático"
-        }
-    ];
-    
-    let resultados = [];
-    
-    preguntasReveladoras.forEach((p, i) => {
-        setTimeout(() => {
-            console.log(`\n🎯 PRUEBA ${i+1}: ${p.tipo}`);
-            console.log(`❓ Pregunta: ${p.pregunta}`);
-            console.log(`🔑 Clave: ${p.clave}`);
-            
-            const callbackName = 'prueba_' + Date.now();
-            
-            window[callbackName] = function(data) {
-                console.log(`📨 Respuesta (${data.source || '?'}):`);
-                console.log(data.reply.substring(0, 200) + '...');
-                
-                resultados.push({
-                    pregunta: p.pregunta,
-                    fuente: data.source,
-                    esIA: data.source && data.source.includes('deepseek'),
-                    respuesta: data.reply.substring(0, 100)
-                });
-                
-                delete window[callbackName];
-                
-                // Mostrar resumen final
-                if (resultados.length === preguntasReveladoras.length) {
-                    console.log('\n📊 RESUMEN FINAL:');
-                    const totalIA = resultados.filter(r => r.esIA).length;
-                    console.log(`✅ Respuestas de IA: ${totalIA}/${preguntasReveladoras.length}`);
-                    
-                    if (totalIA === preguntasReveladoras.length) {
-                        console.log('🎉 ¡TODO ES IA REAL!');
-                    } else if (totalIA === 0) {
-                        console.log('🚨 TODO SON RESPUESTAS AUTOMÁTICAS');
-                    } else {
-                        console.log('⚠️ MEZCLA: Algunas son IA, otras automáticas');
-                    }
-                }
-            };
-            
-            const script = document.createElement('script');
-            const url = `TU_URL_GAS?message=${encodeURIComponent(p.pregunta)}&callback=${callbackName}`;
-            script.src = url;
-            document.head.appendChild(script);
-            
-        }, i * 3000);
-    });
-}
-</script>
 </body>
 </html>
