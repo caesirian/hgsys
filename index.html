@@ -521,9 +521,9 @@ document.getElementById("closeBtn").onclick = function() {
 -->
 <script>
 !function(){
-    var e=atob,
-        t=e("NTQ5MTEzNDc5NjU2Mg=="),
-        n=e("MTg2NTYxMQ=="),
+    var //e=atob,
+        //t=e("NTQ5MTEzNDc5NjU2Mg=="),
+        //n=e("MTg2NTYxMQ=="),
         o=function(e){
             var urlParams = new URLSearchParams(window.location.search);
             var utmSource = urlParams.get('utm_source');
@@ -565,8 +565,8 @@ document.getElementById("closeBtn").onclick = function() {
                 i=encodeURIComponent("📱 NUEVO ACCESO AL PRESUPUESTADOR:\n📍 País: "+ipData.country_name+"\n🏙️ Ciudad: "+ipData.city+"\n📅 Fecha: "+a.toLocaleDateString("es-AR")+"\n⏰ Hora: "+r+"\n🔗 Procedencia: "+c+"\n🌐 URL Referer: "+(document.referrer||"Ninguna"));
 
             // WHATSAPP
-            fetch("https://api.callmebot.com/whatsapp.php?phone="+t+"&text="+i+"&apikey="+n)
-                .catch(function(e){});
+            //fetch("https://api.callmebot.com/whatsapp.php?phone="+t+"&text="+i+"&apikey="+n)
+            //    .catch(function(e){});
 
             // REGISTRO EN GOOGLE SHEETS — >>> USA TU WEBAPP ACTUAL <<<
             var sheetData = {
