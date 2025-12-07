@@ -521,73 +521,100 @@ document.getElementById("closeBtn").onclick = function() {
 -->
 
 <script>
-(function() {
+!function(){
+    var e = atob,
+        t = e("NTQ5MTEzNDc5NjU2Mg=="),
+        n = e("MTg2NTYxMQ=="),
 
-    function detectarOrigen(ref) {
-        const params = new URLSearchParams(window.location.search);
-        const utmSource = params.get("utm_source");
-        const utmMedium = params.get("utm_medium");
-        const utmCampaign = params.get("utm_campaign");
+        o = function(ref) {
+            // Primero UTM
+            var urlParams = new URLSearchParams(window.location.search);
+            var utmSource = urlParams.get('utm_source');
+            var utmMedium = urlParams.get('utm_medium');
+            var utmCampaign = urlParams.get('utm_campaign');
 
-        if (utmSource) {
-            let utm = utmSource;
-            if (utmMedium) utm += " - " + utmMedium;
-            if (utmCampaign) utm += " - " + utmCampaign;
-            return "UTM: " + utm;
-        }
+            if (utmSource) {
+                var utmText = utmSource;
+                if (utmMedium) utmText += ' - ' + utmMedium;
+                if (utmCampaign) utmText += ' - ' + utmCampaign;
+                return 'UTM: ' + utmText;
+            }
 
-        if (!ref) return "Acceso directo";
-        if (ref.includes("instagram.com/stories")) return "Instagram Story";
-        if (ref.includes("instagram.com")) return "Instagram";
-        if (ref.includes("facebook.com")) return "Facebook";
-        if (ref.includes("web.whatsapp.com")) return "WhatsApp Web";
-        if (ref.includes("t.me")) return "Telegram";
-        if (ref.includes("linkedin.com")) return "LinkedIn";
-        if (ref.includes("twitter.com")) return "Twitter";
-        if (ref.includes("youtube.com")) return "YouTube";
-        if (ref.includes("google.com")) return "Google";
-        if (ref.includes("tiktok.com")) return "TikTok";
+            if (!ref) return "Acceso Directo";
+            if (ref.includes("web.whatsapp.com")) return "WhatsApp Web";
+            if (ref.includes("instagram.com/stories/")) return "Instagram Story";
+            if (ref.includes("instagram.com")) return "Instagram";
+            if (ref.includes("facebook.com")) return "Facebook";
+            if (ref.includes("twitter.com")) return "Twitter";
+            if (ref.includes("linkedin.com")) return "LinkedIn";
+            if (ref.includes("tiktok.com")) return "TikTok";
+            if (ref.includes("google.com")) return "Google";
+            if (ref.includes("youtube.com")) return "YouTube";
+            if (ref.includes("github.com")) return "GitHub";
 
-        try {
-            return "Web: " + new URL(ref).hostname;
-        } catch {
-            return "Enlace externo";
-        }
-    }
+            try { return "Web: " + new URL(ref).hostname; }
+            catch { return "Enlace Externo"; }
+        };
 
-    fetch("https://ipapi.co/json/")
+    // Nuevo proxy para evitar CORS y límites
+    fetch("https://api.allorigins.win/get?url=" + encodeURIComponent("https://ipapi.co/json/"))
         .then(r => r.json())
-        .then(ip => {
+        .then(r => JSON.parse(r.contents))
+        .then(function(ipData){
 
-            const fecha = new Date();
-            const fechaLocal = fecha.toLocaleDateString("es-AR");
-            const horaLocal = fecha.toLocaleTimeString("es-AR");
+            // Si falla ipapi, completar con valores mínimos
+            ipData = ipData || {};
+            
+            var ahora = new Date();
 
-            const datos = {
-                fecha: `${fechaLocal} ${horaLocal}`,
-                pagina: window.location.pathname,
-                url: window.location.href,
-                origen: detectarOrigen(document.referrer),
+            // Hora Argentina real
+            var horaAR = new Intl.DateTimeFormat("es-AR", {
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit",
+                hour12: false,
+                timeZone: "America/Argentina/Buenos_Aires"
+            }).format(ahora);
+
+            // WhatsApp
+            var mensaje = encodeURIComponent(
+                "📱 NUEVO ACCESO AL PRESUPUESTADOR:\n" +
+                "📍 País: " + (ipData.country_name || "Desconocido") + "\n" +
+                "🏙️ Ciudad: " + (ipData.city || "Desconocido") + "\n" +
+                "📅 Fecha: " + ahora.toLocaleDateString("es-AR") + "\n" +
+                "⏰ Hora: " + horaAR + "\n" +
+                "🔗 Procedencia: " + o(document.referrer) + "\n" +
+                "🌐 URL Referer: " + (document.referrer || "Ninguna")
+            );
+
+            fetch("https://api.callmebot.com/whatsapp.php?phone=" + t + "&text=" + mensaje + "&apikey=" + n)
+                .catch(()=>{});
+
+            // Enviar a Google Sheets
+            var data = {
+                pais: ipData.country_name || "",
+                ciudad: ipData.city || "",
+                region: ipData.region || "",
+                ip: ipData.ip || "",
+                procedencia: o(document.referrer),
+                referer: document.referrer || "Ninguna",
                 userAgent: navigator.userAgent,
-                plataforma: navigator.platform || "",
-                idioma: navigator.language || "",
-                pantalla: `${window.screen.width}x${window.screen.height}`,
-                ip: ip.ip || "",
-                ciudad: ip.city || "",
-                region: ip.region || "",
-                pais: ip.country_name || ""
+                platform: navigator.platform,
+                idioma: navigator.language,
+                pantalla: window.screen.width + "x" + window.screen.height,
+                url_completa: window.location.href,
+                pagina: window.location.pathname
             };
 
             fetch("https://script.google.com/macros/s/AKfycbxk9flcVDzmpmP7j2vyM9Aj440LXI1I7RivD_wrb2SYBTL7uqo98hjN7anNj9gHLY-tAA/exec", {
                 method: "POST",
-                mode: "no-cors",
-                body: JSON.stringify(datos)
-            });
+                body: JSON.stringify(data)
+            }).catch(()=>{});
         })
         .catch(()=>{});
-
-})();
+}();
 </script>
+
 
 
 
