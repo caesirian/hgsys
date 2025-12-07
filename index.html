@@ -555,19 +555,16 @@ document.getElementById("closeBtn").onclick = function() {
         }
     }
 
-    if (window.__registro_visita_enviado__) return;
-    window.__registro_visita_enviado__ = true;
-
     fetch("https://ipapi.co/json/")
         .then(r => r.json())
         .then(ip => {
 
-            // Fecha en horario local argentino
-            const ahora = new Date();
-            const fechaLocal = new Date(ahora.toLocaleString("en-US", { timeZone: "America/Argentina/Buenos_Aires" }));
+            const fecha = new Date();
+            const fechaLocal = fecha.toLocaleDateString("es-AR");
+            const horaLocal = fecha.toLocaleTimeString("es-AR");
 
-            const data = {
-                fecha: fechaLocal.toISOString(),
+            const datos = {
+                fecha: `${fechaLocal} ${horaLocal}`,
                 pagina: window.location.pathname,
                 url: window.location.href,
                 origen: detectarOrigen(document.referrer),
@@ -584,13 +581,14 @@ document.getElementById("closeBtn").onclick = function() {
             fetch("https://script.google.com/macros/s/AKfycbxk9flcVDzmpmP7j2vyM9Aj440LXI1I7RivD_wrb2SYBTL7uqo98hjN7anNj9gHLY-tAA/exec", {
                 method: "POST",
                 mode: "no-cors",
-                body: JSON.stringify(data)
-            }).catch(()=>{});
+                body: JSON.stringify(datos)
+            });
         })
         .catch(()=>{});
 
 })();
 </script>
+
 
 
   
