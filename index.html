@@ -523,39 +523,71 @@ document.getElementById("closeBtn").onclick = function() {
 <script>
 (function() {
 
-    function getDeviceInfo() {
-        return {
-            userAgent: navigator.userAgent,
-            idioma: navigator.language || navigator.userLanguage,
-            plataforma: navigator.platform,
-            pantalla: `${screen.width}x${screen.height}`,
-        };
-    }
+    function detectarOrigen(ref) {
+        const params = new URLSearchParams(window.location.search);
+        const utmSource = params.get("utm_source");
+        const utmMedium = params.get("utm_medium");
+        const utmCampaign = params.get("utm_campaign");
 
-    function getReferrerSource() {
-        const ref = document.referrer;
+        if (utmSource) {
+            let utm = utmSource;
+            if (utmMedium) utm += " - " + utmMedium;
+            if (utmCampaign) utm += " - " + utmCampaign;
+            return "UTM: " + utm;
+        }
+
         if (!ref) return "Acceso directo";
-        if (ref.includes("instagram")) return "Instagram";
-        if (ref.includes("facebook")) return "Facebook";
-        if (ref.includes("t.co") || ref.includes("twitter")) return "Twitter / X";
-        if (ref.includes("google")) return "Google / Búsqueda";
-        return ref;
+        if (ref.includes("instagram.com/stories")) return "Instagram Story";
+        if (ref.includes("instagram.com")) return "Instagram";
+        if (ref.includes("facebook.com")) return "Facebook";
+        if (ref.includes("web.whatsapp.com")) return "WhatsApp Web";
+        if (ref.includes("t.me")) return "Telegram";
+        if (ref.includes("linkedin.com")) return "LinkedIn";
+        if (ref.includes("twitter.com")) return "Twitter";
+        if (ref.includes("youtube.com")) return "YouTube";
+        if (ref.includes("google.com")) return "Google";
+        if (ref.includes("tiktok.com")) return "TikTok";
+
+        try {
+            return "Web: " + new URL(ref).hostname;
+        } catch {
+            return "Enlace externo";
+        }
     }
 
-    const data = {
-        timestamp: new Date().toISOString(),
-        url: window.location.href,
-        pagina: window.location.pathname,
-        origen: getReferrerSource(),
-        ...getDeviceInfo()
-    };
+    if (window.__registro_visita_enviado__) return;
+    window.__registro_visita_enviado__ = true;
 
-     fetch("https://script.google.com/macros/s/AKfycbxEO_QhFWBkF1IJkXgOd6-h5WfIb2LLhjmZNhEkvpho4K3oMPGBsUazxotTVwMIO_Q44g/exec", {
-        method: "POST",
-        mode: "no-cors",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data)
-    });
+    fetch("https://ipapi.co/json/")
+        .then(r => r.json())
+        .then(ip => {
+
+            // Fecha en horario local argentino
+            const ahora = new Date();
+            const fechaLocal = new Date(ahora.toLocaleString("en-US", { timeZone: "America/Argentina/Buenos_Aires" }));
+
+            const data = {
+                fecha: fechaLocal.toISOString(),
+                pagina: window.location.pathname,
+                url: window.location.href,
+                origen: detectarOrigen(document.referrer),
+                userAgent: navigator.userAgent,
+                plataforma: navigator.platform || "",
+                idioma: navigator.language || "",
+                pantalla: `${window.screen.width}x${window.screen.height}`,
+                ip: ip.ip || "",
+                ciudad: ip.city || "",
+                region: ip.region || "",
+                pais: ip.country_name || ""
+            };
+
+            fetch("https://script.google.com/macros/s/AKfycbxk9flcVDzmpmP7j2vyM9Aj440LXI1I7RivD_wrb2SYBTL7uqo98hjN7anNj9gHLY-tAA/exec", {
+                method: "POST",
+                mode: "no-cors",
+                body: JSON.stringify(data)
+            }).catch(()=>{});
+        })
+        .catch(()=>{});
 
 })();
 </script>
