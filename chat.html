@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚌 Viaje Conectado</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            background-color: #111;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Fondo del interior del colectivo */
+        .bus-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2069&q=80');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            filter: brightness(0.7) contrast(1.1);
+            z-index: -1;
+        }
+
+        /* Efecto de ventana del colectivo */
+        .bus-window-effect {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to right, rgba(0,0,0,0.1) 1px, transparent 1px), 
+                        linear-gradient(to bottom, rgba(0,0,0,0.1) 1px, transparent 1px);
+            background-size: 30px 30px;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        /* Contenedor principal de ventanas flotantes */
+        .desktop-container {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Barra de chat superior */
+        .chat-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 60px;
+            background: rgba(25, 25, 35, 0.85);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            z-index: 1000;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .chat-toggle {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 8px 20px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 10px rgba(102, 126, 234, 0.3);
+        }
+
+        .chat-toggle:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .chat-toggle i {
+            font-size: 16px;
+        }
+
+        .chat-notification {
+            position: absolute;
+            top: 12px;
+            right: 20px;
+            background: #ff4757;
+            color: white;
+            border-radius: 50%;
+            width: 22px;
+            height: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            box-shadow: 0 2px 5px rgba(255, 71, 87, 0.5);
+        }
+
+        /* Ventana de chat expandida */
+        .chat-window {
+            position: fixed;
+            top: 60px;
+            right: 20px;
+            width: 350px;
+            height: 450px;
+            background: rgba(30, 30, 40, 0.95);
+            backdrop-filter: blur(15px);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+            z-index: 999;
+            display: none;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .chat-window.active {
+            display: flex;
+            flex-direction: column;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .chat-header {
+            padding: 15px;
+            background: rgba(40, 40, 50, 0.9);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-radius: 15px 15px 0 0;
+        }
+
+        .chat-header h3 {
+            color: white;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .close-chat {
+            background: transparent;
+            border: none;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 18px;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+
+        .close-chat:hover {
+            color: white;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .message {
+            background: rgba(50, 50, 65, 0.8);
+            padding: 10px 15px;
+            border-radius: 10px;
+            max-width: 85%;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.user {
+            align-self: flex-end;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 10px 10px 0 10px;
+        }
+
+        .message.other {
+            align-self: flex-start;
+            background: rgba(60, 60, 75, 0.9);
+            border-radius: 10px 10px 10px 0;
+        }
+
+        .message-sender {
+            font-weight: bold;
+            font-size: 12px;
+            margin-bottom: 4px;
+            color: #aaa;
+        }
+
+        .message.user .message-sender {
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .message-text {
+            color: white;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .chat-input {
+            padding: 15px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            gap: 10px;
+            background: rgba(40, 40, 50, 0.9);
+        }
+
+        .chat-input input {
+            flex: 1;
+            padding: 10px 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            color: white;
+            font-size: 14px;
+            outline: none;
+            transition: border 0.3s;
+        }
+
+        .chat-input input:focus {
+            border-color: #667eea;
+        }
+
+        .chat-input button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+
+        .chat-input button:hover {
+            transform: scale(1.05);
+        }
+
+        /* Ventanas flotantes */
+        .floating-window {
+            position: absolute;
+            background: rgba(30, 30, 40, 0.85);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 10;
+            overflow: hidden;
+            min-width: 220px;
+            transition: box-shadow 0.3s;
+        }
+
+        .floating-window:hover {
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+        }
+
+        .window-header {
+            padding: 12px 15px;
+            background: rgba(40, 40, 50, 0.9);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: move;
+            user-select: none;
+        }
+
+        .window-title {
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .window-controls {
+            display: flex;
+            gap: 8px;
+        }
+
+        .window-control {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .window-control:hover {
+            transform: scale(1.1);
+        }
+
+        .close-btn {
+            background: #ff5f57;
+        }
+
+        .minimize-btn {
+            background: #ffbd2e;
+        }
+
+        .maximize-btn {
+            background: #28ca42;
+        }
+
+        .window-content {
+            padding: 20px;
+            color: white;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 12px;
+            color: #aaa;
+            margin-bottom: 5px;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 8px 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            color: white;
+            font-size: 14px;
+            outline: none;
+            transition: border 0.3s;
+        }
+
+        .form-control:focus {
+            border-color: #667eea;
+        }
+
+        .info-display {
+            padding: 15px;
+            background: rgba(40, 40, 50, 0.7);
+            border-radius: 8px;
+            margin-top: 10px;
+            border-left: 3px solid #667eea;
+        }
+
+        .info-display h4 {
+            font-size: 12px;
+            color: #aaa;
+            margin-bottom: 5px;
+        }
+
+        .info-display p {
+            font-size: 16px;
+            font-weight: 600;
+            color: white;
+        }
+
+        /* Estilos específicos para cada ventana */
+        #nameWindow {
+            top: 100px;
+            left: 50px;
+            width: 280px;
+        }
+
+        #ageWindow {
+            top: 100px;
+            right: 50px;
+            width: 250px;
+        }
+
+        #lineWindow {
+            bottom: 150px;
+            left: 80px;
+            width: 300px;
+        }
+
+        #routeWindow {
+            bottom: 150px;
+            right: 80px;
+            width: 320px;
+        }
+
+        /* Botón de acción flotante */
+        .fab {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            cursor: pointer;
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+            z-index: 100;
+            transition: all 0.3s ease;
+        }
+
+        .fab:hover {
+            transform: translateX(-50%) scale(1.1);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
+        }
+
+        /* Indicador de arrastre */
+        .drag-indicator {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .chat-window {
+                width: calc(100% - 40px);
+                height: 400px;
+                right: 20px;
+            }
+
+            .floating-window {
+                min-width: 200px;
+            }
+
+            #nameWindow, #ageWindow {
+                top: 80px;
+            }
+
+            #lineWindow, #routeWindow {
+                bottom: 100px;
+            }
+
+            #nameWindow, #lineWindow {
+                left: 20px;
+            }
+
+            #ageWindow, #routeWindow {
+                right: 20px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .floating-window {
+                position: relative;
+                width: calc(100% - 40px) !important;
+                margin: 20px auto;
+                left: auto !important;
+                right: auto !important;
+                top: auto !important;
+                bottom: auto !important;
+            }
+
+            .chat-bar {
+                height: 50px;
+                padding: 0 15px;
+            }
+
+            .chat-toggle {
+                padding: 6px 15px;
+                font-size: 13px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Fondo del interior del colectivo -->
+    <div class="bus-background"></div>
+    <div class="bus-window-effect"></div>
+
+    <!-- Barra de chat superior -->
+    <div class="chat-bar">
+        <button class="chat-toggle" id="toggleChat">
+            <i class="fas fa-comments"></i>
+            Chat del Viaje
+        </button>
+        <div class="chat-notification" id="chatNotification">3</div>
+    </div>
+
+    <!-- Ventana de chat -->
+    <div class="chat-window" id="chatWindow">
+        <div class="chat-header">
+            <h3><i class="fas fa-comments"></i> Chat del Viaje #146</h3>
+            <button class="close-chat" id="closeChat">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="chat-messages" id="chatMessages">
+            <div class="message other">
+                <div class="message-sender">Ana</div>
+                <div class="message-text">¿Alguien más va al festival en el centro?</div>
+            </div>
+            <div class="message user">
+                <div class="message-sender">Tú</div>
+                <div class="message-text">¡Yo sí! ¿A qué hora empieza?</div>
+            </div>
+            <div class="message other">
+                <div class="message-sender">Carlos</div>
+                <div class="message-text">A las 15:00, dicen que habrá buena música</div>
+            </div>
+        </div>
+        <div class="chat-input">
+            <input type="text" id="chatInput" placeholder="Escribe un mensaje...">
+            <button id="sendMessage">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Ventana flotante: Nombre -->
+    <div class="floating-window" id="nameWindow">
+        <div class="window-header">
+            <div class="window-title">
+                <i class="fas fa-user"></i> Nombre
+            </div>
+            <div class="window-controls">
+                <div class="window-control minimize-btn"></div>
+                <div class="window-control maximize-btn"></div>
+                <div class="window-control close-btn"></div>
+            </div>
+        </div>
+        <div class="window-content">
+            <div class="form-group">
+                <label for="userName">Tu nombre (opcional)</label>
+                <input type="text" id="userName" class="form-control" placeholder="Ej: María, Juan, Alex...">
+            </div>
+            <div class="info-display">
+                <h4>Nombre actual</h4>
+                <p id="currentName">Anónimo</p>
+            </div>
+        </div>
+        <div class="drag-indicator">
+            <i class="fas fa-arrows-alt"></i> Arrastrar
+        </div>
+    </div>
+
+    <!-- Ventana flotante: Rango de Edad -->
+    <div class="floating-window" id="ageWindow">
+        <div class="window-header">
+            <div class="window-title">
+                <i class="fas fa-birthday-cake"></i> Rango de Edad
+            </div>
+            <div class="window-controls">
+                <div class="window-control minimize-btn"></div>
+                <div class="window-control maximize-btn"></div>
+                <div class="window-control close-btn"></div>
+            </div>
+        </div>
+        <div class="window-content">
+            <div class="form-group">
+                <label for="ageRange">Selecciona tu rango de edad (opcional)</label>
+                <select id="ageRange" class="form-control">
+                    <option value="">Prefiero no decirlo</option>
+                    <option value="under18">Menor de 18</option>
+                    <option value="18-25">18 - 25 años</option>
+                    <option value="26-35">26 - 35 años</option>
+                    <option value="36-50">36 - 50 años</option>
+                    <option value="over50">Más de 50 años</option>
+                </select>
+            </div>
+            <div class="info-display">
+                <h4>Rango seleccionado</h4>
+                <p id="currentAge">No especificado</p>
+            </div>
+        </div>
+        <div class="drag-indicator">
+            <i class="fas fa-arrows-alt"></i> Arrastrar
+        </div>
+    </div>
+
+    <!-- Ventana flotante: Línea -->
+    <div class="floating-window" id="lineWindow">
+        <div class="window-header">
+            <div class="window-title">
+                <i class="fas fa-bus"></i> Línea
+            </div>
+            <div class="window-controls">
+                <div class="window-control minimize-btn"></div>
+                <div class="window-control maximize-btn"></div>
+                <div class="window-control close-btn"></div>
+            </div>
+        </div>
+        <div class="window-content">
+            <div class="form-group">
+                <label for="busLine">Línea del colectivo</label>
+                <select id="busLine" class="form-control">
+                    <option value="146">146 - Plaza Italia a Puente Saavedra</option>
+                    <option value="152">152 - Retiro a Villa Lugano</option>
+                    <option value="168">168 - Constitución a La Boca</option>
+                    <option value="29">29 - Palermo a Recoleta</option>
+                    <option value="39">39 - Av. Corrientes a Once</option>
+                </select>
+            </div>
+            <div class="info-display">
+                <h4>Línea actual</h4>
+                <p id="currentLine">146 - Plaza Italia a Puente Saavedra</p>
+            </div>
+        </div>
+        <div class="drag-indicator">
+            <i class="fas fa-arrows-alt"></i> Arrastrar
+        </div>
+    </div>
+
+    <!-- Ventana flotante: Trayecto -->
+    <div class="floating-window" id="routeWindow">
+        <div class="window-header">
+            <div class="window-title">
+                <i class="fas fa-route"></i> Trayecto
+            </div>
+            <div class="window-controls">
+                <div class="window-control minimize-btn"></div>
+                <div class="window-control maximize-btn"></div>
+                <div class="window-control close-btn"></div>
+            </div>
+        </div>
+        <div class="window-content">
+            <div class="form-group">
+                <label for="origin">Origen</label>
+                <input type="text" id="origin" class="form-control" placeholder="Ej: Plaza Italia">
+            </div>
+            <div class="form-group">
+                <label for="destination">Destino</label>
+                <input type="text" id="destination" class="form-control" placeholder="Ej: Puente Saavedra">
+            </div>
+            <div class="info-display">
+                <h4>Trayecto actual</h4>
+                <p id="currentRoute">Plaza Italia → Puente Saavedra</p>
+            </div>
+        </div>
+        <div class="drag-indicator">
+            <i class="fas fa-arrows-alt"></i> Arrastrar
+        </div>
+    </div>
+
+    <!-- Botón de acción flotante -->
+    <button class="fab" id="connectButton">
+        <i class="fas fa-plug"></i>
+    </button>
+
+    <script>
+        // Variables globales
+        let chatOpen = false;
+        let activeWindow = null;
+        let isDragging = false;
+        let dragOffset = { x: 0, y: 0 };
+
+        // Inicialización cuando el DOM esté listo
+        document.addEventListener('DOMContentLoaded', function() {
+            // Configurar eventos del chat
+            const toggleChatBtn = document.getElementById('toggleChat');
+            const closeChatBtn = document.getElementById('closeChat');
+            const chatWindow = document.getElementById('chatWindow');
+            const chatInput = document.getElementById('chatInput');
+            const sendMessageBtn = document.getElementById('sendMessage');
+            const chatMessages = document.getElementById('chatMessages');
+            const chatNotification = document.getElementById('chatNotification');
+            
+            // Configurar eventos de las ventanas flotantes
+            const userNameInput = document.getElementById('userName');
+            const ageRangeSelect = document.getElementById('ageRange');
+            const busLineSelect = document.getElementById('busLine');
+            const originInput = document.getElementById('origin');
+            const destinationInput = document.getElementById('destination');
+            const connectButton = document.getElementById('connectButton');
+            
+            // Mostrar/ocultar chat
+            toggleChatBtn.addEventListener('click', function() {
+                chatOpen = !chatOpen;
+                if (chatOpen) {
+                    chatWindow.classList.add('active');
+                    chatNotification.style.display = 'none';
+                } else {
+                    chatWindow.classList.remove('active');
+                }
+            });
+            
+            closeChatBtn.addEventListener('click', function() {
+                chatOpen = false;
+                chatWindow.classList.remove('active');
+            });
+            
+            // Enviar mensaje de chat
+            function sendMessage() {
+                const messageText = chatInput.value.trim();
+                if (messageText === '') return;
+                
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'message user';
+                messageDiv.innerHTML = `
+                    <div class="message-sender">Tú</div>
+                    <div class="message-text">${messageText}</div>
+                `;
+                
+                chatMessages.appendChild(messageDiv);
+                chatInput.value = '';
+                
+                // Auto-scroll al último mensaje
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+                
+                // Simular respuesta automática después de 1 segundo
+                setTimeout(() => {
+                    const responses = [
+                        "¡Interesante!",
+                        "¿Alguien más tiene algo que agregar?",
+                        "Me gusta esa idea",
+                        "¿En qué parada estamos?"
+                    ];
+                    
+                    const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+                    const responseDiv = document.createElement('div');
+                    responseDiv.className = 'message other';
+                    responseDiv.innerHTML = `
+                        <div class="message-sender">Viajero</div>
+                        <div class="message-text">${randomResponse}</div>
+                    `;
+                    
+                    chatMessages.appendChild(responseDiv);
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                    
+                    // Actualizar notificación
+                    const currentCount = parseInt(chatNotification.textContent);
+                    chatNotification.textContent = currentCount + 1;
+                    chatNotification.style.display = 'flex';
+                }, 1000);
+            }
+            
+            sendMessageBtn.addEventListener('click', sendMessage);
+            
+            chatInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    sendMessage();
+                }
+            });
+            
+            // Actualizar información en tiempo real
+            userNameInput.addEventListener('input', function() {
+                const currentNameElement = document.getElementById('currentName');
+                if (userNameInput.value.trim() === '') {
+                    currentNameElement.textContent = 'Anónimo';
+                } else {
+                    currentNameElement.textContent = userNameInput.value;
+                }
+            });
+            
+            ageRangeSelect.addEventListener('change', function() {
+                const currentAgeElement = document.getElementById('currentAge');
+                const selectedOption = ageRangeSelect.options[ageRangeSelect.selectedIndex];
+                
+                if (selectedOption.value === '') {
+                    currentAgeElement.textContent = 'No especificado';
+                } else {
+                    currentAgeElement.textContent = selectedOption.text;
+                }
+            });
+            
+            busLineSelect.addEventListener('change', function() {
+                const currentLineElement = document.getElementById('currentLine');
+                currentLineElement.textContent = busLineSelect.options[busLineSelect.selectedIndex].text;
+            });
+            
+            originInput.addEventListener('input', updateRouteDisplay);
+            destinationInput.addEventListener('input', updateRouteDisplay);
+            
+            function updateRouteDisplay() {
+                const origin = originInput.value.trim();
+                const destination = destinationInput.value.trim();
+                const currentRouteElement = document.getElementById('currentRoute');
+                
+                if (origin === '' && destination === '') {
+                    currentRouteElement.textContent = 'No especificado';
+                } else if (origin === '') {
+                    currentRouteElement.textContent = `→ ${destination}`;
+                } else if (destination === '') {
+                    currentRouteElement.textContent = `${origin} →`;
+                } else {
+                    currentRouteElement.textContent = `${origin} → ${destination}`;
+                }
+            }
+            
+            // Configurar botón de conexión
+            connectButton.addEventListener('click', function() {
+                // Obtener datos de todas las ventanas
+                const userData = {
+                    name: userNameInput.value || 'Anónimo',
+                    ageRange: ageRangeSelect.value ? ageRangeSelect.options[ageRangeSelect.selectedIndex].text : 'No especificado',
+                    line: busLineSelect.options[busLineSelect.selectedIndex].text,
+                    route: document.getElementById('currentRoute').textContent
+                };
+                
+                // Cambiar estado del botón
+                connectButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                connectButton.style.background = 'linear-gradient(135deg, #28ca42 0%, #1e7e34 100%)';
+                
+                // Simular conexión
+                setTimeout(() => {
+                    // Mostrar mensaje en el chat
+                    const connectionMessage = document.createElement('div');
+                    connectionMessage.className = 'message other';
+                    connectionMessage.innerHTML = `
+                        <div class="message-sender">Sistema</div>
+                        <div class="message-text">${userData.name} se ha unido al viaje ${userData.line}</div>
+                    `;
+                    
+                    chatMessages.appendChild(connectionMessage);
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                    
+                    // Restaurar botón
+                    connectButton.innerHTML = '<i class="fas fa-check"></i>';
+                    
+                    // Cambiar a estado "conectado" por 2 segundos
+                    setTimeout(() => {
+                        connectButton.innerHTML = '<i class="fas fa-plug"></i>';
+                        connectButton.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+                    }, 2000);
+                }, 1500);
+            });
+            
+            // Hacer ventanas arrastrables
+            const windows = document.querySelectorAll('.floating-window');
+            const windowHeaders = document.querySelectorAll('.window-header');
+            
+            windowHeaders.forEach(header => {
+                header.addEventListener('mousedown', startDrag);
+            });
+            
+            function startDrag(e) {
+                if (e.target.classList.contains('window-control')) return;
+                
+                activeWindow = this.parentElement;
+                isDragging = true;
+                
+                const rect = activeWindow.getBoundingClientRect();
+                dragOffset.x = e.clientX - rect.left;
+                dragOffset.y = e.clientY - rect.top;
+                
+                document.addEventListener('mousemove', drag);
+                document.addEventListener('mouseup', stopDrag);
+                
+                // Traer al frente la ventana activa
+                windows.forEach(window => {
+                    window.style.zIndex = '10';
+                });
+                activeWindow.style.zIndex = '100';
+                
+                e.preventDefault();
+            }
+            
+            function drag(e) {
+                if (!isDragging || !activeWindow) return;
+                
+                const x = e.clientX - dragOffset.x;
+                const y = e.clientY - dragOffset.y;
+                
+                // Limitar movimiento dentro de la ventana
+                const maxX = window.innerWidth - activeWindow.offsetWidth;
+                const maxY = window.innerHeight - activeWindow.offsetHeight;
+                
+                activeWindow.style.left = Math.max(0, Math.min(x, maxX)) + 'px';
+                activeWindow.style.top = Math.max(60, Math.min(y, maxY)) + 'px'; // 60px es la altura de la barra de chat
+            }
+            
+            function stopDrag() {
+                isDragging = false;
+                activeWindow = null;
+                document.removeEventListener('mousemove', drag);
+                document.removeEventListener('mouseup', stopDrag);
+            }
+            
+            // Control de ventanas (minimizar, maximizar, cerrar)
+            const windowControls = document.querySelectorAll('.window-control');
+            
+            windowControls.forEach(control => {
+                control.addEventListener('click', function() {
+                    const window = this.closest('.floating-window');
+                    
+                    if (this.classList.contains('close-btn')) {
+                        // Efecto de cerrar ventana
+                        window.style.transform = 'scale(0.8)';
+                        window.style.opacity = '0';
+                        
+                        setTimeout(() => {
+                            window.style.display = 'none';
+                        }, 300);
+                    } else if (this.classList.contains('minimize-btn')) {
+                        // Efecto de minimizar ventana
+                        const content = window.querySelector('.window-content');
+                        const dragIndicator = window.querySelector('.drag-indicator');
+                        
+                        if (content.style.display === 'none') {
+                            content.style.display = 'block';
+                            dragIndicator.style.display = 'flex';
+                            window.style.height = 'auto';
+                        } else {
+                            content.style.display = 'none';
+                            dragIndicator.style.display = 'none';
+                            window.style.height = window.querySelector('.window-header').offsetHeight + 'px';
+                        }
+                    } else if (this.classList.contains('maximize-btn')) {
+                        // Efecto de maximizar ventana
+                        if (window.style.width === '90vw' && window.style.height === '80vh') {
+                            window.style.width = '';
+                            window.style.height = '';
+                            window.style.left = '';
+                            window.style.top = '';
+                            window.style.transform = '';
+                        } else {
+                            window.style.width = '90vw';
+                            window.style.height = '80vh';
+                            window.style.left = '5vw';
+                            window.style.top = '15vh';
+                            window.style.transform = 'translate(0, 0)';
+                        }
+                    }
+                });
+            });
+            
+            // Configurar valores por defecto
+            originInput.value = 'Plaza Italia';
+            destinationInput.value = 'Puente Saavedra';
+            updateRouteDisplay();
+            
+            // Simular actividad inicial en el chat
+            setTimeout(() => {
+                const welcomeMessage = document.createElement('div');
+                welcomeMessage.className = 'message other';
+                welcomeMessage.innerHTML = `
+                    <div class="message-sender">Sistema</div>
+                    <div class="message-text">¡Bienvenido a Viaje Conectado! Completa tus datos y únete al chat.</div>
+                `;
+                
+                chatMessages.appendChild(welcomeMessage);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }, 1000);
+        });
+    </script>
+</body>
+</html>
