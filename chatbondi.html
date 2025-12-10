@@ -3,122 +3,195 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Detector de Visitante + Movimiento</title>
+<title>Pasajeros Online + Chat por Vehículo</title>
+
+<script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
+
 <style>
-    body { font-family: Arial; padding: 20px; background: #f2f2f2; }
-    .card { background:#fff; padding:20px; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,0.1); margin-bottom:20px; }
+body { font-family: Arial; padding: 20px; background: #f2f2f2; }
+.card { background:#fff; padding:20px; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,0.1); margin-bottom:20px; }
+#chatBox { display:none; }
+.chat-msg { background:#eaeaea; padding:8px; margin:5px 0; border-radius:5px; }
 </style>
 </head>
 <body>
 
-<h1>Monitor de Visita + Transporte</h1>
+<h1>Sistema de Pasajeros + Chat en Vehículo</h1>
 
 <div class="card">
-    <h3>Estado del visitante</h3>
+    <h3>Visitante</h3>
     <p><b>ID visitante:</b> <span id="visitorId">cargando…</span></p>
     <p><b>IP:</b> <span id="ip">cargando…</span></p>
+    <p><b>Pasajeros Online:</b> <span id="onlineCount">0</span></p>
 </div>
 
 <div class="card">
     <h3>Detección de movimiento</h3>
     <p><b>Velocidad:</b> <span id="speed">0</span> km/h</p>
-    <p><b>Medio de transporte estimado:</b> <span id="transport">Desconocido</span></p>
+    <p><b>Transporte estimado:</b> <span id="transport">Desconocido</span></p>
+    <button id="goChatBtn">Ir al chat</button>
+</div>
+
+<div id="chatBox" class="card">
+    <h3>Chat del Vehículo</h3>
+    <div id="messages" style="height:200px; overflow-y:auto; border:1px solid #ccc; padding:10px; background:white;"></div>
+    <input id="msgInput" style="width:80%;" placeholder="Escribí un mensaje…" />
+    <button id="sendBtn">Enviar</button>
 </div>
 
 <script>
-// ---------------------------
-// 1) Obtener ID del visitante
-// ---------------------------
-async function getVisitorID() {
-    let id = localStorage.getItem("visitor_id");
-    if (!id) {
-        // Crear un ID basado en userAgent + random + fecha
-        const random = Math.random().toString(36).substring(2);
-        id = btoa(navigator.userAgent + "_" + random + "_" + Date.now());
-        localStorage.setItem("visitor_id", id);
-    }
-    document.getElementById("visitorId").innerText = id;
+// Inicializar GUN
+const gun = Gun({ peers: ["https://gun-manhattan.herokuapp.com/gun"] });
+
+// -----------------------------------------
+// 1) Identificar visitante (dispositivo)
+// -----------------------------------------
+let visitorId = localStorage.getItem("visitor_id");
+if (!visitorId) {
+    visitorId = "v_" + btoa(navigator.userAgent + "_" + Math.random() + "_" + Date.now());
+    localStorage.setItem("visitor_id", visitorId);
 }
-getVisitorID();
+document.getElementById("visitorId").innerText = visitorId;
 
 
-// ---------------------------
-// 2) Obtener IP pública sin backend (API pública segura)
-// ---------------------------
+// -----------------------------------------
+// 2) Obtener IP pública
+// -----------------------------------------
+let userIP = "";
 async function getIP() {
     try {
         const res = await fetch("https://api.ipify.org?format=json");
         const data = await res.json();
-        document.getElementById("ip").innerText = data.ip;
+        userIP = data.ip;
+        document.getElementById("ip").innerText = userIP;
     } catch {
+        userIP = "0.0.0.0";
         document.getElementById("ip").innerText = "No disponible";
     }
 }
-getIP();
+await getIP();
 
 
-// ---------------------------------------------
-// 3) Detectar velocidad del GPS y transporte
-// ---------------------------------------------
+// -----------------------------------------
+// 3) Sistema de Pasajeros Online (contador)
+// -----------------------------------------
+const onlineNode = gun.get("online-users");
+
+function heartbeat() {
+    onlineNode.get(visitorId).put(Date.now());
+}
+heartbeat();
+setInterval(heartbeat, 15000);  // cada 15 segundos
+
+// Escuchar cambios y actualizar contador
+setInterval(() => {
+    const cutoff = Date.now() - 20000; // si no actualizó en 20s, está offline
+    onlineNode.map().on((ts, id) => {
+        onlineNode.once(data => {
+            let count = 0;
+            for (const key in data) {
+                if (data[key] > cutoff) count++;
+            }
+            document.getElementById("onlineCount").innerText = count;
+        });
+    });
+}, 5000);
+
+
+// -----------------------------------------
+// 4) GPS + velocidad + transporte
+// -----------------------------------------
 let lastPos = null;
 let lastTime = null;
+let currentSpeed = 0;
 
-function calculateSpeedAndTransport(pos) {
+function calcSpeed(pos) {
     const lat = pos.coords.latitude;
     const lon = pos.coords.longitude;
     const accuracy = pos.coords.accuracy;
 
-    // precisión muy baja = posible SUBTE
     if (accuracy > 150) {
-        document.getElementById("transport").innerText = "Subte (señal GPS muy baja)";
+        document.getElementById("transport").innerText = "Subte (señal baja)";
         return;
     }
 
     if (lastPos) {
-        const dist = getDistanceFromLatLon(lastPos.lat, lastPos.lon, lat, lon); // km
-        const timeDiff = (Date.now() - lastTime) / 3600000; // horas
-        const speed = dist / timeDiff;
+        const dist = haversine(lastPos.lat, lastPos.lon, lat, lon);
+        const hours = (Date.now() - lastTime) / 3600000;
+        currentSpeed = dist / hours;
 
-        document.getElementById("speed").innerText = speed.toFixed(2);
-
-        // Clasificación por velocidad
-        let transport = "Desconocido";
-        if (speed < 6) transport = "Caminando";
-        else if (speed < 25) transport = "Auto / Moto / Bicicleta";
-        else if (speed < 50) transport = "Colectivo";
-        else if (speed < 130) transport = "Tren";
-        else transport = "Posible tren de larga distancia";
-
-        document.getElementById("transport").innerText = transport;
+        document.getElementById("speed").innerText = currentSpeed.toFixed(2);
+        classifyTransport(currentSpeed);
     }
 
     lastPos = { lat, lon };
     lastTime = Date.now();
 }
 
-// Distancia Haversine
-function getDistanceFromLatLon(lat1, lon1, lat2, lon2) {
+function classifyTransport(v) {
+    let t = "Desconocido";
+    if (v < 6) t = "Caminando";
+    else if (v < 25) t = "Auto/Bici/Moto";
+    else if (v < 50) t = "Colectivo";
+    else if (v < 130) t = "Tren";
+    document.getElementById("transport").innerText = t;
+}
+
+function haversine(lat1, lon1, lat2, lon2) {
     const R = 6371;
-    const dLat = (lat2 - lat1) * Math.PI/180;
-    const dLon = (lon2 - lon1) * Math.PI/180;
-    const a =
-        Math.sin(dLat/2) * Math.sin(dLat/2) +
-        Math.cos(lat1 * Math.PI/180) *
-        Math.cos(lat2 * Math.PI/180) *
-        Math.sin(dLon/2) * Math.sin(dLon/2);
+    const dLat = (lat2-lat1) * Math.PI/180;
+    const dLon = (lon2-lon1) * Math.PI/180;
+    const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
     return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
 }
 
-// Activar ubicación
-if (navigator.geolocation) {
-    navigator.geolocation.watchPosition(
-        calculateSpeedAndTransport,
-        (err) => console.log("Error GPS:", err),
-        { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 }
-    );
-} else {
-    alert("Tu navegador no soporta GPS.");
+navigator.geolocation?.watchPosition(
+    calcSpeed,
+    err => console.log("GPS error:", err),
+    { enableHighAccuracy: true, timeout: 5000 }
+);
+
+
+// -----------------------------------------
+// 5) Chat del vehículo
+// -----------------------------------------
+function getRoom() {
+    const spd = Math.round(currentSpeed);
+    return btoa(userIP + "_" + spd).replace(/=/g,"");
 }
+
+const goChatBtn = document.getElementById("goChatBtn");
+goChatBtn.onclick = () => {
+    document.getElementById("chatBox").style.display = "block";
+    loadChat();
+};
+
+function loadChat() {
+    const room = gun.get("chat-" + getRoom());
+    room.map().on((msg, key) => {
+        if (!msg) return;
+        const div = document.createElement("div");
+        div.className = "chat-msg";
+        div.innerText = msg.sender + ": " + msg.text;
+        document.getElementById("messages").appendChild(div);
+    });
+}
+
+document.getElementById("sendBtn").onclick = () => {
+    const text = document.getElementById("msgInput").value.trim();
+    if (!text) return;
+
+    const message = {
+        sender: visitorId.substring(0,8),
+        text,
+        ts: Date.now()
+    };
+
+    const room = gun.get("chat-" + getRoom());
+    room.set(message);
+
+    document.getElementById("msgInput").value = "";
+};
 </script>
 
 </body>
