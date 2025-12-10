@@ -1,174 +1,20 @@
 <!DOCTYPE html>
-<html lang="es">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <title>Visitantes en Tiempo Real + Chat por Vehículo</title>
-  <style>
-    body { font-family: Arial; margin: 20px; }
-    #chatBox { border: 1px solid #ccc; height: 200px; overflow-y: auto; padding: 10px; margin-bottom: 10px; }
-  </style>
+  <meta charset="UTF-8">
+  <title>Visitantes en tiempo real</title>
 </head>
+
 <body>
+<h1>Visitantes conectados: <span id="count">0</span></h1>
 
-<h2>Visitantes Actuales: <span id="activeCount">0</span></h2>
-<h3>Tu grupo (vehículo) ID: <span id="roomId">–</span></h3>
+<script>
+  const evtSource = new EventSource("/api/visitors");
 
-<div id="chatBox"></div>
-
-<input id="msgInput" placeholder="Escribí un mensaje..." />
-<button onclick="sendMessage()">Enviar</button>
-
-<script type="module">
-  // -------------------------
-  //   CONFIG FIREBASE
-  // -------------------------
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getDatabase, ref, set, onValue, push } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-
-  const firebaseConfig = {
-    apiKey: "TU_API_KEY",
-    authDomain: "TU_PROJECT.firebaseapp.com",
-    databaseURL: "https://TU_PROJECT.firebaseio.com",
-    projectId: "TU_PROJECT",
-    storageBucket: "TU_PROJECT.appspot.com",
-    messagingSenderId: "xxx",
-    appId: "xxx"
+  evtSource.onmessage = function(event) {
+    document.getElementById("count").innerText = event.data;
   };
-
-  const app = initializeApp(firebaseConfig);
-  const db  = getDatabase(app);
-
-  // -------------------------
-  //   DATOS DEL USUARIO
-  // -------------------------
-  const userId = "user_" + Math.random().toString(36).substr(2, 9);
-  let userRoom = null;
-  document.getElementById("roomId").innerText = "calculando…";
-
-  // -------------------------
-  //   GEOLOCALIZACIÓN + MOVIMIENTO
-  // -------------------------
-  let lastPos = null;
-
-  function trackPosition() {
-    navigator.geolocation.watchPosition(async pos => {
-      const lat = pos.coords.latitude;
-      const lon = pos.coords.longitude;
-      const acc = pos.coords.accuracy;
-      const time = Date.now();
-      let speed = 0, direction = 0;
-
-      if (lastPos) {
-        const dt = (time - lastPos.time) / 1000;
-        const dx = lat - lastPos.lat;
-        const dy = lon - lastPos.lon;
-        speed = Math.sqrt(dx*dx + dy*dy) / dt;
-
-        direction = Math.atan2(dx, dy);
-      }
-
-      lastPos = { lat, lon, time };
-
-      // subir datos en tiempo real
-      await set(ref(db, "visitors/" + userId), {
-        lat, lon, acc, speed, direction, time
-      });
-
-      detectVehicleGroup();
-    });
-  }
-
-  // -------------------------
-  //  DETECCIÓN DE "MISMO VEHÍCULO"
-  // -------------------------
-  function detectVehicleGroup() {
-    onValue(ref(db, "visitors"), snapshot => {
-      if (!snapshot.exists()) return;
-
-      const users = snapshot.val();
-      const my = users[userId];
-      if (!my) return;
-
-      let candidates = [];
-
-      for (let uid in users) {
-        if (uid === userId) continue;
-
-        const u = users[uid];
-        const dist = haversine(my.lat, my.lon, u.lat, u.lon);
-        const dv   = Math.abs(my.speed - u.speed);
-        const dd   = Math.abs(my.direction - u.direction);
-        const dt   = Math.abs(my.time - u.time);
-
-        if (dist < 0.015 && dv < 0.003 && dd < 0.4 && dt < 8000) {
-          candidates.push(uid);
-        }
-      }
-
-      // si hay coincidencias, crear un room común
-      if (candidates.length > 0) {
-        userRoom = [userId, ...candidates].sort().join("_");
-      } else {
-        userRoom = userId;
-      }
-
-      document.getElementById("roomId").innerText = userRoom;
-
-      listenToChat();
-    });
-  }
-
-  // -------------------------
-  //  CONTAR VISITANTES
-  // -------------------------
-  onValue(ref(db, "visitors"), snap => {
-    document.getElementById("activeCount").innerText = snap.exists() ? Object.keys(snap.val()).length : 0;
-  });
-
-  // -------------------------
-  //  CHAT EN TIEMPO REAL
-  // -------------------------
-  function listenToChat() {
-    onValue(ref(db, "rooms/" + userRoom), snap => {
-      const box = document.getElementById("chatBox");
-      box.innerHTML = "";
-
-      if (!snap.exists()) return;
-
-      const msgs = snap.val();
-      Object.values(msgs).forEach(m => {
-        box.innerHTML += `<div><b>${m.user}:</b> ${m.text}</div>`;
-      });
-
-      box.scrollTop = box.scrollHeight;
-    });
-  }
-
-  function sendMessage() {
-    const msg = document.getElementById("msgInput").value;
-    if (!msg) return;
-
-    const r = ref(db, "rooms/" + userRoom);
-    push(r, { user: userId, text: msg });
-    document.getElementById("msgInput").value = "";
-  }
-
-  // -------------------------
-  //  FUNCIÓN HAVERSINE
-  // -------------------------
-  function haversine(lat1, lon1, lat2, lon2) {
-    const R = 6371;
-    const dLat = (lat2 - lat1) * Math.PI/180;
-    const dLon = (lon2 - lon1) * Math.PI/180;
-    const a = Math.sin(dLat/2)**2 +
-              Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) *
-              Math.sin(dLon/2)**2;
-    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-  }
-
-  // iniciar
-  trackPosition();
-
 </script>
+
 </body>
 </html>
