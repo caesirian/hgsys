@@ -1,19 +1,124 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>Visitantes en tiempo real</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Detector de Visitante + Movimiento</title>
+<style>
+    body { font-family: Arial; padding: 20px; background: #f2f2f2; }
+    .card { background:#fff; padding:20px; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,0.1); margin-bottom:20px; }
+</style>
 </head>
-
 <body>
-<h1>Visitantes conectados: <span id="count">0</span></h1>
+
+<h1>Monitor de Visita + Transporte</h1>
+
+<div class="card">
+    <h3>Estado del visitante</h3>
+    <p><b>ID visitante:</b> <span id="visitorId">cargando…</span></p>
+    <p><b>IP:</b> <span id="ip">cargando…</span></p>
+</div>
+
+<div class="card">
+    <h3>Detección de movimiento</h3>
+    <p><b>Velocidad:</b> <span id="speed">0</span> km/h</p>
+    <p><b>Medio de transporte estimado:</b> <span id="transport">Desconocido</span></p>
+</div>
 
 <script>
-  const evtSource = new EventSource("/api/visitors");
+// ---------------------------
+// 1) Obtener ID del visitante
+// ---------------------------
+async function getVisitorID() {
+    let id = localStorage.getItem("visitor_id");
+    if (!id) {
+        // Crear un ID basado en userAgent + random + fecha
+        const random = Math.random().toString(36).substring(2);
+        id = btoa(navigator.userAgent + "_" + random + "_" + Date.now());
+        localStorage.setItem("visitor_id", id);
+    }
+    document.getElementById("visitorId").innerText = id;
+}
+getVisitorID();
 
-  evtSource.onmessage = function(event) {
-    document.getElementById("count").innerText = event.data;
-  };
+
+// ---------------------------
+// 2) Obtener IP pública sin backend (API pública segura)
+// ---------------------------
+async function getIP() {
+    try {
+        const res = await fetch("https://api.ipify.org?format=json");
+        const data = await res.json();
+        document.getElementById("ip").innerText = data.ip;
+    } catch {
+        document.getElementById("ip").innerText = "No disponible";
+    }
+}
+getIP();
+
+
+// ---------------------------------------------
+// 3) Detectar velocidad del GPS y transporte
+// ---------------------------------------------
+let lastPos = null;
+let lastTime = null;
+
+function calculateSpeedAndTransport(pos) {
+    const lat = pos.coords.latitude;
+    const lon = pos.coords.longitude;
+    const accuracy = pos.coords.accuracy;
+
+    // precisión muy baja = posible SUBTE
+    if (accuracy > 150) {
+        document.getElementById("transport").innerText = "Subte (señal GPS muy baja)";
+        return;
+    }
+
+    if (lastPos) {
+        const dist = getDistanceFromLatLon(lastPos.lat, lastPos.lon, lat, lon); // km
+        const timeDiff = (Date.now() - lastTime) / 3600000; // horas
+        const speed = dist / timeDiff;
+
+        document.getElementById("speed").innerText = speed.toFixed(2);
+
+        // Clasificación por velocidad
+        let transport = "Desconocido";
+        if (speed < 6) transport = "Caminando";
+        else if (speed < 25) transport = "Auto / Moto / Bicicleta";
+        else if (speed < 50) transport = "Colectivo";
+        else if (speed < 130) transport = "Tren";
+        else transport = "Posible tren de larga distancia";
+
+        document.getElementById("transport").innerText = transport;
+    }
+
+    lastPos = { lat, lon };
+    lastTime = Date.now();
+}
+
+// Distancia Haversine
+function getDistanceFromLatLon(lat1, lon1, lat2, lon2) {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI/180;
+    const dLon = (lon2 - lon1) * Math.PI/180;
+    const a =
+        Math.sin(dLat/2) * Math.sin(dLat/2) +
+        Math.cos(lat1 * Math.PI/180) *
+        Math.cos(lat2 * Math.PI/180) *
+        Math.sin(dLon/2) * Math.sin(dLon/2);
+    return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
+}
+
+// Activar ubicación
+if (navigator.geolocation) {
+    navigator.geolocation.watchPosition(
+        calculateSpeedAndTransport,
+        (err) => console.log("Error GPS:", err),
+        { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 }
+    );
+} else {
+    alert("Tu navegador no soporta GPS.");
+}
 </script>
 
 </body>
