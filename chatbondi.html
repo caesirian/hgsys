@@ -1034,7 +1034,8 @@
                 
                 if (AppState.isTouchDevice) {
                     // Para dispositivos táctiles
-                    header.addEventListener('touchstart', handleTouchStart, { passive: false });
+                   
+ header.addEventListener('touchstart', handleTouchStart, { passive: false });
                     header.addEventListener('touchmove', handleTouchMove, { passive: false });
                     header.addEventListener('touchend', handleTouchEnd);
                 } else {
