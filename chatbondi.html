@@ -827,17 +827,22 @@
         </div>
     </div>
 
-    <!-- Configuración de Google Apps Script -->
+    <!-- Configuración GAS - ESTA PARTE DEBE SER REEMPLAZADA CON TU URL REAL -->
     <div id="gasConfig" style="display: none;">
-        <!-- Reemplaza esta URL con tu Web App de Google Apps Script -->
-        <input type="hidden" id="gasUrl" value="https://script.google.com/macros/s/AKfycbzG1w3h5YQ.../exec">
+        <!-- IMPORTANTE: Después de desplegar tu Web App de GAS, reemplaza esta URL -->
+        <input type="hidden" id="gasUrl" value="TU_URL_DE_GAS_AQUI">
     </div>
 
     <script>
-        // Configuración de la aplicación
+        // ============================
+        // CONFIGURACIÓN PRINCIPAL
+        // ============================
         const CONFIG = {
-            GAS_URL: 'https://script.google.com/macros/s/AKfycbzG1w3h5YQ.../exec', // Reemplaza con tu URL de GAS
-            UPDATE_INTERVAL: 5000, // 5 segundos
+            // IMPORTANTE: Reemplaza esta URL con tu Web App de GAS
+            // Ejemplo: 'https://script.google.com/macros/s/AKfycby.../exec'
+            GAS_URL: 'TU_URL_DE_GAS_AQUI',
+            
+            UPDATE_INTERVAL: 5000,
             MAX_MESSAGES: 100,
             USER_ID: 'user_' + Math.random().toString(36).substr(2, 9),
             SESSION_ID: 'session_' + Date.now()
@@ -855,43 +860,42 @@
             messages: [],
             connectedUsers: 1,
             passengerCount: 5,
-            lastUpdate: null,
             isDragging: false,
             dragWindow: null,
-            dragOffset: { x: 0, y: 0 }
+            dragOffset: { x: 0, y: 0 },
+            
+            // Datos de Google Sheets (Sheet ID proporcionado)
+            SHEET_ID: '139M_PxEAOCXpuby_8NXVNnPVmzyU9hmFTUux8qNOkJM'
         };
 
-        // Inicialización cuando el DOM esté listo
+        // ============================
+        // INICIALIZACIÓN
+        // ============================
         document.addEventListener('DOMContentLoaded', () => {
             initializeApp();
         });
 
         async function initializeApp() {
-            // Configurar eventos del chat
+            // Leer URL de GAS del input hidden si existe
+            const gasUrlElement = document.getElementById('gasUrl');
+            if (gasUrlElement && gasUrlElement.value && gasUrlElement.value !== 'TU_URL_DE_GAS_AQUI') {
+                CONFIG.GAS_URL = gasUrlElement.value;
+            }
+            
             setupChat();
-            
-            // Configurar ventanas flotantes
             setupWindows();
-            
-            // Configurar formularios
             setupForms();
-            
-            // Configurar botón de conexión
             setupConnection();
-            
-            // Configurar notificaciones
             setupNotifications();
-            
-            // Cargar estado inicial
             loadInitialState();
-            
-            // Iniciar actualizaciones periódicas
             startPeriodicUpdates();
             
-            // Mostrar notificación de bienvenida
             showNotification('¡Bienvenido a Viaje Conectado!', 'Completa tus datos y únete al viaje.', 'info');
         }
 
+        // ============================
+        // FUNCIONES DEL CHAT
+        // ============================
         function setupChat() {
             const toggleBtn = document.getElementById('toggleChat');
             const chatWindow = document.getElementById('chatWindow');
@@ -916,15 +920,17 @@
                 }
             });
             
-            // Añadir algunos mensajes de ejemplo
+            // Mensajes iniciales
             addMessage('Sistema', '¡Bienvenido al chat del viaje! Completa tus datos para comenzar.', 'received');
             addMessage('Ana', '¿Alguien más va al festival en el centro?', 'received');
             addMessage('Carlos', 'Yo voy, empieza a las 15:00', 'received');
         }
 
+        // ============================
+        // FUNCIONES DE VENTANAS
+        // ============================
         function setupWindows() {
             // Hacer ventanas arrastrables
-            const windows = document.querySelectorAll('.floating-window');
             const headers = document.querySelectorAll('.window-header');
             
             headers.forEach(header => {
@@ -932,7 +938,7 @@
                 header.addEventListener('touchstart', startDragTouch, { passive: false });
             });
             
-            // Configurar botones de control de ventanas
+            // Botones de control
             document.querySelectorAll('.window-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     const action = e.currentTarget.dataset.action;
@@ -946,13 +952,6 @@
                             closeWindow(window);
                             break;
                     }
-                });
-            });
-            
-            // Prevenir arrastre accidental de inputs
-            document.querySelectorAll('.form-input, .form-select').forEach(input => {
-                input.addEventListener('mousedown', (e) => {
-                    e.stopPropagation();
                 });
             });
         }
@@ -984,7 +983,6 @@
             const x = (e.clientX || e.touches[0].clientX) - AppState.dragOffset.x;
             const y = (e.clientY || e.touches[0].clientY) - AppState.dragOffset.y;
             
-            // Limitar movimiento dentro de la ventana
             const maxX = window.innerWidth - AppState.dragWindow.offsetWidth;
             const maxY = window.innerHeight - AppState.dragWindow.offsetHeight;
             
@@ -1025,6 +1023,9 @@
             }, 300);
         }
 
+        // ============================
+        // FUNCIONES DE FORMULARIOS
+        // ============================
         function setupForms() {
             // Nombre
             const nameInput = document.getElementById('userName');
@@ -1032,6 +1033,7 @@
                 AppState.userName = nameInput.value.trim();
                 document.getElementById('currentName').textContent = 
                     AppState.userName || 'Viajer@';
+                saveState();
             });
             
             // Edad
@@ -1041,6 +1043,7 @@
                 const selectedOption = ageSelect.options[ageSelect.selectedIndex];
                 document.getElementById('currentAge').textContent = 
                     selectedOption.text || 'No especificado';
+                saveState();
             });
             
             // Línea
@@ -1061,6 +1064,7 @@
                     document.getElementById('currentLineDisplay').textContent = 
                         `Línea ${selectedOption.text.split(' ')[0]}`;
                 }
+                saveState();
             });
             
             customLineInput.addEventListener('input', () => {
@@ -1070,6 +1074,7 @@
                     line ? `Línea ${line}` : 'Especifica tu línea';
                 document.getElementById('currentLineDisplay').textContent = 
                     line ? `Línea ${line}` : 'Línea personalizada';
+                saveState();
             });
             
             // Trayecto
@@ -1092,6 +1097,7 @@
                 }
                 
                 document.getElementById('currentRoute').textContent = route;
+                saveState();
             }
             
             originInput.addEventListener('input', updateRouteDisplay);
@@ -1103,6 +1109,9 @@
             updateRouteDisplay();
         }
 
+        // ============================
+        // CONEXIÓN GAS
+        // ============================
         function setupConnection() {
             const connectBtn = document.getElementById('connectButton');
             
@@ -1118,18 +1127,15 @@
         async function connectToTrip() {
             const connectBtn = document.getElementById('connectButton');
             
-            // Validar datos mínimos
             if (!AppState.origin || !AppState.destination) {
                 showNotification('Completa tu trayecto', 'Debes especificar origen y destino.', 'error');
                 return;
             }
             
-            // Cambiar estado del botón
             connectBtn.classList.add('connecting');
             connectBtn.innerHTML = '<div class="loader"></div><span>Conectando...</span>';
             
             try {
-                // Preparar datos para enviar
                 const userData = {
                     userId: CONFIG.USER_ID,
                     sessionId: CONFIG.SESSION_ID,
@@ -1139,36 +1145,63 @@
                     origin: AppState.origin,
                     destination: AppState.destination,
                     action: 'connect',
-                    timestamp: new Date().toISOString()
+                    timestamp: new Date().toISOString(),
+                    sheetId: AppState.SHEET_ID
                 };
                 
-                // Enviar a Google Apps Script
-                const response = await sendToGAS(userData);
-                
-                if (response.success) {
-                    // Actualizar estado
-                    AppState.isConnected = true;
-                    connectBtn.classList.remove('connecting');
-                    connectBtn.classList.add('connected');
-                    connectBtn.innerHTML = '<i class="fas fa-check"></i><span>Conectado</span>';
-                    
-                    // Actualizar contadores
-                    AppState.connectedUsers = response.connectedUsers || 1;
-                    AppState.passengerCount = response.passengerCount || 5;
-                    updateCounters();
-                    
-                    // Añadir mensaje al chat
-                    addMessage('Sistema', `Te has unido al viaje ${AppState.busLine}`, 'received');
-                    
-                    // Mostrar notificación
-                    showNotification('¡Conectado!', 'Ya estás compartiendo tu viaje.', 'success');
+                // Verificar si tenemos URL de GAS
+                if (!CONFIG.GAS_URL || CONFIG.GAS_URL === 'TU_URL_DE_GAS_AQUI') {
+                    // Modo simulación
+                    await simulateConnection(userData);
                 } else {
-                    throw new Error(response.error || 'Error desconocido');
+                    // Enviar a GAS real
+                    await sendToGAS(userData);
                 }
+                
+                AppState.isConnected = true;
+                connectBtn.classList.remove('connecting');
+                connectBtn.classList.add('connected');
+                connectBtn.innerHTML = '<i class="fas fa-check"></i><span>Conectado</span>';
+                
+                updateCounters();
+                addMessage('Sistema', `Te has unido al viaje ${AppState.busLine}`, 'received');
+                showNotification('¡Conectado!', 'Ya estás compartiendo tu viaje.', 'success');
+                
             } catch (error) {
                 console.error('Error al conectar:', error);
                 connectBtn.classList.remove('connecting');
+                connectBtn.innerHTML = '<i class="fas fa-plug"></i><span>Conectar al Viaje</span>';
                 showNotification('Error de conexión', 'No se pudo conectar al viaje.', 'error');
+            }
+        }
+
+        async function simulateConnection(userData) {
+            // Simulación para desarrollo
+            return new Promise(resolve => {
+                setTimeout(() => {
+                    AppState.connectedUsers = Math.floor(Math.random() * 10) + 1;
+                    AppState.passengerCount = Math.floor(Math.random() * 20) + 5;
+                    resolve({ success: true });
+                }, 1500);
+            });
+        }
+
+        async function sendToGAS(data) {
+            try {
+                // IMPORTANTE: Para GAS, necesitamos usar JSONP o redirigir debido a CORS
+                const url = `${CONFIG.GAS_URL}?action=${data.action}&data=${encodeURIComponent(JSON.stringify(data))}`;
+                
+                const response = await fetch(url, {
+                    method: 'GET',
+                    mode: 'no-cors' // GAS requiere no-cors
+                });
+                
+                // Con no-cors no podemos leer la respuesta, pero asumimos éxito
+                return { success: true };
+                
+            } catch (error) {
+                console.error('Error enviando a GAS:', error);
+                throw error;
             }
         }
 
@@ -1179,21 +1212,20 @@
             connectBtn.classList.remove('connected');
             connectBtn.innerHTML = '<i class="fas fa-plug"></i><span>Conectar al Viaje</span>';
             
-            // Añadir mensaje al chat
             addMessage('Sistema', 'Te has desconectado del viaje', 'received');
-            
             showNotification('Desconectado', 'Ya no estás compartiendo tu viaje.', 'info');
         }
 
+        // ============================
+        // NOTIFICACIONES
+        // ============================
         function setupNotifications() {
             const notification = document.getElementById('notification');
             
-            // Cerrar notificación al hacer clic
             notification.addEventListener('click', () => {
                 notification.classList.remove('show');
             });
             
-            // Cerrar automáticamente después de 5 segundos
             setInterval(() => {
                 notification.classList.remove('show');
             }, 5000);
@@ -1205,18 +1237,14 @@
             const messageEl = document.getElementById('notificationMessage');
             const icon = notification.querySelector('.notification-icon');
             
-            // Actualizar contenido
             titleEl.textContent = title;
             messageEl.textContent = message;
             
-            // Actualizar tipo y icono
             notification.className = `notification ${type}`;
             icon.innerHTML = getIconForType(type);
             
-            // Mostrar
             notification.classList.add('show');
             
-            // Ocultar después de 5 segundos
             setTimeout(() => {
                 notification.classList.remove('show');
             }, 5000);
@@ -1231,8 +1259,10 @@
             }
         }
 
+        // ============================
+        // ESTADO Y PERSISTENCIA
+        // ============================
         function loadInitialState() {
-            // Cargar desde localStorage si existe
             const savedData = localStorage.getItem('viajeConectadoData');
             if (savedData) {
                 try {
@@ -1246,7 +1276,6 @@
                     document.getElementById('origin').value = AppState.origin;
                     document.getElementById('destination').value = AppState.destination;
                     
-                    // Disparar eventos para actualizar displays
                     document.getElementById('userName').dispatchEvent(new Event('input'));
                     document.getElementById('ageRange').dispatchEvent(new Event('change'));
                     document.getElementById('busLine').dispatchEvent(new Event('change'));
@@ -1255,8 +1284,11 @@
                         document.getElementById('connectButton').classList.add('connected');
                         document.getElementById('connectButton').innerHTML = '<i class="fas fa-check"></i><span>Conectado</span>';
                     }
+                    
+                    updateCounters();
+                    
                 } catch (e) {
-                    console.error('Error al cargar datos guardados:', e);
+                    console.error('Error al cargar datos:', e);
                 }
             }
         }
@@ -1270,6 +1302,9 @@
             document.getElementById('passengerCount').textContent = AppState.passengerCount;
         }
 
+        // ============================
+        // FUNCIONES DEL CHAT
+        // ============================
         function addMessage(sender, text, type = 'received') {
             const messagesContainer = document.getElementById('chatMessages');
             const messageDiv = document.createElement('div');
@@ -1278,22 +1313,18 @@
             
             messageDiv.className = `message ${type}`;
             messageDiv.innerHTML = `
-                <div class="message-sender">${sender}</div>
+                <div class="message-sender">${escapeHtml(sender)}</div>
                 <div class="message-bubble">${escapeHtml(text)}</div>
                 <div class="message-time">${time}</div>
             `;
             
             messagesContainer.appendChild(messageDiv);
             
-            // Limitar número de mensajes
             if (messagesContainer.children.length > CONFIG.MAX_MESSAGES) {
                 messagesContainer.removeChild(messagesContainer.firstChild);
             }
             
-            // Auto-scroll
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
-            
-            // Guardar en estado
             AppState.messages.push({ sender, text, type, time });
         }
 
@@ -1304,15 +1335,12 @@
             
             if (!text) return;
             
-            // Deshabilitar temporalmente
             input.disabled = true;
             sendBtn.disabled = true;
             
-            // Añadir mensaje localmente
             addMessage(AppState.userName || 'Tú', text, 'sent');
             
-            // Enviar a GAS si está conectado
-            if (AppState.isConnected) {
+            if (AppState.isConnected && CONFIG.GAS_URL !== 'TU_URL_DE_GAS_AQUI') {
                 try {
                     const messageData = {
                         userId: CONFIG.USER_ID,
@@ -1324,114 +1352,87 @@
                     
                     await sendToGAS(messageData);
                 } catch (error) {
-                    console.error('Error al enviar mensaje:', error);
+                    console.error('Error enviando mensaje:', error);
                 }
             }
             
-            // Limpiar y re-habilitar
             input.value = '';
             input.disabled = false;
             sendBtn.disabled = false;
             input.focus();
-        }
-
-        async function sendToGAS(data) {
-            // NOTA: Reemplaza CONFIG.GAS_URL con tu URL real de Google Apps Script
-            const gasUrl = document.getElementById('gasUrl')?.value || CONFIG.GAS_URL;
             
-            if (gasUrl.includes('AKfycbzG1w3h5YQ')) {
-                // URL de ejemplo - devolver datos simulados
-                return simulateGASResponse(data);
-            }
-            
-            try {
-                const response = await fetch(gasUrl, {
-                    method: 'POST',
-                    mode: 'no-cors', // IMPORTANTE: GAS requiere no-cors para peticiones desde web
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(data)
-                });
-                
-                // Nota: Con 'no-cors', no podemos leer la respuesta directamente
-                // Una alternativa es usar JSONP o redirigir a una URL de callback
-                return { success: true, message: 'Datos enviados' };
-                
-            } catch (error) {
-                console.error('Error al enviar a GAS:', error);
-                throw error;
+            // Respuesta automática (simulada)
+            if (Math.random() > 0.5) {
+                setTimeout(() => {
+                    const responses = [
+                        "¡Interesante!",
+                        "Yo también voy por ahí",
+                        "¿En qué parada estamos?",
+                        "Buena información"
+                    ];
+                    const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+                    addMessage('Viajer@', randomResponse, 'received');
+                }, 1000);
             }
         }
 
-        function simulateGASResponse(data) {
-            // Simular respuesta de GAS para desarrollo
-            console.log('Simulando GAS response para:', data);
-            
-            switch(data.action) {
-                case 'connect':
-                    return {
-                        success: true,
-                        connectedUsers: Math.floor(Math.random() * 10) + 1,
-                        passengerCount: Math.floor(Math.random() * 20) + 5,
-                        tripId: 'trip_' + Date.now()
-                    };
-                case 'message':
-                    // Simular respuesta automática
-                    setTimeout(() => {
-                        const responses = [
-                            "¡Interesante!",
-                            "¿Alguien más tiene algo que agregar?",
-                            "Yo también voy por ahí",
-                            "¿En qué parada estamos?"
-                        ];
-                        const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-                        addMessage('Viajer@', randomResponse, 'received');
-                    }, 1000);
-                    return { success: true };
-                default:
-                    return { success: true };
-            }
-        }
-
+        // ============================
+        // ACTUALIZACIONES PERIÓDICAS
+        // ============================
         function startPeriodicUpdates() {
             setInterval(async () => {
                 if (AppState.isConnected) {
                     try {
-                        // Solicitar actualización de estado
                         const updateData = {
                             userId: CONFIG.USER_ID,
                             action: 'update',
                             timestamp: new Date().toISOString()
                         };
                         
-                        const response = await sendToGAS(updateData);
+                        // Simular actualización o enviar a GAS
+                        if (CONFIG.GAS_URL !== 'TU_URL_DE_GAS_AQUI') {
+                            await sendToGAS(updateData);
+                        }
                         
-                        if (response && response.connectedUsers) {
-                            AppState.connectedUsers = response.connectedUsers;
-                            AppState.passengerCount = response.passengerCount;
+                        // Actualizar contadores aleatoriamente para demostración
+                        if (Math.random() > 0.7) {
+                            AppState.connectedUsers += Math.random() > 0.5 ? 1 : -1;
+                            AppState.connectedUsers = Math.max(1, AppState.connectedUsers);
                             updateCounters();
                         }
+                        
                     } catch (error) {
-                        console.error('Error en actualización periódica:', error);
+                        console.error('Error en actualización:', error);
                     }
                 }
                 
-                // Guardar estado periódicamente
                 saveState();
             }, CONFIG.UPDATE_INTERVAL);
         }
 
+        // ============================
+        // FUNCIONES UTILITARIAS
+        // ============================
         function escapeHtml(text) {
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
         }
 
-        // Guardar estado al cerrar la ventana
+        // Guardar estado al cerrar
         window.addEventListener('beforeunload', () => {
             saveState();
         });
+
+        // ============================
+        // INICIALIZACIÓN AUTOMÁTICA
+        // ============================
+        // Asegurar que todos los elementos estén cargados
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeApp);
+        } else {
+            initializeApp();
+        }
     </script>
 </body>
 </html>
