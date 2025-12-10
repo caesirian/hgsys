@@ -1,167 +1,233 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<title>Pasajeros Online</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Pasajeros Online + Chat (GUN)</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css"/>
 <style>
-    body { font-family: Arial; padding:20px; background:#f5f5f5; }
-    #container { max-width:600px; margin:auto; background:white; padding:20px; border-radius:10px; }
-    #chat-box { height:200px; overflow-y:auto; background:#eee; padding:10px; border-radius:5px; display:none; }
-    #chat-input { width:100%; padding:10px; margin-top:10px; display:none; }
-    #go-chat { margin-top:20px; padding:12px; background:#007bff; color:white; border:none; width:100%; border-radius:5px; cursor:pointer; }
+  body{font-family:Inter,system-ui,Arial;margin:18px;background:#f5f7fb;color:#111}
+  .card{background:#fff;border-radius:10px;padding:16px;margin-bottom:14px;box-shadow:0 6px 18px rgba(17,24,39,0.06)}
+  #chatPanel{display:none}
+  #messages{height:240px;overflow:auto;border:1px solid #eee;padding:8px;border-radius:8px;background:#fafafa}
+  .msg{padding:6px;margin:6px 0;border-radius:6px;background:#e9f0ff}
+  .msg.me{background:#dff7e5}
+  button{padding:8px 12px;border-radius:8px;border:0;background:#0b74de;color:#fff;cursor:pointer}
+  input,button,textarea{font-family:inherit}
 </style>
 </head>
 <body>
 
-<div id="container">
-    <h2>Pasajeros Online: <span id="count">0</span></h2>
-
-    <p><b>ID:</b> <span id="visitor-id"></span></p>
-    <p><b>IP:</b> <span id="visitor-ip"></span></p>
-    <p><b>Velocidad:</b> <span id="speed">0</span> km/h</p>
-    <p><b>Modo:</b> <span id="transport">Detectando...</span></p>
-
-    <button id="go-chat">Ir al Chat</button>
-
-    <div id="chat-box"></div>
-    <input id="chat-input" placeholder="Escribe un mensaje...">
+<div class="card">
+  <h2>Pasajeros Online: <span id="onlineCount">0</span></h2>
+  <p><strong>ID:</strong> <span id="visitorId">cargando…</span></p>
+  <p><strong>IP:</strong> <span id="visitorIp">cargando…</span></p>
 </div>
 
-<script>
-/* ================================
-   1) IDENTIFICACIÓN ÚNICA
-================================ */
-let visitorId = localStorage.getItem("visitorId");
-if (!visitorId) {
-    visitorId = "USR-" + Math.random().toString(36).substring(2);
-    localStorage.setItem("visitorId", visitorId);
-}
-document.getElementById("visitor-id").textContent = visitorId;
+<div class="card">
+  <h3>Movimiento</h3>
+  <p><strong>Velocidad:</strong> <span id="speed">0</span> km/h</p>
+  <p><strong>Modo:</strong> <span id="transport">Detectando…</span></p>
+  <button id="goChatBtn">Ir al chat</button>
+</div>
 
-/* ================================
-   2) OBTENER IP PÚBLICA
-================================ */
-let visitorIp = "";
-fetch("https://api.ipify.org?format=json")
-  .then(r => r.json())
-  .then(d => {
-      visitorIp = d.ip;
-      document.getElementById("visitor-ip").textContent = visitorIp;
-      connectWebSocket();   // ← importante: iniciamos el websocket recién cuando sabemos la IP
+<div id="chatPanel" class="card">
+  <h3>Chat de vehículo <small id="roomLabel"></small></h3>
+  <div id="messages"></div>
+  <div style="margin-top:8px;display:flex;gap:8px">
+    <input id="msgInput" placeholder="Escribí un mensaje..." style="flex:1;padding:8px;border-radius:8px;border:1px solid #ddd"/>
+    <button id="sendBtn">Enviar</button>
+  </div>
+</div>
+
+<!-- GUN -->
+<script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
+
+<script>
+(function(){
+  // ---------- util ----------
+  const log = (...a)=>console.log('[App]',...a);
+  const now = ()=>Date.now();
+
+  // ---------- visitorId (persistente) ----------
+  let visitorId = localStorage.getItem('visitor_id');
+  if (!visitorId) {
+    visitorId = 'v_' + Math.random().toString(36).slice(2,10);
+    localStorage.setItem('visitor_id', visitorId);
+    log('Nuevo visitorId', visitorId);
+  } else log('visitorId recuperado', visitorId);
+  document.getElementById('visitorId').innerText = visitorId;
+
+  // ---------- obtener IP pública (con fallback) ----------
+  window.__USER_IP__ = '0.0.0.0';
+  async function fetchIP(){
+    try {
+      const r = await fetch('https://api.ipify.org?format=json', {cache:'no-store'});
+      if (!r.ok) throw new Error('status ' + r.status);
+      const j = await r.json();
+      window.__USER_IP__ = j.ip || '0.0.0.0';
+      document.getElementById('visitorIp').innerText = window.__USER_IP__;
+      log('IP pública', window.__USER_IP__);
+    } catch(err) {
+      log('No se pudo obtener IP pública:', err);
+      document.getElementById('visitorIp').innerText = 'No disponible';
+      window.__USER_IP__ = '0.0.0.0';
+    }
+  }
+  fetchIP();
+
+  // ---------- inicializar GUN ----------
+  // peers públicos (si fallan, GUN usa mesh local)
+  let gun;
+  try {
+    gun = Gun({ peers: ['https://gun-manhattan.herokuapp.com/gun', 'https://gun-us.herokuapp.com/gun'] });
+    log('GUN inicializado');
+  } catch(e){
+    gun = Gun();
+    log('GUN init fallback', e);
+  }
+
+  // ---------- Pasajeros online (heartbeat) ----------
+  const onlineNode = gun.get('online-users');
+
+  function heartbeat(){
+    try {
+      onlineNode.get(visitorId).put({ts: now()});
+    } catch(e){ log('heartbeat error', e); }
+  }
+  heartbeat();
+  const hbInterval = setInterval(heartbeat, 12000); // cada 12s
+
+  // actualizar contador: cada 4s hacemos snapshot once()
+  async function updateOnlineCount(){
+    try {
+      const cutoff = now() - 25000; // 25s
+      onlineNode.once(data => {
+        try {
+          if (!data) { document.getElementById('onlineCount').innerText = '0'; return; }
+          let count = 0;
+          for (const k in data) {
+            const v = data[k];
+            let ts = 0;
+            if (v && typeof v === 'object' && v.ts) ts = v.ts;
+            else if (typeof v === 'number') ts = v;
+            if (ts > cutoff) count++;
+          }
+          document.getElementById('onlineCount').innerText = count;
+        } catch(e){ log('procesando snapshot', e); }
+      });
+    } catch(e){ log('updateOnlineCount error', e); }
+  }
+  updateOnlineCount();
+  const countInterval = setInterval(updateOnlineCount, 4000);
+
+  // ---------- GPS: velocidad y clasificación ----------
+  let last = null;
+  let currentSpeedKmh = 0;
+  function haversineKm(aLat,aLon,bLat,bLon){
+    const R = 6371;
+    const dLat = (bLat-aLat) * Math.PI/180;
+    const dLon = (bLon-aLon) * Math.PI/180;
+    const A = Math.sin(dLat/2)**2 + Math.cos(aLat*Math.PI/180)*Math.cos(bLat*Math.PI/180)*Math.sin(dLon/2)**2;
+    return R * 2 * Math.atan2(Math.sqrt(A), Math.sqrt(1-A));
+  }
+  function classify(speed, acc){
+    if (acc > 150) return 'Subte (señal baja)';
+    if (speed < 6) return 'Caminando';
+    if (speed < 25) return 'Auto/Bici/Moto';
+    if (speed < 50) return 'Colectivo';
+    if (speed < 130) return 'Tren';
+    return 'Desconocido';
+  }
+  function onPos(p){
+    try {
+      const lat = p.coords.latitude, lon = p.coords.longitude, acc = p.coords.accuracy || 999;
+      if (last) {
+        const distKm = haversineKm(last.lat,last.lon,lat,lon);
+        const dtH = (p.timestamp - last.t) / 3600000;
+        let sp = dtH > 0 ? (distKm / dtH) : 0;
+        if (!isFinite(sp)) sp = 0;
+        currentSpeedKmh = Math.max(0, sp);
+        document.getElementById('speed').innerText = currentSpeedKmh.toFixed(1);
+        document.getElementById('transport').innerText = classify(currentSpeedKmh, acc);
+        // enviar movimiento al nodo (opcional para logs)
+        try { gun.get('movement').get(visitorId).put({lat,lon,speed:currentSpeedKmh,ts: now()}); } catch(e){/*ignore*/ }
+      }
+      last = {lat,lon,t:p.timestamp};
+    } catch(e){ log('onPos error', e); }
+  }
+  if (navigator.geolocation){
+    navigator.geolocation.watchPosition(onPos, err=>log('GPS error',err), {enableHighAccuracy:true, maximumAge:1000, timeout:8000});
+  } else log('Geolocation no disponible');
+
+  // ---------- Chat por vehículo ----------
+  // RoomKey simple: ip + speedRound
+  function roomKey(){
+    const ip = window.__USER_IP__ || '0.0.0.0';
+    const sp = Math.round(currentSpeedKmh || 0);
+    return btoa(ip + '_' + sp).replace(/=/g,'');
+  }
+
+  const goChatBtn = document.getElementById('goChatBtn');
+  const chatPanel = document.getElementById('chatPanel');
+  const messagesEl = document.getElementById('messages');
+  const msgInput = document.getElementById('msgInput');
+  const sendBtn = document.getElementById('sendBtn');
+  let roomNode = null;
+  let seenMsgKeys = new Set();
+
+  function openChat(){
+    chatPanel.style.display = 'block';
+    const rk = roomKey();
+    document.getElementById('roomLabel').innerText = ' ' + rk.slice(0,10);
+    roomNode = gun.get('chat-' + rk);
+    messagesEl.innerHTML = '';
+    seenMsgKeys.clear();
+
+    // escuchar mensajes (map)
+    roomNode.map().on((data, id) => {
+      try {
+        if (!data) return;
+        // Evitar re-dibujar mensajes duplicados
+        const key = id || (data.ts + '|' + (data.sender||'x'));
+        if (seenMsgKeys.has(key)) return;
+        seenMsgKeys.add(key);
+        const div = document.createElement('div');
+        div.className = 'msg ' + (data.sender === visitorId ? 'me':'');
+        div.innerHTML = `<strong>${(data.sender||'anon').slice(0,8)}:</strong> ${escapeHtml(data.text||'')}`;
+        messagesEl.appendChild(div);
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+      } catch(e){ log('error procesando msg', e); }
+    });
+  }
+
+  goChatBtn.addEventListener('click', openChat);
+
+  function sendMessage(){
+    const text = (msgInput.value||'').trim();
+    if (!text) return;
+    if (!roomNode) openChat();
+    const msg = { sender: visitorId, text, ts: now() };
+    try {
+      roomNode.set(msg);
+      msgInput.value = '';
+    } catch(e){ log('error sending msg', e); }
+  }
+  sendBtn.addEventListener('click', sendMessage);
+  msgInput.addEventListener('keydown', e => { if (e.key === 'Enter') sendMessage(); });
+
+  // escapeHtml
+  function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c=> ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+  // ---------- cleanup on unload ----------
+  window.addEventListener('beforeunload', () => {
+    try { onlineNode.get(visitorId).put(null); } catch(e){ /*ignore*/ }
+    clearInterval(hbInterval); clearInterval(countInterval);
   });
 
-/* ================================
-   3) DETECCIÓN DE VELOCIDAD + MODO DE TRANSPORTE
-================================ */
-let lastPosition = null;
-function detectTransport(speed) {
-    if (speed < 3) return "Caminando";
-    if (speed < 20) return "Auto o Moto";
-    if (speed < 60) return "Colectivo";
-    if (speed < 120) return "Tren";
-    return "Subte / Alta velocidad";
-}
-
-navigator.geolocation.watchPosition(pos => {
-    if (lastPosition) {
-        const dx = pos.coords.latitude - lastPosition.latitude;
-        const dy = pos.coords.longitude - lastPosition.longitude;
-        const dist = Math.sqrt(dx*dx + dy*dy) * 111000; // metros
-        const dt = (pos.timestamp - lastPosition.time) / 1000; // segundos
-        const speed = Math.round((dist / dt) * 3.6); // km/h
-        document.getElementById("speed").textContent = speed;
-        document.getElementById("transport").textContent = detectTransport(speed);
-
-        sendMovement(speed);
-    }
-
-    lastPosition = {
-        latitude: pos.coords.latitude,
-        longitude: pos.coords.longitude,
-        time: pos.timestamp
-    };
-}, err => console.log(err), { enableHighAccuracy:true });
-
-/* ================================
-   4) WEBSOCKET: CONTADOR + CHAT
-================================ */
-
-// ⚠️ Usa este servidor WS gratuito.
-// Si querés uno propio, avisame y te lo creo.
-// (Está configurado para manejar contador + salas + chat)
-const WS_URL = "wss://transport-ws-server.cleverapps.io"; // SERVIDOR LISTO PARA USAR
-
-let ws;
-let vehicleRoom = "";
-
-function connectWebSocket() {
-    vehicleRoom = visitorIp.replace(/\./g, "-"); // Cada IP = un vehículo
-    ws = new WebSocket(WS_URL);
-
-    ws.onopen = () => {
-        ws.send(JSON.stringify({
-            type: "join",
-            visitorId,
-            visitorIp,
-            room: vehicleRoom
-        }));
-    };
-
-    ws.onmessage = (msg) => {
-        const data = JSON.parse(msg.data);
-
-        if (data.type === "count") {
-            document.getElementById("count").textContent = data.count;
-        }
-
-        if (data.type === "chat") {
-            addChatMessage(data.id, data.text);
-        }
-    };
-}
-
-function sendMovement(speed) {
-    if (!ws || ws.readyState !== WebSocket.OPEN) return;
-    ws.send(JSON.stringify({
-        type: "movement",
-        room: vehicleRoom,
-        visitorId,
-        speed
-    }));
-}
-
-/* ================================
-   5) CHAT
-================================ */
-const chatBox = document.getElementById("chat-box");
-const chatInput = document.getElementById("chat-input");
-
-document.getElementById("go-chat").onclick = () => {
-    chatBox.style.display = "block";
-    chatInput.style.display = "block";
-};
-
-chatInput.addEventListener("keydown", e => {
-    if (e.key === "Enter") {
-        const text = chatInput.value.trim();
-        if (!text) return;
-
-        ws.send(JSON.stringify({
-            type: "chat",
-            room: vehicleRoom,
-            id: visitorId,
-            text
-        }));
-
-        chatInput.value = "";
-    }
-});
-
-function addChatMessage(author, msg) {
-    chatBox.innerHTML += `<p><b>${author}:</b> ${msg}</p>`;
-    chatBox.scrollTop = chatBox.scrollHeight;
-}
+  // expose for debug
+  window.__APP__ = { gun, visitorId, roomKey };
+})();
 </script>
-
 </body>
 </html>
