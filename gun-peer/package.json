@@ -1,0 +1,14 @@
+{
+  "name": "gun-peer-server",
+  "version": "1.0.0",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "gun": "^0.2020.123" 
+  },
+  "engines": {
+    "node": "16.x || 18.x || 20.x"
+  }
+}
