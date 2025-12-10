@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>🚌 Viaje Conectado</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -28,6 +28,15 @@
             padding: 0;
             box-sizing: border-box;
             font-family: 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        input, textarea, select {
+            -webkit-user-select: text;
+            user-select: text;
         }
 
         body {
@@ -36,6 +45,7 @@
             color: var(--text);
             overflow: hidden;
             position: relative;
+            touch-action: pan-x pan-y;
         }
 
         /* Fondo dinámico del colectivo */
@@ -85,6 +95,7 @@
             padding: 0 20px;
             z-index: 1000;
             box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+            touch-action: none;
         }
 
         .chat-info {
@@ -106,6 +117,8 @@
             align-items: center;
             gap: 8px;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
         }
 
         .chat-toggle:hover {
@@ -177,6 +190,7 @@
             display: flex;
             flex-direction: column;
             gap: 15px;
+            -webkit-overflow-scrolling: touch;
         }
 
         .message {
@@ -252,6 +266,9 @@
             font-size: 14px;
             outline: none;
             transition: all 0.3s;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
         }
 
         .chat-input:focus {
@@ -271,6 +288,8 @@
             align-items: center;
             justify-content: center;
             transition: all 0.3s;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
         }
 
         .send-btn:hover {
@@ -296,6 +315,13 @@
             z-index: 100;
             min-width: 280px;
             transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            touch-action: none;
+        }
+
+        .floating-window.dragging {
+            transition: none;
+            opacity: 0.9;
+            z-index: 1000 !important;
         }
 
         .floating-window:hover {
@@ -313,6 +339,7 @@
             cursor: move;
             user-select: none;
             border-radius: 16px 16px 0 0;
+            touch-action: none;
         }
 
         .window-title {
@@ -350,6 +377,8 @@
             align-items: center;
             justify-content: center;
             transition: all 0.2s;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
         }
 
         .window-btn:hover {
@@ -359,6 +388,10 @@
 
         .window-content {
             padding: 20px;
+            touch-action: pan-y;
+            overflow-y: auto;
+            max-height: 400px;
+            -webkit-overflow-scrolling: touch;
         }
 
         .form-group {
@@ -382,6 +415,9 @@
             color: var(--text);
             font-size: 14px;
             transition: all 0.3s;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
         }
 
         .form-input:focus {
@@ -399,6 +435,9 @@
             color: var(--text);
             font-size: 14px;
             cursor: pointer;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
         }
 
         .current-value {
@@ -465,6 +504,8 @@
             z-index: 1000;
             box-shadow: 0 10px 40px rgba(99, 102, 241, 0.4);
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
         }
 
         .main-action:hover {
@@ -502,6 +543,7 @@
             z-index: 2000;
             transform: translateX(120%);
             transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            touch-action: manipulation;
         }
 
         .notification.show {
@@ -550,6 +592,8 @@
                 width: calc(100% - 40px);
                 height: 400px;
                 right: 20px;
+                left: 20px;
+                top: 70px;
             }
 
             .floating-window {
@@ -560,10 +604,12 @@
                 right: 20px !important;
                 top: auto !important;
                 bottom: auto !important;
+                max-width: 400px;
             }
 
             .chat-header {
                 padding: 0 15px;
+                height: 70px;
             }
 
             .chat-stats {
@@ -578,11 +624,44 @@
                 bottom: auto;
                 margin-top: 20px;
             }
+
+            .main-action {
+                bottom: 20px;
+                padding: 12px 24px;
+                font-size: 14px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .floating-window {
+                width: calc(100% - 30px) !important;
+                left: 15px !important;
+                right: 15px !important;
+                margin: 15px auto;
+            }
+
+            .chat-window {
+                width: calc(100% - 30px);
+                height: 350px;
+                right: 15px;
+                left: 15px;
+            }
+
+            .window-content {
+                padding: 15px;
+            }
+
+            .main-action {
+                width: calc(100% - 40px);
+                justify-content: center;
+                padding: 15px;
+            }
         }
 
         /* Scrollbar personalizada */
         ::-webkit-scrollbar {
             width: 8px;
+            height: 8px;
         }
 
         ::-webkit-scrollbar-track {
@@ -620,6 +699,36 @@
             0%, 100% { opacity: 1; }
             50% { opacity: 0.5; }
         }
+
+        /* Mejoras táctiles */
+        .touch-hint {
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            pointer-events: none;
+        }
+
+        .touch-hint i {
+            font-size: 14px;
+        }
+
+        /* Efectos de toque */
+        .tap-feedback:active {
+            transform: scale(0.98);
+            transition: transform 0.1s;
+        }
+
+        /* Prevenir zoom en iOS */
+        input[type="text"],
+        input[type="number"],
+        textarea {
+            font-size: 16px; /* Previene zoom en iOS */
+        }
     </style>
 </head>
 <body>
@@ -630,7 +739,7 @@
     <!-- Cabecera con chat -->
     <header class="chat-header">
         <div class="chat-info">
-            <button class="chat-toggle" id="toggleChat">
+            <button class="chat-toggle tap-feedback" id="toggleChat">
                 <i class="fas fa-comment-dots"></i>
                 Chat del Viaje
             </button>
@@ -660,7 +769,7 @@
             <div class="chat-input-area">
                 <div class="chat-input-group">
                     <input type="text" class="chat-input" id="chatInput" placeholder="Escribe un mensaje..." maxlength="200">
-                    <button class="send-btn" id="sendMessage">
+                    <button class="send-btn tap-feedback" id="sendMessage">
                         <i class="fas fa-paper-plane"></i>
                     </button>
                 </div>
@@ -678,10 +787,10 @@
                 <span>Tu Nombre</span>
             </div>
             <div class="window-controls">
-                <button class="window-btn" data-action="minimize">
+                <button class="window-btn tap-feedback" data-action="minimize">
                     <i class="fas fa-minus"></i>
                 </button>
-                <button class="window-btn" data-action="close">
+                <button class="window-btn tap-feedback" data-action="close">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
@@ -696,6 +805,9 @@
                 <div class="current-value-text" id="currentName">Viajer@</div>
             </div>
         </div>
+        <div class="touch-hint">
+            <i class="fas fa-arrows-alt"></i> Arrastrar
+        </div>
     </div>
 
     <!-- Ventana de Edad -->
@@ -708,10 +820,10 @@
                 <span>Rango de Edad</span>
             </div>
             <div class="window-controls">
-                <button class="window-btn" data-action="minimize">
+                <button class="window-btn tap-feedback" data-action="minimize">
                     <i class="fas fa-minus"></i>
                 </button>
-                <button class="window-btn" data-action="close">
+                <button class="window-btn tap-feedback" data-action="close">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
@@ -733,6 +845,9 @@
                 <div class="current-value-text" id="currentAge">No especificado</div>
             </div>
         </div>
+        <div class="touch-hint">
+            <i class="fas fa-arrows-alt"></i> Arrastrar
+        </div>
     </div>
 
     <!-- Ventana de Línea -->
@@ -745,10 +860,10 @@
                 <span>Línea del Colectivo</span>
             </div>
             <div class="window-controls">
-                <button class="window-btn" data-action="minimize">
+                <button class="window-btn tap-feedback" data-action="minimize">
                     <i class="fas fa-minus"></i>
                 </button>
-                <button class="window-btn" data-action="close">
+                <button class="window-btn tap-feedback" data-action="close">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
@@ -774,6 +889,9 @@
                 <div class="current-value-text" id="currentLine">146 - Plaza Italia a Puente Saavedra</div>
             </div>
         </div>
+        <div class="touch-hint">
+            <i class="fas fa-arrows-alt"></i> Arrastrar
+        </div>
     </div>
 
     <!-- Ventana de Trayecto -->
@@ -786,10 +904,10 @@
                 <span>Trayecto</span>
             </div>
             <div class="window-controls">
-                <button class="window-btn" data-action="minimize">
+                <button class="window-btn tap-feedback" data-action="minimize">
                     <i class="fas fa-minus"></i>
                 </button>
-                <button class="window-btn" data-action="close">
+                <button class="window-btn tap-feedback" data-action="close">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
@@ -808,10 +926,13 @@
                 <div class="current-value-text" id="currentRoute">Plaza Italia → Puente Saavedra</div>
             </div>
         </div>
+        <div class="touch-hint">
+            <i class="fas fa-arrows-alt"></i> Arrastrar
+        </div>
     </div>
 
     <!-- Botón de acción principal -->
-    <button class="main-action" id="connectButton">
+    <button class="main-action tap-feedback" id="connectButton">
         <i class="fas fa-plug"></i>
         <span>Conectar al Viaje</span>
     </button>
@@ -827,21 +948,12 @@
         </div>
     </div>
 
-    <!-- Configuración GAS - ESTA PARTE DEBE SER REEMPLAZADA CON TU URL REAL -->
-    <div id="gasConfig" style="display: none;">
-        <!-- IMPORTANTE: Después de desplegar tu Web App de GAS, reemplaza esta URL -->
-        <input type="hidden" id="gasUrl" value="https://script.google.com/macros/s/AKfycbyP_RWfFWHW9ae7mXwCm7i6MEhViQKbPWTYu9fOzp8F_JHjG_7CeuYs5PYm1SINK9FqJg/exec">
-    </div>
-
     <script>
         // ============================
         // CONFIGURACIÓN PRINCIPAL
         // ============================
         const CONFIG = {
-            // IMPORTANTE: Reemplaza esta URL con tu Web App de GAS
-            // Ejemplo: 'https://script.google.com/macros/s/AKfycby.../exec'
-            GAS_URL: 'TU_URL_DE_GAS_AQUI',
-            
+            GAS_URL: 'https://script.google.com/macros/s/AKfycbyP_RWfFWHW9ae7mXwCm7i6MEhViQKbPWTYu9fOzp8F_JHjG_7CeuYs5PYm1SINK9FqJg/exec', // Reemplaza con tu URL real
             UPDATE_INTERVAL: 5000,
             MAX_MESSAGES: 100,
             USER_ID: 'user_' + Math.random().toString(36).substr(2, 9),
@@ -863,38 +975,235 @@
             isDragging: false,
             dragWindow: null,
             dragOffset: { x: 0, y: 0 },
-            
-            // Datos de Google Sheets (Sheet ID proporcionado)
-            SHEET_ID: '139M_PxEAOCXpuby_8NXVNnPVmzyU9hmFTUux8qNOkJM'
+            isTouchDevice: 'ontouchstart' in window || navigator.maxTouchPoints > 0
         };
 
         // ============================
-        // INICIALIZACIÓN
+        // INICIALIZACIÓN MEJORADA
         // ============================
         document.addEventListener('DOMContentLoaded', () => {
             initializeApp();
         });
 
         async function initializeApp() {
-            // Leer URL de GAS del input hidden si existe
-            const gasUrlElement = document.getElementById('gasUrl');
-            if (gasUrlElement && gasUrlElement.value && gasUrlElement.value !== 'TU_URL_DE_GAS_AQUI') {
-                CONFIG.GAS_URL = gasUrlElement.value;
-            }
+            // Detectar dispositivo táctil
+            detectTouchDevice();
             
+            // Configurar eventos
             setupChat();
             setupWindows();
             setupForms();
             setupConnection();
             setupNotifications();
+            
+            // Cargar estado inicial
             loadInitialState();
+            
+            // Iniciar actualizaciones
             startPeriodicUpdates();
             
+            // Mostrar bienvenida
             showNotification('¡Bienvenido a Viaje Conectado!', 'Completa tus datos y únete al viaje.', 'info');
+            
+            // Añadir mensajes iniciales
+            addMessage('Sistema', '¡Bienvenido al chat del viaje!', 'received');
+            addMessage('Ana', '¿Alguien más va al festival en el centro?', 'received');
+            addMessage('Carlos', 'Yo voy, empieza a las 15:00', 'received');
+        }
+
+        function detectTouchDevice() {
+            console.log('Dispositivo táctil detectado:', AppState.isTouchDevice);
+            if (AppState.isTouchDevice) {
+                document.body.classList.add('touch-device');
+                
+                // Añadir clase a botones para mejor feedback táctil
+                document.querySelectorAll('button, .window-btn, .chat-toggle, .send-btn, .main-action').forEach(btn => {
+                    btn.classList.add('tap-feedback');
+                });
+            }
         }
 
         // ============================
-        // FUNCIONES DEL CHAT
+        // SISTEMA DE ARRASTRE MEJORADO
+        // ============================
+        function setupWindows() {
+            const windows = document.querySelectorAll('.floating-window');
+            
+            windows.forEach(window => {
+                const header = window.querySelector('.window-header');
+                
+                if (AppState.isTouchDevice) {
+                    // Para dispositivos táctiles
+                    header.addEventListener('touchstart', handleTouchStart, { passive: false });
+                    header.addEventListener('touchmove', handleTouchMove, { passive: false });
+                    header.addEventListener('touchend', handleTouchEnd);
+                } else {
+                    // Para desktop
+                    header.addEventListener('mousedown', handleMouseDown);
+                }
+                
+                // Prevenir arrastre accidental en inputs
+                const inputs = window.querySelectorAll('input, select, textarea');
+                inputs.forEach(input => {
+                    input.addEventListener('mousedown', (e) => e.stopPropagation());
+                    input.addEventListener('touchstart', (e) => e.stopPropagation());
+                });
+            });
+            
+            // Configurar botones de control
+            document.querySelectorAll('.window-btn').forEach(btn => {
+                btn.addEventListener('click', handleWindowControl);
+                if (AppState.isTouchDevice) {
+                    btn.addEventListener('touchend', handleWindowControl);
+                }
+            });
+        }
+
+        function handleMouseDown(e) {
+            if (e.target.closest('.window-btn')) return;
+            
+            e.preventDefault();
+            startDrag(e.target.closest('.floating-window'), e.clientX, e.clientY);
+            
+            document.addEventListener('mousemove', handleMouseMove);
+            document.addEventListener('mouseup', handleMouseUp);
+        }
+
+        function handleMouseMove(e) {
+            e.preventDefault();
+            if (AppState.isDragging && AppState.dragWindow) {
+                moveWindow(e.clientX, e.clientY);
+            }
+        }
+
+        function handleMouseUp() {
+            stopDrag();
+            document.removeEventListener('mousemove', handleMouseMove);
+            document.removeEventListener('mouseup', handleMouseUp);
+        }
+
+        function handleTouchStart(e) {
+            if (e.target.closest('.window-btn')) return;
+            
+            e.preventDefault();
+            const touch = e.touches[0];
+            startDrag(e.target.closest('.floating-window'), touch.clientX, touch.clientY);
+        }
+
+        function handleTouchMove(e) {
+            e.preventDefault();
+            if (AppState.isDragging && AppState.dragWindow && e.touches.length === 1) {
+                const touch = e.touches[0];
+                moveWindow(touch.clientX, touch.clientY);
+            }
+        }
+
+        function handleTouchEnd(e) {
+            e.preventDefault();
+            stopDrag();
+        }
+
+        function startDrag(window, clientX, clientY) {
+            AppState.isDragging = true;
+            AppState.dragWindow = window;
+            
+            // Traer al frente
+            document.querySelectorAll('.floating-window').forEach(w => {
+                w.style.zIndex = '100';
+            });
+            AppState.dragWindow.style.zIndex = '1000';
+            AppState.dragWindow.classList.add('dragging');
+            
+            // Calcular offset
+            const rect = AppState.dragWindow.getBoundingClientRect();
+            AppState.dragOffset.x = clientX - rect.left;
+            AppState.dragOffset.y = clientY - rect.top;
+            
+            // Prevenir scroll en móvil
+            if (AppState.isTouchDevice) {
+                document.body.style.overflow = 'hidden';
+            }
+        }
+
+        function moveWindow(clientX, clientY) {
+            if (!AppState.isDragging || !AppState.dragWindow) return;
+            
+            // Calcular nueva posición
+            let x = clientX - AppState.dragOffset.x;
+            let y = clientY - AppState.dragOffset.y;
+            
+            // Limitar a los bordes de la ventana
+            const maxX = window.innerWidth - AppState.dragWindow.offsetWidth;
+            const maxY = window.innerHeight - AppState.dragWindow.offsetHeight;
+            
+            x = Math.max(10, Math.min(x, maxX - 10));
+            y = Math.max(70, Math.min(y, maxY - 10)); // 70px para la cabecera
+            
+            // Aplicar posición
+            AppState.dragWindow.style.left = x + 'px';
+            AppState.dragWindow.style.top = y + 'px';
+            AppState.dragWindow.style.right = 'auto';
+            AppState.dragWindow.style.bottom = 'auto';
+        }
+
+        function stopDrag() {
+            if (AppState.isDragging && AppState.dragWindow) {
+                AppState.dragWindow.classList.remove('dragging');
+                
+                // Restaurar scroll en móvil
+                if (AppState.isTouchDevice) {
+                    document.body.style.overflow = '';
+                }
+            }
+            
+            AppState.isDragging = false;
+            AppState.dragWindow = null;
+        }
+
+        function handleWindowControl(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const action = e.currentTarget.dataset.action;
+            const window = e.currentTarget.closest('.floating-window');
+            
+            switch(action) {
+                case 'minimize':
+                    toggleWindowMinimize(window);
+                    break;
+                case 'close':
+                    closeWindow(window);
+                    break;
+            }
+        }
+
+        function toggleWindowMinimize(window) {
+            const content = window.querySelector('.window-content');
+            const isMinimized = content.style.display === 'none';
+            
+            if (isMinimized) {
+                content.style.display = 'block';
+                window.style.height = 'auto';
+                window.querySelector('[data-action="minimize"] i').className = 'fas fa-minus';
+            } else {
+                content.style.display = 'none';
+                window.style.height = window.querySelector('.window-header').offsetHeight + 'px';
+                window.querySelector('[data-action="minimize"] i').className = 'fas fa-plus';
+            }
+        }
+
+        function closeWindow(window) {
+            window.style.opacity = '0';
+            window.style.transform = 'scale(0.9)';
+            
+            setTimeout(() => {
+                window.style.display = 'none';
+                showNotification('Ventana cerrada', 'Puedes recargar la página para restaurarla.', 'info');
+            }, 300);
+        }
+
+        // ============================
+        // CHAT MEJORADO
         // ============================
         function setupChat() {
             const toggleBtn = document.getElementById('toggleChat');
@@ -902,17 +1211,19 @@
             const sendBtn = document.getElementById('sendMessage');
             const chatInput = document.getElementById('chatInput');
             
-            toggleBtn.addEventListener('click', () => {
-                AppState.chatOpen = !AppState.chatOpen;
-                chatWindow.classList.toggle('active', AppState.chatOpen);
-                
-                if (AppState.chatOpen) {
-                    chatInput.focus();
-                }
-            });
+            // Toggle chat
+            toggleBtn.addEventListener('click', toggleChat);
+            if (AppState.isTouchDevice) {
+                toggleBtn.addEventListener('touchend', toggleChat);
+            }
             
+            // Enviar mensaje
             sendBtn.addEventListener('click', sendMessage);
+            if (AppState.isTouchDevice) {
+                sendBtn.addEventListener('touchend', sendMessage);
+            }
             
+            // Enter para enviar
             chatInput.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
@@ -920,131 +1231,51 @@
                 }
             });
             
-            // Mensajes iniciales
-            addMessage('Sistema', '¡Bienvenido al chat del viaje! Completa tus datos para comenzar.', 'received');
-            addMessage('Ana', '¿Alguien más va al festival en el centro?', 'received');
-            addMessage('Carlos', 'Yo voy, empieza a las 15:00', 'received');
-        }
-
-        // ============================
-        // FUNCIONES DE VENTANAS
-        // ============================
-        function setupWindows() {
-            // Hacer ventanas arrastrables
-            const headers = document.querySelectorAll('.window-header');
-            
-            headers.forEach(header => {
-                header.addEventListener('mousedown', startDrag);
-                header.addEventListener('touchstart', startDragTouch, { passive: false });
-            });
-            
-            // Botones de control
-            document.querySelectorAll('.window-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    const action = e.currentTarget.dataset.action;
-                    const window = e.currentTarget.closest('.floating-window');
-                    
-                    switch(action) {
-                        case 'minimize':
-                            minimizeWindow(window);
-                            break;
-                        case 'close':
-                            closeWindow(window);
-                            break;
-                    }
-                });
+            // Enfocar input al abrir chat
+            chatInput.addEventListener('focus', () => {
+                // Scroll al final en móvil
+                if (AppState.isTouchDevice) {
+                    setTimeout(() => {
+                        window.scrollTo(0, 0);
+                    }, 100);
+                }
             });
         }
 
-        function startDrag(e) {
-            e.preventDefault();
-            AppState.isDragging = true;
-            AppState.dragWindow = e.currentTarget.closest('.floating-window');
+        function toggleChat(e) {
+            if (e) e.preventDefault();
             
-            const rect = AppState.dragWindow.getBoundingClientRect();
-            AppState.dragOffset.x = (e.clientX || e.touches[0].clientX) - rect.left;
-            AppState.dragOffset.y = (e.clientY || e.touches[0].clientY) - rect.top;
+            AppState.chatOpen = !AppState.chatOpen;
+            const chatWindow = document.getElementById('chatWindow');
             
-            document.addEventListener('mousemove', dragWindow);
-            document.addEventListener('mouseup', stopDrag);
-            document.addEventListener('touchmove', dragWindowTouch, { passive: false });
-            document.addEventListener('touchend', stopDrag);
-        }
-
-        function startDragTouch(e) {
-            if (e.touches.length === 1) {
-                startDrag(e);
+            if (AppState.chatOpen) {
+                chatWindow.classList.add('active');
+                document.getElementById('chatInput').focus();
+                
+                // Scroll al final de los mensajes
+                setTimeout(() => {
+                    const messages = document.getElementById('chatMessages');
+                    messages.scrollTop = messages.scrollHeight;
+                }, 100);
+            } else {
+                chatWindow.classList.remove('active');
             }
-        }
-
-        function dragWindow(e) {
-            if (!AppState.isDragging || !AppState.dragWindow) return;
-            
-            const x = (e.clientX || e.touches[0].clientX) - AppState.dragOffset.x;
-            const y = (e.clientY || e.touches[0].clientY) - AppState.dragOffset.y;
-            
-            const maxX = window.innerWidth - AppState.dragWindow.offsetWidth;
-            const maxY = window.innerHeight - AppState.dragWindow.offsetHeight;
-            
-            AppState.dragWindow.style.left = Math.max(20, Math.min(x, maxX)) + 'px';
-            AppState.dragWindow.style.top = Math.max(80, Math.min(y, maxY)) + 'px';
-        }
-
-        function dragWindowTouch(e) {
-            if (e.touches.length === 1) {
-                dragWindow(e);
-            }
-        }
-
-        function stopDrag() {
-            AppState.isDragging = false;
-            AppState.dragWindow = null;
-            
-            document.removeEventListener('mousemove', dragWindow);
-            document.removeEventListener('mouseup', stopDrag);
-            document.removeEventListener('touchmove', dragWindowTouch);
-            document.removeEventListener('touchend', stopDrag);
-        }
-
-        function minimizeWindow(window) {
-            const content = window.querySelector('.window-content');
-            const isMinimized = content.style.display === 'none';
-            
-            content.style.display = isMinimized ? 'block' : 'none';
-            window.style.height = isMinimized ? 'auto' : window.querySelector('.window-header').offsetHeight + 'px';
-        }
-
-        function closeWindow(window) {
-            window.style.opacity = '0';
-            window.style.transform = 'scale(0.8)';
-            
-            setTimeout(() => {
-                window.style.display = 'none';
-            }, 300);
         }
 
         // ============================
-        // FUNCIONES DE FORMULARIOS
+        // FORMULARIOS MEJORADOS
         // ============================
         function setupForms() {
             // Nombre
             const nameInput = document.getElementById('userName');
-            nameInput.addEventListener('input', () => {
-                AppState.userName = nameInput.value.trim();
-                document.getElementById('currentName').textContent = 
-                    AppState.userName || 'Viajer@';
-                saveState();
-            });
+            nameInput.addEventListener('input', updateName);
+            if (AppState.isTouchDevice) {
+                nameInput.addEventListener('change', updateName);
+            }
             
             // Edad
             const ageSelect = document.getElementById('ageRange');
-            ageSelect.addEventListener('change', () => {
-                AppState.ageRange = ageSelect.value;
-                const selectedOption = ageSelect.options[ageSelect.selectedIndex];
-                document.getElementById('currentAge').textContent = 
-                    selectedOption.text || 'No especificado';
-                saveState();
-            });
+            ageSelect.addEventListener('change', updateAge);
             
             // Línea
             const lineSelect = document.getElementById('busLine');
@@ -1052,163 +1283,166 @@
             const customLineInput = document.getElementById('customLine');
             
             lineSelect.addEventListener('change', () => {
-                AppState.busLine = lineSelect.value;
-                
+                updateLine();
                 if (lineSelect.value === 'custom') {
                     customLineGroup.style.display = 'block';
-                    document.getElementById('currentLine').textContent = 'Especifica tu línea';
+                    setTimeout(() => customLineInput.focus(), 100);
                 } else {
                     customLineGroup.style.display = 'none';
-                    const selectedOption = lineSelect.options[lineSelect.selectedIndex];
-                    document.getElementById('currentLine').textContent = selectedOption.text;
-                    document.getElementById('currentLineDisplay').textContent = 
-                        `Línea ${selectedOption.text.split(' ')[0]}`;
                 }
-                saveState();
             });
             
-            customLineInput.addEventListener('input', () => {
-                const line = customLineInput.value.trim();
-                AppState.busLine = line;
-                document.getElementById('currentLine').textContent = 
-                    line ? `Línea ${line}` : 'Especifica tu línea';
-                document.getElementById('currentLineDisplay').textContent = 
-                    line ? `Línea ${line}` : 'Línea personalizada';
-                saveState();
-            });
+            customLineInput.addEventListener('input', updateLine);
+            if (AppState.isTouchDevice) {
+                customLineInput.addEventListener('change', updateLine);
+            }
             
             // Trayecto
             const originInput = document.getElementById('origin');
             const destinationInput = document.getElementById('destination');
             
-            function updateRouteDisplay() {
-                AppState.origin = originInput.value.trim();
-                AppState.destination = destinationInput.value.trim();
-                
-                let route = '';
-                if (AppState.origin && AppState.destination) {
-                    route = `${AppState.origin} → ${AppState.destination}`;
-                } else if (AppState.origin) {
-                    route = `${AppState.origin} → ...`;
-                } else if (AppState.destination) {
-                    route = `... → ${AppState.destination}`;
-                } else {
-                    route = 'No especificado';
-                }
-                
-                document.getElementById('currentRoute').textContent = route;
-                saveState();
+            originInput.addEventListener('input', updateRoute);
+            destinationInput.addEventListener('input', updateRoute);
+            
+            if (AppState.isTouchDevice) {
+                originInput.addEventListener('change', updateRoute);
+                destinationInput.addEventListener('change', updateRoute);
             }
             
-            originInput.addEventListener('input', updateRouteDisplay);
-            destinationInput.addEventListener('input', updateRouteDisplay);
+            // Valores iniciales
+            updateName();
+            updateAge();
+            updateLine();
+            updateRoute();
+        }
+
+        function updateName() {
+            const nameInput = document.getElementById('userName');
+            AppState.userName = nameInput.value.trim();
+            document.getElementById('currentName').textContent = 
+                AppState.userName || 'Viajer@';
+            saveState();
+        }
+
+        function updateAge() {
+            const ageSelect = document.getElementById('ageRange');
+            AppState.ageRange = ageSelect.value;
+            const selectedOption = ageSelect.options[ageSelect.selectedIndex];
+            document.getElementById('currentAge').textContent = 
+                selectedOption.text || 'No especificado';
+            saveState();
+        }
+
+        function updateLine() {
+            const lineSelect = document.getElementById('busLine');
+            const customLineInput = document.getElementById('customLine');
             
-            // Valores por defecto
-            originInput.value = AppState.origin;
-            destinationInput.value = AppState.destination;
-            updateRouteDisplay();
+            if (lineSelect.value === 'custom') {
+                AppState.busLine = customLineInput.value.trim() || 'custom';
+                document.getElementById('currentLine').textContent = 
+                    customLineInput.value ? `Línea ${customLineInput.value}` : 'Especifica tu línea';
+                document.getElementById('currentLineDisplay').textContent = 
+                    customLineInput.value ? `Línea ${customLineInput.value}` : 'Línea personalizada';
+            } else {
+                AppState.busLine = lineSelect.value;
+                const selectedOption = lineSelect.options[lineSelect.selectedIndex];
+                document.getElementById('currentLine').textContent = selectedOption.text;
+                document.getElementById('currentLineDisplay').textContent = 
+                    `Línea ${selectedOption.text.split(' ')[0]}`;
+            }
+            saveState();
+        }
+
+        function updateRoute() {
+            const originInput = document.getElementById('origin');
+            const destinationInput = document.getElementById('destination');
+            
+            AppState.origin = originInput.value.trim();
+            AppState.destination = destinationInput.value.trim();
+            
+            let route = '';
+            if (AppState.origin && AppState.destination) {
+                route = `${AppState.origin} → ${AppState.destination}`;
+            } else if (AppState.origin) {
+                route = `${AppState.origin} → ...`;
+            } else if (AppState.destination) {
+                route = `... → ${AppState.destination}`;
+            } else {
+                route = 'No especificado';
+            }
+            
+            document.getElementById('currentRoute').textContent = route;
+            saveState();
         }
 
         // ============================
-        // CONEXIÓN GAS
+        // CONEXIÓN
         // ============================
         function setupConnection() {
             const connectBtn = document.getElementById('connectButton');
             
-            connectBtn.addEventListener('click', async () => {
-                if (AppState.isConnected) {
-                    disconnectFromTrip();
-                } else {
-                    await connectToTrip();
-                }
-            });
+            connectBtn.addEventListener('click', handleConnection);
+            if (AppState.isTouchDevice) {
+                connectBtn.addEventListener('touchend', handleConnection);
+            }
+        }
+
+        function handleConnection(e) {
+            if (e) e.preventDefault();
+            
+            if (AppState.isConnected) {
+                disconnectFromTrip();
+            } else {
+                connectToTrip();
+            }
         }
 
         async function connectToTrip() {
             const connectBtn = document.getElementById('connectButton');
             
+            // Validar
             if (!AppState.origin || !AppState.destination) {
-                showNotification('Completa tu trayecto', 'Debes especificar origen y destino.', 'error');
+                showNotification('Completa tu trayecto', 'Especifica origen y destino para conectar.', 'error');
                 return;
             }
             
+            // Cambiar estado
             connectBtn.classList.add('connecting');
             connectBtn.innerHTML = '<div class="loader"></div><span>Conectando...</span>';
+            connectBtn.disabled = true;
             
             try {
-                const userData = {
-                    userId: CONFIG.USER_ID,
-                    sessionId: CONFIG.SESSION_ID,
-                    userName: AppState.userName || 'Anónimo',
-                    ageRange: AppState.ageRange,
-                    busLine: AppState.busLine,
-                    origin: AppState.origin,
-                    destination: AppState.destination,
-                    action: 'connect',
-                    timestamp: new Date().toISOString(),
-                    sheetId: AppState.SHEET_ID
-                };
+                // Simular conexión (reemplazar con GAS real)
+                await new Promise(resolve => setTimeout(resolve, 1500));
                 
-                // Verificar si tenemos URL de GAS
-                if (!CONFIG.GAS_URL || CONFIG.GAS_URL === 'TU_URL_DE_GAS_AQUI') {
-                    // Modo simulación
-                    await simulateConnection(userData);
-                } else {
-                    // Enviar a GAS real
-                    await sendToGAS(userData);
-                }
-                
+                // Actualizar estado
                 AppState.isConnected = true;
+                AppState.connectedUsers = Math.floor(Math.random() * 10) + 1;
+                AppState.passengerCount = Math.floor(Math.random() * 20) + 5;
+                
+                // Actualizar UI
                 connectBtn.classList.remove('connecting');
                 connectBtn.classList.add('connected');
                 connectBtn.innerHTML = '<i class="fas fa-check"></i><span>Conectado</span>';
+                connectBtn.disabled = false;
                 
                 updateCounters();
                 addMessage('Sistema', `Te has unido al viaje ${AppState.busLine}`, 'received');
                 showNotification('¡Conectado!', 'Ya estás compartiendo tu viaje.', 'success');
                 
             } catch (error) {
-                console.error('Error al conectar:', error);
+                console.error('Error:', error);
                 connectBtn.classList.remove('connecting');
                 connectBtn.innerHTML = '<i class="fas fa-plug"></i><span>Conectar al Viaje</span>';
-                showNotification('Error de conexión', 'No se pudo conectar al viaje.', 'error');
-            }
-        }
-
-        async function simulateConnection(userData) {
-            // Simulación para desarrollo
-            return new Promise(resolve => {
-                setTimeout(() => {
-                    AppState.connectedUsers = Math.floor(Math.random() * 10) + 1;
-                    AppState.passengerCount = Math.floor(Math.random() * 20) + 5;
-                    resolve({ success: true });
-                }, 1500);
-            });
-        }
-
-        async function sendToGAS(data) {
-            try {
-                // IMPORTANTE: Para GAS, necesitamos usar JSONP o redirigir debido a CORS
-                const url = `${CONFIG.GAS_URL}?action=${data.action}&data=${encodeURIComponent(JSON.stringify(data))}`;
-                
-                const response = await fetch(url, {
-                    method: 'GET',
-                    mode: 'no-cors' // GAS requiere no-cors
-                });
-                
-                // Con no-cors no podemos leer la respuesta, pero asumimos éxito
-                return { success: true };
-                
-            } catch (error) {
-                console.error('Error enviando a GAS:', error);
-                throw error;
+                connectBtn.disabled = false;
+                showNotification('Error', 'No se pudo conectar al viaje.', 'error');
             }
         }
 
         function disconnectFromTrip() {
-            const connectBtn = document.getElementById('connectButton');
-            
             AppState.isConnected = false;
+            
+            const connectBtn = document.getElementById('connectButton');
             connectBtn.classList.remove('connected');
             connectBtn.innerHTML = '<i class="fas fa-plug"></i><span>Conectar al Viaje</span>';
             
@@ -1222,13 +1456,16 @@
         function setupNotifications() {
             const notification = document.getElementById('notification');
             
+            // Cerrar al tocar
             notification.addEventListener('click', () => {
                 notification.classList.remove('show');
             });
             
-            setInterval(() => {
-                notification.classList.remove('show');
-            }, 5000);
+            if (AppState.isTouchDevice) {
+                notification.addEventListener('touchend', () => {
+                    notification.classList.remove('show');
+                });
+            }
         }
 
         function showNotification(title, message, type = 'info') {
@@ -1237,14 +1474,18 @@
             const messageEl = document.getElementById('notificationMessage');
             const icon = notification.querySelector('.notification-icon');
             
+            // Actualizar contenido
             titleEl.textContent = title;
             messageEl.textContent = message;
             
+            // Actualizar estilo
             notification.className = `notification ${type}`;
             icon.innerHTML = getIconForType(type);
             
+            // Mostrar
             notification.classList.add('show');
             
+            // Auto-ocultar
             setTimeout(() => {
                 notification.classList.remove('show');
             }, 5000);
@@ -1260,56 +1501,16 @@
         }
 
         // ============================
-        // ESTADO Y PERSISTENCIA
-        // ============================
-        function loadInitialState() {
-            const savedData = localStorage.getItem('viajeConectadoData');
-            if (savedData) {
-                try {
-                    const data = JSON.parse(savedData);
-                    Object.assign(AppState, data);
-                    
-                    // Actualizar UI
-                    document.getElementById('userName').value = AppState.userName;
-                    document.getElementById('ageRange').value = AppState.ageRange;
-                    document.getElementById('busLine').value = AppState.busLine;
-                    document.getElementById('origin').value = AppState.origin;
-                    document.getElementById('destination').value = AppState.destination;
-                    
-                    document.getElementById('userName').dispatchEvent(new Event('input'));
-                    document.getElementById('ageRange').dispatchEvent(new Event('change'));
-                    document.getElementById('busLine').dispatchEvent(new Event('change'));
-                    
-                    if (AppState.isConnected) {
-                        document.getElementById('connectButton').classList.add('connected');
-                        document.getElementById('connectButton').innerHTML = '<i class="fas fa-check"></i><span>Conectado</span>';
-                    }
-                    
-                    updateCounters();
-                    
-                } catch (e) {
-                    console.error('Error al cargar datos:', e);
-                }
-            }
-        }
-
-        function saveState() {
-            localStorage.setItem('viajeConectadoData', JSON.stringify(AppState));
-        }
-
-        function updateCounters() {
-            document.getElementById('connectedCount').textContent = AppState.connectedUsers;
-            document.getElementById('passengerCount').textContent = AppState.passengerCount;
-        }
-
-        // ============================
-        // FUNCIONES DEL CHAT
+        // FUNCIONES UTILITARIAS
         // ============================
         function addMessage(sender, text, type = 'received') {
             const messagesContainer = document.getElementById('chatMessages');
             const messageDiv = document.createElement('div');
             
-            const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const time = new Date().toLocaleTimeString([], { 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            });
             
             messageDiv.className = `message ${type}`;
             messageDiv.innerHTML = `
@@ -1320,12 +1521,13 @@
             
             messagesContainer.appendChild(messageDiv);
             
+            // Limitar mensajes
             if (messagesContainer.children.length > CONFIG.MAX_MESSAGES) {
                 messagesContainer.removeChild(messagesContainer.firstChild);
             }
             
+            // Auto-scroll
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
-            AppState.messages.push({ sender, text, type, time });
         }
 
         async function sendMessage() {
@@ -1335,99 +1537,135 @@
             
             if (!text) return;
             
+            // Deshabilitar temporalmente
             input.disabled = true;
             sendBtn.disabled = true;
             
+            // Añadir mensaje
             addMessage(AppState.userName || 'Tú', text, 'sent');
             
-            if (AppState.isConnected && CONFIG.GAS_URL !== 'TU_URL_DE_GAS_AQUI') {
-                try {
-                    const messageData = {
-                        userId: CONFIG.USER_ID,
-                        userName: AppState.userName || 'Anónimo',
-                        message: text,
-                        action: 'message',
-                        timestamp: new Date().toISOString()
-                    };
-                    
-                    await sendToGAS(messageData);
-                } catch (error) {
-                    console.error('Error enviando mensaje:', error);
-                }
-            }
+            // Simular respuesta
+            setTimeout(() => {
+                const responses = [
+                    "¡Interesante!",
+                    "¿Alguien más tiene algo que agregar?",
+                    "Yo también voy por ahí",
+                    "¿En qué parada estamos?",
+                    "Buena información, gracias"
+                ];
+                const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+                addMessage('Viajer@', randomResponse, 'received');
+            }, 1000 + Math.random() * 2000);
             
+            // Limpiar y habilitar
             input.value = '';
             input.disabled = false;
             sendBtn.disabled = false;
             input.focus();
-            
-            // Respuesta automática (simulada)
-            if (Math.random() > 0.5) {
-                setTimeout(() => {
-                    const responses = [
-                        "¡Interesante!",
-                        "Yo también voy por ahí",
-                        "¿En qué parada estamos?",
-                        "Buena información"
-                    ];
-                    const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-                    addMessage('Viajer@', randomResponse, 'received');
-                }, 1000);
+        }
+
+        function updateCounters() {
+            document.getElementById('connectedCount').textContent = AppState.connectedUsers;
+            document.getElementById('passengerCount').textContent = AppState.passengerCount;
+        }
+
+        function loadInitialState() {
+            const savedData = localStorage.getItem('viajeConectadoData');
+            if (savedData) {
+                try {
+                    const data = JSON.parse(savedData);
+                    
+                    // Restaurar estado
+                    AppState.userName = data.userName || '';
+                    AppState.ageRange = data.ageRange || '';
+                    AppState.busLine = data.busLine || '146';
+                    AppState.origin = data.origin || 'Plaza Italia';
+                    AppState.destination = data.destination || 'Puente Saavedra';
+                    AppState.isConnected = data.isConnected || false;
+                    
+                    // Actualizar UI
+                    document.getElementById('userName').value = AppState.userName;
+                    document.getElementById('ageRange').value = AppState.ageRange;
+                    document.getElementById('busLine').value = AppState.busLine;
+                    document.getElementById('origin').value = AppState.origin;
+                    document.getElementById('destination').value = AppState.destination;
+                    
+                    updateName();
+                    updateAge();
+                    updateLine();
+                    updateRoute();
+                    
+                    if (AppState.isConnected) {
+                        document.getElementById('connectButton').classList.add('connected');
+                        document.getElementById('connectButton').innerHTML = '<i class="fas fa-check"></i><span>Conectado</span>';
+                    }
+                    
+                } catch (e) {
+                    console.error('Error cargando estado:', e);
+                }
             }
         }
 
-        // ============================
-        // ACTUALIZACIONES PERIÓDICAS
-        // ============================
+        function saveState() {
+            const stateToSave = {
+                userName: AppState.userName,
+                ageRange: AppState.ageRange,
+                busLine: AppState.busLine,
+                origin: AppState.origin,
+                destination: AppState.destination,
+                isConnected: AppState.isConnected
+            };
+            localStorage.setItem('viajeConectadoData', JSON.stringify(stateToSave));
+        }
+
         function startPeriodicUpdates() {
-            setInterval(async () => {
+            setInterval(() => {
                 if (AppState.isConnected) {
-                    try {
-                        const updateData = {
-                            userId: CONFIG.USER_ID,
-                            action: 'update',
-                            timestamp: new Date().toISOString()
-                        };
-                        
-                        // Simular actualización o enviar a GAS
-                        if (CONFIG.GAS_URL !== 'TU_URL_DE_GAS_AQUI') {
-                            await sendToGAS(updateData);
-                        }
-                        
-                        // Actualizar contadores aleatoriamente para demostración
-                        if (Math.random() > 0.7) {
-                            AppState.connectedUsers += Math.random() > 0.5 ? 1 : -1;
-                            AppState.connectedUsers = Math.max(1, AppState.connectedUsers);
-                            updateCounters();
-                        }
-                        
-                    } catch (error) {
-                        console.error('Error en actualización:', error);
+                    // Simular actualización de contadores
+                    if (Math.random() > 0.7) {
+                        AppState.connectedUsers += Math.random() > 0.5 ? 1 : -1;
+                        AppState.connectedUsers = Math.max(1, AppState.connectedUsers);
+                        AppState.passengerCount += Math.random() > 0.5 ? 1 : -1;
+                        AppState.passengerCount = Math.max(3, AppState.passengerCount);
+                        updateCounters();
                     }
                 }
-                
                 saveState();
             }, CONFIG.UPDATE_INTERVAL);
         }
 
-        // ============================
-        // FUNCIONES UTILITARIAS
-        // ============================
         function escapeHtml(text) {
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
         }
 
-        // Guardar estado al cerrar
-        window.addEventListener('beforeunload', () => {
-            saveState();
-        });
+        // ============================
+        // MANEJO DE EVENTOS TÁCTILES
+        // ============================
+        
+        // Prevenir zoom con doble toque
+        let lastTouchEnd = 0;
+        document.addEventListener('touchend', (event) => {
+            const now = Date.now();
+            if (now - lastTouchEnd <= 300) {
+                event.preventDefault();
+            }
+            lastTouchEnd = now;
+        }, false);
 
-        // ============================
-        // INICIALIZACIÓN AUTOMÁTICA
-        // ============================
-        // Asegurar que todos los elementos estén cargados
+        // Manejar gestos táctiles
+        document.addEventListener('touchmove', (e) => {
+            if (AppState.isDragging) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+
+        // Guardar estado al salir
+        window.addEventListener('beforeunload', saveState);
+        window.addEventListener('pagehide', saveState);
+
+        // Inicializar
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', initializeApp);
         } else {
