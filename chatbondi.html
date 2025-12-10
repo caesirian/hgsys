@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
     <title>🚌 Viaje Conectado</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -31,14 +31,17 @@
             -webkit-tap-highlight-color: transparent;
         }
 
+        /* FIX: Permitir scroll en body */
         body {
             min-height: 100vh;
             background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
             color: var(--text);
-            overflow: hidden;
+            overflow-x: hidden;
+            overflow-y: auto; /* Cambiado de hidden a auto */
             position: relative;
             display: flex;
             flex-direction: column;
+            -webkit-overflow-scrolling: touch; /* Scroll suave en iOS */
         }
 
         /* Fondo del colectivo */
@@ -71,13 +74,14 @@
             z-index: -1;
         }
 
-        /* Contenedor principal */
+        /* Contenedor principal - FIX: Permitir scroll */
         .app-container {
             flex: 1;
             display: flex;
             flex-direction: column;
-            overflow: hidden;
+            min-height: 100vh;
             position: relative;
+            overflow: visible; /* Cambiado de hidden a visible */
         }
 
         /* Cabecera fija */
@@ -91,7 +95,9 @@
             align-items: center;
             justify-content: space-between;
             z-index: 100;
-            position: relative;
+            position: sticky;
+            top: 0;
+            flex-shrink: 0;
         }
 
         .header-left {
@@ -139,15 +145,16 @@
             color: var(--accent);
         }
 
-        /* Área de contenido principal */
+        /* FIX: Área de contenido principal con scroll táctil */
         .main-content {
             flex: 1;
             overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
+            -webkit-overflow-scrolling: touch; /* Scroll suave en iOS */
             padding: 20px;
             display: flex;
             flex-direction: column;
             gap: 20px;
+            min-height: 0; /* Importante para flex scroll */
         }
 
         /* Sección de datos del usuario */
@@ -159,6 +166,7 @@
             padding: 20px;
             border: 1px solid var(--glass-border);
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            flex-shrink: 0;
         }
 
         .section-title {
@@ -204,6 +212,7 @@
             padding: 18px;
             border: 1px solid var(--glass-border);
             transition: transform 0.2s, box-shadow 0.2s;
+            flex-shrink: 0;
         }
 
         .form-card:active {
@@ -283,6 +292,7 @@
             border-radius: 16px;
             border: 1px solid var(--glass-border);
             margin-top: 10px;
+            flex-shrink: 0;
         }
 
         .action-button {
@@ -320,7 +330,7 @@
             cursor: wait;
         }
 
-        /* Chat flotante en la parte inferior */
+        /* Chat flotante en la parte inferior - FIX: Scroll mejorado */
         .chat-container {
             position: fixed;
             bottom: 0;
@@ -338,6 +348,7 @@
             max-height: 85vh;
             display: flex;
             flex-direction: column;
+            touch-action: pan-y; /* Permite scroll vertical */
         }
 
         .chat-container.expanded {
@@ -351,6 +362,7 @@
             justify-content: space-between;
             border-bottom: 1px solid var(--glass-border);
             cursor: pointer;
+            flex-shrink: 0;
         }
 
         .chat-header-left {
@@ -399,14 +411,17 @@
             color: var(--text);
         }
 
+        /* FIX: Área de mensajes con scroll táctil */
         .chat-messages {
             flex: 1;
             padding: 20px;
             overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
+            -webkit-overflow-scrolling: touch; /* Scroll suave en iOS */
             display: flex;
             flex-direction: column;
             gap: 12px;
+            min-height: 0; /* Importante para flex scroll */
+            overscroll-behavior: contain; /* Previene scroll en el body detrás */
         }
 
         .message {
@@ -414,6 +429,7 @@
             flex-direction: column;
             max-width: 85%;
             animation: messageIn 0.3s ease;
+            flex-shrink: 0;
         }
 
         @keyframes messageIn {
@@ -465,6 +481,7 @@
             padding: 16px 20px;
             border-top: 1px solid var(--glass-border);
             background: var(--surface-light);
+            flex-shrink: 0;
         }
 
         .chat-input-group {
@@ -587,6 +604,143 @@
             to { transform: rotate(360deg); }
         }
 
+        /* =============================== */
+        /* SANDBOX DE CONSOLA NUEVO */
+        /* =============================== */
+        .console-sandbox {
+            position: fixed;
+            bottom: 70px;
+            right: 20px;
+            width: 300px;
+            height: 300px;
+            background: rgba(0, 0, 0, 0.9);
+            border-radius: 12px;
+            border: 1px solid var(--primary);
+            z-index: 1500;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            transform: translateY(calc(100% + 20px));
+            transition: transform 0.3s ease;
+            font-family: 'Courier New', monospace;
+        }
+
+        .console-sandbox.open {
+            transform: translateY(0);
+        }
+
+        .console-header {
+            padding: 10px 15px;
+            background: rgba(99, 102, 241, 0.2);
+            border-bottom: 1px solid var(--primary);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-radius: 12px 12px 0 0;
+        }
+
+        .console-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .console-controls {
+            display: flex;
+            gap: 8px;
+        }
+
+        .console-btn {
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+
+        .console-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .console-content {
+            flex: 1;
+            padding: 10px;
+            overflow-y: auto;
+            font-size: 11px;
+            line-height: 1.4;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .console-log {
+            margin-bottom: 6px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .log-time {
+            color: #888;
+            font-size: 10px;
+            margin-right: 8px;
+        }
+
+        .log-info { color: #4fc3f7; }
+        .log-success { color: #69f0ae; }
+        .log-warning { color: #ffd54f; }
+        .log-error { color: #ff8a80; }
+        .log-debug { color: #b39ddb; }
+
+        .console-input {
+            padding: 10px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            gap: 8px;
+        }
+
+        .console-input input {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            color: white;
+            padding: 6px 10px;
+            font-size: 12px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .console-toggle {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            z-index: 1499;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+            transition: transform 0.2s;
+        }
+
+        .console-toggle:active {
+            transform: scale(0.95);
+        }
+
         /* Responsive */
         @media (max-width: 768px) {
             .app-header {
@@ -624,6 +778,15 @@
             .chat-container {
                 border-radius: 16px 16px 0 0;
             }
+
+            /* Sandbox responsive */
+            .console-sandbox {
+                width: calc(100% - 40px);
+                height: 250px;
+                right: 20px;
+                left: 20px;
+                bottom: 80px;
+            }
         }
 
         @media (max-width: 480px) {
@@ -651,7 +814,7 @@
             }
         }
 
-        /* Scrollbar */
+        /* Scrollbar personalizada */
         ::-webkit-scrollbar {
             width: 6px;
         }
@@ -664,6 +827,16 @@
         ::-webkit-scrollbar-thumb {
             background: var(--primary);
             border-radius: 3px;
+        }
+
+        /* Clases de utilidad para scroll */
+        .scrollable {
+            -webkit-overflow-scrolling: touch;
+            overflow-y: auto;
+        }
+
+        .no-scroll {
+            overflow: hidden;
         }
     </style>
 </head>
@@ -781,6 +954,9 @@
                     <span>Conectar al Viaje</span>
                 </button>
             </section>
+
+            <!-- Espacio para scroll -->
+            <div style="height: 50px; flex-shrink: 0;"></div>
         </main>
     </div>
 
@@ -815,6 +991,38 @@
         </div>
     </div>
 
+    <!-- Sandbox de Consola -->
+    <div class="console-sandbox" id="consoleSandbox">
+        <div class="console-header">
+            <div class="console-title">
+                <i class="fas fa-terminal"></i>
+                <span>Consola de Depuración</span>
+            </div>
+            <div class="console-controls">
+                <button class="console-btn" id="consoleClear">
+                    <i class="fas fa-trash"></i>
+                </button>
+                <button class="console-btn" id="consoleClose">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+        <div class="console-content" id="consoleContent">
+            <!-- Logs aparecerán aquí -->
+        </div>
+        <div class="console-input">
+            <input type="text" id="consoleCommand" placeholder="Ej: AppState, CONFIG, test()" autocomplete="off">
+            <button class="console-btn" id="consoleExecute">
+                <i class="fas fa-play"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Botón para abrir/cerrar consola -->
+    <button class="console-toggle" id="consoleToggle">
+        <i class="fas fa-bug"></i>
+    </button>
+
     <!-- Notificaciones -->
     <div class="notification" id="notification">
         <div class="notification-icon">
@@ -831,8 +1039,7 @@
         // CONFIGURACIÓN
         // ============================
         const CONFIG = {
-            // TU URL DE GAS - IMPORTANTE: Reemplaza con tu URL
-            GAS_URL: 'https://script.google.com/macros/s/AKfycbwTkwgCUFF8vKq3F0Znw0__VOltJjkIRjw3mGoUZLlIxaCai75AAUPOT0qe1nEaReVlPw/exec',
+            GAS_URL: 'https://script.google.com/macros/s/AKfycbyP_RWfFWHW9ae7mXwCm7i6MEhViQKbPWTYu9fOzp8F_JHjG_7CeuYs5PYm1SINK9FqJg/exec',
             UPDATE_INTERVAL: 5000,
             MAX_MESSAGES: 50,
             USER_ID: 'user_' + Math.random().toString(36).substr(2, 9),
@@ -844,6 +1051,7 @@
         const AppState = {
             isConnected: false,
             chatExpanded: false,
+            consoleOpen: false,
             userName: '',
             ageRange: '',
             busLine: '146',
@@ -853,8 +1061,200 @@
             connectedUsers: 1,
             activeChatUsers: 3,
             isTouchDevice: 'ontouchstart' in window || navigator.maxTouchPoints > 0,
-            currentTripId: null
+            currentTripId: null,
+            consoleLogs: []
         };
+
+        // ============================
+        // SISTEMA DE CONSOLA SANDBOX
+        // ============================
+        class ConsoleSandbox {
+            constructor() {
+                this.logs = [];
+                this.maxLogs = 100;
+                this.setupConsole();
+            }
+
+            setupConsole() {
+                // Interceptar console.log original
+                const originalLog = console.log;
+                const originalError = console.error;
+                const originalWarn = console.warn;
+                const originalInfo = console.info;
+
+                console.log = (...args) => {
+                    this.addLog('info', args);
+                    originalLog.apply(console, args);
+                };
+
+                console.error = (...args) => {
+                    this.addLog('error', args);
+                    originalError.apply(console, args);
+                };
+
+                console.warn = (...args) => {
+                    this.addLog('warning', args);
+                    originalWarn.apply(console, args);
+                };
+
+                console.info = (...args) => {
+                    this.addLog('info', args);
+                    originalInfo.apply(console, args);
+                };
+
+                // Configurar eventos
+                document.getElementById('consoleToggle').addEventListener('click', () => this.toggle());
+                document.getElementById('consoleClose').addEventListener('click', () => this.toggle());
+                document.getElementById('consoleClear').addEventListener('click', () => this.clear());
+                document.getElementById('consoleExecute').addEventListener('click', () => this.executeCommand());
+                
+                document.getElementById('consoleCommand').addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') this.executeCommand();
+                });
+
+                // Log inicial
+                this.addLog('info', ['✅ Consola de depuración inicializada']);
+                this.addLog('info', [`User ID: ${CONFIG.USER_ID}`]);
+                this.addLog('info', [`GAS URL: ${CONFIG.GAS_URL}`]);
+            }
+
+            addLog(type, args) {
+                const time = new Date().toLocaleTimeString([], { 
+                    hour: '2-digit', 
+                    minute: '2-digit',
+                    second: '2-digit'
+                });
+                
+                const message = args.map(arg => {
+                    if (typeof arg === 'object') {
+                        try {
+                            return JSON.stringify(arg, null, 2);
+                        } catch {
+                            return String(arg);
+                        }
+                    }
+                    return String(arg);
+                }).join(' ');
+
+                const log = {
+                    time,
+                    type,
+                    message,
+                    timestamp: Date.now()
+                };
+
+                this.logs.push(log);
+                AppState.consoleLogs.push(log);
+
+                if (this.logs.length > this.maxLogs) {
+                    this.logs.shift();
+                }
+
+                this.render();
+            }
+
+            render() {
+                const container = document.getElementById('consoleContent');
+                if (!container) return;
+
+                container.innerHTML = this.logs.map(log => `
+                    <div class="console-log log-${log.type}">
+                        <span class="log-time">[${log.time}]</span>
+                        <span class="log-message">${this.escapeHtml(log.message)}</span>
+                    </div>
+                `).join('');
+
+                container.scrollTop = container.scrollHeight;
+            }
+
+            clear() {
+                this.logs = [];
+                AppState.consoleLogs = [];
+                this.render();
+                this.addLog('info', ['🧹 Consola limpiada']);
+            }
+
+            toggle() {
+                const sandbox = document.getElementById('consoleSandbox');
+                const toggleBtn = document.getElementById('consoleToggle');
+                
+                AppState.consoleOpen = !AppState.consoleOpen;
+                sandbox.classList.toggle('open', AppState.consoleOpen);
+                
+                if (AppState.consoleOpen) {
+                    toggleBtn.innerHTML = '<i class="fas fa-times"></i>';
+                    this.addLog('info', ['📟 Consola abierta']);
+                } else {
+                    toggleBtn.innerHTML = '<i class="fas fa-bug"></i>';
+                    this.addLog('info', ['📟 Consola cerrada']);
+                }
+            }
+
+            executeCommand() {
+                const input = document.getElementById('consoleCommand');
+                const command = input.value.trim();
+                
+                if (!command) return;
+
+                this.addLog('debug', [`> ${command}`]);
+
+                try {
+                    let result;
+                    
+                    // Comandos especiales
+                    if (command === 'AppState') {
+                        result = AppState;
+                    } else if (command === 'CONFIG') {
+                        result = CONFIG;
+                    } else if (command === 'test()') {
+                        result = this.runTest();
+                    } else if (command === 'clear()') {
+                        this.clear();
+                        input.value = '';
+                        return;
+                    } else if (command === 'help') {
+                        result = {
+                            comandos: [
+                                'AppState - Ver estado de la aplicación',
+                                'CONFIG - Ver configuración',
+                                'test() - Ejecutar pruebas',
+                                'clear() - Limpiar consola',
+                                'help - Mostrar esta ayuda',
+                                'Cualquier código JavaScript válido'
+                            ]
+                        };
+                    } else {
+                        // Evaluar como JavaScript
+                        result = eval(`(${command})`);
+                    }
+
+                    this.addLog('success', ['←', result]);
+                } catch (error) {
+                    this.addLog('error', [`❌ Error: ${error.message}`]);
+                }
+
+                input.value = '';
+                input.focus();
+            }
+
+            runTest() {
+                return {
+                    appState: Object.keys(AppState),
+                    config: Object.keys(CONFIG),
+                    testResults: {
+                        touchDevice: AppState.isTouchDevice,
+                        screenSize: `${window.innerWidth}x${window.innerHeight}`,
+                        userAgent: navigator.userAgent.substring(0, 50) + '...'
+                    }
+                };
+            }
+
+            escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+        }
 
         // ============================
         // INICIALIZACIÓN
@@ -864,8 +1264,10 @@
         });
 
         async function initializeApp() {
-            console.log('Inicializando Viaje Conectado...');
-            console.log('URL GAS:', CONFIG.GAS_URL);
+            console.log('🚀 Inicializando Viaje Conectado...');
+            
+            // Inicializar sandbox de consola primero
+            window.consoleSandbox = new ConsoleSandbox();
             
             setupEventListeners();
             setupForms();
@@ -876,7 +1278,15 @@
             // Probar conexión con GAS
             testGASConnection();
             
-            showNotification('¡Bienvenido a Viaje Conectado!', 'Completa tus datos y únete al chat.', 'info');
+            showNotification('¡Bienvenido a Viaje Conectado!', 'Desliza para ver todo el contenido.', 'info');
+            
+            // Log información del dispositivo
+            console.log('📱 Dispositivo:', {
+                touch: AppState.isTouchDevice,
+                screen: `${window.innerWidth}x${window.innerHeight}`,
+                platform: navigator.platform,
+                agent: navigator.userAgent
+            });
         }
 
         // ============================
@@ -884,45 +1294,43 @@
         // ============================
         async function testGASConnection() {
             try {
-                console.log('Probando conexión con GAS...');
+                console.log('🔗 Probando conexión con GAS...');
                 const response = await fetch(`${CONFIG.GAS_URL}?action=test&timestamp=${Date.now()}`, {
                     method: 'GET',
                     mode: 'no-cors'
                 });
-                console.log('Conexión GAS exitosa (no-cors mode)');
+                console.log('✅ Conexión GAS exitosa (no-cors mode)');
                 showNotification('Conexión establecida', 'Backend listo para usar', 'success');
             } catch (error) {
-                console.warn('No se pudo verificar conexión GAS:', error);
+                console.warn('⚠️ No se pudo verificar conexión GAS:', error);
                 showNotification('Modo simulación activado', 'Usando datos locales', 'info');
             }
         }
 
         async function sendToGAS(data) {
             try {
-                console.log('Enviando a GAS:', data);
+                console.log('📤 Enviando a GAS:', data);
                 
-                // Usar FormData para evitar problemas CORS
                 const formData = new FormData();
                 formData.append('data', JSON.stringify(data));
                 
                 const response = await fetch(CONFIG.GAS_URL, {
                     method: 'POST',
                     body: formData,
-                    mode: 'no-cors' // Importante para GAS
+                    mode: 'no-cors'
                 });
                 
-                console.log('Datos enviados a GAS');
+                console.log('✅ Datos enviados a GAS');
                 return { success: true, message: 'Datos enviados' };
                 
             } catch (error) {
-                console.error('Error enviando a GAS:', error);
-                // Simular respuesta para desarrollo
+                console.error('❌ Error enviando a GAS:', error);
                 return simulateGASResponse(data);
             }
         }
 
         function simulateGASResponse(data) {
-            console.log('Simulando respuesta GAS para:', data.action);
+            console.log('🔄 Simulando respuesta GAS para:', data.action);
             
             switch(data.action) {
                 case 'connect':
@@ -975,6 +1383,13 @@
             const notification = document.getElementById('notification');
             notification.addEventListener('click', () => {
                 notification.classList.remove('show');
+            });
+
+            // Prevenir scroll no deseado en elementos que no deberían hacer scroll
+            document.querySelectorAll('input, select').forEach(el => {
+                el.addEventListener('touchstart', (e) => {
+                    e.stopPropagation();
+                });
             });
         }
 
@@ -1083,6 +1498,8 @@
                     sheetId: CONFIG.SHEET_ID
                 };
                 
+                console.log('🔌 Conectando al viaje:', userData);
+                
                 // Enviar a GAS
                 const response = await sendToGAS(userData);
                 
@@ -1115,8 +1532,10 @@
                 // Iniciar actualizaciones periódicas
                 startPeriodicUpdates();
                 
+                console.log('✅ Conectado exitosamente al viaje');
+                
             } catch (error) {
-                console.error('Error:', error);
+                console.error('❌ Error conectando al viaje:', error);
                 connectBtn.classList.remove('connecting');
                 connectBtn.innerHTML = '<i class="fas fa-plug"></i><span>Conectar al Viaje</span>';
                 connectBtn.disabled = false;
@@ -1134,6 +1553,8 @@
             
             addMessage('Sistema', 'Te has desconectado del viaje', 'received');
             showNotification('Desconectado', 'Ya no estás compartiendo tu viaje.', 'info');
+            
+            console.log('🔌 Desconectado del viaje');
         }
 
         // ============================
@@ -1164,9 +1585,12 @@
                     document.getElementById('chatInput').focus();
                     scrollToBottom();
                 }, 300);
+                
+                console.log('💬 Chat expandido');
             } else {
                 chatContainer.classList.remove('expanded');
                 toggleIcon.className = 'fas fa-chevron-up';
+                console.log('💬 Chat contraído');
             }
         }
 
@@ -1200,6 +1624,8 @@
             
             // Guardar en estado
             AppState.messages.push({ sender, text, type, time });
+            
+            console.log(`💬 Mensaje de ${sender}: ${text.substring(0, 50)}...`);
         }
 
         function scrollToBottom() {
@@ -1237,7 +1663,7 @@
                     
                     await sendToGAS(messageData);
                 } catch (error) {
-                    console.error('Error enviando mensaje:', error);
+                    console.error('❌ Error enviando mensaje:', error);
                 }
             }
             
@@ -1297,6 +1723,8 @@
             setTimeout(() => {
                 notification.classList.remove('show');
             }, 5000);
+            
+            console.log(`📢 Notificación [${type}]: ${title} - ${message}`);
         }
 
         function getIconForType(type) {
@@ -1345,8 +1773,10 @@
                         startPeriodicUpdates();
                     }
                     
+                    console.log('💾 Estado cargado desde localStorage');
+                    
                 } catch (e) {
-                    console.error('Error cargando estado:', e);
+                    console.error('❌ Error cargando estado:', e);
                 }
             }
         }
@@ -1410,13 +1840,15 @@
                         }
                         
                     } catch (error) {
-                        console.error('Error en actualización:', error);
+                        console.error('❌ Error en actualización:', error);
                     }
                 }
                 
                 // Guardar estado periódicamente
                 saveState();
             }, CONFIG.UPDATE_INTERVAL);
+            
+            console.log('🔄 Actualizaciones periódicas iniciadas');
         }
 
         // ============================
@@ -1431,6 +1863,19 @@
         // Guardar estado al salir
         window.addEventListener('beforeunload', saveState);
         window.addEventListener('pagehide', saveState);
+
+        // Función de ayuda para testeo desde consola
+        window.test = function() {
+            console.log('🧪 Ejecutando prueba...');
+            return {
+                appState: AppState,
+                config: CONFIG,
+                domElements: {
+                    userName: document.getElementById('userName').value,
+                    connected: AppState.isConnected
+                }
+            };
+        };
     </script>
 </body>
 </html>
