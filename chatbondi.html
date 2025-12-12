@@ -1468,80 +1468,168 @@
                 await connectToTrip();
             }
         }
+// ============================
+// CONEXIÓN AL VIAJE - VERSIÓN COMPARTIDA
+// ============================
 
-        async function connectToTrip() {
-            const connectBtn = document.getElementById('connectButton');
-            
-            // Validar
-            if (!AppState.origin || !AppState.destination) {
-                showNotification('Completa tu trayecto', 'Especifica origen y destino para conectar.', 'error');
-                return;
-            }
-            
-            // Cambiar estado del botón
-            connectBtn.classList.add('connecting');
-            connectBtn.innerHTML = '<div class="loader"></div><span>Conectando...</span>';
-            connectBtn.disabled = true;
-            
+async function connectToTrip() {
+    const connectBtn = document.getElementById('connectButton');
+    
+    // Validar
+    if (!AppState.origin || !AppState.destination) {
+        showNotification('Completa tu trayecto', 'Especifica origen y destino para conectar.', 'error');
+        return;
+    }
+    
+    // Cambiar estado del botón
+    connectBtn.classList.add('connecting');
+    connectBtn.innerHTML = '<div class="loader"></div><span>Conectando...</span>';
+    connectBtn.disabled = true;
+    
+    try {
+        // GENERAR USER ID ÚNICO PERO PERSISTENTE
+        let userId = localStorage.getItem('viaje_user_id');
+        if (!userId) {
+            userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+            localStorage.setItem('viaje_user_id', userId);
+        }
+        
+        // Usar MISMO tripId para misma línea y trayecto
+        const tripId = AppState.busLine + '_' + AppState.origin + '_' + AppState.destination;
+        
+        // Preparar datos para GAS
+        const userData = {
+            userId: userId, // USAR MISMO ID EN ESTE DISPOSITIO
+            sessionId: 'session_' + Date.now(),
+            userName: AppState.userName || 'Anónimo',
+            ageRange: AppState.ageRange,
+            busLine: AppState.busLine,
+            origin: AppState.origin,
+            destination: AppState.destination,
+            action: 'connect',
+            timestamp: new Date().toISOString(),
+            sheetId: CONFIG.SHEET_ID,
+            tripId: tripId // MISMO tripId PARA MISMA LÍNEA/TRAYECTO
+        };
+        
+        console.log('🔌 Conectando al viaje compartido:', userData);
+        
+        // Enviar a GAS
+        const response = await sendToGAS(userData);
+        
+        // USAR LOS DATOS REALES DEL SERVIDOR
+        AppState.isConnected = true;
+        AppState.currentTripId = tripId;
+        AppState.connectedUsers = response.connectedUsers || 1;
+        AppState.activeChatUsers = response.passengerCount || 3;
+        
+        // Actualizar UI
+        connectBtn.classList.remove('connecting');
+        connectBtn.classList.add('connected');
+        connectBtn.innerHTML = `<i class="fas fa-check"></i><span>Conectado (${AppState.connectedUsers})</span>`;
+        connectBtn.disabled = false;
+        
+        // Añadir mensaje al chat
+        addMessage('Sistema', 
+            `Te has unido al viaje ${AppState.busLine}. ` +
+            `Hay ${AppState.connectedUsers} pasajeros conectados.`, 
+            'received'
+        );
+        
+        // Actualizar contadores
+        updateCounters();
+        
+        // Mostrar notificación
+        showNotification('¡Conectado!', 
+            `Compartiendo viaje con ${AppState.connectedUsers} personas`, 
+            'success'
+        );
+        
+        // Expandir chat automáticamente
+        if (!AppState.chatExpanded) {
+            toggleChat();
+        }
+        
+        // Iniciar actualizaciones periódicas
+        startPeriodicUpdates();
+        
+        console.log(`✅ Conectado exitosamente. Usuarios totales: ${AppState.connectedUsers}`);
+        
+    } catch (error) {
+        console.error('❌ Error conectando al viaje:', error);
+        connectBtn.classList.remove('connecting');
+        connectBtn.innerHTML = '<i class="fas fa-plug"></i><span>Conectar al Viaje</span>';
+        connectBtn.disabled = false;
+        showNotification('Error de conexión', 'No se pudo conectar al viaje.', 'error');
+    }
+}
+
+// ============================
+// ACTUALIZACIONES PERIÓDICAS - MEJORADA
+// ============================
+
+function startPeriodicUpdates() {
+    // Limpiar intervalo anterior si existe
+    if (AppState.updateInterval) {
+        clearInterval(AppState.updateInterval);
+    }
+    
+    AppState.updateInterval = setInterval(async () => {
+        if (AppState.isConnected) {
             try {
-                // Preparar datos para GAS
-                const userData = {
-                    userId: CONFIG.USER_ID,
-                    sessionId: CONFIG.SESSION_ID,
-                    userName: AppState.userName || 'Anónimo',
-                    ageRange: AppState.ageRange,
-                    busLine: AppState.busLine,
-                    origin: AppState.origin,
-                    destination: AppState.destination,
-                    action: 'connect',
+                // OBTENER USUARIOS CONECTADOS REALES DEL SERVIDOR
+                const updateData = {
+                    userId: localStorage.getItem('viaje_user_id') || CONFIG.USER_ID,
+                    action: 'update',
                     timestamp: new Date().toISOString(),
-                    sheetId: CONFIG.SHEET_ID
+                    tripId: AppState.currentTripId
                 };
                 
-                console.log('🔌 Conectando al viaje:', userData);
+                const response = await sendToGAS(updateData);
                 
-                // Enviar a GAS
-                const response = await sendToGAS(userData);
-                
-                // Actualizar estado
-                AppState.isConnected = true;
-                AppState.currentTripId = response.tripId || 'trip_' + Date.now();
-                AppState.connectedUsers = response.connectedUsers || Math.floor(Math.random() * 10) + 1;
-                AppState.activeChatUsers = Math.floor(Math.random() * 5) + 3;
-                
-                // Actualizar UI
-                connectBtn.classList.remove('connecting');
-                connectBtn.classList.add('connected');
-                connectBtn.innerHTML = '<i class="fas fa-check"></i><span>Conectado</span>';
-                connectBtn.disabled = false;
-                
-                // Añadir mensaje al chat
-                addMessage('Sistema', `Te has unido al viaje ${AppState.busLine}`, 'received');
-                
-                // Actualizar contadores
-                updateCounters();
-                
-                // Mostrar notificación
-                showNotification('¡Conectado!', 'Ya estás compartiendo tu viaje con otros pasajeros.', 'success');
-                
-                // Expandir chat automáticamente
-                if (!AppState.chatExpanded) {
-                    toggleChat();
+                // ACTUALIZAR CON LOS DATOS DEL SERVIDOR
+                if (response && response.success) {
+                    const oldCount = AppState.connectedUsers;
+                    AppState.connectedUsers = response.connectedUsers || oldCount;
+                    AppState.activeChatUsers = response.passengerCount || AppState.activeChatUsers;
+                    
+                    // Solo actualizar si cambió
+                    if (oldCount !== AppState.connectedUsers) {
+                        updateCounters();
+                        console.log(`🔄 Usuarios conectados actualizado: ${oldCount} → ${AppState.connectedUsers}`);
+                        
+                        // Actualizar texto del botón si está conectado
+                        if (AppState.isConnected) {
+                            document.getElementById('connectButton').innerHTML = 
+                                `<i class="fas fa-check"></i><span>Conectado (${AppState.connectedUsers})</span>`;
+                        }
+                    }
                 }
                 
-                // Iniciar actualizaciones periódicas
-                startPeriodicUpdates();
-                
-                console.log('✅ Conectado exitosamente al viaje');
-                
             } catch (error) {
-                console.error('❌ Error conectando al viaje:', error);
-                connectBtn.classList.remove('connecting');
-                connectBtn.innerHTML = '<i class="fas fa-plug"></i><span>Conectar al Viaje</span>';
-                connectBtn.disabled = false;
-                showNotification('Error de conexión', 'No se pudo conectar al viaje. Intenta nuevamente.', 'error');
+                console.error('❌ Error en actualización:', error);
             }
         }
+        
+        // Guardar estado periódicamente
+        saveState();
+    }, 3000); // Cada 3 segundos (más frecuente)
+    
+    console.log('🔄 Actualizaciones periódicas iniciadas (cada 3s)');
+}
+
+// ============================
+// ACTUALIZAR CONTADORES
+// ============================
+
+function updateCounters() {
+    document.getElementById('connectedCount').textContent = AppState.connectedUsers;
+    document.getElementById('currentLineDisplay').textContent = AppState.busLine;
+    document.getElementById('chatUserCount').textContent = AppState.activeChatUsers;
+    
+    // También mostrar en consola
+    console.log(`👥 Contadores actualizados: ${AppState.connectedUsers} conectados, ${AppState.activeChatUsers} en chat`);
+}
 
         function disconnectFromTrip() {
             AppState.isConnected = false;
