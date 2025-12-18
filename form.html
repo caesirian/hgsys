@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+</head>
+<body>
+  <form id="reprocannForm">
+    <h2>Solicitud REPROCANN</h2>
+
+    <input name="apellido" placeholder="Apellido" required><br>
+    <input name="nombre" placeholder="Nombre" required><br>
+    <input name="dni" placeholder="DNI" required><br>
+    <input name="fecha_nacimiento" type="date" required><br>
+
+    <input name="domicilio" placeholder="Domicilio" required><br>
+    <input name="localidad" placeholder="Localidad" required><br>
+    <input name="provincia" placeholder="Provincia" required><br>
+
+    <input name="telefono" placeholder="Teléfono"><br>
+    <input name="email" type="email"><br>
+
+    <textarea name="diagnostico" placeholder="Diagnóstico médico"></textarea><br>
+    <input name="obra_social" placeholder="Obra Social"><br>
+
+    <input name="profesional_nombre" placeholder="Profesional interviniente"><br>
+    <input name="profesional_matricula" placeholder="Matrícula profesional"><br>
+
+    <button type="submit">Generar PDF</button>
+  </form>
+
+  <script>
+    document.getElementById("reprocannForm").onsubmit = e => {
+      e.preventDefault();
+      const data = Object.fromEntries(new FormData(e.target));
+      google.script.run
+        .withSuccessHandler(url => window.open(url))
+        .generarPDF(data);
+    };
+  </script>
+</body>
+</html>
