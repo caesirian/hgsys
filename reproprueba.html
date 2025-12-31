@@ -356,10 +356,7 @@
             paciente_obra_social: { x_pdf: 147.98674860459826, y_pdf: 262.9656459056284, width_pdf: 377.96615521985234, height_pdf: 6.33250604842451 },
             
             // SECCIÓN FINAL - TODOS LOS DATOS JUNTO A LA FIRMA
-            // Firma del paciente (derecha)
             paciente_firmaclaracion: { x_pdf: 374.96642382921857, y_pdf: 792.5631254291309, width_pdf: 163.9853160213116, height_pdf: 0.6665795840446853 },
-            
-            // Datos del paciente junto a la firma (izquierda, en columna vertical)
             paciente_nombre_firma: { x_pdf: 56.66159293419303, y_pdf: 760.5631254291309, width_pdf: 165.65183346055258, height_pdf: 0.6665795840446853 },
             paciente_fecha: { x_pdf: 56.66159293419303, y_pdf: 773.5614273180023, width_pdf: 165.65183346055258, height_pdf: 0.6665795840446853 },
             paciente_localidad_final: { x_pdf: 56.66159293419303, y_pdf: 786.5597292068736, width_pdf: 165.65183346055258, height_pdf: 0.6665795840446853 },
@@ -538,12 +535,10 @@
                 paciente_telefono_celular: document.getElementById('paciente_telefono_celular').value.trim(),
                 paciente_email: document.getElementById('paciente_email').value.trim(),
                 paciente_obra_social: document.getElementById('paciente_obra_social').value.trim(),
-                // Campos adicionales para registro interno (NO van al PDF)
                 patologia: document.getElementById('patologia').value.trim(),
                 tratamiento_actual: document.getElementById('tratamiento_actual').value.trim(),
                 otros_antecedentes: document.getElementById('otros_antecedentes').value.trim(),
                 codigo_vinculacion: document.getElementById('codigo_vinculacion').value.trim(),
-                // Firma
                 paciente_firmaclaracion: canvas && canvas.hasSignature ? canvas.getSignatureData() : '',
                 paciente_fecha: document.getElementById('paciente_fecha').value
             };
@@ -622,239 +617,239 @@
         }
         
         function generarPDFDirecto(datos) {
-            const tieneFirma = datos.paciente_firmaclaracion && datos.paciente_firmaclaracion !== '';
-            let datosImpresion = { ...datos };
-            
-            if (!tieneFirma) {
-                datosImpresion = { ...datos, paciente_firmaclaracion: '' };
-            }
-            
-            // Crear ventana para PDF
-            const ventanaPDF = window.open('', '_blank');
-            if (!ventanaPDF) {
-                mostrarEstado('❌ Permita ventanas emergentes para generar el PDF', 'error');
-                document.getElementById('submitBtn').disabled = false;
-                document.getElementById('loading').style.display = 'none';
-                return;
-            }
-            
-            // Generar HTML del PDF con coordenadas exactas
-            const htmlPDF = `
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>REPROCANN - ${datosImpresion.paciente_apellidonombre}</title>
-    <style>
-        @page { size: A4; margin: 0; }
-        body {
-            margin: 0; padding: 0; width: 210mm; height: 297mm; position: relative;
-            font-family: 'Arial', sans-serif; background: white;
-        }
-        .formulario-pdf {
-            width: 210mm; height: 297mm; position: relative; overflow: hidden;
-        }
-        .form-background {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1;
-        }
-        .form-background img {
-            width: 100%; height: 100%; object-fit: fill;
-        }
-        .form-overlay {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2;
-        }
-        .form-field {
-            position: absolute; background: transparent; border: none; padding: 0;
-            font-size: 10pt; line-height: 1.2; white-space: normal; overflow: visible;
-            word-wrap: break-word; pointer-events: none; font-family: 'Arial', sans-serif;
-        }
-        .signature-container {
-            position: absolute; pointer-events: none;
-        }
-        .signature-container img {
-            max-width: 100%; max-height: 100%; object-fit: contain;
-        }
-    </style>
-</head>
-<body>
-    <div class="formulario-pdf">
-        <div class="form-background">
-            <img src="http://cocoquerandi.com.ar/recann-pagina-1.png" alt="Fondo Formulario REPROCANN">
-        </div>
-        <div class="form-overlay">`;
-            
-            // FUNCIÓN PARA CONVERTIR COORDENADAS A MM
-            function convertirAMilimetros(campoId, pdfValue, isX = true) {
-                let valor = pdfValue * CALIBRACION.escala;
+            try {
+                const tieneFirma = datos.paciente_firmaclaracion && datos.paciente_firmaclaracion !== '';
                 
-                if (isX) {
-                    valor += CALIBRACION.offsetX;
-                } else {
-                    valor += CALIBRACION.offsetY;
+                // Crear ventana para PDF
+                const ventanaPDF = window.open('', '_blank');
+                if (!ventanaPDF) {
+                    mostrarEstado('❌ Permita ventanas emergentes para generar el PDF', 'error');
+                    return;
                 }
                 
-                if (campoId === 'paciente_firmaclaracion') {
+                // FUNCIÓN PARA CONVERTIR COORDENADAS A MM
+                function convertirAMilimetros(campoId, pdfValue, isX = true) {
+                    let valor = pdfValue * CALIBRACION.escala;
+                    
                     if (isX) {
-                        valor += CALIBRACION.firma.offsetX;
+                        valor += CALIBRACION.offsetX;
                     } else {
-                        valor += CALIBRACION.firma.offsetY;
+                        valor += CALIBRACION.offsetY;
                     }
+                    
+                    if (campoId === 'paciente_firmaclaracion') {
+                        if (isX) {
+                            valor += CALIBRACION.firma.offsetX;
+                        } else {
+                            valor += CALIBRACION.firma.offsetY;
+                        }
+                    }
+                    
+                    return valor * 0.264583; // Convertir píxeles a milímetros
                 }
                 
-                // Convertir píxeles a milímetros (1px = 0.264583 mm)
-                return valor * 0.264583;
+                // Generar HTML del PDF
+                let htmlPDF = `<!DOCTYPE html>
+    <html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <title>REPROCANN - ${datos.paciente_apellidonombre}</title>
+        <style>
+            @page { size: A4; margin: 0; }
+            body {
+                margin: 0; padding: 0; width: 210mm; height: 297mm; position: relative;
+                font-family: 'Arial', sans-serif; background: white;
             }
-            
-            // Campos que SÍ van al PDF (excluyendo datos médicos)
-            const camposParaPDF = [
-                { id: 'paciente_apellidonombre', valor: datosImpresion.paciente_apellidonombre },
-                { id: 'paciente_doc', valor: datosImpresion.paciente_doc },
-                { id: 'paciente_nac', valor: formatearFecha(datosImpresion.paciente_nac) },
-                { id: 'paciente_dom', valor: datosImpresion.paciente_dom },
-                { id: 'paciente_localidad', valor: datosImpresion.paciente_localidad },
-                { id: 'paciente_provincia', valor: datosImpresion.paciente_provincia },
-                { id: 'paciente_codigo_postal', valor: datosImpresion.paciente_codigo_postal },
-                { id: 'paciente_telefono_particular', valor: datosImpresion.paciente_telefono_particular },
-                { id: 'paciente_telefono_celular', valor: datosImpresion.paciente_telefono_celular },
-                { id: 'paciente_email', valor: datosImpresion.paciente_email },
-                { id: 'paciente_obra_social', valor: datosImpresion.paciente_obra_social }
-            ];
-            
-            // Agregar campos principales al PDF
-            camposParaPDF.forEach(campo => {
-                if (campo.valor && campo.valor !== '' && coordenadasOriginales[campo.id]) {
-                    const coord = coordenadasOriginales[campo.id];
-                    const x_mm = convertirAMilimetros(campo.id, coord.x_pdf, true);
-                    const y_mm = convertirAMilimetros(campo.id, coord.y_pdf, false);
-                    const width_mm = convertirAMilimetros(campo.id, coord.width_pdf, true);
-                    
-                    const fontSize = campo.valor.length > 50 ? '9pt' : '10pt';
-                    const lineHeight = campo.valor.length > 100 ? '1.1' : '1.2';
-                    
-                    htmlPDF += `
+            .formulario-pdf {
+                width: 210mm; height: 297mm; position: relative; overflow: hidden;
+            }
+            .form-background {
+                position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1;
+            }
+            .form-background img {
+                width: 100%; height: 100%; object-fit: fill;
+            }
+            .form-overlay {
+                position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2;
+            }
+            .form-field {
+                position: absolute; background: transparent; border: none; padding: 0;
+                font-size: 10pt; line-height: 1.2; white-space: normal; overflow: visible;
+                word-wrap: break-word; pointer-events: none; font-family: 'Arial', sans-serif;
+            }
+            .signature-container {
+                position: absolute; pointer-events: none;
+            }
+            .signature-container img {
+                max-width: 100%; max-height: 100%; object-fit: contain;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="formulario-pdf">
+            <div class="form-background">
+                <img src="http://cocoquerandi.com.ar/recann-pagina-1.png" alt="Fondo Formulario REPROCANN">
+            </div>
+            <div class="form-overlay">`;
+                
+                // Campos que SÍ van al PDF (excluyendo datos médicos)
+                const camposParaPDF = [
+                    { id: 'paciente_apellidonombre', valor: datos.paciente_apellidonombre },
+                    { id: 'paciente_doc', valor: datos.paciente_doc },
+                    { id: 'paciente_nac', valor: formatearFecha(datos.paciente_nac) },
+                    { id: 'paciente_dom', valor: datos.paciente_dom },
+                    { id: 'paciente_localidad', valor: datos.paciente_localidad },
+                    { id: 'paciente_provincia', valor: datos.paciente_provincia },
+                    { id: 'paciente_codigo_postal', valor: datos.paciente_codigo_postal },
+                    { id: 'paciente_telefono_particular', valor: datos.paciente_telefono_particular },
+                    { id: 'paciente_telefono_celular', valor: datos.paciente_telefono_celular },
+                    { id: 'paciente_email', valor: datos.paciente_email },
+                    { id: 'paciente_obra_social', valor: datos.paciente_obra_social }
+                ];
+                
+                // Agregar campos principales al PDF - CORREGIDO: NO REASIGNAR VARIABLES
+                for (let i = 0; i < camposParaPDF.length; i++) {
+                    const campo = camposParaPDF[i];
+                    if (campo.valor && campo.valor !== '' && coordenadasOriginales[campo.id]) {
+                        const coord = coordenadasOriginales[campo.id];
+                        const x_mm = convertirAMilimetros(campo.id, coord.x_pdf, true);
+                        const y_mm = convertirAMilimetros(campo.id, coord.y_pdf, false);
+                        const width_mm = convertirAMilimetros(campo.id, coord.width_pdf, true);
+                        
+                        const fontSize = campo.valor.length > 50 ? '9pt' : '10pt';
+                        const lineHeight = campo.valor.length > 100 ? '1.1' : '1.2';
+                        
+                        htmlPDF += `
             <div class="form-field" 
                  style="left: ${x_mm.toFixed(2)}mm; top: ${y_mm.toFixed(2)}mm; width: ${width_mm.toFixed(2)}mm; font-size: ${fontSize}; line-height: ${lineHeight};">
                 ${campo.valor}
             </div>`;
+                    }
                 }
-            });
-            
-            // Agregar firma si existe
-            if (tieneFirma && coordenadasOriginales.paciente_firmaclaracion) {
-                const coord = coordenadasOriginales.paciente_firmaclaracion;
-                const x = convertToPixels('paciente_firmaclaracion', coord.x_pdf, true);
-                const y = convertToPixels('paciente_firmaclaracion', coord.y_pdf, false);
-                const width = convertToPixels('paciente_firmaclaracion', coord.width_pdf, true) * CALIBRACION.firma.escala;
-                const height = 60;
                 
-                const x_mm = x * 0.264583;
-                const y_mm = y * 0.264583;
-                const width_mm = width * 0.264583;
-                const height_mm = height * 0.264583;
-            
-                htmlPDF += `
+                // Agregar firma si existe
+                if (tieneFirma && coordenadasOriginales.paciente_firmaclaracion) {
+                    const coord = coordenadasOriginales.paciente_firmaclaracion;
+                    const x = convertToPixels('paciente_firmaclaracion', coord.x_pdf, true);
+                    const y = convertToPixels('paciente_firmaclaracion', coord.y_pdf, false);
+                    const width = convertToPixels('paciente_firmaclaracion', coord.width_pdf, true) * CALIBRACION.firma.escala;
+                    const height = 60;
+                    
+                    const x_mm = x * 0.264583;
+                    const y_mm = y * 0.264583;
+                    const width_mm = width * 0.264583;
+                    const height_mm = height * 0.264583;
+                
+                    htmlPDF += `
             <div class="signature-container" 
                  style="left: ${x_mm.toFixed(2)}mm; top: ${y_mm.toFixed(2)}mm; width: ${width_mm.toFixed(2)}mm; height: ${height_mm.toFixed(2)}mm;">
-                <img src="${datosImpresion.paciente_firmaclaracion}" 
+                <img src="${datos.paciente_firmaclaracion}" 
                      alt="Firma del paciente">
             </div>`;
-            }
-            
-            // Agregar datos finales junto a la firma
-            // 1. Apellido y Nombre
-            if (coordenadasOriginales.paciente_nombre_firma && datosImpresion.paciente_apellidonombre) {
-                const coord = coordenadasOriginales.paciente_nombre_firma;
-                const x_mm = convertirAMilimetros('paciente_nombre_firma', coord.x_pdf, true);
-                const y_mm = convertirAMilimetros('paciente_nombre_firma', coord.y_pdf, false);
-                const width_mm = convertirAMilimetros('paciente_nombre_firma', coord.width_pdf, true);
+                }
                 
-                htmlPDF += `
+                // Agregar datos finales junto a la firma
+                // 1. Apellido y Nombre
+                if (coordenadasOriginales.paciente_nombre_firma && datos.paciente_apellidonombre) {
+                    const coord = coordenadasOriginales.paciente_nombre_firma;
+                    const x_mm = convertirAMilimetros('paciente_nombre_firma', coord.x_pdf, true);
+                    const y_mm = convertirAMilimetros('paciente_nombre_firma', coord.y_pdf, false);
+                    const width_mm = convertirAMilimetros('paciente_nombre_firma', coord.width_pdf, true);
+                    
+                    htmlPDF += `
             <div class="form-field" 
                  style="left: ${x_mm.toFixed(2)}mm; top: ${y_mm.toFixed(2)}mm; width: ${width_mm.toFixed(2)}mm; font-size: 10pt;">
-                ${datosImpresion.paciente_apellidonombre}
+                ${datos.paciente_apellidonombre}
             </div>`;
-            }
-            
-            // 2. Fecha de Firma
-            if (coordenadasOriginales.paciente_fecha && datosImpresion.paciente_fecha) {
-                const coord = coordenadasOriginales.paciente_fecha;
-                const x_mm = convertirAMilimetros('paciente_fecha', coord.x_pdf, true);
-                const y_mm = convertirAMilimetros('paciente_fecha', coord.y_pdf, false);
-                const width_mm = convertirAMilimetros('paciente_fecha', coord.width_pdf, true);
+                }
                 
-                htmlPDF += `
+                // 2. Fecha de Firma
+                if (coordenadasOriginales.paciente_fecha && datos.paciente_fecha) {
+                    const coord = coordenadasOriginales.paciente_fecha;
+                    const x_mm = convertirAMilimetros('paciente_fecha', coord.x_pdf, true);
+                    const y_mm = convertirAMilimetros('paciente_fecha', coord.y_pdf, false);
+                    const width_mm = convertirAMilimetros('paciente_fecha', coord.width_pdf, true);
+                    
+                    htmlPDF += `
             <div class="form-field" 
                  style="left: ${x_mm.toFixed(2)}mm; top: ${y_mm.toFixed(2)}mm; width: ${width_mm.toFixed(2)}mm; font-size: 10pt;">
-                ${formatearFecha(datosImpresion.paciente_fecha)}
+                ${formatearFecha(datos.paciente_fecha)}
             </div>`;
-            }
-            
-            // 3. Localidad
-            if (coordenadasOriginales.paciente_localidad_final && datosImpresion.paciente_localidad) {
-                const coord = coordenadasOriginales.paciente_localidad_final;
-                const x_mm = convertirAMilimetros('paciente_localidad_final', coord.x_pdf, true);
-                const y_mm = convertirAMilimetros('paciente_localidad_final', coord.y_pdf, false);
-                const width_mm = convertirAMilimetros('paciente_localidad_final', coord.width_pdf, true);
+                }
                 
-                htmlPDF += `
+                // 3. Localidad
+                if (coordenadasOriginales.paciente_localidad_final && datos.paciente_localidad) {
+                    const coord = coordenadasOriginales.paciente_localidad_final;
+                    const x_mm = convertirAMilimetros('paciente_localidad_final', coord.x_pdf, true);
+                    const y_mm = convertirAMilimetros('paciente_localidad_final', coord.y_pdf, false);
+                    const width_mm = convertirAMilimetros('paciente_localidad_final', coord.width_pdf, true);
+                    
+                    htmlPDF += `
             <div class="form-field" 
                  style="left: ${x_mm.toFixed(2)}mm; top: ${y_mm.toFixed(2)}mm; width: ${width_mm.toFixed(2)}mm; font-size: 10pt;">
-                ${datosImpresion.paciente_localidad}
+                ${datos.paciente_localidad}
             </div>`;
-            }
-            
-            // 4. Provincia
-            if (coordenadasOriginales.paciente_provincia_final && datosImpresion.paciente_provincia) {
-                const coord = coordenadasOriginales.paciente_provincia_final;
-                const x_mm = convertirAMilimetros('paciente_provincia_final', coord.x_pdf, true);
-                const y_mm = convertirAMilimetros('paciente_provincia_final', coord.y_pdf, false);
-                const width_mm = convertirAMilimetros('paciente_provincia_final', coord.width_pdf, true);
+                }
                 
-                htmlPDF += `
+                // 4. Provincia
+                if (coordenadasOriginales.paciente_provincia_final && datos.paciente_provincia) {
+                    const coord = coordenadasOriginales.paciente_provincia_final;
+                    const x_mm = convertirAMilimetros('paciente_provincia_final', coord.x_pdf, true);
+                    const y_mm = convertirAMilimetros('paciente_provincia_final', coord.y_pdf, false);
+                    const width_mm = convertirAMilimetros('paciente_provincia_final', coord.width_pdf, true);
+                    
+                    htmlPDF += `
             <div class="form-field" 
                  style="left: ${x_mm.toFixed(2)}mm; top: ${y_mm.toFixed(2)}mm; width: ${width_mm.toFixed(2)}mm; font-size: 10pt;">
-                ${datosImpresion.paciente_provincia}
+                ${datos.paciente_provincia}
             </div>`;
-            }
-            
-            // 5. Código Postal
-            if (coordenadasOriginales.paciente_codigo_postal_final && datosImpresion.paciente_codigo_postal) {
-                const coord = coordenadasOriginales.paciente_codigo_postal_final;
-                const x_mm = convertirAMilimetros('paciente_codigo_postal_final', coord.x_pdf, true);
-                const y_mm = convertirAMilimetros('paciente_codigo_postal_final', coord.y_pdf, false);
-                const width_mm = convertirAMilimetros('paciente_codigo_postal_final', coord.width_pdf, true);
+                }
                 
-                htmlPDF += `
+                // 5. Código Postal
+                if (coordenadasOriginales.paciente_codigo_postal_final && datos.paciente_codigo_postal) {
+                    const coord = coordenadasOriginales.paciente_codigo_postal_final;
+                    const x_mm = convertirAMilimetros('paciente_codigo_postal_final', coord.x_pdf, true);
+                    const y_mm = convertirAMilimetros('paciente_codigo_postal_final', coord.y_pdf, false);
+                    const width_mm = convertirAMilimetros('paciente_codigo_postal_final', coord.width_pdf, true);
+                    
+                    htmlPDF += `
             <div class="form-field" 
                  style="left: ${x_mm.toFixed(2)}mm; top: ${y_mm.toFixed(2)}mm; width: ${width_mm.toFixed(2)}mm; font-size: 10pt;">
-                ${datosImpresion.paciente_codigo_postal}
+                ${datos.paciente_codigo_postal}
             </div>`;
-            }
-            
-            htmlPDF += `
+                }
+                
+                htmlPDF += `
+            </div>
         </div>
-    </div>
-    <script>
-        window.onload = function() {
-            setTimeout(function() { 
-                window.print();
-                setTimeout(function() { window.close(); }, 1000);
-            }, 1000);
-        }
-        document.addEventListener('keydown', function(e) {
-            if (e.ctrlKey && e.key === 'p') {
-                e.preventDefault();
-                window.print();
+        <script>
+            window.onload = function() {
+                setTimeout(function() { 
+                    window.print();
+                    setTimeout(function() { window.close(); }, 1000);
+                }, 1000);
             }
-        });
-    <\/script>
-</body>
-</html>`;
-            
-            ventanaPDF.document.write(htmlPDF);
-            ventanaPDF.document.close();
-            
-            mostrarEstado('✅ PDF generado. Se abrirá la ventana de impresión. Guarde como PDF.', 'success');
+            document.addEventListener('keydown', function(e) {
+                if (e.ctrlKey && e.key === 'p') {
+                    e.preventDefault();
+                    window.print();
+                }
+            });
+        <\/script>
+    </body>
+    </html>`;
+                
+                ventanaPDF.document.write(htmlPDF);
+                ventanaPDF.document.close();
+                
+                mostrarEstado('✅ PDF generado. Se abrirá la ventana de impresión. Guarde como PDF.', 'success');
+                
+            } catch (error) {
+                console.error('Error al generar PDF:', error);
+                mostrarEstado('❌ Error al generar el PDF: ' + error.message, 'error');
+                document.getElementById('submitBtn').disabled = false;
+                document.getElementById('loading').style.display = 'none';
+            }
         }
         
         function clearForm() {
