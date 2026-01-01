@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>REPROCANN - Formulario de Registro</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', sans-serif;
+        }
+        
+        body {
+            background: #f5f7fa;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: #2c3e50;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+        }
+        
+        .data-entry {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .section-title {
+            font-size: 1.1rem;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #3498db;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #495057;
+            font-size: 0.9rem;
+        }
+        
+        label.required::after {
+            content: " *";
+            color: #e74c3c;
+        }
+        
+        input, textarea, select {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+        
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+        }
+        
+        textarea {
+            min-height: 70px;
+            resize: vertical;
+        }
+        
+        .signature-area {
+            border: 2px dashed #ccc;
+            border-radius: 6px;
+            padding: 15px;
+            text-align: center;
+            margin: 15px 0;
+            background: white;
+            position: relative;
+        }
+        
+        #signatureCanvas {
+            border: 1px solid #aaa;
+            background: white;
+            width: 100%;
+            height: 120px;
+            cursor: crosshair;
+            display: block;
+            margin: 0 auto;
+            touch-action: none;
+        }
+        
+        .signature-buttons {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin-top: 10px;
+        }
+        
+        button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .btn-success {
+            background: #27ae60;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #219653;
+        }
+        
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+        
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+        }
+        
+        .status-message {
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            display: none;
+            font-size: 0.9rem;
+        }
+        
+        .status-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .status-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .form-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .form-row .form-group {
+            flex: 1;
+            margin-bottom: 0;
+        }
+        
+        @media (max-width: 768px) {
+            .form-row {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>REPROCANN - Formulario de Registro</h1>
+            <p style="font-size: 0.9rem; opacity: 0.9;">Complete el formulario para generar su documento PDF</p>
+        </div>
+        
+        <div id="statusMessage" class="status-message"></div>
+        
+        <div id="loading" class="loading">
+            <p>Generando PDF...</p>
+        </div>
+        
+        <div class="data-entry">
+            <form id="pacienteForm">
+                <div class="section-title">Datos del Paciente</div>
+                
+                <div class="form-group">
+                    <label class="required">Apellido y Nombre</label>
+                    <input type="text" id="paciente_apellidonombre" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="required">DNI</label>
+                    <input type="text" id="paciente_doc" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="required">Fecha de Nacimiento</label>
+                    <input type="date" id="paciente_nac" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="required">Domicilio</label>
+                    <input type="text" id="paciente_dom" required>
+                </div>
+                
+                <!-- FILA 1: Localidad, Provincia, CP -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="required">Localidad</label>
+                        <input type="text" id="paciente_localidad" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="required">Provincia</label>
+                        <input type="text" id="paciente_provincia" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="required">Código Postal</label>
+                        <input type="text" id="paciente_codigo_postal" required>
+                    </div>
+                </div>
+                
+                <!-- FILA 2: Teléfono Particular y Teléfono Celular -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Teléfono Particular</label>
+                        <input type="tel" id="paciente_telefono_particular">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="required">Teléfono Celular</label>
+                        <input type="tel" id="paciente_telefono_celular" required>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="required">Correo Electrónico</label>
+                    <input type="email" id="paciente_email" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="required">Obra Social</label>
+                    <input type="text" id="paciente_obra_social" required>
+                </div>
+                
+                <!-- Campos adicionales que pedimos pero NO van al PDF -->
+                <div class="section-title" style="margin-top: 20px;">Datos Médicos (Sólo para registro interno)</div>
+                
+                <div class="form-group">
+                    <label class="required">Patología/Diagnóstico</label>
+                    <textarea id="patologia" required></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label class="required">Tratamiento Actual</label>
+                    <textarea id="tratamiento_actual" required></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label>Otros Antecedentes Médicos</label>
+                    <textarea id="otros_antecedentes"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label>Código de Vinculación (opcional)</label>
+                    <input type="text" id="codigo_vinculacion">
+                </div>
+                
+                <div class="section-title" style="margin-top: 20px;">Firma del Paciente</div>
+                
+                <div class="signature-area">
+                    <canvas id="signatureCanvas"></canvas>
+                    <div class="signature-buttons">
+                        <button type="button" class="btn-danger" id="clearSignatureBtn">
+                            Limpiar Firma
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="required">Fecha de Firma</label>
+                    <input type="date" id="paciente_fecha" required>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn-success" id="submitBtn">
+                        Generar y Descargar PDF
+                    </button>
+                    <button type="button" class="btn-danger" id="clearFormBtn">
+                        Limpiar Todo
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Contenedor oculto para generar el PDF -->
+    <div id="pdfContainer" style="position: absolute; left: -9999px; top: 0; width: 794px; height: 1123px; background: white;"></div>
+
+    <script>
+        // COORDENADAS EXACTAS DEL ORIGINAL
+        const coordenadasOriginales = {
+            // SECCIÓN SUPERIOR
+            paciente_apellidonombre: { x_pdf: 147.98674860459826, y_pdf: 184.3092549883555, width_pdf: 377.96615521985234, height_pdf: 6.665795840446853 },
+            paciente_doc: { x_pdf: 147.98674860459826, y_pdf: 197.64084666924919, width_pdf: 141.98728582333078, height_pdf: 6.33250604842451 },
+            paciente_nac: { x_pdf: 370.96678197504025, y_pdf: 197.64084666924919, width_pdf: 154.98612184941035, height_pdf: 6.33250604842451 },
+            paciente_dom: { x_pdf: 147.98674860459826, y_pdf: 210.63914855812055, width_pdf: 377.96615521985234, height_pdf: 6.33250604842451 },
+            
+            // FILA: Localidad, Provincia, CP
+            paciente_localidad: { x_pdf: 147.98674860459826, y_pdf: 223.63745044699193, width_pdf: 207.98612184941035, height_pdf: 6.33250604842451 },
+            paciente_provincia: { x_pdf: 370.96678197504025, y_pdf: 223.63745044699193, width_pdf: 154.98612184941035, height_pdf: 6.33250604842451 },
+            paciente_codigo_postal: { x_pdf: 502.0000000000000, y_pdf: 223.63745044699193, width_pdf: 100.00000000000000, height_pdf: 6.33250604842451 },
+            
+            // FILA: Teléfono Particular y Teléfono Celular
+            paciente_telefono_particular: { x_pdf: 184.98674860459826, y_pdf: 236.6357523358633, width_pdf: 207.98612184941035, height_pdf: 6.665795840446853 },
+            paciente_telefono_celular: { x_pdf: 370.96678197504025, y_pdf: 236.6357523358633, width_pdf: 154.98612184941035, height_pdf: 6.33250604842451 },
+            
+            // FILAS SIGUIENTES
+            paciente_email: { x_pdf: 147.98674860459826, y_pdf: 249.96734401675698, width_pdf: 377.96615521985234, height_pdf: 6.33250604842451 },
+            paciente_obra_social: { x_pdf: 147.98674860459826, y_pdf: 262.9656459056284, width_pdf: 377.96615521985234, height_pdf: 6.33250604842451 },
+            
+            // SECCIÓN FINAL - TODOS LOS DATOS JUNTO A LA FIRMA
+            paciente_firmaclaracion: { x_pdf: 374.96642382921857, y_pdf: 792.5631254291309, width_pdf: 163.9853160213116, height_pdf: 0.6665795840446853 },
+            paciente_nombre_firma: { x_pdf: 56.66159293419303, y_pdf: 760.5631254291309, width_pdf: 165.65183346055258, height_pdf: 0.6665795840446853 },
+            paciente_fecha: { x_pdf: 56.66159293419303, y_pdf: 773.5614273180023, width_pdf: 165.65183346055258, height_pdf: 0.6665795840446853 },
+            paciente_localidad_final: { x_pdf: 56.66159293419303, y_pdf: 786.5597292068736, width_pdf: 165.65183346055258, height_pdf: 0.6665795840446853 },
+            paciente_provincia_final: { x_pdf: 56.66159293419303, y_pdf: 799.558031095745, width_pdf: 165.65183346055258, height_pdf: 0.6665795840446853 },
+            paciente_codigo_postal_final: { x_pdf: 56.66159293419303, y_pdf: 812.5563329846164, width_pdf: 165.65183346055258, height_pdf: 0.6665795840446853 }
+        };
+        
+        const CALIBRACION = {
+            escala: 1.32,
+            offsetX: 7.0,
+            offsetY: 0.0,
+            firma: {
+                offsetX: -100,  // ← PARA MOVER LA FIRMA A LA DERECHA, CAMBIA ESTE NÚMERO (ej: -80)
+                offsetY: -50,
+                escala: 2.0
+            }
+        };
+        
+        let isDrawing = false;
+        let lastX = 0;
+        let lastY = 0;
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            inicializarFirma();
+            configurarEventos();
+            
+            const hoy = new Date().toISOString().split('T')[0];
+            document.getElementById('paciente_nac').value = hoy;
+            document.getElementById('paciente_fecha').value = hoy;
+            
+            mostrarEstado('Complete el formulario y haga clic en "Generar y Descargar PDF"', 'info');
+        });
+        
+        function inicializarFirma() {
+            const canvas = document.getElementById('signatureCanvas');
+            if (!canvas) return;
+            
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+            
+            const ctx = canvas.getContext('2d');
+            ctx.lineWidth = 2;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.strokeStyle = '#000000';
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            function startDrawing(e) {
+                e.preventDefault();
+                isDrawing = true;
+                const pos = getCoordinates(e);
+                [lastX, lastY] = [pos.x, pos.y];
+                ctx.beginPath();
+                ctx.moveTo(lastX, lastY);
+            }
+            
+            function draw(e) {
+                if (!isDrawing) return;
+                e.preventDefault();
+                const pos = getCoordinates(e);
+                const x = pos.x;
+                const y = pos.y;
+                ctx.lineTo(x, y);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+                [lastX, lastY] = [x, y];
+            }
+            
+            function stopDrawing(e) {
+                if (!isDrawing) return;
+                e.preventDefault();
+                isDrawing = false;
+                ctx.closePath();
+            }
+            
+            function getCoordinates(e) {
+                const rect = canvas.getBoundingClientRect();
+                let x, y;
+                if (e.type.includes('touch')) {
+                    x = e.touches[0].clientX - rect.left;
+                    y = e.touches[0].clientY - rect.top;
+                } else {
+                    x = e.clientX - rect.left;
+                    y = e.clientY - rect.top;
+                }
+                return { x, y };
+            }
+            
+            function clearCanvas() {
+                ctx.fillStyle = 'white';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#000000';
+                mostrarEstado('Firma limpiada', 'success');
+            }
+            
+            function getSignatureData() {
+                return canvas.toDataURL('image/png');
+            }
+            
+            function hasSignature() {
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const data = imageData.data;
+                for (let i = 0; i < data.length; i += 4) {
+                    if (data[i] !== 255 || data[i + 1] !== 255 || data[i + 2] !== 255) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+            
+            canvas.addEventListener('mousedown', startDrawing);
+            canvas.addEventListener('mousemove', draw);
+            canvas.addEventListener('mouseup', stopDrawing);
+            canvas.addEventListener('mouseleave', stopDrawing);
+            
+            canvas.addEventListener('touchstart', function(e) {
+                if (e.cancelable) e.preventDefault();
+                startDrawing(e);
+            }, { passive: false });
+            
+            canvas.addEventListener('touchmove', function(e) {
+                if (e.cancelable) e.preventDefault();
+                draw(e);
+            }, { passive: false });
+            
+            canvas.addEventListener('touchend', function(e) {
+                if (e.cancelable) e.preventDefault();
+                stopDrawing(e);
+            }, { passive: false });
+            
+            canvas.addEventListener('touchcancel', function(e) {
+                if (e.cancelable) e.preventDefault();
+                stopDrawing(e);
+            }, { passive: false });
+            
+            canvas.clear = clearCanvas;
+            canvas.getSignatureData = getSignatureData;
+            canvas.hasSignature = hasSignature;
+            
+            document.getElementById('clearSignatureBtn').addEventListener('click', clearCanvas);
+        }
+        
+        function configurarEventos() {
+            document.getElementById('submitBtn').addEventListener('click', async function() {
+                const datos = obtenerDatosFormulario();
+                if (!validarFormulario()) return;
+                
+                this.disabled = true;
+                document.getElementById('loading').style.display = 'block';
+                
+                try {
+                    await generarPDFDirecto(datos);
+                } catch (error) {
+                    console.error('Error:', error);
+                    mostrarEstado('❌ Error al generar el PDF', 'error');
+                } finally {
+                    this.disabled = false;
+                    document.getElementById('loading').style.display = 'none';
+                }
+            });
+            
+            document.getElementById('clearFormBtn').addEventListener('click', clearForm);
+        }
+        
+        function obtenerDatosFormulario() {
+            const canvas = document.getElementById('signatureCanvas');
+            return {
+                paciente_apellidonombre: document.getElementById('paciente_apellidonombre').value.trim(),
+                paciente_doc: document.getElementById('paciente_doc').value.trim(),
+                paciente_nac: document.getElementById('paciente_nac').value,
+                paciente_dom: document.getElementById('paciente_dom').value.trim(),
+                paciente_localidad: document.getElementById('paciente_localidad').value.trim(),
+                paciente_provincia: document.getElementById('paciente_provincia').value.trim(),
+                paciente_codigo_postal: document.getElementById('paciente_codigo_postal').value.trim(),
+                paciente_telefono_particular: document.getElementById('paciente_telefono_particular').value.trim(),
+                paciente_telefono_celular: document.getElementById('paciente_telefono_celular').value.trim(),
+                paciente_email: document.getElementById('paciente_email').value.trim(),
+                paciente_obra_social: document.getElementById('paciente_obra_social').value.trim(),
+                patologia: document.getElementById('patologia').value.trim(),
+                tratamiento_actual: document.getElementById('tratamiento_actual').value.trim(),
+                otros_antecedentes: document.getElementById('otros_antecedentes').value.trim(),
+                codigo_vinculacion: document.getElementById('codigo_vinculacion').value.trim(),
+                paciente_firmaclaracion: canvas && canvas.hasSignature ? canvas.getSignatureData() : '',
+                paciente_fecha: document.getElementById('paciente_fecha').value
+            };
+        }
+        
+        function validarFormulario() {
+            const datos = obtenerDatosFormulario();
+            const camposRequeridos = [
+                'paciente_apellidonombre',
+                'paciente_doc',
+                'paciente_nac',
+                'paciente_dom',
+                'paciente_localidad',
+                'paciente_provincia',
+                'paciente_codigo_postal',
+                'paciente_telefono_celular',
+                'paciente_email',
+                'paciente_obra_social',
+                'patologia',
+                'tratamiento_actual',
+                'paciente_fecha'
+            ];
+            
+            const camposFaltantes = [];
+            for (const campo of camposRequeridos) {
+                if (!datos[campo] || datos[campo].toString().trim() === '') {
+                    const nombreCampo = campo.replace(/_/g, ' ');
+                    camposFaltantes.push(nombreCampo);
+                }
+            }
+            
+            if (datos.paciente_doc && !/^\d{7,8}$/.test(datos.paciente_doc)) {
+                camposFaltantes.push('DNI (7-8 dígitos)');
+            }
+            
+            const canvas = document.getElementById('signatureCanvas');
+            if (!canvas || !canvas.hasSignature || !datos.paciente_firmaclaracion) {
+                camposFaltantes.push('Firma del paciente');
+            }
+            
+            if (camposFaltantes.length > 0) {
+                mostrarEstado(`❌ Campos incompletos: ${camposFaltantes.join(', ')}`, 'error');
+                return false;
+            }
+            
+            return true;
+        }
+        
+        function convertToPixels(campoId, pdfValue, isX = true) {
+            let valor = pdfValue * CALIBRACION.escala;
+            
+            if (isX) {
+                valor += CALIBRACION.offsetX;
+            } else {
+                valor += CALIBRACION.offsetY;
+            }
+            
+            if (campoId === 'paciente_firmaclaracion') {
+                if (isX) {
+                    valor += CALIBRACION.firma.offsetX;
+                } else {
+                    valor += CALIBRACION.firma.offsetY;
+                }
+            }
+            
+            return valor;
+        }
+        
+        function formatearFecha(fechaISO) {
+            if (!fechaISO) return '';
+            const fecha = new Date(fechaISO);
+            const dia = fecha.getDate().toString().padStart(2, '0');
+            const mes = (fecha.getMonth() + 1).toString().padStart(2, '0');
+            const anio = fecha.getFullYear();
+            return `${dia}/${mes}/${anio}`;
+        }
+        
+        async function generarPDFDirecto(datos) {
+            mostrarEstado('📄 Generando PDF...', 'info');
+            
+            // Crear el HTML exacto del PDF usando las mismas coordenadas
+            const pdfContainer = document.getElementById('pdfContainer');
+            
+            // IMAGEN DE FONDO
+            const imagenFondo = 'http://cocoquerandi.com.ar/recann-pagina-1.png';
+            
+            let html = `
+                <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none;">
+                    <img src="${imagenFondo}" alt="Fondo Formulario REPROCANN" 
+                         style="width: 100%; height: 100%; object-fit: fill;" id="formBackgroundImage">
+                </div>
+                <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2; pointer-events: none;">
+            `;
+            
+            // Lista de campos que se muestran en el PDF
+            const camposParaPDF = [
+                { id: 'paciente_apellidonombre', valor: datos.paciente_apellidonombre },
+                { id: 'paciente_doc', valor: datos.paciente_doc },
+                { id: 'paciente_nac', valor: formatearFecha(datos.paciente_nac) },
+                { id: 'paciente_dom', valor: datos.paciente_dom },
+                { id: 'paciente_localidad', valor: datos.paciente_localidad },
+                { id: 'paciente_provincia', valor: datos.paciente_provincia },
+                { id: 'paciente_codigo_postal', valor: datos.paciente_codigo_postal },
+                { id: 'paciente_telefono_particular', valor: datos.paciente_telefono_particular },
+                { id: 'paciente_telefono_celular', valor: datos.paciente_telefono_celular },
+                { id: 'paciente_email', valor: datos.paciente_email },
+                { id: 'paciente_obra_social', valor: datos.paciente_obra_social }
+            ];
+            
+            // Agregar campos de texto
+            for (let i = 0; i < camposParaPDF.length; i++) {
+                const campo = camposParaPDF[i];
+                if (campo.valor && campo.valor !== '' && coordenadasOriginales[campo.id]) {
+                    const coord = coordenadasOriginales[campo.id];
+                    const x = convertToPixels(campo.id, coord.x_pdf, true);
+                    const y = convertToPixels(campo.id, coord.y_pdf, false);
+                    const width = convertToPixels(campo.id, coord.width_pdf, true);
+                    
+                    const fontSize = campo.valor.length > 50 ? '9px' : '11px';
+                    const lineHeight = campo.valor.length > 100 ? '1.1' : '1.2';
+                    
+                    html += `
+                        <div style="position: absolute; background: transparent; border: none; padding: 0; 
+                                    font-size: ${fontSize}; line-height: ${lineHeight}; white-space: normal; 
+                                    overflow: visible; word-wrap: break-word; pointer-events: none; 
+                                    font-family: 'Arial', sans-serif;
+                                    left: ${x}px; top: ${y}px; width: ${width}px;">
+                            ${campo.valor}
+                        </div>
+                    `;
+                }
+            }
+            
+            // Agregar firma
+            if (datos.paciente_firmaclaracion && coordenadasOriginales.paciente_firmaclaracion) {
+                const coord = coordenadasOriginales.paciente_firmaclaracion;
+                const x = convertToPixels('paciente_firmaclaracion', coord.x_pdf, true);
+                const y = convertToPixels('paciente_firmaclaracion', coord.y_pdf, false);
+                const width = convertToPixels('paciente_firmaclaracion', coord.width_pdf, true) * CALIBRACION.firma.escala;
+                const height = 60;
+                
+                html += `
+                    <div style="position: absolute; pointer-events: none;
+                                left: ${x}px; top: ${y}px; width: ${width}px; height: ${height}px;">
+                        <img src="${datos.paciente_firmaclaracion}" 
+                             alt="Firma del paciente"
+                             style="width: 100%; height: 100%; object-fit: contain;">
+                    </div>
+                    
+                    <!-- NOMBRE DEL PACIENTE DEBAJO DE LA FIRMA -->
+                    <div style="position: absolute; background: transparent; border: none; padding: 0;
+                                font-size: 10px; line-height: 1.2; white-space: normal; 
+                                overflow: visible; word-wrap: break-word; pointer-events: none; 
+                                font-family: 'Arial', sans-serif; text-align: center;
+                                left: ${x}px; top: ${y + 15}px; width: ${width}px;">
+                        ${datos.paciente_apellidonombre}
+                    </div>
+                `;
+            }
+            
+            // FECHA + LOCALIDAD + PROVINCIA
+            if (coordenadasOriginales.paciente_fecha && datos.paciente_fecha && datos.paciente_localidad && datos.paciente_provincia) {
+                const coord = coordenadasOriginales.paciente_fecha;
+                const x = convertToPixels('paciente_fecha', coord.x_pdf, true);
+                const y = convertToPixels('paciente_fecha', coord.y_pdf, false);
+                const width = convertToPixels('paciente_fecha', coord.width_pdf, true);
+                
+                const textoCombinado = `${formatearFecha(datos.paciente_fecha)}, ${datos.paciente_localidad}, ${datos.paciente_provincia}`;
+                const fontSize = textoCombinado.length > 50 ? '9px' : '11px';
+                
+                html += `
+                    <div style="position: absolute; background: transparent; border: none; padding: 0;
+                                font-size: ${fontSize}; line-height: 1.2; white-space: normal; 
+                                overflow: visible; word-wrap: break-word; pointer-events: none; 
+                                font-family: 'Arial', sans-serif;
+                                left: ${x}px; top: ${y}px; width: ${width}px;">
+                        ${textoCombinado}
+                    </div>
+                `;
+            }
+            
+            html += `</div>`;
+            pdfContainer.innerHTML = html;
+            
+            // Esperar a que cargue la imagen
+            await new Promise((resolve) => {
+                const img = document.getElementById('formBackgroundImage');
+                if (img) {
+                    if (img.complete) {
+                        resolve();
+                    } else {
+                        img.onload = resolve;
+                        img.onerror = resolve;
+                    }
+                } else {
+                    resolve();
+                }
+            });
+            
+            // Convertir a PDF con jsPDF
+            if (typeof html2canvas === 'undefined' || typeof window.jspdf === 'undefined') {
+                throw new Error('Librerías no cargadas');
+            }
+            
+            const canvas = await html2canvas(pdfContainer, {
+                scale: 2,
+                useCORS: true,
+                logging: false,
+                backgroundColor: '#FFFFFF'
+            });
+            
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF({
+                orientation: 'portrait',
+                unit: 'mm',
+                format: 'a4'
+            });
+            
+            const imgWidth = 210;
+            const imgHeight = (canvas.height * imgWidth) / canvas.width;
+            const imgData = canvas.toDataURL('image/jpeg', 1.0);
+            
+            pdf.addImage(imgData, 'JPEG', 0, 0, imgWidth, imgHeight);
+            
+            const nombreArchivo = `REPROCANN_${datos.paciente_apellidonombre.replace(/\s+/g, '_')}_${datos.paciente_doc}.pdf`;
+            pdf.save(nombreArchivo);
+            
+            mostrarEstado('✅ PDF generado y descargado', 'success');
+        }
+        
+        function clearForm() {
+            if (confirm('¿Está seguro que desea limpiar todo el formulario?')) {
+                const inputs = document.querySelectorAll('#pacienteForm input, #pacienteForm textarea');
+                inputs.forEach(input => {
+                    if (input.type !== 'button' && input.type !== 'submit') {
+                        input.value = '';
+                    }
+                });
+                
+                const canvas = document.getElementById('signatureCanvas');
+                if (canvas && canvas.clear) {
+                    canvas.clear();
+                }
+                
+                const hoy = new Date().toISOString().split('T')[0];
+                document.getElementById('paciente_nac').value = hoy;
+                document.getElementById('paciente_fecha').value = hoy;
+                
+                mostrarEstado('Formulario limpiado', 'success');
+            }
+        }
+        
+        function mostrarEstado(mensaje, tipo) {
+            const statusDiv = document.getElementById('statusMessage');
+            statusDiv.textContent = mensaje;
+            statusDiv.className = `status-message status-${tipo}`;
+            statusDiv.style.display = 'block';
+            
+            setTimeout(() => {
+                if (statusDiv.textContent === mensaje) {
+                    statusDiv.style.display = 'none';
+                }
+            }, 5000);
+        }
+    </script>
+</body>
+</html>
