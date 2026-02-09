@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CV - Hernán Garbarino</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Variables de colores y fuentes */
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --accent-color: #e74c3c;
+            --light-gray: #f5f5f5;
+            --medium-gray: #ecf0f1;
+            --dark-gray: #7f8c8d;
+            --text-color: #333;
+            --spacing: 20px;
+            --border-radius: 4px;
+            --font-primary: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        /* Estilos generales */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: var(--font-primary);
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: white;
+            font-size: 14px;
+            max-width: 210mm; /* Tamaño A4 */
+            margin: 0 auto;
+            padding: 15mm;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Encabezado */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: var(--spacing);
+            margin-bottom: var(--spacing);
+            border-bottom: 2px solid var(--secondary-color);
+        }
+        
+        .name-title h1 {
+            font-size: 28px;
+            color: var(--primary-color);
+            margin-bottom: 5px;
+        }
+        
+        .name-title h2 {
+            font-size: 18px;
+            color: var(--dark-gray);
+            font-weight: normal;
+        }
+        
+        .contact-info {
+            text-align: right;
+            font-size: 13px;
+        }
+        
+        .contact-info div {
+            margin-bottom: 3px;
+        }
+        
+        .contact-info i {
+            color: var(--secondary-color);
+            width: 16px;
+            margin-right: 5px;
+        }
+        
+        /* Secciones */
+        .section {
+            margin-bottom: var(--spacing);
+        }
+        
+        .section-title {
+            font-size: 18px;
+            color: var(--primary-color);
+            padding-bottom: 8px;
+            margin-bottom: 12px;
+            border-bottom: 1px solid var(--medium-gray);
+            display: flex;
+            align-items: center;
+        }
+        
+        .section-title i {
+            margin-right: 8px;
+            color: var(--secondary-color);
+        }
+        
+        /* Experiencia laboral */
+        .job {
+            margin-bottom: 15px;
+            page-break-inside: avoid;
+        }
+        
+        .job-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+        
+        .job-title {
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+        
+        .job-date {
+            color: var(--dark-gray);
+            font-style: italic;
+        }
+        
+        .job-company {
+            color: var(--secondary-color);
+            margin-bottom: 3px;
+        }
+        
+        .job-description ul {
+            padding-left: 20px;
+        }
+        
+        .job-description li {
+            margin-bottom: 3px;
+        }
+        
+        /* Educación y competencias */
+        .education-item, .competence-item {
+            margin-bottom: 8px;
+        }
+        
+        .education-title, .competence-title {
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+        
+        .education-details, .competence-details {
+            color: var(--dark-gray);
+        }
+        
+        /* Herramientas e idiomas */
+        .tools-container, .languages-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .tool-tag, .language-tag {
+            background-color: var(--light-gray);
+            padding: 5px 10px;
+            border-radius: var(--border-radius);
+            font-size: 13px;
+        }
+        
+        .language-tag {
+            background-color: var(--medium-gray);
+        }
+        
+        .language-level {
+            color: var(--dark-gray);
+            font-size: 12px;
+            margin-left: 5px;
+        }
+        
+        /* Resumen */
+        .summary {
+            background-color: var(--light-gray);
+            padding: 15px;
+            border-radius: var(--border-radius);
+            margin-bottom: var(--spacing);
+            font-size: 14px;
+        }
+        
+        /* Estilos para impresión/PDF */
+        @media print {
+            body {
+                padding: 10mm;
+                box-shadow: none;
+                font-size: 12px;
+            }
+            
+            .section-title {
+                font-size: 16px;
+            }
+            
+            .name-title h1 {
+                font-size: 24px;
+            }
+            
+            .job {
+                page-break-inside: avoid;
+            }
+            
+            .section {
+                page-break-inside: avoid;
+            }
+            
+            /* Evitar que se corten títulos al final de página */
+            h2, h3 {
+                page-break-after: avoid;
+            }
+            
+            ul {
+                page-break-inside: avoid;
+            }
+            
+            /* No imprimir enlaces URL completos */
+            a[href]:after {
+                content: "" !important;
+            }
+        }
+        
+        /* Información adicional */
+        .additional-info {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid var(--medium-gray);
+            font-size: 12px;
+            color: var(--dark-gray);
+        }
+        
+        .keywords {
+            font-style: italic;
+        }
+        
+        /* Ajustes responsivos */
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .contact-info {
+                text-align: left;
+                margin-top: 10px;
+            }
+            
+            .job-header {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Encabezado con información personal -->
+    <div class="header">
+        <div class="name-title">
+            <h1>Hernán Garbarino</h1>
+            <h2>Administrativo Senior | Especialista en Finanzas y Procesos</h2>
+        </div>
+        <div class="contact-info">
+            <div><i class="fas fa-envelope"></i> hernan.garbarino@gmail.com</div>
+            <div><i class="fas fa-phone"></i> +54 9 11 2533-3769</div>
+            <div><i class="fas fa-map-marker-alt"></i> Buenos Aires, Argentina</div>
+            <div><i class="fas fa-globe"></i> <a href="http://HGsolucionesWeb.com.ar/">HGsolucionesWeb.com.ar</a></div>
+        </div>
+    </div>
+    
+    <!-- Resumen profesional -->
+    <div class="summary">
+        Profesional con más de 18 años de experiencia en administración, finanzas y gestión de procesos. Especializado en la optimización de circuitos administrativos, control de pagos, rendiciones, conciliaciones y documentación contable. Enfoque analítico, capacidad de priorización y compromiso con la mejora continua. Búsqueda de entornos donde aportar soluciones eficientes, orden financiero y soporte a la toma de decisiones.
+    </div>
+    
+    <!-- Experiencia laboral -->
+    <div class="section">
+        <div class="section-title">
+            <i class="fas fa-briefcase"></i> Experiencia Profesional
+        </div>
+        
+        <div class="job">
+            <div class="job-header">
+                <div class="job-title">Administrativo Senior</div>
+                <div class="job-date">Abril 2019 - Agosto 2024</div>
+            </div>
+            <div class="job-company">ARSAT | Gerencia de Operaciones Terrestres</div>
+            <div class="job-description">
+                <ul>
+                    <li>Gestión y control de rendiciones de gastos de Grupos Operativos según normativas internas.</li>
+                    <li>Supervisión de circuitos de reintegro y validación documental de gastos operativos.</li>
+                    <li>Administración de tarjetas corporativas recargables (BNA y BBVA), con control de fondos y registros.</li>
+                    <li>Arqueos anuales de fondos fijos, viáticos y refrigerios para equipos operativos.</li>
+                    <li>Control y gestión de Órdenes de Trabajo y Tareas de Mantenimiento en campo.</li>
+                    <li>Elaboración de reportes periódicos sobre estado de pagos para la Gerencia.</li>
+                    <li>Administración de fondos y caja chica, garantizando trazabilidad y reposición.</li>
+                    <li>Monitoreo de flota vehicular mediante sistemas GPS.</li>
+                    <li>Participación en la mejora de procesos administrativos y operativos.</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="job">
+            <div class="job-header">
+                <div class="job-title">Analista Administrativo</div>
+                <div class="job-date">Agosto 2006 - Abril 2019</div>
+            </div>
+            <div class="job-company">ARSAT | Gerencia de Administración y Finanzas</div>
+            <div class="job-description">
+                <ul>
+                    <li>Administración de facturación de servicios satelitales y gestión de cobranzas.</li>
+                    <li>Alta y mantenimiento de proveedores en sistema, con control de documentación fiscal.</li>
+                    <li>Contabilización de facturas de proveedores, elaboración de órdenes de pago y liquidaciones.</li>
+                    <li>Reportes de movimientos bancarios, fondos fijos y tarjetas corporativas.</li>
+                    <li>Gestión de pagos de impuestos nacionales y provinciales (SUSS, SICORE, ARBA).</li>
+                    <li>Coordinación de transferencias masivas para pagos a proveedores, sueldos y viáticos.</li>
+                    <li>Emisión de notas de crédito y débito, conciliación bancaria.</li>
+                    <li>Preparación de informes para auditorías internas y externas.</li>
+                    <li>Control y reposición de cajas chicas a nivel gerencial.</li>
+                    <li>Atención directa a proveedores y elaboración de estadísticas de consumo energético.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Educación -->
+    <div class="section">
+        <div class="section-title">
+            <i class="fas fa-graduation-cap"></i> Educación
+        </div>
+        <div class="education-item">
+            <div class="education-title">Tecnicatura Superior en Administración de Recursos Humanos</div>
+            <div class="education-details">ESBA - Graduado</div>
+        </div>
+    </div>
+    
+    <!-- Competencias -->
+    <div class="section">
+        <div class="section-title">
+            <i class="fas fa-star"></i> Competencias
+        </div>
+        <div class="competence-item">
+            <div class="competence-title">Orientación a resultados</div>
+        </div>
+        <div class="competence-item">
+            <div class="competence-title">Comunicación organizacional</div>
+        </div>
+        <div class="competence-item">
+            <div class="competence-title">Resolución de problemas</div>
+        </div>
+        <div class="competence-item">
+            <div class="competence-title">Trabajo en equipo</div>
+        </div>
+        <div class="competence-item">
+            <div class="competence-title">Atención al cliente interno y externo</div>
+        </div>
+        <div class="competence-item">
+            <div class="competence-title">Trabajo bajo presión</div>
+        </div>
+    </div>
+    
+    <!-- Idiomas -->
+    <div class="section">
+        <div class="section-title">
+            <i class="fas fa-language"></i> Idiomas
+        </div>
+        <div class="languages-container">
+            <div class="language-tag">
+                Español <span class="language-level">(Nativo)</span>
+            </div>
+            <div class="language-tag">
+                Inglés <span class="language-level">(Bilingüe)</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Herramientas informáticas -->
+    <div class="section">
+        <div class="section-title">
+            <i class="fas fa-laptop-code"></i> Herramientas Informáticas
+        </div>
+        <div class="tools-container">
+            <div class="tool-tag">Windows / Mac</div>
+            <div class="tool-tag">Excel Avanzado (Tablas Dinámicas, Gráficos, Dashboards, KPIs)</div>
+            <div class="tool-tag">Desarrollo web e integración con hojas de cálculo</div>
+            <div class="tool-tag">Sistemas de notificaciones y alertas</div>
+            <div class="tool-tag">Desarrollo de sistema de gestión web</div>
+        </div>
+    </div>
+    
+    </div>
+    
+  
+</body>
+</html>
