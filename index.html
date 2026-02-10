@@ -101,6 +101,27 @@
       font-weight:600;
       cursor:pointer;
     }
+ /* Estilos para el marco de foto redondo */
+    .profile-frame {
+      display: inline-block;
+      margin-bottom: 32px;
+    }
+    
+    .profile-frame.round {
+      border-radius: 50%;
+      padding: 6px;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+    
+    .profile-frame.round img {
+      width: 160px;
+      height: 160px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      display: block;
+    }
 
     @media(max-width:900px){
       .grid{grid-template-columns:1fr}
@@ -138,6 +159,15 @@
 
 <section class="hero container">
   <div>
+
+
+    <!-- Marco redondo para foto de perfil -->
+    <div class="profile-frame round">
+      <img src="perfil.png" 
+           alt="Hernán Garbarino - Desarrollador Web y Administrador"
+           id="profile-photo">
+    </div>
+
     <h1 data-i18n="hero.title">Desarrollo Web + Sistemas de Gestión para Empresas</h1>
     <p data-i18n="hero.subtitle">Soy desarrollador web y administrador con más de 18 años de experiencia en gestión, finanzas y procesos. Creo sitios, sistemas y automatizaciones que funcionan en la práctica, no solo en diseño.</p>
     <div class="cta-group">
