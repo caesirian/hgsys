@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Tren Sarmiento en Línea</title>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
@@ -11,9 +11,10 @@
 html, body { margin:0; padding:0; height:100%; background:#0c0c0c; font-family:system-ui; color:#e0e0e0;}
 #app { display:flex; flex-direction:column; height:100%; }
 header { padding:10px; text-align:center; background:#111; font-weight:600; }
-#status { font-size:0.8rem; opacity:0.8; }
+#status { font-size:0.8rem; opacity:0.85; }
 #controls { padding:8px; background:#111; display:flex; flex-direction:column; gap:6px; }
 select { padding:8px; border-radius:6px; border:none; font-size:0.9rem; }
+#direction, #destInfo { font-size:0.85rem; opacity:0.9; }
 #map { flex:1; }
 </style>
 </head>
@@ -22,13 +23,15 @@ select { padding:8px; border-radius:6px; border:none; font-size:0.9rem; }
 <div id="app">
   <header>
     🚆 Tren Sarmiento en Línea
-    <div id="status">Solicitando ubicación...</div>
+    <div id="status">Esperando permiso de ubicación…</div>
   </header>
 
   <div id="controls">
-    <label>Estación destino:
+    <label>
+      Estación destino:
       <select id="destinationSelect"></select>
     </label>
+    <div id="destInfo"></div>
     <div id="direction"></div>
   </div>
 
@@ -36,7 +39,6 @@ select { padding:8px; border-radius:6px; border:none; font-size:0.9rem; }
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
 <script>
 const stations = [
   { name:"Once", lat:-34.60843445605315, lng:-58.406953744878294, order:0 },
@@ -57,12 +59,8 @@ const stations = [
   { name:"Moreno", lat:-34.650403431138976, lng:-58.78973968366113, order:15 }
 ];
 
-// Polilínea de la vía (aprox uniendo estaciones)
-const track = stations.map(s => [s.lat, s.lng]);
-
 const map = L.map('map').setView([-34.63, -58.55], 11);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(map);
-L.polyline(track,{color:'#00e5ff'}).addTo(map);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{ maxZoom:19 }).addTo(map);
 
 stations.forEach(s=>{
   L.circleMarker([s.lat,s.lng],{radius:5,color:'#00e5ff'}).addTo(map).bindPopup(s.name);
@@ -74,77 +72,64 @@ const trainIcon = L.icon({
 });
 
 let userMarker = null;
-let smoothedPos = null;
-let lastLngs = [];
-let currentDirection = null;
+let lastLng = null;
+let watchId = null;
 
-function projectToTrack(lat, lng){
-  let minDist = Infinity;
-  let closest = null;
-
-  for(let i=0;i<track.length-1;i++){
-    const [lat1,lng1] = track[i];
-    const [lat2,lng2] = track[i+1];
-
-    const t = ((lat-lat1)*(lat2-lat1)+(lng-lng1)*(lng2-lng1)) /
-              ((lat2-lat1)**2+(lng2-lng1)**2);
-
-    const clampedT = Math.max(0, Math.min(1, t));
-    const projLat = lat1 + clampedT*(lat2-lat1);
-    const projLng = lng1 + clampedT*(lng2-lng1);
-
-    const dist = Math.hypot(lat-projLat, lng-projLng);
-    if(dist < minDist){
-      minDist = dist;
-      closest = {lat:projLat, lng:projLng};
-    }
+function startGeo(){
+  if(!("geolocation" in navigator)){
+    document.getElementById("status").innerText = "Geolocalización no soportada";
+    return;
   }
-  return closest;
+
+  watchId = navigator.geolocation.watchPosition(onGeoOk, onGeoErr, {
+    enableHighAccuracy:true,
+    timeout:15000,
+    maximumAge:0
+  });
 }
 
-function smooth(prev, next, alpha=0.2){
-  if(!prev) return next;
-  return {
-    lat: prev.lat + alpha*(next.lat-prev.lat),
-    lng: prev.lng + alpha*(next.lng-prev.lng)
-  };
-}
+function onGeoOk(pos){
+  const lat = pos.coords.latitude;
+  const lng = pos.coords.longitude;
 
-navigator.geolocation.watchPosition(pos=>{
-  const raw = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-
-  const snapped = projectToTrack(raw.lat, raw.lng);
-  smoothedPos = smooth(smoothedPos, snapped);
+  document.getElementById("status").innerText = "Ubicación activa";
 
   if(!userMarker){
-    userMarker = L.marker([smoothedPos.lat, smoothedPos.lng],{icon:trainIcon}).addTo(map);
-    map.setView([smoothedPos.lat, smoothedPos.lng], 14);
+    userMarker = L.marker([lat,lng],{icon:trainIcon}).addTo(map);
+    map.setView([lat,lng], 14);
   } else {
-    userMarker.setLatLng([smoothedPos.lat, smoothedPos.lng]);
+    userMarker.setLatLng([lat,lng]);
   }
 
-  lastLngs.push(smoothedPos.lng);
-  if(lastLngs.length > 5) lastLngs.shift();
-
-  if(lastLngs.length === 5){
-    const delta = lastLngs[4] - lastLngs[0];
-    const newDir = delta > 0 ? "Once → Moreno" : "Moreno → Once";
-    if(newDir === currentDirection || !currentDirection){
-      currentDirection = newDir;
-    }
-    document.getElementById("direction").innerText = "Sentido: " + currentDirection;
+  if(lastLng !== null){
+    const newDir = lng > lastLng ? "Once → Moreno" : "Moreno → Once";
+    document.getElementById("direction").innerText = "Sentido: " + newDir;
   }
+  lastLng = lng;
+}
 
-  document.getElementById("status").innerText = "Ubicación activa (filtrada y ajustada a vía)";
-
-},{ enableHighAccuracy:true, maximumAge:1000, timeout:10000 });
+function onGeoErr(err){
+  console.error(err);
+  let msg = "Error de ubicación";
+  if(location.protocol !== "https:") msg = "La geolocalización requiere HTTPS (GitHub Pages lo cumple)";
+  document.getElementById("status").innerText = msg;
+}
 
 const select = document.getElementById("destinationSelect");
 stations.forEach(s=>{
-  const o=document.createElement("option");
-  o.value=s.name; o.textContent=s.name;
+  const o = document.createElement("option");
+  o.value = s.order;
+  o.textContent = s.name;
   select.appendChild(o);
 });
+
+select.addEventListener("change", ()=>{
+  const st = stations[select.value];
+  map.flyTo([st.lat, st.lng], 15, { animate:true, duration:1.2 });
+  document.getElementById("destInfo").innerText = "Destino seleccionado: " + st.name;
+});
+
+startGeo();
 </script>
 </body>
 </html>
