@@ -2,14 +2,13 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <title>Auditoría Transporte – Línea Sarmiento (MVP)</title>
+  <title>Tren Sarmiento en Línea – MVP Pasajero</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
 
+  <!-- Leaflet CSS (sin integrity para evitar bloqueos) -->
   <link
     rel="stylesheet"
     href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    integrity="sha256-o9N1j8Mkf6QHc3a1k5nq1hVfC6C5n7w0kGZ8R0X0X4c="
-    crossorigin=""
   />
 
   <style>
@@ -20,14 +19,13 @@
       --muted: #9aa4b2;
       --accent: #3fa9f5;
       --ok: #34d399;
-      --warn: #f59e0b;
     }
 
     * { box-sizing: border-box; }
 
     body {
       margin: 0;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, sans-serif;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Arial, sans-serif;
       background: var(--bg);
       color: var(--text);
       height: 100vh;
@@ -37,7 +35,7 @@
 
     header {
       padding: 10px 12px;
-      background: linear-gradient(180deg, #0f1319, #0b0d10);
+      background: #0f1319;
       border-bottom: 1px solid #1f2937;
     }
 
@@ -45,7 +43,6 @@
       font-size: 14px;
       margin: 0 0 4px 0;
       font-weight: 600;
-      letter-spacing: 0.3px;
     }
 
     header p {
@@ -56,6 +53,7 @@
 
     #map {
       flex: 1;
+      min-height: 300px;
     }
 
     .panel {
@@ -92,11 +90,6 @@
       font-size: 12px;
     }
 
-    button {
-      background: #0f1319;
-      cursor: pointer;
-    }
-
     button.primary {
       background: var(--accent);
       color: #001019;
@@ -116,7 +109,7 @@
 <body>
 
 <header>
-  <h1>Auditoría de Transporte Público – Línea Sarmiento</h1>
+  <h1>Tren Sarmiento en Línea</h1>
   <p>Ubicación en tiempo real · Sentido de viaje · Próxima estación</p>
 </header>
 
@@ -146,18 +139,17 @@
     <select id="destination"></select>
   </div>
 
-  <button id="centerBtn" class="primary" style="grid-column: span 2;">Centrar en mi ubicación</button>
+  <button id="centerBtn" class="primary" style="grid-column: span 2;">
+    Centrar en mi ubicación
+  </button>
 </div>
 
 <footer>
-  MVP – Datos abiertos · Uso personal/experimental · Hecho para GitHub Pages
+  MVP Pasajero · Datos abiertos · GitHub Pages
 </footer>
 
-<script
-  src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-  integrity="sha256-oZ6H0B3pijZQ+1kM0q8p1Jp5Q1X9n2Z9mF3s5mF0X6k="
-  crossorigin=""
-></script>
+<!-- Leaflet JS (sin integrity para evitar bloqueos) -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
   const stations = [
@@ -179,21 +171,21 @@
     { "name": "Moreno", "lat": -34.650403431138976, "lng": -58.78973968366113, "order": 15 }
   ];
 
-  const map = L.map('map', { zoomControl: false }).setView([-34.63, -58.55], 11);
+  const map = L.map('map').setView([-34.63, -58.55], 11);
 
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
     attribution: '&copy; OpenStreetMap'
   }).addTo(map);
 
-  const stationMarkers = stations.map(s =>
+  stations.forEach(s => {
     L.circleMarker([s.lat, s.lng], {
       radius: 5,
       color: '#3fa9f5',
       fillColor: '#3fa9f5',
-      fillOpacity: 0.8
-    }).addTo(map).bindPopup(s.name)
-  );
+      fillOpacity: 0.9
+    }).addTo(map).bindPopup(s.name);
+  });
 
   const userMarker = L.circleMarker([0,0], {
     radius: 7,
@@ -216,14 +208,13 @@
     const R = 6371e3;
     const φ1 = a.lat * Math.PI/180;
     const φ2 = b.lat * Math.PI/180;
-    const Δφ = (b.lat-a.lat) * Math.PI/180;
-    const Δλ = (b.lng-a.lng) * Math.PI/180;
+    const Δφ = (b.lat - a.lat) * Math.PI/180;
+    const Δλ = (b.lng - a.lng) * Math.PI/180;
 
     const x = Math.sin(Δφ/2) ** 2 +
               Math.cos(φ1) * Math.cos(φ2) *
               Math.sin(Δλ/2) ** 2;
-    const c = 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1-x));
-    return R * c;
+    return 2 * R * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x));
   }
 
   function getNearestStation(pos) {
@@ -241,14 +232,14 @@
   function updateDirection(current) {
     if (!lastPos) return '—';
     const dx = current.lng - lastPos.lng;
-    return dx < 0 ? 'Sentido Moreno → Once' : 'Sentido Once → Moreno';
+    return dx < 0 ? 'Moreno → Once' : 'Once → Moreno';
   }
 
   function getNextStation(nearest, direction) {
     if (!nearest) return '—';
-    if (direction.includes('Once → Moreno')) {
+    if (direction === 'Once → Moreno') {
       return stations[nearest.order + 1]?.name || 'Moreno (terminal)';
-    } else if (direction.includes('Moreno → Once')) {
+    } else if (direction === 'Moreno → Once') {
       return stations[nearest.order - 1]?.name || 'Once (terminal)';
     }
     return '—';
@@ -261,6 +252,7 @@
     };
 
     userMarker.setLatLng(coords);
+    map.setView([coords.lat, coords.lng], 14);
 
     document.getElementById('pos').textContent =
       coords.lat.toFixed(5) + ', ' + coords.lng.toFixed(5);
@@ -278,16 +270,19 @@
 
   if (navigator.geolocation) {
     navigator.geolocation.watchPosition(onLocation, err => {
-      document.getElementById('pos').textContent = 'Permiso de ubicación denegado';
+      document.getElementById('pos').textContent =
+        'Ubicación no disponible (ver permisos del navegador)';
     }, {
       enableHighAccuracy: true,
       maximumAge: 5000,
-      timeout: 10000
+      timeout: 15000
     });
+  } else {
+    document.getElementById('pos').textContent = 'Geolocalización no soportada';
   }
 
   document.getElementById('centerBtn').onclick = () => {
-    if (lastPos) map.setView([lastPos.lat, lastPos.lng], 14);
+    if (lastPos) map.setView([lastPos.lat, lastPos.lng], 15);
   };
 </script>
 
