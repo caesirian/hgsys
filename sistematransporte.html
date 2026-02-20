@@ -5,162 +5,145 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Tren Sarmiento en Línea</title>
 
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
 <style>
-html, body {
-  margin: 0;
-  padding: 0;
-  height: 100%;
-  background: #0c0c0c;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-  color: #e0e0e0;
-}
-
-#app {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-
-header {
-  padding: 10px;
-  text-align: center;
-  background: #111;
-  font-weight: 600;
-  font-size: 1rem;
-}
-
-#status {
-  font-size: 0.8rem;
-  opacity: 0.8;
-}
-
-#controls {
-  padding: 8px;
-  background: #111;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-select {
-  padding: 8px;
-  border-radius: 6px;
-  border: none;
-  font-size: 0.9rem;
-}
-
-#map {
-  flex: 1;
-}
-
-.leaflet-container {
-  background: #000;
-}
+html, body { margin:0; padding:0; height:100%; background:#0c0c0c; font-family:system-ui; color:#e0e0e0;}
+#app { display:flex; flex-direction:column; height:100%; }
+header { padding:10px; text-align:center; background:#111; font-weight:600; }
+#status { font-size:0.8rem; opacity:0.8; }
+#controls { padding:8px; background:#111; display:flex; flex-direction:column; gap:6px; }
+select { padding:8px; border-radius:6px; border:none; font-size:0.9rem; }
+#map { flex:1; }
 </style>
 </head>
 
 <body>
 <div id="app">
-
   <header>
     🚆 Tren Sarmiento en Línea
     <div id="status">Solicitando ubicación...</div>
   </header>
 
   <div id="controls">
-    <label>
-      Estación destino:
+    <label>Estación destino:
       <select id="destinationSelect"></select>
     </label>
     <div id="direction"></div>
   </div>
 
   <div id="map"></div>
-
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
 const stations = [
-  { "name": "Once", "lat": -34.60843445605315, "lng": -58.406953744878294, "order": 0 },
-  { "name": "Caballito", "lat": -34.61917964127605, "lng": -58.4436934702321, "order": 1 },
-  { "name": "Flores", "lat": -34.62784069841297, "lng": -58.46605866222143, "order": 2 },
-  { "name": "Floresta", "lat": -34.63231874819957, "lng": -58.48085346218695, "order": 3 },
-  { "name": "Villa Luro", "lat": -34.636253770170214, "lng": -58.50208178545416, "order": 4 },
-  { "name": "Liniers", "lat": -34.63891286578733, "lng": -58.526369712082506, "order": 5 },
-  { "name": "Ciudadela", "lat": -34.63993245473705, "lng": -58.541042322318674, "order": 6 },
-  { "name": "Ramos Mejía", "lat": -34.640498321397814, "lng": -58.56427762921467, "order": 7 },
-  { "name": "Haedo", "lat": -34.64458523900209, "lng": -58.591789162657996, "order": 8 },
-  { "name": "Morón", "lat": -34.64830301546528, "lng": -58.61961852033873, "order": 9 },
-  { "name": "Castelar", "lat": -34.65209867073312, "lng": -58.641937718124275, "order": 10 },
-  { "name": "Ituzaingó", "lat": -34.65935515537083, "lng": -58.666079423302385, "order": 11 },
-  { "name": "S. A. de Padua", "lat": -34.66565261218575, "lng": -58.69832704988376, "order": 12 },
-  { "name": "Merlo", "lat": -34.664524499459674, "lng": -58.72785611491195, "order": 13 },
-  { "name": "Paso del Rey", "lat": -34.658523331785624, "lng": -58.76218789854426, "order": 14 },
-  { "name": "Moreno", "lat": -34.650403431138976, "lng": -58.78973968366113, "order": 15 }
+  { name:"Once", lat:-34.60843445605315, lng:-58.406953744878294, order:0 },
+  { name:"Caballito", lat:-34.61917964127605, lng:-58.4436934702321, order:1 },
+  { name:"Flores", lat:-34.62784069841297, lng:-58.46605866222143, order:2 },
+  { name:"Floresta", lat:-34.63231874819957, lng:-58.48085346218695, order:3 },
+  { name:"Villa Luro", lat:-34.636253770170214, lng:-58.50208178545416, order:4 },
+  { name:"Liniers", lat:-34.63891286578733, lng:-58.526369712082506, order:5 },
+  { name:"Ciudadela", lat:-34.63993245473705, lng:-58.541042322318674, order:6 },
+  { name:"Ramos Mejía", lat:-34.640498321397814, lng:-58.56427762921467, order:7 },
+  { name:"Haedo", lat:-34.64458523900209, lng:-58.591789162657996, order:8 },
+  { name:"Morón", lat:-34.64830301546528, lng:-58.61961852033873, order:9 },
+  { name:"Castelar", lat:-34.65209867073312, lng:-58.641937718124275, order:10 },
+  { name:"Ituzaingó", lat:-34.65935515537083, lng:-58.666079423302385, order:11 },
+  { name:"S. A. de Padua", lat:-34.66565261218575, lng:-58.69832704988376, order:12 },
+  { name:"Merlo", lat:-34.664524499459674, lng:-58.72785611491195, order:13 },
+  { name:"Paso del Rey", lat:-34.658523331785624, lng:-58.76218789854426, order:14 },
+  { name:"Moreno", lat:-34.650403431138976, lng:-58.78973968366113, order:15 }
 ];
 
-const map = L.map('map', { zoomControl: true }).setView([-34.63, -58.55], 11);
+// Polilínea de la vía (aprox uniendo estaciones)
+const track = stations.map(s => [s.lat, s.lng]);
 
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  maxZoom: 19,
-  attribution: '© OpenStreetMap'
-}).addTo(map);
+const map = L.map('map').setView([-34.63, -58.55], 11);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(map);
+L.polyline(track,{color:'#00e5ff'}).addTo(map);
 
-stations.forEach(s => {
-  L.circleMarker([s.lat, s.lng], {
-    radius: 6,
-    color: '#00e5ff'
-  }).addTo(map).bindPopup(s.name);
+stations.forEach(s=>{
+  L.circleMarker([s.lat,s.lng],{radius:5,color:'#00e5ff'}).addTo(map).bindPopup(s.name);
 });
 
 const trainIcon = L.icon({
-  iconUrl: 'https://cdn-icons-png.flaticon.com/512/2972/2972556.png',
-  iconSize: [32, 32],
-  iconAnchor: [16, 16]
+  iconUrl:'https://cdn-icons-png.flaticon.com/512/2972/2972556.png',
+  iconSize:[32,32], iconAnchor:[16,16]
 });
 
 let userMarker = null;
-let lastPosition = null;
+let smoothedPos = null;
+let lastLngs = [];
+let currentDirection = null;
 
-navigator.geolocation.watchPosition(pos => {
-  const lat = pos.coords.latitude;
-  const lng = pos.coords.longitude;
+function projectToTrack(lat, lng){
+  let minDist = Infinity;
+  let closest = null;
 
-  document.getElementById("status").innerText = "Ubicación activa";
+  for(let i=0;i<track.length-1;i++){
+    const [lat1,lng1] = track[i];
+    const [lat2,lng2] = track[i+1];
 
-  if (!userMarker) {
-    userMarker = L.marker([lat, lng], { icon: trainIcon }).addTo(map);
-    map.setView([lat, lng], 14);
+    const t = ((lat-lat1)*(lat2-lat1)+(lng-lng1)*(lng2-lng1)) /
+              ((lat2-lat1)**2+(lng2-lng1)**2);
+
+    const clampedT = Math.max(0, Math.min(1, t));
+    const projLat = lat1 + clampedT*(lat2-lat1);
+    const projLng = lng1 + clampedT*(lng2-lng1);
+
+    const dist = Math.hypot(lat-projLat, lng-projLng);
+    if(dist < minDist){
+      minDist = dist;
+      closest = {lat:projLat, lng:projLng};
+    }
+  }
+  return closest;
+}
+
+function smooth(prev, next, alpha=0.2){
+  if(!prev) return next;
+  return {
+    lat: prev.lat + alpha*(next.lat-prev.lat),
+    lng: prev.lng + alpha*(next.lng-prev.lng)
+  };
+}
+
+navigator.geolocation.watchPosition(pos=>{
+  const raw = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+
+  const snapped = projectToTrack(raw.lat, raw.lng);
+  smoothedPos = smooth(smoothedPos, snapped);
+
+  if(!userMarker){
+    userMarker = L.marker([smoothedPos.lat, smoothedPos.lng],{icon:trainIcon}).addTo(map);
+    map.setView([smoothedPos.lat, smoothedPos.lng], 14);
   } else {
-    userMarker.setLatLng([lat, lng]);
+    userMarker.setLatLng([smoothedPos.lat, smoothedPos.lng]);
   }
 
-  if (lastPosition) {
-    const dir = lng > lastPosition.lng ? "Sentido Moreno ➜ Once" : "Sentido Once ➜ Moreno";
-    document.getElementById("direction").innerText = dir;
+  lastLngs.push(smoothedPos.lng);
+  if(lastLngs.length > 5) lastLngs.shift();
+
+  if(lastLngs.length === 5){
+    const delta = lastLngs[4] - lastLngs[0];
+    const newDir = delta > 0 ? "Once → Moreno" : "Moreno → Once";
+    if(newDir === currentDirection || !currentDirection){
+      currentDirection = newDir;
+    }
+    document.getElementById("direction").innerText = "Sentido: " + currentDirection;
   }
 
-  lastPosition = { lat, lng };
+  document.getElementById("status").innerText = "Ubicación activa (filtrada y ajustada a vía)";
 
-}, err => {
-  document.getElementById("status").innerText = "Error al obtener ubicación";
-  console.error(err);
-}, {
-  enableHighAccuracy: true,
-  maximumAge: 1000,
-  timeout: 10000
-});
+},{ enableHighAccuracy:true, maximumAge:1000, timeout:10000 });
 
 const select = document.getElementById("destinationSelect");
-stations.forEach(s => {
-  const opt = document.createElement("option");
-  opt.value = s.name;
-  opt.textContent = s.name;
-  select.appendChild(opt);
+stations.forEach(s=>{
+  const o=document.createElement("option");
+  o.value=s.name; o.textContent=s.name;
+  select.appendChild(o);
 });
 </script>
 </body>
