@@ -2,134 +2,129 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Tren Sarmiento en Línea</title>
+<title>Tren Sarmiento en Línea – Mapa</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link
+  rel="stylesheet"
+  href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+/>
 
 <style>
-html, body { margin:0; padding:0; height:100%; background:#0c0c0c; font-family:system-ui; color:#e0e0e0;}
-#app { display:flex; flex-direction:column; height:100%; }
-header { padding:10px; text-align:center; background:#111; font-weight:600; }
-#status { font-size:0.8rem; opacity:0.85; }
-#controls { padding:8px; background:#111; display:flex; flex-direction:column; gap:6px; }
-select { padding:8px; border-radius:6px; border:none; font-size:0.9rem; }
-#direction, #destInfo { font-size:0.85rem; opacity:0.9; }
-#map { flex:1; }
+:root {
+  --bg: #0b0e11;
+  --panel: #131922;
+  --text: #e6e6e6;
+  --muted: #9aa4af;
+  --accent: #00e5ff;
+}
+
+:root.light {
+  --bg: #f4f6f8;
+  --panel: #ffffff;
+  --text: #0b0e11;
+  --muted: #5b6470;
+  --accent: #0066ff;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+header {
+  padding: 10px 14px;
+  background: var(--panel);
+  border-bottom: 1px solid #222;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+h1 {
+  font-size: 1rem;
+  margin: 0;
+  color: var(--accent);
+}
+
+button {
+  background: transparent;
+  border: 1px solid #333;
+  border-radius: 6px;
+  padding: 6px 10px;
+  color: var(--text);
+  cursor: pointer;
+}
+
+#map {
+  height: calc(100vh - 52px);
+  width: 100%;
+}
 </style>
 </head>
 
 <body>
-<div id="app">
-  <header>
-    🚆 Tren Sarmiento en Línea
-    <div id="status">Esperando permiso de ubicación…</div>
-  </header>
 
-  <div id="controls">
-    <label>
-      Estación destino:
-      <select id="destinationSelect"></select>
-    </label>
-    <div id="destInfo"></div>
-    <div id="direction"></div>
-  </div>
+<header>
+  <h1>🚆 Tren Sarmiento en Línea – Mapa</h1>
+  <button id="themeToggle">🌙 / ☀️</button>
+</header>
 
-  <div id="map"></div>
-</div>
+<div id="map"></div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
+const root = document.documentElement;
+
+// Tema
+function setTheme(mode) {
+  if (mode === 'light') root.classList.add('light');
+  else root.classList.remove('light');
+  localStorage.setItem('theme', mode);
+}
+document.getElementById('themeToggle').onclick = () => {
+  setTheme(root.classList.contains('light') ? 'dark' : 'light');
+};
+setTheme(localStorage.getItem('theme') || 'dark');
+
+// Mapa base
+const map = L.map('map').setView([-34.6084, -58.4069], 10);
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 18,
+  attribution: '&copy; OpenStreetMap contributors'
+}).addTo(map);
+
+// Icono locomotora SVG embebido
+const trainIcon = L.icon({
+  iconUrl: 'data:image/svg+xml;utf8,\
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">\
+    <rect x="10" y="20" width="44" height="20" rx="4" ry="4" fill="%2300e5ff"/>\
+    <rect x="14" y="14" width="18" height="8" rx="2" ry="2" fill="%2300e5ff"/>\
+    <circle cx="20" cy="46" r="5" fill="%23ffffff"/>\
+    <circle cx="44" cy="46" r="5" fill="%23ffffff"/>\
+    <rect x="8" y="40" width="48" height="4" fill="%23ffffff"/>\
+  </svg>',
+  iconSize: [32, 32],
+  iconAnchor: [16, 16],
+  popupAnchor: [0, -12]
+});
+
+// Ejemplo de estaciones (reemplazás por tus coordenadas reales)
 const stations = [
-  { name:"Once", lat:-34.60843445605315, lng:-58.406953744878294, order:0 },
-  { name:"Caballito", lat:-34.61917964127605, lng:-58.4436934702321, order:1 },
-  { name:"Flores", lat:-34.62784069841297, lng:-58.46605866222143, order:2 },
-  { name:"Floresta", lat:-34.63231874819957, lng:-58.48085346218695, order:3 },
-  { name:"Villa Luro", lat:-34.636253770170214, lng:-58.50208178545416, order:4 },
-  { name:"Liniers", lat:-34.63891286578733, lng:-58.526369712082506, order:5 },
-  { name:"Ciudadela", lat:-34.63993245473705, lng:-58.541042322318674, order:6 },
-  { name:"Ramos Mejía", lat:-34.640498321397814, lng:-58.56427762921467, order:7 },
-  { name:"Haedo", lat:-34.64458523900209, lng:-58.591789162657996, order:8 },
-  { name:"Morón", lat:-34.64830301546528, lng:-58.61961852033873, order:9 },
-  { name:"Castelar", lat:-34.65209867073312, lng:-58.641937718124275, order:10 },
-  { name:"Ituzaingó", lat:-34.65935515537083, lng:-58.666079423302385, order:11 },
-  { name:"S. A. de Padua", lat:-34.66565261218575, lng:-58.69832704988376, order:12 },
-  { name:"Merlo", lat:-34.664524499459674, lng:-58.72785611491195, order:13 },
-  { name:"Paso del Rey", lat:-34.658523331785624, lng:-58.76218789854426, order:14 },
-  { name:"Moreno", lat:-34.650403431138976, lng:-58.78973968366113, order:15 }
+  { name: "Once", lat: -34.6084, lng: -58.4069 },
+  { name: "Moreno", lat: -34.6346, lng: -58.7890 },
+  { name: "Merlo", lat: -34.6680, lng: -58.7287 }
 ];
 
-const map = L.map('map').setView([-34.63, -58.55], 11);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{ maxZoom:19 }).addTo(map);
-
-stations.forEach(s=>{
-  L.circleMarker([s.lat,s.lng],{radius:5,color:'#00e5ff'}).addTo(map).bindPopup(s.name);
+stations.forEach(s => {
+  L.marker([s.lat, s.lng], { icon: trainIcon })
+    .addTo(map)
+    .bindPopup(`<b>${s.name}</b>`);
 });
-
-const trainIcon = L.icon({
-  iconUrl:'https://cdn-icons-png.flaticon.com/512/2972/2972556.png',
-  iconSize:[32,32], iconAnchor:[16,16]
-});
-
-let userMarker = null;
-let lastLng = null;
-let watchId = null;
-
-function startGeo(){
-  if(!("geolocation" in navigator)){
-    document.getElementById("status").innerText = "Geolocalización no soportada";
-    return;
-  }
-
-  watchId = navigator.geolocation.watchPosition(onGeoOk, onGeoErr, {
-    enableHighAccuracy:true,
-    timeout:15000,
-    maximumAge:0
-  });
-}
-
-function onGeoOk(pos){
-  const lat = pos.coords.latitude;
-  const lng = pos.coords.longitude;
-
-  document.getElementById("status").innerText = "Ubicación activa";
-
-  if(!userMarker){
-    userMarker = L.marker([lat,lng],{icon:trainIcon}).addTo(map);
-    map.setView([lat,lng], 14);
-  } else {
-    userMarker.setLatLng([lat,lng]);
-  }
-
-  if(lastLng !== null){
-    const newDir = lng > lastLng ? "Once → Moreno" : "Moreno → Once";
-    document.getElementById("direction").innerText = "Sentido: " + newDir;
-  }
-  lastLng = lng;
-}
-
-function onGeoErr(err){
-  console.error(err);
-  let msg = "Error de ubicación";
-  if(location.protocol !== "https:") msg = "La geolocalización requiere HTTPS (GitHub Pages lo cumple)";
-  document.getElementById("status").innerText = msg;
-}
-
-const select = document.getElementById("destinationSelect");
-stations.forEach(s=>{
-  const o = document.createElement("option");
-  o.value = s.order;
-  o.textContent = s.name;
-  select.appendChild(o);
-});
-
-select.addEventListener("change", ()=>{
-  const st = stations[select.value];
-  map.flyTo([st.lat, st.lng], 15, { animate:true, duration:1.2 });
-  document.getElementById("destInfo").innerText = "Destino seleccionado: " + st.name;
-});
-
-startGeo();
 </script>
+
 </body>
 </html>
