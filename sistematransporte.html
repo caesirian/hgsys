@@ -1,297 +1,167 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <title>Tren Sarmiento en Línea – MVP Pasajero</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tren Sarmiento en Línea</title>
 
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
-  <style>
-    :root {
-      --bg: #0b0d10;
-      --panel: #12161c;
-      --text: #e6e9ef;
-      --muted: #9aa4b2;
-      --accent: #3fa9f5;
-      --ok: #34d399;
-    }
+<style>
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: #0c0c0c;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  color: #e0e0e0;
+}
 
-    * { box-sizing: border-box; }
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
 
-    body {
-      margin: 0;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Arial, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
+header {
+  padding: 10px;
+  text-align: center;
+  background: #111;
+  font-weight: 600;
+  font-size: 1rem;
+}
 
-    header {
-      padding: 10px 12px;
-      background: #0f1319;
-      border-bottom: 1px solid #1f2937;
-    }
+#status {
+  font-size: 0.8rem;
+  opacity: 0.8;
+}
 
-    header h1 {
-      font-size: 14px;
-      margin: 0 0 4px 0;
-      font-weight: 600;
-    }
+#controls {
+  padding: 8px;
+  background: #111;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
 
-    header p {
-      font-size: 12px;
-      margin: 0;
-      color: var(--muted);
-    }
+select {
+  padding: 8px;
+  border-radius: 6px;
+  border: none;
+  font-size: 0.9rem;
+}
 
-    #map {
-      flex: 1;
-      min-height: 300px;
-    }
+#map {
+  flex: 1;
+}
 
-    .panel {
-      background: var(--panel);
-      border-top: 1px solid #1f2937;
-      padding: 10px 12px;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-    }
-
-    .card {
-      background: #0f1319;
-      border: 1px solid #1f2937;
-      border-radius: 10px;
-      padding: 8px;
-      font-size: 12px;
-    }
-
-    .card strong {
-      display: block;
-      font-size: 11px;
-      color: var(--muted);
-      margin-bottom: 2px;
-    }
-
-    select, button {
-      width: 100%;
-      padding: 8px;
-      border-radius: 8px;
-      border: 1px solid #1f2937;
-      background: #0b0d10;
-      color: var(--text);
-      font-size: 12px;
-    }
-
-    button.primary {
-      background: var(--accent);
-      color: #001019;
-      border: none;
-      font-weight: 600;
-    }
-
-    footer {
-      padding: 6px 10px;
-      font-size: 10px;
-      color: var(--muted);
-      text-align: center;
-      border-top: 1px solid #1f2937;
-    }
-  </style>
+.leaflet-container {
+  background: #000;
+}
+</style>
 </head>
+
 <body>
+<div id="app">
 
-<header>
-  <h1>Tren Sarmiento en Línea</h1>
-  <p>Ubicación en tiempo real · Sentido de viaje · Próxima estación</p>
-</header>
+  <header>
+    🚆 Tren Sarmiento en Línea
+    <div id="status">Solicitando ubicación...</div>
+  </header>
 
-<div id="map"></div>
-
-<div class="panel">
-  <div class="card">
-    <strong>Posición</strong>
-    <div id="pos">Esperando GPS…</div>
-  </div>
-  <div class="card">
-    <strong>Sentido estimado</strong>
-    <div id="direction">—</div>
+  <div id="controls">
+    <label>
+      Estación destino:
+      <select id="destinationSelect"></select>
+    </label>
+    <div id="direction"></div>
   </div>
 
-  <div class="card">
-    <strong>Estación más cercana</strong>
-    <div id="nearest">—</div>
-  </div>
-  <div class="card">
-    <strong>Siguiente estación</strong>
-    <div id="next">—</div>
-  </div>
+  <div id="map"></div>
 
-  <div class="card" style="grid-column: span 2;">
-    <strong>Destino</strong>
-    <select id="destination"></select>
-  </div>
-
-  <button id="centerBtn" class="primary" style="grid-column: span 2;">
-    Centrar en mi ubicación
-  </button>
 </div>
-
-<footer>
-  MVP Pasajero · Datos abiertos · GitHub Pages
-</footer>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
-  const stations = [
-    { "name": "Once", "lat": -34.60843445605315, "lng": -58.406953744878294, "order": 0 },
-    { "name": "Caballito", "lat": -34.61917964127605, "lng": -58.4436934702321, "order": 1 },
-    { "name": "Flores", "lat": -34.62784069841297, "lng": -58.46605866222143, "order": 2 },
-    { "name": "Floresta", "lat": -34.63231874819957, "lng": -58.48085346218695, "order": 3 },
-    { "name": "Villa Luro", "lat": -34.636253770170214, "lng": -58.50208178545416, "order": 4 },
-    { "name": "Liniers", "lat": -34.63891286578733, "lng": -58.526369712082506, "order": 5 },
-    { "name": "Ciudadela", "lat": -34.63993245473705, "lng": -58.541042322318674, "order": 6 },
-    { "name": "Ramos Mejía", "lat": -34.640498321397814, "lng": -58.56427762921467, "order": 7 },
-    { "name": "Haedo", "lat": -34.64458523900209, "lng": -58.591789162657996, "order": 8 },
-    { "name": "Morón", "lat": -34.64830301546528, "lng": -58.61961852033873, "order": 9 },
-    { "name": "Castelar", "lat": -34.65209867073312, "lng": -58.641937718124275, "order": 10 },
-    { "name": "Ituzaingó", "lat": -34.65935515537083, "lng": -58.666079423302385, "order": 11 },
-    { "name": "S. A. de Padua", "lat": -34.66565261218575, "lng": -58.69832704988376, "order": 12 },
-    { "name": "Merlo", "lat": -34.664524499459674, "lng": -58.72785611491195, "order": 13 },
-    { "name": "Paso del Rey", "lat": -34.658523331785624, "lng": -58.76218789854426, "order": 14 },
-    { "name": "Moreno", "lat": -34.650403431138976, "lng": -58.78973968366113, "order": 15 }
-  ];
+const stations = [
+  { "name": "Once", "lat": -34.60843445605315, "lng": -58.406953744878294, "order": 0 },
+  { "name": "Caballito", "lat": -34.61917964127605, "lng": -58.4436934702321, "order": 1 },
+  { "name": "Flores", "lat": -34.62784069841297, "lng": -58.46605866222143, "order": 2 },
+  { "name": "Floresta", "lat": -34.63231874819957, "lng": -58.48085346218695, "order": 3 },
+  { "name": "Villa Luro", "lat": -34.636253770170214, "lng": -58.50208178545416, "order": 4 },
+  { "name": "Liniers", "lat": -34.63891286578733, "lng": -58.526369712082506, "order": 5 },
+  { "name": "Ciudadela", "lat": -34.63993245473705, "lng": -58.541042322318674, "order": 6 },
+  { "name": "Ramos Mejía", "lat": -34.640498321397814, "lng": -58.56427762921467, "order": 7 },
+  { "name": "Haedo", "lat": -34.64458523900209, "lng": -58.591789162657996, "order": 8 },
+  { "name": "Morón", "lat": -34.64830301546528, "lng": -58.61961852033873, "order": 9 },
+  { "name": "Castelar", "lat": -34.65209867073312, "lng": -58.641937718124275, "order": 10 },
+  { "name": "Ituzaingó", "lat": -34.65935515537083, "lng": -58.666079423302385, "order": 11 },
+  { "name": "S. A. de Padua", "lat": -34.66565261218575, "lng": -58.69832704988376, "order": 12 },
+  { "name": "Merlo", "lat": -34.664524499459674, "lng": -58.72785611491195, "order": 13 },
+  { "name": "Paso del Rey", "lat": -34.658523331785624, "lng": -58.76218789854426, "order": 14 },
+  { "name": "Moreno", "lat": -34.650403431138976, "lng": -58.78973968366113, "order": 15 }
+];
 
-  const map = L.map('map', {
-    zoomControl: true,
-    scrollWheelZoom: true,
-    doubleClickZoom: true,
-    touchZoom: true
-  }).setView([-34.63, -58.55], 11);
+const map = L.map('map', { zoomControl: true }).setView([-34.63, -58.55], 11);
 
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19,
-    attribution: '&copy; OpenStreetMap'
-  }).addTo(map);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 19,
+  attribution: '© OpenStreetMap'
+}).addTo(map);
 
-  stations.forEach(s => {
-    L.circleMarker([s.lat, s.lng], {
-      radius: 5,
-      color: '#3fa9f5',
-      fillColor: '#3fa9f5',
-      fillOpacity: 0.9
-    }).addTo(map).bindPopup(s.name);
-  });
+stations.forEach(s => {
+  L.circleMarker([s.lat, s.lng], {
+    radius: 6,
+    color: '#00e5ff'
+  }).addTo(map).bindPopup(s.name);
+});
 
-  const userMarker = L.circleMarker([0,0], {
-    radius: 7,
-    color: '#34d399',
-    fillColor: '#34d399',
-    fillOpacity: 1
-  }).addTo(map);
+const trainIcon = L.icon({
+  iconUrl: 'https://cdn-icons-png.flaticon.com/512/2972/2972556.png',
+  iconSize: [32, 32],
+  iconAnchor: [16, 16]
+});
 
-  const pathLine = L.polyline([], { color: '#34d399', weight: 2, opacity: 0.7 }).addTo(map);
+let userMarker = null;
+let lastPosition = null;
 
-  const destinationSelect = document.getElementById('destination');
-  stations.forEach(s => {
-    const opt = document.createElement('option');
-    opt.value = s.order;
-    opt.textContent = s.name;
-    destinationSelect.appendChild(opt);
-  });
+navigator.geolocation.watchPosition(pos => {
+  const lat = pos.coords.latitude;
+  const lng = pos.coords.longitude;
 
-  let lastPos = null;
-  let firstFix = true;
+  document.getElementById("status").innerText = "Ubicación activa";
 
-  function distance(a, b) {
-    const R = 6371e3;
-    const φ1 = a.lat * Math.PI/180;
-    const φ2 = b.lat * Math.PI/180;
-    const Δφ = (b.lat - a.lat) * Math.PI/180;
-    const Δλ = (b.lng - a.lng) * Math.PI/180;
-    const x = Math.sin(Δφ/2) ** 2 +
-              Math.cos(φ1) * Math.cos(φ2) *
-              Math.sin(Δλ/2) ** 2;
-    return 2 * R * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x));
-  }
-
-  function getNearestStation(pos) {
-    let min = Infinity, nearest = null;
-    stations.forEach(s => {
-      const d = distance(pos, s);
-      if (d < min) {
-        min = d;
-        nearest = s;
-      }
-    });
-    return nearest;
-  }
-
-  function updateDirection(current) {
-    if (!lastPos) return '—';
-    const dx = current.lng - lastPos.lng;
-    return dx < 0 ? 'Moreno → Once' : 'Once → Moreno';
-  }
-
-  function getNextStation(nearest, direction) {
-    if (!nearest) return '—';
-    if (direction === 'Once → Moreno') {
-      return stations[nearest.order + 1]?.name || 'Moreno (terminal)';
-    } else if (direction === 'Moreno → Once') {
-      return stations[nearest.order - 1]?.name || 'Once (terminal)';
-    }
-    return '—';
-  }
-
-  function onLocation(pos) {
-    const coords = {
-      lat: pos.coords.latitude,
-      lng: pos.coords.longitude
-    };
-
-    userMarker.setLatLng(coords);
-    pathLine.addLatLng(coords);
-
-    if (firstFix) {
-      map.setView([coords.lat, coords.lng], 14);
-      firstFix = false;
-    }
-
-    document.getElementById('pos').textContent =
-      coords.lat.toFixed(5) + ', ' + coords.lng.toFixed(5);
-
-    const nearest = getNearestStation(coords);
-    const direction = updateDirection(coords);
-    const next = getNextStation(nearest, direction);
-
-    document.getElementById('nearest').textContent = nearest?.name || '—';
-    document.getElementById('direction').textContent = direction;
-    document.getElementById('next').textContent = next;
-
-    lastPos = coords;
-  }
-
-  if (navigator.geolocation) {
-    navigator.geolocation.watchPosition(onLocation, err => {
-      document.getElementById('pos').textContent =
-        'Ubicación no disponible (ver permisos del navegador)';
-    }, {
-      enableHighAccuracy: true,
-      maximumAge: 0,
-      timeout: 20000
-    });
+  if (!userMarker) {
+    userMarker = L.marker([lat, lng], { icon: trainIcon }).addTo(map);
+    map.setView([lat, lng], 14);
   } else {
-    document.getElementById('pos').textContent = 'Geolocalización no soportada';
+    userMarker.setLatLng([lat, lng]);
   }
 
-  document.getElementById('centerBtn').onclick = () => {
-    if (lastPos) map.setView([lastPos.lat, lastPos.lng], 15);
-  };
-</script>
+  if (lastPosition) {
+    const dir = lng > lastPosition.lng ? "Sentido Moreno ➜ Once" : "Sentido Once ➜ Moreno";
+    document.getElementById("direction").innerText = dir;
+  }
 
+  lastPosition = { lat, lng };
+
+}, err => {
+  document.getElementById("status").innerText = "Error al obtener ubicación";
+  console.error(err);
+}, {
+  enableHighAccuracy: true,
+  maximumAge: 1000,
+  timeout: 10000
+});
+
+const select = document.getElementById("destinationSelect");
+stations.forEach(s => {
+  const opt = document.createElement("option");
+  opt.value = s.name;
+  opt.textContent = s.name;
+  select.appendChild(opt);
+});
+</script>
 </body>
 </html>
