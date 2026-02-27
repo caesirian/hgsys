@@ -3,246 +3,148 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Tren Sarmiento en Línea – Posición sobre la vía</title>
+<title>Tren Sarmiento en Vivo – Auditoría Ciudadana</title>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <style>
-html, body { margin:0; padding:0; height:100%; background:#0c0c0c; font-family:system-ui; color:#e0e0e0;}
-#app { display:flex; flex-direction:column; height:100%; }
-header { padding:10px; text-align:center; background:#111; font-weight:600; }
-#status { font-size:0.8rem; opacity:0.85; }
-#controls { padding:8px; background:#111; display:flex; flex-direction:column; gap:6px; }
-select { padding:8px; border-radius:6px; border:none; font-size:0.9rem; }
-#direction, #destInfo { font-size:0.85rem; opacity:0.9; }
-#metrics { padding:8px; background:#0f0f0f; font-size:0.8rem; max-height:120px; overflow:auto; }
-#map { flex:1; }
-.train-icon { width: 26px; height: 26px; filter: drop-shadow(0 0 4px rgba(0,229,255,0.6)); }
+  html, body { margin:0; padding:0; height:100%; font-family: system-ui, sans-serif; background:#0b0b0b; color:#fff; }
+  #map { height: 65vh; }
+  .panel { padding: 10px; background: #111; }
+  select, button { width:100%; padding:8px; margin:4px 0; font-size:15px; }
+  .stats { font-size:13px; line-height:1.4; }
+  .kpi { display:flex; gap:8px; flex-wrap:wrap; }
+  .kpi div { background:#1a1a1a; padding:6px 8px; border-radius:6px; }
 </style>
 </head>
-
 <body>
-<div id="app">
-  <header>
-    🚆 Tren Sarmiento en Línea
-    <div id="status">Esperando permiso de ubicación…</div>
-  </header>
 
-  <div id="controls">
-    <label>Estación destino:
-      <select id="destinationSelect"></select>
-    </label>
-    <div id="destInfo"></div>
-    <div id="direction"></div>
+<div id="map"></div>
+
+<div class="panel">
+  <div class="kpi">
+    <div>Estado: <b id="status">Iniciando…</b></div>
+    <div>Sentido: <b id="direction">–</b></div>
+    <div>Vel. prom.: <b id="avgSpeed">–</b></div>
+    <div>ETA: <b id="eta">–</b></div>
   </div>
 
-  <div id="metrics">
-    <strong>Paradas por estación (dwell time):</strong>
-    <div id="stats"></div>
-  </div>
+  <select id="destination">
+    <option value="">Seleccionar estación destino</option>
+  </select>
 
-  <div id="map"></div>
+  <button id="exportBtn">Exportar métricas (CSV)</button>
+
+  <div class="stats" id="dwellStats"></div>
 </div>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-/* ===== DATASET ESTACIONES ===== */
 const stations = [
-  { name:"Once", lat:-34.60843445605315, lng:-58.406953744878294, order:0 },
-  { name:"Caballito", lat:-34.61917964127605, lng:-58.4436934702321, order:1 },
-  { name:"Flores", lat:-34.62784069841297, lng:-58.46605866222143, order:2 },
-  { name:"Floresta", lat:-34.63231874819957, lng:-58.48085346218695, order:3 },
-  { name:"Villa Luro", lat:-34.636253770170214, lng:-58.50208178545416, order:4 },
-  { name:"Liniers", lat:-34.63891286578733, lng:-58.526369712082506, order:5 },
-  { name:"Ciudadela", lat:-34.63993245473705, lng:-58.541042322318674, order:6 },
-  { name:"Ramos Mejía", lat:-34.640498321397814, lng:-58.56427762921467, order:7 },
-  { name:"Haedo", lat:-34.64458523900209, lng:-58.591789162657996, order:8 },
-  { name:"Morón", lat:-34.64830301546528, lng:-58.61961852033873, order:9 },
-  { name:"Castelar", lat:-34.65209867073312, lng:-58.641937718124275, order:10 },
-  { name:"Ituzaingó", lat:-34.65935515537083, lng:-58.666079423302385, order:11 },
-  { name:"S. A. de Padua", lat:-34.66565261218575, lng:-58.69832704988376, order:12 },
-  { name:"Merlo", lat:-34.664524499459674, lng:-58.72785611491195, order:13 },
-  { name:"Paso del Rey", lat:-34.658523331785624, lng:-58.76218789854426, order:14 },
-  { name:"Moreno", lat:-34.650403431138976, lng:-58.78973968366113, order:15 }
+ { name:"Once", lat:-34.60843445605315, lng:-58.406953744878294, order:0 },
+ { name:"Caballito", lat:-34.61917964127605, lng:-58.4436934702321, order:1 },
+ { name:"Flores", lat:-34.62784069841297, lng:-58.46605866222143, order:2 },
+ { name:"Floresta", lat:-34.63231874819957, lng:-58.48085346218695, order:3 },
+ { name:"Villa Luro", lat:-34.636253770170214, lng:-58.50208178545416, order:4 },
+ { name:"Liniers", lat:-34.63891286578733, lng:-58.526369712082506, order:5 },
+ { name:"Ciudadela", lat:-34.63993245473705, lng:-58.541042322318674, order:6 },
+ { name:"Ramos Mejía", lat:-34.640498321397814, lng:-58.56427762921467, order:7 },
+ { name:"Haedo", lat:-34.64458523900209, lng:-58.591789162657996, order:8 },
+ { name:"Morón", lat:-34.64830301546528, lng:-58.61961852033873, order:9 },
+ { name:"Castelar", lat:-34.65209867073312, lng:-58.641937718124275, order:10 },
+ { name:"Ituzaingó", lat:-34.65935515537083, lng:-58.666079423302385, order:11 },
+ { name:"S. A. de Padua", lat:-34.66565261218575, lng:-58.69832704988376, order:12 },
+ { name:"Merlo", lat:-34.664524499459674, lng:-58.72785611491195, order:13 },
+ { name:"Paso del Rey", lat:-34.658523331785624, lng:-58.76218789854426, order:14 },
+ { name:"Moreno", lat:-34.650403431138976, lng:-58.78973968366113, order:15 }
 ];
 
-/* ===== MAPA ===== */
-const track = stations.map(s => [s.lat, s.lng]); // polilínea de la vía (aprox)
-const map = L.map('map').setView([-34.63, -58.55], 11);
+const map = L.map('map', { zoomControl:true }).setView([stations[0].lat, stations[0].lng], 12);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{ maxZoom:19 }).addTo(map);
-L.polyline(track,{color:'#00e5ff', weight:3, opacity:0.7}).addTo(map);
+
+const railLine = L.polyline(stations.map(s=>[s.lat,s.lng]),{ color:'#ff3b3b', weight:4 }).addTo(map);
+map.fitBounds(railLine.getBounds());
+stations.forEach(s=>L.circleMarker([s.lat,s.lng],{ radius:5, color:'#0ff' }).addTo(map));
 
 stations.forEach(s=>{
-  L.circleMarker([s.lat,s.lng],{radius:5,color:'#00e5ff'}).addTo(map).bindPopup(s.name);
+  const o=document.createElement("option"); o.value=s.order; o.textContent=s.name; destination.appendChild(o);
 });
 
-/* ===== ICONO SVG ===== */
-const trainSVG = `
-<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
-  <rect x="14" y="10" width="36" height="28" rx="4" fill="#00e5ff"/>
-  <rect x="20" y="16" width="10" height="10" rx="2" fill="#0c0c0c"/>
-  <rect x="34" y="16" width="10" height="10" rx="2" fill="#0c0c0c"/>
-  <circle cx="24" cy="44" r="5" fill="#e0e0e0"/>
-  <circle cx="40" cy="44" r="5" fill="#e0e0e0"/>
-</svg>`;
-const trainIcon = L.divIcon({
-  className:'',
-  html:`<div class="train-icon">${trainSVG}</div>`,
-  iconSize:[26,26],
-  iconAnchor:[13,13]
+const locoIcon = L.divIcon({
+  html:`<svg width="28" height="28" viewBox="0 0 64 64"><rect x="6" y="24" width="40" height="20" rx="3" fill="#ff3b3b"/><rect x="12" y="14" width="18" height="12" rx="2" fill="#ff3b3b"/><circle cx="16" cy="48" r="5" fill="#fff"/><circle cx="36" cy="48" r="5" fill="#fff"/></svg>`,
+  className:'', iconSize:[28,28], iconAnchor:[14,14]
 });
 
-/* ===== UTILIDADES GEOMÉTRICAS ===== */
-function projectToTrack(lat, lng){
-  let minDist = Infinity;
-  let closest = null;
+let marker=L.marker([stations[0].lat,stations[0].lng],{icon:locoIcon}).addTo(map);
 
-  for(let i=0;i<track.length-1;i++){
-    const [lat1,lng1] = track[i];
-    const [lat2,lng2] = track[i+1];
+let lastPos=null, lastTime=null, speedSamples=[], dwell={}, stoppedAt=null, destOrder=null;
 
-    const dx = lat2-lat1;
-    const dy = lng2-lng1;
-    const t = ((lat-lat1)*dx + (lng-lng1)*dy) / (dx*dx + dy*dy);
-    const tt = Math.max(0, Math.min(1, t));
+function snap(latlng){
+  let min=Infinity, best=latlng;
+  railLine.getLatLngs().forEach(p=>{
+    const d=map.distance(latlng,p);
+    if(d<min){min=d;best=p;}
+  });
+  return best;
+}
 
-    const projLat = lat1 + tt*dx;
-    const projLng = lng1 + tt*dy;
-
-    const dist = Math.hypot(lat-projLat, lng-projLng);
-    if(dist < minDist){
-      minDist = dist;
-      closest = { lat: projLat, lng: projLng };
-    }
+function updateDwell(pos){
+  const thr=40, now=Date.now();
+  const st=stations.find(s=>map.distance(pos,[s.lat,s.lng])<thr);
+  if(st){
+    if(!stoppedAt) stoppedAt={ name:st.name, start:now };
+  } else if(stoppedAt){
+    const dt=Math.round((now-stoppedAt.start)/1000);
+    dwell[stoppedAt.name]=(dwell[stoppedAt.name]||0)+dt;
+    stoppedAt=null; renderStats();
   }
-  return closest;
 }
 
-function smooth(prev, next, alpha=0.25){
-  if(!prev) return next;
-  return {
-    lat: prev.lat + alpha*(next.lat - prev.lat),
-    lng: prev.lng + alpha*(next.lng - prev.lng)
-  };
-}
-
-/* ===== ESTADÍSTICAS DE PARADA ===== */
-const stats = JSON.parse(localStorage.getItem("stationStats")||"{}");
 function renderStats(){
-  const div=document.getElementById("stats");
-  div.innerHTML="";
-  Object.keys(stats).forEach(k=>{
-    const s=stats[k];
-    div.innerHTML += `<div>${k}: ${Math.round(s.total/1000)}s / ${s.count} paradas (prom ${Math.round(s.total/s.count/1000)}s)</div>`;
-  });
-}
-renderStats();
-
-/* ===== GEOLOCALIZACIÓN CON MAP-MATCHING ===== */
-let userMarker=null;
-let smoothedPos=null;
-let lastPos=null;
-let lastTime=null;
-let lastLngs=[];
-let currentDirection=null;
-let currentStation=null;
-let stopStartTime=null;
-
-function haversine(a,b){
-  const R=6371000;
-  const dLat=(b.lat-a.lat)*Math.PI/180;
-  const dLng=(b.lng-a.lng)*Math.PI/180;
-  const la1=a.lat*Math.PI/180, la2=b.lat*Math.PI/180;
-  const h = Math.sin(dLat/2)**2 + Math.cos(la1)*Math.cos(la2)*Math.sin(dLng/2)**2;
-  return 2*R*Math.asin(Math.sqrt(h));
+  dwellStats.innerHTML="<b>Dwell por estación:</b><br>"+Object.entries(dwell).map(([k,v])=>`${k}: ${v}s`).join("<br>");
 }
 
-function nearestStation(pos){
-  let min=Infinity, st=null;
-  stations.forEach(s=>{
-    const d=haversine(pos,{lat:s.lat,lng:s.lng});
-    if(d<min){ min=d; st=s; }
-  });
-  return { station: st, dist: min };
+function computeETA(pos){
+  if(destOrder===null) return;
+  const dest=stations[destOrder];
+  const dist=map.distance(pos,[dest.lat,dest.lng]);
+  const avg = speedSamples.length ? speedSamples.reduce((a,b)=>a+b,0)/speedSamples.length : 0;
+  if(avg>1){
+    eta.textContent = Math.round(dist/avg/60)+" min";
+  }
 }
+
+destination.onchange = e => destOrder = e.target.value===""?null:parseInt(e.target.value);
+
+exportBtn.onclick = () => {
+  let csv="estacion,segundos\n";
+  Object.entries(dwell).forEach(([k,v])=>csv+=`${k},${v}\n`);
+  const blob=new Blob([csv],{type:"text/csv"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download="dwell_sarmiento.csv";
+  a.click();
+};
 
 navigator.geolocation.watchPosition(pos=>{
-  const raw = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-  const now = Date.now();
+  const raw=L.latLng(pos.coords.latitude,pos.coords.longitude);
+  const p=snap(raw);
+  marker.setLatLng(p);
 
-  // Map-matching: proyectar a la vía
-  const snapped = projectToTrack(raw.lat, raw.lng);
-  // Suavizado
-  smoothedPos = smooth(smoothedPos, snapped);
-
-  document.getElementById("status").innerText="Ubicación activa (ajustada a la vía)";
-
-  if(!userMarker){
-    userMarker = L.marker([smoothedPos.lat, smoothedPos.lng],{icon:trainIcon}).addTo(map);
-    map.setView([smoothedPos.lat, smoothedPos.lng], 14);
-  } else {
-    userMarker.setLatLng([smoothedPos.lat, smoothedPos.lng]);
+  if(lastPos && lastTime){
+    const d=map.distance(p,lastPos);
+    const dt=(Date.now()-lastTime)/1000;
+    const v=d/dt;
+    speedSamples.push(v); if(speedSamples.length>10) speedSamples.shift();
+    avgSpeed.textContent=Math.round(v*3.6)+" km/h";
   }
 
-  // Sentido estable (ventana temporal)
-  lastLngs.push(smoothedPos.lng);
-  if(lastLngs.length > 6) lastLngs.shift();
-  if(lastLngs.length === 6){
-    const delta = lastLngs[5] - lastLngs[0];
-    const newDir = delta > 0 ? "Once → Moreno" : "Moreno → Once";
-    if(!currentDirection) currentDirection = newDir;
-    if(newDir === currentDirection) {
-      document.getElementById("direction").innerText = "Sentido: " + currentDirection;
-    }
-  }
+  updateDwell(p);
+  computeETA(p);
 
-  // Detección de parada en estación
-  if(lastPos){
-    const dist = haversine(lastPos, smoothedPos);
-    const dt = (now - lastTime)/1000;
-    const speed = dist/dt;
-
-    const { station, dist:distToStation } = nearestStation(smoothedPos);
-
-    if(speed < 0.6 && distToStation < 60){
-      if(!stopStartTime){
-        stopStartTime = now;
-        currentStation = station.name;
-      }
-    } else {
-      if(stopStartTime && currentStation){
-        const dwell = now - stopStartTime;
-        stats[currentStation] = stats[currentStation] || { total:0, count:0 };
-        stats[currentStation].total += dwell;
-        stats[currentStation].count += 1;
-        localStorage.setItem("stationStats", JSON.stringify(stats));
-        renderStats();
-        stopStartTime=null;
-        currentStation=null;
-      }
-    }
-  }
-
-  lastPos = smoothedPos;
-  lastTime = now;
-
-}, err=>{
-  console.error(err);
-  document.getElementById("status").innerText="Error de geolocalización (HTTPS + GPS requerido)";
-},{ enableHighAccuracy:true, maximumAge:0, timeout:15000 });
-
-/* ===== DESTINO ===== */
-const select=document.getElementById("destinationSelect");
-stations.forEach(s=>{
-  const o=document.createElement("option");
-  o.value=s.order; o.textContent=s.name;
-  select.appendChild(o);
-});
-select.addEventListener("change", ()=>{
-  const st=stations[select.value];
-  map.flyTo([st.lat,st.lng],15,{animate:true,duration:1.2});
-  document.getElementById("destInfo").innerText="Destino: "+st.name;
-});
+  status.textContent="Activo";
+  lastPos=p; lastTime=Date.now();
+},{ enableHighAccuracy:true, maximumAge:1000, timeout:8000 });
 </script>
 </body>
 </html>
