@@ -45,46 +45,33 @@ const stations = [
  { name:"Moreno", lat:-34.650403431138976, lng:-58.78973968366113 }
 ];
 
-const map = L.map('map', { zoomControl:true }).setView([stations[0].lat, stations[0].lng], 12);
+const map = L.map('map').setView([stations[0].lat, stations[0].lng], 12);
 
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  maxZoom: 19,
-  attribution: '&copy; OpenStreetMap'
-}).addTo(map);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{ maxZoom:19 }).addTo(map);
 
-const railLine = L.polyline(stations.map(s => [s.lat, s.lng]), {
-  color: '#ff3b3b',
-  weight: 4
-}).addTo(map);
-
+const railLine = L.polyline(stations.map(s=>[s.lat,s.lng]),{ color:'#ff3b3b', weight:4 }).addTo(map);
 map.fitBounds(railLine.getBounds());
 
-stations.forEach(s => {
-  L.circleMarker([s.lat, s.lng], { radius: 4, color:'#0ff' }).addTo(map);
-});
+stations.forEach(s => L.circleMarker([s.lat, s.lng], { radius:4, color:'#0ff' }).addTo(map));
 
 const locoIcon = L.divIcon({
-  html: `
-  <svg width="28" height="28" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  html:`<svg width="28" height="28" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
     <rect x="6" y="24" width="40" height="20" rx="3" fill="#ff3b3b"/>
     <rect x="12" y="14" width="18" height="12" rx="2" fill="#ff3b3b"/>
-    <circle cx="16" cy="48" r="5" fill="#ffffff"/>
-    <circle cx="36" cy="48" r="5" fill="#ffffff"/>
+    <circle cx="16" cy="48" r="5" fill="#fff"/>
+    <circle cx="36" cy="48" r="5" fill="#fff"/>
   </svg>`,
-  className: '',
-  iconSize: [28,28],
-  iconAnchor: [14,14]
+  className:'', iconSize:[28,28], iconAnchor:[14,14]
 });
 
 let marker = null;
 let watchId = null;
 
 function snapToRail(latlng) {
-  let minDist = Infinity;
-  let best = latlng;
+  let min = Infinity, best = latlng;
   railLine.getLatLngs().forEach(p => {
     const d = map.distance(latlng, p);
-    if (d < minDist) { minDist = d; best = p; }
+    if (d < min) { min = d; best = p; }
   });
   return best;
 }
@@ -94,32 +81,41 @@ function startTracking() {
     status.textContent = "GPS no soportado por el navegador";
     return;
   }
+
   status.textContent = "Solicitando permiso de ubicación…";
 
-  watchId = navigator.geolocation.watchPosition(
-    (pos) => {
-      const raw = L.latLng(pos.coords.latitude, pos.coords.longitude);
-      const snapped = snapToRail(raw);
+  // Fuerza el prompt de permisos en Android
+  navigator.geolocation.getCurrentPosition(
+    () => {
+      status.textContent = "Permiso concedido. Activando seguimiento…";
 
-      if (!marker) {
-        marker = L.marker(snapped, { icon: locoIcon }).addTo(map);
-        map.setView(snapped, 14);
-      } else {
-        marker.setLatLng(snapped);
-      }
+      watchId = navigator.geolocation.watchPosition(
+        (pos) => {
+          const raw = L.latLng(pos.coords.latitude, pos.coords.longitude);
+          const snapped = snapToRail(raw);
 
-      status.textContent = "GPS activo";
+          if (!marker) {
+            marker = L.marker(snapped, { icon: locoIcon }).addTo(map);
+            map.setView(snapped, 14);
+          } else {
+            marker.setLatLng(snapped);
+          }
+
+          status.textContent = "GPS activo";
+        },
+        (err) => {
+          if (err.code === 1) status.textContent = "Permiso de ubicación denegado";
+          else if (err.code === 2) status.textContent = "Ubicación no disponible";
+          else status.textContent = "Timeout del GPS";
+        },
+        { enableHighAccuracy:true, maximumAge:1000, timeout:10000 }
+      );
     },
     (err) => {
       if (err.code === 1) status.textContent = "Permiso de ubicación denegado";
-      else if (err.code === 2) status.textContent = "Ubicación no disponible";
-      else status.textContent = "Timeout del GPS";
+      else status.textContent = "No se pudo acceder al GPS";
     },
-    {
-      enableHighAccuracy: true,
-      maximumAge: 1000,
-      timeout: 10000
-    }
+    { enableHighAccuracy:true, timeout:10000 }
   );
 }
 
