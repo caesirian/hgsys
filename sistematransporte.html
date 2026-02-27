@@ -10,11 +10,10 @@
 
 <style>
   html, body { margin:0; padding:0; height:100%; font-family: system-ui, sans-serif; background:#0b0b0b; color:#fff; }
-  #map { height: 65vh; }
+  #map { height: 60vh; }
   .panel { padding: 10px; background: #111; }
-  select, button { width:100%; padding:8px; margin:4px 0; font-size:15px; }
-  .stats { font-size:13px; line-height:1.4; }
-  .kpi { display:flex; gap:8px; flex-wrap:wrap; }
+  button, select { width:100%; padding:10px; margin:6px 0; font-size:16px; }
+  .kpi { display:flex; flex-wrap:wrap; gap:6px; font-size:13px; }
   .kpi div { background:#1a1a1a; padding:6px 8px; border-radius:6px; }
 </style>
 </head>
@@ -23,10 +22,12 @@
 <div id="map"></div>
 
 <div class="panel">
+  <button id="startBtn">Activar ubicación</button>
+
   <div class="kpi">
-    <div>Estado: <b id="status">Iniciando…</b></div>
+    <div>Estado: <b id="status">Esperando activación</b></div>
     <div>Sentido: <b id="direction">–</b></div>
-    <div>Vel. prom.: <b id="avgSpeed">–</b></div>
+    <div>Velocidad: <b id="avgSpeed">–</b></div>
     <div>ETA: <b id="eta">–</b></div>
   </div>
 
@@ -34,9 +35,8 @@
     <option value="">Seleccionar estación destino</option>
   </select>
 
-  <button id="exportBtn">Exportar métricas (CSV)</button>
-
-  <div class="stats" id="dwellStats"></div>
+  <button id="exportBtn">Exportar dwell (CSV)</button>
+  <div id="dwellStats"></div>
 </div>
 
 <script>
@@ -59,14 +59,13 @@ const stations = [
  { name:"Moreno", lat:-34.650403431138976, lng:-58.78973968366113, order:15 }
 ];
 
-const map = L.map('map', { zoomControl:true }).setView([stations[0].lat, stations[0].lng], 12);
+const map = L.map('map').setView([stations[0].lat, stations[0].lng], 12);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{ maxZoom:19 }).addTo(map);
-
 const railLine = L.polyline(stations.map(s=>[s.lat,s.lng]),{ color:'#ff3b3b', weight:4 }).addTo(map);
 map.fitBounds(railLine.getBounds());
-stations.forEach(s=>L.circleMarker([s.lat,s.lng],{ radius:5, color:'#0ff' }).addTo(map));
 
 stations.forEach(s=>{
+  L.circleMarker([s.lat,s.lng],{ radius:5, color:'#0ff' }).addTo(map);
   const o=document.createElement("option"); o.value=s.order; o.textContent=s.name; destination.appendChild(o);
 });
 
@@ -75,9 +74,7 @@ const locoIcon = L.divIcon({
   className:'', iconSize:[28,28], iconAnchor:[14,14]
 });
 
-let marker=L.marker([stations[0].lat,stations[0].lng],{icon:locoIcon}).addTo(map);
-
-let lastPos=null, lastTime=null, speedSamples=[], dwell={}, stoppedAt=null, destOrder=null;
+let marker=null, watchId=null, lastPos=null, lastTime=null, dwell={}, stoppedAt=null, speedSamples=[], destOrder=null;
 
 function snap(latlng){
   let min=Infinity, best=latlng;
@@ -88,63 +85,32 @@ function snap(latlng){
   return best;
 }
 
-function updateDwell(pos){
-  const thr=40, now=Date.now();
-  const st=stations.find(s=>map.distance(pos,[s.lat,s.lng])<thr);
-  if(st){
-    if(!stoppedAt) stoppedAt={ name:st.name, start:now };
-  } else if(stoppedAt){
-    const dt=Math.round((now-stoppedAt.start)/1000);
-    dwell[stoppedAt.name]=(dwell[stoppedAt.name]||0)+dt;
-    stoppedAt=null; renderStats();
+function startTracking(){
+  if(!navigator.geolocation){
+    status.textContent="GPS no soportado";
+    return;
   }
+  status.textContent="Solicitando permiso de ubicación…";
+  watchId = navigator.geolocation.watchPosition(onPos, onErr, { enableHighAccuracy:true, maximumAge:1000, timeout:10000 });
 }
 
-function renderStats(){
-  dwellStats.innerHTML="<b>Dwell por estación:</b><br>"+Object.entries(dwell).map(([k,v])=>`${k}: ${v}s`).join("<br>");
-}
-
-function computeETA(pos){
-  if(destOrder===null) return;
-  const dest=stations[destOrder];
-  const dist=map.distance(pos,[dest.lat,dest.lng]);
-  const avg = speedSamples.length ? speedSamples.reduce((a,b)=>a+b,0)/speedSamples.length : 0;
-  if(avg>1){
-    eta.textContent = Math.round(dist/avg/60)+" min";
-  }
-}
-
-destination.onchange = e => destOrder = e.target.value===""?null:parseInt(e.target.value);
-
-exportBtn.onclick = () => {
-  let csv="estacion,segundos\n";
-  Object.entries(dwell).forEach(([k,v])=>csv+=`${k},${v}\n`);
-  const blob=new Blob([csv],{type:"text/csv"});
-  const a=document.createElement("a");
-  a.href=URL.createObjectURL(blob);
-  a.download="dwell_sarmiento.csv";
-  a.click();
-};
-
-navigator.geolocation.watchPosition(pos=>{
-  const raw=L.latLng(pos.coords.latitude,pos.coords.longitude);
+function onPos(pos){
+  const raw=L.latLng(pos.coords.latitude, pos.coords.longitude);
   const p=snap(raw);
-  marker.setLatLng(p);
 
-  if(lastPos && lastTime){
-    const d=map.distance(p,lastPos);
-    const dt=(Date.now()-lastTime)/1000;
-    const v=d/dt;
-    speedSamples.push(v); if(speedSamples.length>10) speedSamples.shift();
-    avgSpeed.textContent=Math.round(v*3.6)+" km/h";
-  }
+  if(!marker) marker=L.marker(p,{icon:locoIcon}).addTo(map);
+  else marker.setLatLng(p);
 
-  updateDwell(p);
-  computeETA(p);
+  status.textContent="GPS activo";
+  lastTime = Date.now();
+  lastPos = p;
+}
 
-  status.textContent="Activo";
-  lastPos=p; lastTime=Date.now();
-},{ enableHighAccuracy:true, maximumAge:1000, timeout:8000 });
+function onErr(e){
+  status.textContent = e.code===1 ? "Permiso denegado" : "GPS no disponible";
+}
+
+startBtn.onclick = startTracking;
 </script>
 </body>
 </html>
