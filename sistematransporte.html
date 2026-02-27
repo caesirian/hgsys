@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Tren Sarmiento en Línea – Métricas de Parada</title>
+<title>Tren Sarmiento en Línea – Posición sobre la vía</title>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
@@ -15,16 +15,9 @@ header { padding:10px; text-align:center; background:#111; font-weight:600; }
 #controls { padding:8px; background:#111; display:flex; flex-direction:column; gap:6px; }
 select { padding:8px; border-radius:6px; border:none; font-size:0.9rem; }
 #direction, #destInfo { font-size:0.85rem; opacity:0.9; }
-#metrics {
-  padding:8px;
-  background:#0f0f0f;
-  font-size:0.8rem;
-  max-height:140px;
-  overflow:auto;
-}
+#metrics { padding:8px; background:#0f0f0f; font-size:0.8rem; max-height:120px; overflow:auto; }
 #map { flex:1; }
 .train-icon { width: 26px; height: 26px; filter: drop-shadow(0 0 4px rgba(0,229,255,0.6)); }
-.station-hit { color:#00e5ff; }
 </style>
 </head>
 
@@ -36,8 +29,7 @@ select { padding:8px; border-radius:6px; border:none; font-size:0.9rem; }
   </header>
 
   <div id="controls">
-    <label>
-      Estación destino:
+    <label>Estación destino:
       <select id="destinationSelect"></select>
     </label>
     <div id="destInfo"></div>
@@ -45,7 +37,7 @@ select { padding:8px; border-radius:6px; border:none; font-size:0.9rem; }
   </div>
 
   <div id="metrics">
-    <strong>Estadísticas de paradas (dwell time):</strong>
+    <strong>Paradas por estación (dwell time):</strong>
     <div id="stats"></div>
   </div>
 
@@ -54,6 +46,7 @@ select { padding:8px; border-radius:6px; border:none; font-size:0.9rem; }
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
+/* ===== DATASET ESTACIONES ===== */
 const stations = [
   { name:"Once", lat:-34.60843445605315, lng:-58.406953744878294, order:0 },
   { name:"Caballito", lat:-34.61917964127605, lng:-58.4436934702321, order:1 },
@@ -73,14 +66,17 @@ const stations = [
   { name:"Moreno", lat:-34.650403431138976, lng:-58.78973968366113, order:15 }
 ];
 
+/* ===== MAPA ===== */
+const track = stations.map(s => [s.lat, s.lng]); // polilínea de la vía (aprox)
 const map = L.map('map').setView([-34.63, -58.55], 11);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{ maxZoom:19 }).addTo(map);
+L.polyline(track,{color:'#00e5ff', weight:3, opacity:0.7}).addTo(map);
 
 stations.forEach(s=>{
   L.circleMarker([s.lat,s.lng],{radius:5,color:'#00e5ff'}).addTo(map).bindPopup(s.name);
 });
 
-// Icono SVG
+/* ===== ICONO SVG ===== */
 const trainSVG = `
 <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
   <rect x="14" y="10" width="36" height="28" rx="4" fill="#00e5ff"/>
@@ -90,19 +86,67 @@ const trainSVG = `
   <circle cx="40" cy="44" r="5" fill="#e0e0e0"/>
 </svg>`;
 const trainIcon = L.divIcon({
-  className: '',
-  html: `<div class="train-icon">${trainSVG}</div>`,
-  iconSize: [26,26],
-  iconAnchor: [13,13]
+  className:'',
+  html:`<div class="train-icon">${trainSVG}</div>`,
+  iconSize:[26,26],
+  iconAnchor:[13,13]
 });
 
+/* ===== UTILIDADES GEOMÉTRICAS ===== */
+function projectToTrack(lat, lng){
+  let minDist = Infinity;
+  let closest = null;
+
+  for(let i=0;i<track.length-1;i++){
+    const [lat1,lng1] = track[i];
+    const [lat2,lng2] = track[i+1];
+
+    const dx = lat2-lat1;
+    const dy = lng2-lng1;
+    const t = ((lat-lat1)*dx + (lng-lng1)*dy) / (dx*dx + dy*dy);
+    const tt = Math.max(0, Math.min(1, t));
+
+    const projLat = lat1 + tt*dx;
+    const projLng = lng1 + tt*dy;
+
+    const dist = Math.hypot(lat-projLat, lng-projLng);
+    if(dist < minDist){
+      minDist = dist;
+      closest = { lat: projLat, lng: projLng };
+    }
+  }
+  return closest;
+}
+
+function smooth(prev, next, alpha=0.25){
+  if(!prev) return next;
+  return {
+    lat: prev.lat + alpha*(next.lat - prev.lat),
+    lng: prev.lng + alpha*(next.lng - prev.lng)
+  };
+}
+
+/* ===== ESTADÍSTICAS DE PARADA ===== */
+const stats = JSON.parse(localStorage.getItem("stationStats")||"{}");
+function renderStats(){
+  const div=document.getElementById("stats");
+  div.innerHTML="";
+  Object.keys(stats).forEach(k=>{
+    const s=stats[k];
+    div.innerHTML += `<div>${k}: ${Math.round(s.total/1000)}s / ${s.count} paradas (prom ${Math.round(s.total/s.count/1000)}s)</div>`;
+  });
+}
+renderStats();
+
+/* ===== GEOLOCALIZACIÓN CON MAP-MATCHING ===== */
 let userMarker=null;
+let smoothedPos=null;
 let lastPos=null;
 let lastTime=null;
+let lastLngs=[];
+let currentDirection=null;
 let currentStation=null;
 let stopStartTime=null;
-
-const stats = JSON.parse(localStorage.getItem("stationStats")||"{}");
 
 function haversine(a,b){
   const R=6371000;
@@ -111,15 +155,6 @@ function haversine(a,b){
   const la1=a.lat*Math.PI/180, la2=b.lat*Math.PI/180;
   const h = Math.sin(dLat/2)**2 + Math.cos(la1)*Math.cos(la2)*Math.sin(dLng/2)**2;
   return 2*R*Math.asin(Math.sqrt(h));
-}
-
-function renderStats(){
-  const div=document.getElementById("stats");
-  div.innerHTML="";
-  Object.keys(stats).forEach(k=>{
-    const s=stats[k];
-    div.innerHTML += `<div class="station-hit">${k}: ${Math.round(s.total/1000)}s en ${s.count} paradas (prom: ${Math.round(s.total/s.count/1000)}s)</div>`;
-  });
 }
 
 function nearestStation(pos){
@@ -132,26 +167,42 @@ function nearestStation(pos){
 }
 
 navigator.geolocation.watchPosition(pos=>{
-  const lat=pos.coords.latitude;
-  const lng=pos.coords.longitude;
-  const now=Date.now();
-  const current={lat,lng};
+  const raw = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+  const now = Date.now();
 
-  document.getElementById("status").innerText="Ubicación activa";
+  // Map-matching: proyectar a la vía
+  const snapped = projectToTrack(raw.lat, raw.lng);
+  // Suavizado
+  smoothedPos = smooth(smoothedPos, snapped);
+
+  document.getElementById("status").innerText="Ubicación activa (ajustada a la vía)";
 
   if(!userMarker){
-    userMarker=L.marker([lat,lng],{icon:trainIcon}).addTo(map);
-    map.setView([lat,lng],14);
+    userMarker = L.marker([smoothedPos.lat, smoothedPos.lng],{icon:trainIcon}).addTo(map);
+    map.setView([smoothedPos.lat, smoothedPos.lng], 14);
   } else {
-    userMarker.setLatLng([lat,lng]);
+    userMarker.setLatLng([smoothedPos.lat, smoothedPos.lng]);
   }
 
-  if(lastPos){
-    const dist=haversine(lastPos,current);
-    const dt=(now-lastTime)/1000;
-    const speed=dist/dt; // m/s
+  // Sentido estable (ventana temporal)
+  lastLngs.push(smoothedPos.lng);
+  if(lastLngs.length > 6) lastLngs.shift();
+  if(lastLngs.length === 6){
+    const delta = lastLngs[5] - lastLngs[0];
+    const newDir = delta > 0 ? "Once → Moreno" : "Moreno → Once";
+    if(!currentDirection) currentDirection = newDir;
+    if(newDir === currentDirection) {
+      document.getElementById("direction").innerText = "Sentido: " + currentDirection;
+    }
+  }
 
-    const {station, dist:distToStation}=nearestStation(current);
+  // Detección de parada en estación
+  if(lastPos){
+    const dist = haversine(lastPos, smoothedPos);
+    const dt = (now - lastTime)/1000;
+    const speed = dist/dt;
+
+    const { station, dist:distToStation } = nearestStation(smoothedPos);
 
     if(speed < 0.6 && distToStation < 60){
       if(!stopStartTime){
@@ -166,22 +217,21 @@ navigator.geolocation.watchPosition(pos=>{
         stats[currentStation].count += 1;
         localStorage.setItem("stationStats", JSON.stringify(stats));
         renderStats();
-        stopStartTime = null;
-        currentStation = null;
+        stopStartTime=null;
+        currentStation=null;
       }
     }
   }
 
-  lastPos=current;
-  lastTime=now;
+  lastPos = smoothedPos;
+  lastTime = now;
 
 }, err=>{
-  document.getElementById("status").innerText="Error de geolocalización";
   console.error(err);
+  document.getElementById("status").innerText="Error de geolocalización (HTTPS + GPS requerido)";
 },{ enableHighAccuracy:true, maximumAge:0, timeout:15000 });
 
-renderStats();
-
+/* ===== DESTINO ===== */
 const select=document.getElementById("destinationSelect");
 stations.forEach(s=>{
   const o=document.createElement("option");
