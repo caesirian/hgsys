@@ -3,18 +3,17 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Tren Sarmiento en Vivo – Auditoría Ciudadana</title>
+<title>Tren Sarmiento – Posición en Vivo (Base estable)</title>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <style>
   html, body { margin:0; padding:0; height:100%; font-family: system-ui, sans-serif; background:#0b0b0b; color:#fff; }
-  #map { height: 60vh; }
-  .panel { padding: 10px; background: #111; }
-  button, select { width:100%; padding:10px; margin:6px 0; font-size:16px; }
-  .kpi { display:flex; flex-wrap:wrap; gap:6px; font-size:13px; }
-  .kpi div { background:#1a1a1a; padding:6px 8px; border-radius:6px; }
+  #map { height: 70vh; }
+  .panel { padding: 10px; background:#111; }
+  button { width:100%; padding:12px; font-size:16px; }
+  .status { margin-top:8px; font-size:14px; }
 </style>
 </head>
 <body>
@@ -23,94 +22,109 @@
 
 <div class="panel">
   <button id="startBtn">Activar ubicación</button>
-
-  <div class="kpi">
-    <div>Estado: <b id="status">Esperando activación</b></div>
-    <div>Sentido: <b id="direction">–</b></div>
-    <div>Velocidad: <b id="avgSpeed">–</b></div>
-    <div>ETA: <b id="eta">–</b></div>
-  </div>
-
-  <select id="destination">
-    <option value="">Seleccionar estación destino</option>
-  </select>
-
-  <button id="exportBtn">Exportar dwell (CSV)</button>
-  <div id="dwellStats"></div>
+  <div class="status">Estado: <b id="status">Esperando activación</b></div>
 </div>
 
 <script>
 const stations = [
- { name:"Once", lat:-34.60843445605315, lng:-58.406953744878294, order:0 },
- { name:"Caballito", lat:-34.61917964127605, lng:-58.4436934702321, order:1 },
- { name:"Flores", lat:-34.62784069841297, lng:-58.46605866222143, order:2 },
- { name:"Floresta", lat:-34.63231874819957, lng:-58.48085346218695, order:3 },
- { name:"Villa Luro", lat:-34.636253770170214, lng:-58.50208178545416, order:4 },
- { name:"Liniers", lat:-34.63891286578733, lng:-58.526369712082506, order:5 },
- { name:"Ciudadela", lat:-34.63993245473705, lng:-58.541042322318674, order:6 },
- { name:"Ramos Mejía", lat:-34.640498321397814, lng:-58.56427762921467, order:7 },
- { name:"Haedo", lat:-34.64458523900209, lng:-58.591789162657996, order:8 },
- { name:"Morón", lat:-34.64830301546528, lng:-58.61961852033873, order:9 },
- { name:"Castelar", lat:-34.65209867073312, lng:-58.641937718124275, order:10 },
- { name:"Ituzaingó", lat:-34.65935515537083, lng:-58.666079423302385, order:11 },
- { name:"S. A. de Padua", lat:-34.66565261218575, lng:-58.69832704988376, order:12 },
- { name:"Merlo", lat:-34.664524499459674, lng:-58.72785611491195, order:13 },
- { name:"Paso del Rey", lat:-34.658523331785624, lng:-58.76218789854426, order:14 },
- { name:"Moreno", lat:-34.650403431138976, lng:-58.78973968366113, order:15 }
+ { name:"Once", lat:-34.60843445605315, lng:-58.406953744878294 },
+ { name:"Caballito", lat:-34.61917964127605, lng:-58.4436934702321 },
+ { name:"Flores", lat:-34.62784069841297, lng:-58.46605866222143 },
+ { name:"Floresta", lat:-34.63231874819957, lng:-58.48085346218695 },
+ { name:"Villa Luro", lat:-34.636253770170214, lng:-58.50208178545416 },
+ { name:"Liniers", lat:-34.63891286578733, lng:-58.526369712082506 },
+ { name:"Ciudadela", lat:-34.63993245473705, lng:-58.541042322318674 },
+ { name:"Ramos Mejía", lat:-34.640498321397814, lng:-58.56427762921467 },
+ { name:"Haedo", lat:-34.64458523900209, lng:-58.591789162657996 },
+ { name:"Morón", lat:-34.64830301546528, lng:-58.61961852033873 },
+ { name:"Castelar", lat:-34.65209867073312, lng:-58.641937718124275 },
+ { name:"Ituzaingó", lat:-34.65935515537083, lng:-58.666079423302385 },
+ { name:"S. A. de Padua", lat:-34.66565261218575, lng:-58.69832704988376 },
+ { name:"Merlo", lat:-34.664524499459674, lng:-58.72785611491195 },
+ { name:"Paso del Rey", lat:-34.658523331785624, lng:-58.76218789854426 },
+ { name:"Moreno", lat:-34.650403431138976, lng:-58.78973968366113 }
 ];
 
-const map = L.map('map').setView([stations[0].lat, stations[0].lng], 12);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{ maxZoom:19 }).addTo(map);
-const railLine = L.polyline(stations.map(s=>[s.lat,s.lng]),{ color:'#ff3b3b', weight:4 }).addTo(map);
+const map = L.map('map', { zoomControl:true }).setView([stations[0].lat, stations[0].lng], 12);
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 19,
+  attribution: '&copy; OpenStreetMap'
+}).addTo(map);
+
+const railLine = L.polyline(stations.map(s => [s.lat, s.lng]), {
+  color: '#ff3b3b',
+  weight: 4
+}).addTo(map);
+
 map.fitBounds(railLine.getBounds());
 
-stations.forEach(s=>{
-  L.circleMarker([s.lat,s.lng],{ radius:5, color:'#0ff' }).addTo(map);
-  const o=document.createElement("option"); o.value=s.order; o.textContent=s.name; destination.appendChild(o);
+stations.forEach(s => {
+  L.circleMarker([s.lat, s.lng], { radius: 4, color:'#0ff' }).addTo(map);
 });
 
 const locoIcon = L.divIcon({
-  html:`<svg width="28" height="28" viewBox="0 0 64 64"><rect x="6" y="24" width="40" height="20" rx="3" fill="#ff3b3b"/><rect x="12" y="14" width="18" height="12" rx="2" fill="#ff3b3b"/><circle cx="16" cy="48" r="5" fill="#fff"/><circle cx="36" cy="48" r="5" fill="#fff"/></svg>`,
-  className:'', iconSize:[28,28], iconAnchor:[14,14]
+  html: `
+  <svg width="28" height="28" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+    <rect x="6" y="24" width="40" height="20" rx="3" fill="#ff3b3b"/>
+    <rect x="12" y="14" width="18" height="12" rx="2" fill="#ff3b3b"/>
+    <circle cx="16" cy="48" r="5" fill="#ffffff"/>
+    <circle cx="36" cy="48" r="5" fill="#ffffff"/>
+  </svg>`,
+  className: '',
+  iconSize: [28,28],
+  iconAnchor: [14,14]
 });
 
-let marker=null, watchId=null, lastPos=null, lastTime=null, dwell={}, stoppedAt=null, speedSamples=[], destOrder=null;
+let marker = null;
+let watchId = null;
 
-function snap(latlng){
-  let min=Infinity, best=latlng;
-  railLine.getLatLngs().forEach(p=>{
-    const d=map.distance(latlng,p);
-    if(d<min){min=d;best=p;}
+function snapToRail(latlng) {
+  let minDist = Infinity;
+  let best = latlng;
+  railLine.getLatLngs().forEach(p => {
+    const d = map.distance(latlng, p);
+    if (d < minDist) { minDist = d; best = p; }
   });
   return best;
 }
 
-function startTracking(){
-  if(!navigator.geolocation){
-    status.textContent="GPS no soportado";
+function startTracking() {
+  if (!navigator.geolocation) {
+    status.textContent = "GPS no soportado por el navegador";
     return;
   }
-  status.textContent="Solicitando permiso de ubicación…";
-  watchId = navigator.geolocation.watchPosition(onPos, onErr, { enableHighAccuracy:true, maximumAge:1000, timeout:10000 });
+  status.textContent = "Solicitando permiso de ubicación…";
+
+  watchId = navigator.geolocation.watchPosition(
+    (pos) => {
+      const raw = L.latLng(pos.coords.latitude, pos.coords.longitude);
+      const snapped = snapToRail(raw);
+
+      if (!marker) {
+        marker = L.marker(snapped, { icon: locoIcon }).addTo(map);
+        map.setView(snapped, 14);
+      } else {
+        marker.setLatLng(snapped);
+      }
+
+      status.textContent = "GPS activo";
+    },
+    (err) => {
+      if (err.code === 1) status.textContent = "Permiso de ubicación denegado";
+      else if (err.code === 2) status.textContent = "Ubicación no disponible";
+      else status.textContent = "Timeout del GPS";
+    },
+    {
+      enableHighAccuracy: true,
+      maximumAge: 1000,
+      timeout: 10000
+    }
+  );
 }
 
-function onPos(pos){
-  const raw=L.latLng(pos.coords.latitude, pos.coords.longitude);
-  const p=snap(raw);
-
-  if(!marker) marker=L.marker(p,{icon:locoIcon}).addTo(map);
-  else marker.setLatLng(p);
-
-  status.textContent="GPS activo";
-  lastTime = Date.now();
-  lastPos = p;
-}
-
-function onErr(e){
-  status.textContent = e.code===1 ? "Permiso denegado" : "GPS no disponible";
-}
-
-startBtn.onclick = startTracking;
+startBtn.addEventListener("click", startTracking);
 </script>
+
 </body>
 </html>
