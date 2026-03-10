@@ -1,0 +1,598 @@
+/*
+ * Tren Sarmiento
+ */
+
+/* Define el tamaño base para 'rem'. 1rem = 16px por defecto. */
+html {
+    font-size: 17px; /* base desktop */
+    -webkit-text-size-adjust: 100%;
+    -ms-text-size-adjust: 100%;
+    overflow-x: hidden;
+}
+
+body {
+    font-family: 'Roboto', sans-serif;
+    font-weight: 400;
+    color: #545454;
+    -webkit-font-smoothing: antialiased;
+    font-size: 1rem; /* Equivalente a 16px. Asegura una base legible. */
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'Roboto', sans-serif;
+    font-weight: 400;
+    /* Line-height ajustado para encabezados, mejora la legibilidad en varias líneas */
+    line-height: 1.2;
+}
+
+/* Tamaños de fuente para móviles (base) */
+h1 { font-size: 1.5rem; } /* Aproximadamente 35.2px */
+h2 { font-size: 1.3rem; } /* Aproximadamente 28.8px */
+h3 { font-size: 1.2rem; } /* Aproximadamente 25.6px */
+h4 { font-size: 1.1rem; } /* Aproximadamente 22.4px */
+h5 { font-size: 1.1rem; } /* Aproximadamente 19.2px */
+h6 { font-size: 1rem; }   /* Aproximadamente 16px */
+
+.subtitulo {
+  font-size: 20px !important;
+  line-height: 1.6;
+  color: #444;
+  margin: 8px 0 24px 0;
+  padding-left: 12px;
+  border-left: 4px solid #e30613;
+  max-width: 700px;
+}
+
+@media (max-width: 600px) {
+
+  h1 {
+    font-size: 26px;
+  }
+
+  .subtitulo {
+    font-size: 18px !important;
+  }
+
+}
+
+
+p {
+    margin: 0;
+    padding: 0;
+    color: #787878;
+    font-size: 1rem; /* Asegura un tamaño legible en móviles (16px) */
+    line-height: 1.6; /* Mejora la legibilidad de los párrafos */
+}
+
+a {
+    text-decoration: none;
+    color: #0165AF;
+}
+
+a:hover {
+    text-decoration: none;
+    color: #0000FF;
+	text-decoration: underline;
+}
+
+a:hover, a:active, a:focus {
+    outline: 0;
+}
+
+:focus {
+    outline: none;
+}
+
+::-moz-focus-inner {
+    border: 0;
+}
+
+.imgbaner {
+    text-align: center;
+}
+
+img {
+    max-width: 100%;
+    height: auto;
+}
+
+.imagen-principal{
+margin:30px auto;
+text-align:center;
+}
+
+.imagen-principal img{
+display:block;
+margin:auto;
+}
+
+.imgmedio{
+	text-align:center;
+}
+/* Basic CSS ends */
+
+header .navbar { 
+	margin: 0;
+	background: #0494d1;
+	border-radius: 0;
+	border-bottom: 2px solid rgba(0,0,0,0.2); 
+	box-shadow: 0 1px 15px rgba(0,0,0,0.2);
+}
+
+/* Ajustes para enlaces de navegación en móvil */
+header .navbar-default .navbar-nav>li>a {
+    margin: 10px 3px; /* Espaciado más compacto para móvil */
+    padding-top: 6px;
+    color: #fff;
+    padding-bottom: 6px;
+    border-radius: 2px;
+}
+
+header .navbar-default .navbar-nav>li>a:hover, 
+header .navbar-default .navbar-nav>li>a:focus,
+header .navbar-default .navbar-nav>li.open>a:hover, 
+header .navbar-default .navbar-nav>li.open>a:focus {
+	background: #fff;
+}
+
+
+
+header .navbar-nav .dropdown-menu {
+    top: 57px;
+    border-radius: 3px;
+    /* En móvil, las flechas del dropdown suelen ocultarse */
+}
+
+
+header .navbar-nav .dropdown-menu li a {
+    color: #fff !important; /* Añade !important si es necesario */
+	font-size: 1rem;
+}
+
+header .navbar-nav .dropdown-menu:after,
+header .navbar-nav .dropdown-menu:before {
+    display: none; /* Ocultar flechas de dropdown en móvil por defecto */
+}
+
+header .navbar-brand {
+    padding: 0;
+    height: auto;
+}
+
+header .navbar-brand img {
+    position: relative;
+    top: 3px; /* Ajustado para móvil */
+    max-width: 180px; /* Tamaño del logo en móvil */
+}
+
+header .navbar-default .navbar-toggle .icon-bar {
+  background-color: #fff;
+}
+
+/* Banner */
+.banner {
+    background: #ffffff;
+    padding-top: 20px;
+    padding-bottom: 30px;
+}
+
+/* Tamaños de fuente del banner para móvil */
+.banner h1 {
+    margin-top: 0;
+    margin-bottom: 0;
+    font-size: 1.6rem; /* Aproximadamente 32px */
+    line-height: 1.2;
+    color: #676767;
+    text-align: center;
+	font-weight: 600;
+}
+.banner h2 {
+    margin-top: 0.4em;
+    margin-bottom: 0;
+	margin: 10px 0;
+    font-size: 1.4rem; /* Aproximadamente 27.2px */
+    line-height: 1.3;
+    color: #676767;
+    text-align: center;
+	font-weight: 600;
+}
+.banner h3 {
+    margin-top: 0.4em;
+    margin-bottom: 0;
+    font-size: 1.3rem; /* Aproximadamente 24px */
+    line-height: 1.4;
+    color: #106082;
+    text-align: center;
+	font-weight: 600;
+}
+.banner h4 {
+    margin-top: 0.4em;
+    margin-bottom: 0;
+    font-size: 1.2rem; /* Aproximadamente 20.8px */
+    line-height: 1.4;
+    color: #676767;
+    text-align: center;
+	font-weight: 600;
+}
+.banner h5 {
+    margin-top: 0;
+    margin-bottom: 0;
+    font-size: 1.1rem; /* Aproximadamente 17.6px */
+    line-height: 1.5;
+    color: #795f04;
+    text-align: center;
+}
+
+.banner p,
+.banner .row {
+    max-width: 700px;
+    margin: 0 auto;
+    margin-top: 10px;
+    font-size: 0.95rem; /* Ligeramente más pequeño que el párrafo base, pero legible */
+    line-height: 1.6;
+    color: #333333;
+    letter-spacing: 0.055em;
+}
+
+p img {
+    display: block;       /* convierte la imagen en bloque */
+    margin: 0 auto;       /* centra horizontalmente */
+    max-width: 100%;      /* responsivo */
+    height: auto;         /* mantiene proporción */
+}
+
+.banner ul {
+    max-width: 700px;
+    margin: 0 auto;
+    margin-top: 10px;
+    padding-left: 20px;
+    color: #787878;
+    list-style-type: disc;
+}
+
+.banner li {
+    margin-bottom: 10px;
+    line-height: 1.5;
+    font-size: 0.95rem; /* Consistente con banner p */
+    color: #333333;
+}
+
+.imgmedio {
+    text-align: center;
+}
+
+/* after banner content */
+.after-banner {
+    padding-top: 5px;
+}
+
+.after-banner .ab-item {
+    max-width: 360px;
+    margin: 0 auto;
+    margin-top: 30px;
+}
+
+.after-banner .ab-item h2 {
+    margin-top: 0;
+    font-size: 1.5rem; /* Aproximadamente 24px */
+    color: #666666;
+}
+
+.after-banner .ab-item p {
+    font-size: 0.9rem; /* Aproximadamente 14.4px */
+    line-height: 1.6;
+    letter-spacing: 0.025em;
+}
+
+/* default heading */
+.default-heading {
+    margin-top: 20px;
+    margin-bottom: 10px;
+    text-align: center; /* Centrado por defecto en móvil */
+}
+.default-heading h2 {
+    margin-top: 0;
+    font-size: 1.6rem; /* Aproximadamente 25.6px */
+    color: #795f04;
+    font-weight: 400;
+}
+
+/* footer */
+footer {
+    margin-top: 10px;
+    padding: 10px 0;
+    background: #FFF;
+    text-align: center;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+footer.ffoot {
+    margin-top: 0;
+}
+footer p {
+    font-size: 0.85rem; /* Aproximadamente 13.6px */
+    line-height: 1.8;
+    color: #080808;
+}
+footer p a {
+    font-size: 0.9rem; /* Aproximadamente 14.4px */
+    line-height: 1.8;
+    text-transform: uppercase;
+    letter-spacing: 0.055em;
+    color: #080808;
+}
+footer p a:hover { color: #a93c01; }
+
+footer .social a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 5px 4px;
+  width: 45px;
+  height: 45px;
+  font-size: 20px;
+  border-radius: 50%;
+  color: #fff;
+  transition: all 0.3s ease;
+  text-decoration: none;
+}
+
+/* Facebook */
+footer .social a.facebook {
+  background: #3b5998;
+  border: 1px solid #3b5998;
+}
+
+footer .social a.facebook:hover {
+  background: #2d4373;
+  border-color: #2d4373;
+}
+
+/* Instagram */
+footer .social a.instagram {
+  background: radial-gradient(circle at 30% 107%, 
+    #fdf497 0%, #fd5949 45%, #d6249f 60%, #285AEB 90%);
+  border: none;
+}
+
+footer .social a.instagram:hover {
+  filter: brightness(1.1);
+}
+
+/* Email */
+footer .social a.email {
+  background: #00bcd4;
+  border: 1px solid #00bcd4;
+}
+
+footer .social a.email:hover {
+  background: #0097a7;
+  border-color: #0097a7;
+}
+
+/* Asegura que el ícono no intercepte el click */
+footer .social a i {
+  pointer-events: none;
+}
+
+footer .texto-bajo {
+    margin-top: 5px;
+}
+
+/* Google Maps Responsive */
+.google-maps {
+    aspect-ratio: 7 / 6;
+    width: 100%;
+    max-width: 700px;
+    margin: 0 auto;
+    overflow: hidden;
+    position: relative;
+}
+.google-maps iframe {
+    width: 100%;
+    height: 100%;
+    border: 0;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+.adsense-incontent {
+  display: block;
+  width: 100%;
+  max-width: 700px;
+  margin: 24px auto;
+  padding: 12px 0;
+  text-align: center;
+  clear: both;
+}
+
+.boton-centro {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin: 1.875rem 0;
+    padding: 0 0.9375rem; /* 15px */
+    box-sizing: border-box;
+}
+
+.btn {
+    background-color: #007bff;
+    color: #ffffff;
+    padding: 0.875rem 1.75rem;
+    border-radius: 0.75rem;
+    font-weight: 600;
+    font-size: 1.1rem;
+    text-align: center;
+    word-wrap: break-word;
+    white-space: normal;
+    max-width: 100%;
+    box-shadow: 0 0.25rem 0.75rem rgba(0,123,255,0.3);
+    transition: all 0.3s ease;
+}
+
+.btn:hover,
+.btn:focus,
+.btn:active {
+    background-color: #0056b3;
+    color: #e6faff;
+    box-shadow: 0 0.375rem 1.125rem rgba(0,86,179,0.4);
+    transform: translateY(-0.125rem);
+    outline: none;
+}
+@media (max-width: 768px) {
+    .boton-centro {
+        margin: 0.75rem 0; /* menos espacio arriba y abajo */
+        padding: 0 0.5rem;
+    }
+
+    .btn {
+        font-size: 1.1rem;
+        padding: 0.5rem 1rem; /* reduce el espacio interior */
+        line-height: 1.2; /* achica la altura del texto */
+        border-radius: 0.625rem;
+    }
+}
+
+/*
+ * Responsive CSS (Mobile-First approach with min-width)
+ * Estos estilos sobrescriben los estilos base a partir de ciertos anchos de pantalla.
+ */
+
+/* Pequeñas tablets y móviles grandes (desde 481px y más) */
+@media (min-width: 481px) {
+    /* Puedes ajustar el tamaño del logo un poco aquí si lo deseas */
+    header .navbar-brand img { max-width: 220px; }
+}
+
+/* Tablets (desde 768px y más) */
+@media (min-width: 768px) {
+    /* Ajustes de Navbar para tablets/desktop */
+    header .navbar-brand img { max-width: 270px; top: 5px; } /* Restaurar tamaño desktop para logo */
+    header .navbar-default .navbar-nav>li>a {
+        margin: 18px 3px; /* Restaurar margen original para desktop */
+    }
+	
+	header .navbar-default .navbar-nav > li > a {
+    margin: 10px 3px; /* Más compacto que 18px si deseas reducir espacio */
+    padding-top: 4px;
+    padding-bottom: 4px;
+    line-height: 1.1; /* Ajusta según lo necesites */
+	font-size: 1.1rem;
+}
+
+    header .navbar-nav .dropdown-menu:after,
+    header .navbar-nav .dropdown-menu:before {
+        display: block; /* Mostrar las flechas del dropdown */
+    }
+    header .navbar-nav .dropdown-menu li a { color: #333333 !important; } /* Ajusta el color del menú */
+
+    /* Oculta el botón de menú hamburguesa y sus estilos si usas un menú no colapsable */
+    header .navbar-default .navbar-toggle,
+    header .navbar-default .navbar-toggle:hover,
+    header .navbar-default .navbar-toggle:focus {
+        display: none;
+    }
+    /* Asegúrate de que el colapso del navbar se muestre siempre en desktop */
+    header .navbar-collapse.collapse {
+        display: block !important;
+        height: auto !important;
+        padding-bottom: 0;
+        overflow: visible !important;
+    }
+
+    .default-heading {text-align: left;} /* Alinear a la izquierda en pantallas más grandes */
+
+    /* Aumenta los tamaños de fuente para tablets */
+    h1 { font-size: 1.8rem; }
+    h2 { font-size: 1.5rem; }
+    h3 { font-size: 1.3rem; }
+    h4 { font-size: 1.2rem; }
+    h5 { font-size: 1.1rem; }
+    p { font-size: 1.05rem; }
+    .banner h1 { font-size: 1.8rem; }
+    .banner h2 { font-size: 1.5rem; }
+    .banner h3 { font-size: 1.3rem; }
+    .banner h4 { font-size: 1.2rem; }
+    .banner h5 { font-size: 1.1rem; }
+    .banner p, .banner ul, .banner li { font-size: 1rem; }
+    .after-banner .ab-item h2 { font-size: 1.8rem; }
+    .after-banner .ab-item p { font-size: 0.95rem; }
+    .default-heading h2 { font-size: 2.2rem; }
+    footer p { font-size: 0.9rem; }
+    footer p a { font-size: 0.95rem; }
+}
+
+/* Desktop (desde 992px y más) */
+@media (min-width: 992px) {
+    /* Aumenta aún más los tamaños de fuente para desktop */
+    h1 { font-size: 1.8rem; }
+    h2 { font-size: 1.5rem; }
+    h3 { font-size: 1.3rem; }
+    h4 { font-size: 1.2rem; }
+    h5 { font-size: 1.1rem; }
+    p { font-size: 1.1rem; }
+    .banner h1 { font-size: 1.8rem; }
+    .banner h2 { font-size: 1.5rem; }
+    .banner h3 { font-size: 1.3rem; }
+	.banner h4 { font-size: 1.2rem; }
+    .banner h5 { font-size: 1.1rem; }
+    .banner p, .banner ul, .banner li { font-size: 1.05rem; }
+    .after-banner .ab-item h2 { font-size: 1.5rem; }
+    .after-banner .ab-item p { font-size: 1rem; }
+    .default-heading h2 { font-size: 1.5rem; }
+    footer p { font-size: 1rem; }
+    footer p a { font-size: 1.05rem; }
+    .btn { font-size: 1.1rem; }
+}
+
+/* Grandes pantallas (opcional, desde 1200px y más) */
+@media (min-width: 1200px) {
+    h1 { font-size: 2.1rem; }
+    h2 { font-size: 1.8rem; }
+}
+
+
+
+
+
+.linea-con-icono {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 2rem 0;
+  color: #999;
+}
+
+.linea-con-icono::before,
+.linea-con-icono::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background-color: #ccc;
+  margin: 0 12px;
+}
+
+.actualizacion {
+  font-size: 14px;
+  color: #555;
+  background: #f5f5f5;
+  padding: 6px 10px;
+  border-left: 4px solid #cc0000;
+}
+
+.estado {
+  font-size: 20px !important;
+  font-weight: bold;
+  padding: 10px 14px;
+  margin: 10px 0 10px 0;
+  border-left: 5px solid #cc0000;
+  background: #f5f5f5;
+  color: #222;
+  border-radius: 6px;
+}
+.info-servicio {
+  font-size: 16px;
+  line-height: 1.5;
+  margin: 8px 0 18px 0;
+  color: #444;
+}
