@@ -2318,7 +2318,7 @@ renderRoute();
 // Si el appId es el placeholder, no hace nada (modo desarrollo)
 const ONE_SIGNAL_CONFIGURED = typeof OneSignalDeferred !== 'undefined' &&
   document.querySelector('script[src*="OneSignalSDK"]') &&
-  !document.querySelector('script[src*="OneSignalSDK"]')?.previousElementSibling?.textContent?.includes('TU_APP_ID');
+  !document.querySelector('script[src*="OneSignalSDK"]')?.previousElementSibling?.textContent?.includes('445c42f6-aa5b-4731-a072-9576adab63fc');
 
 (function initPush() {
   const pushBar     = document.getElementById('pushBar');
