@@ -1026,6 +1026,84 @@ footer { background: #001533; color: rgba(255,255,255,.55); padding: 32px 20px 2
 .footer-col a:hover, .footer-col a:focus-visible { color: var(--celeste); }
 .footer-brand { font-size: 1.2rem; font-weight: 800; color: #fff; margin-bottom: 6px; }
 .footer-divider { border-top: 1px solid rgba(255,255,255,.08); padding-top: 16px; font-size: 0.78rem; }
+
+/* ─── PUBLICIDAD ──────────────────────────────────────────── */
+.ad-container {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+  margin: 16px auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+.ad-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--celeste), var(--blue), var(--celeste));
+}
+.ad-label {
+  position: absolute;
+  top: 4px;
+  right: 8px;
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  opacity: 0.6;
+}
+.ad-top {
+  max-width: 728px;
+  min-height: 90px;
+}
+.ad-mid {
+  max-width: 728px;
+  min-height: 90px;
+}
+.ad-square {
+  width: 300px;
+  min-height: 250px;
+  margin: 0 auto;
+}
+.ad-bottom {
+  max-width: 728px;
+  min-height: 90px;
+}
+@media (max-width: 768px) {
+  .ad-top, .ad-mid, .ad-bottom {
+    max-width: 320px;
+    min-height: 50px;
+  }
+  .ad-square {
+    width: 300px;
+    min-height: 250px;
+  }
+}
+.ad-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 14px;
+  text-align: center;
+  font-weight: 500;
+}
+.ad-placeholder-icon {
+  font-size: 32px;
+  opacity: 0.4;
+}
 </style>
 </head>
 
@@ -1033,10 +1111,13 @@ footer { background: #001533; color: rgba(255,255,255,.55); padding: 32px 20px 2
 <!-- Skip to content — accesibilidad teclado -->
 <a class="skip-link" href="#main-content">Ir al contenido principal</a>
 
-<!-- TOPBAR -->
-<div role="alert" aria-live="polite" class="topbar">
-  ⚠️ <strong>Obras en Morón:</strong> Andén provisorio para trenes hacia Once — acceso por Sarmiento y Azcuénaga.
-  <a href="#horarios">Ver horarios completos →</a>
+<!-- BANNER PUBLICITARIO TOP -->
+<div class="ad-container ad-top" style="margin: 0; border-radius: 0; border-left: none; border-right: none; border-top: none;">
+  <span class="ad-label">Publicidad</span>
+  <div class="ad-placeholder">
+    <div class="ad-placeholder-icon">📢</div>
+    <div>Espacio publicitario superior 728x90 (desktop) / 320x50 (mobile)</div>
+  </div>
 </div>
 
 <!-- NAVBAR -->
@@ -1137,6 +1218,17 @@ footer { background: #001533; color: rgba(255,255,255,.55); padding: 32px 20px 2
       <a class="hero-pill" href="#estaciones">🚌 Colectivos alternativos</a>
     </nav>
   </section>
+
+  <!-- BANNER PUBLICITARIO SUPERIOR -->
+  <div class="container">
+    <div class="ad-container ad-top">
+      <span class="ad-label">Publicidad</span>
+      <div class="ad-placeholder">
+        <div class="ad-placeholder-icon">📢</div>
+        <div>Espacio publicitario 728x90 (desktop) / 320x50 (mobile)</div>
+      </div>
+    </div>
+  </div>
 
   <!-- STATUS BAR -->
   <div class="status-bar yellow" id="statusBar" role="status" aria-live="polite" aria-label="Estado del servicio">
@@ -1392,6 +1484,17 @@ footer { background: #001533; color: rgba(255,255,255,.55); padding: 32px 20px 2
     </div>
   </section>
 
+  <!-- BANNER PUBLICITARIO MEDIO -->
+  <div class="container">
+    <div class="ad-container ad-mid">
+      <span class="ad-label">Publicidad</span>
+      <div class="ad-placeholder">
+        <div class="ad-placeholder-icon">💼</div>
+        <div>Banner horizontal 728x90 / 320x50</div>
+      </div>
+    </div>
+  </div>
+
   <!-- ESTACIONES -->
   <section class="section section-white" id="estaciones" aria-labelledby="estaciones-title">
     <div class="container">
@@ -1414,6 +1517,83 @@ footer { background: #001533; color: rgba(255,255,255,.55); padding: 32px 20px 2
       <p class="section-sub">Tocá cada estación para ver tarifas y sección.</p>
       <div id="map" role="application" aria-label="Mapa interactivo de las estaciones del Tren Sarmiento"></div>
       <p style="font-size:.72rem;color:rgba(255,255,255,.3);margin-top:8px;">© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer" style="color:rgba(255,255,255,.3);">OpenStreetMap</a> contributors © CARTO</p>
+    </div>
+  </section>
+
+  <!-- OBJETOS PERDIDOS / ENCONTRADOS -->
+  <section class="section section-white" id="objetos-perdidos" aria-labelledby="objetos-title">
+    <div class="container">
+      <span class="section-label">🔍 Ayuda comunitaria</span>
+      <h2 class="section-title" id="objetos-title">Objetos Perdidos y Encontrados</h2>
+      <p class="section-sub">Si perdiste algo en el tren o encontraste un objeto, podés reportarlo en la comunidad de pasajeros.</p>
+      
+      <div style="background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:32px 28px;border:2px solid var(--cel-light);">
+        <div style="display:flex;align-items:flex-start;gap:24px;flex-wrap:wrap;">
+          <div style="flex:1;min-width:280px;">
+            <div style="font-size:3rem;margin-bottom:12px;">📦</div>
+            <h3 style="font-size:1.3rem;font-weight:700;color:var(--navy);margin-bottom:12px;">¿Perdiste algo?</h3>
+            <p style="color:var(--muted);margin-bottom:16px;line-height:1.6;">
+              Reportá tu objeto perdido en el <strong>Grupo de Facebook</strong> oficial. 
+              La comunidad de pasajeros ayuda diariamente a recuperar mochilas, celulares, billeteras, documentos y más.
+            </p>
+            <a 
+              href="https://www.facebook.com/groups/2002389413227419/" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              style="display:inline-flex;align-items:center;gap:8px;background:var(--blue);color:#fff;padding:12px 20px;border-radius:10px;font-weight:600;text-decoration:none;transition:background .18s;"
+              onmouseover="this.style.background='var(--celeste)'"
+              onmouseout="this.style.background='var(--blue)'"
+            >
+              <span style="font-size:1.2rem;">👥</span>
+              Ir al Grupo de Facebook
+            </a>
+          </div>
+          
+          <div style="flex:1;min-width:280px;">
+            <div style="font-size:3rem;margin-bottom:12px;">🎒</div>
+            <h3 style="font-size:1.3rem;font-weight:700;color:var(--navy);margin-bottom:12px;">¿Encontraste algo?</h3>
+            <p style="color:var(--muted);margin-bottom:16px;line-height:1.6;">
+              Publicá una foto o descripción en el grupo. Tu ayuda puede hacer que alguien recupere algo muy importante.
+              También podés avisar en el <strong>Chat de Pasajeros</strong> en Telegram.
+            </p>
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              <a 
+                href="https://www.facebook.com/groups/2002389413227419/" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                style="display:inline-flex;align-items:center;gap:8px;background:rgba(0,85,164,.08);color:var(--blue);padding:10px 16px;border-radius:8px;font-weight:600;text-decoration:none;border:1.5px solid var(--cel-light);transition:background .18s;"
+                onmouseover="this.style.background='var(--cel-light)'"
+                onmouseout="this.style.background='rgba(0,85,164,.08)'"
+              >
+                <span>👥</span>
+                Publicar en Facebook
+              </a>
+              <a 
+                href="https://t.me/pasajerosdeltrensarmientoenlinea" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                style="display:inline-flex;align-items:center;gap:8px;background:rgba(0,85,164,.08);color:var(--blue);padding:10px 16px;border-radius:8px;font-weight:600;text-decoration:none;border:1.5px solid var(--cel-light);transition:background .18s;"
+                onmouseover="this.style.background='var(--cel-light)'"
+                onmouseout="this.style.background='rgba(0,85,164,.08)'"
+              >
+                <span>💬</span>
+                Avisar en Telegram
+              </a>
+            </div>
+          </div>
+        </div>
+        
+        <div style="margin-top:24px;padding:16px;background:var(--cel-bg);border-radius:8px;border-left:4px solid var(--celeste);">
+          <strong style="color:var(--navy);display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+            <span>💡</span>
+            Consejo útil:
+          </strong>
+          <p style="color:var(--muted);font-size:.9rem;line-height:1.6;margin:0;">
+            Incluí en tu publicación: descripción del objeto, en qué formación viajabas (Once o Moreno), 
+            horario aproximado y entre qué estaciones. Cuanto más detalle, mejor.
+          </p>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -1463,6 +1643,17 @@ footer { background: #001533; color: rgba(255,255,255,.55); padding: 32px 20px 2
       </div>
     </div>
   </section>
+
+  <!-- BANNER PUBLICITARIO INFERIOR -->
+  <div class="container">
+    <div class="ad-container ad-bottom">
+      <span class="ad-label">Publicidad</span>
+      <div class="ad-placeholder">
+        <div class="ad-placeholder-icon">🌟</div>
+        <div>Banner horizontal inferior 728x90 / 320x50</div>
+      </div>
+    </div>
+  </div>
 
   <!-- COMUNIDAD -->
   <section class="app-section" id="app" aria-labelledby="app-title">
