@@ -1163,96 +1163,340 @@ Activar notificaciones
     <button type="button" class="push-bar-dismiss" id="pushBarDismiss" aria-label="Cerrar">✕</button>
   </div>
 </div>
-<!-- ═══ WIDGET FLOTANTE — ÚLTIMOS TRENES ═══ -->
+<!-- ═══════════════════════════════════════ -->
+<!-- WIDGET ÚLTIMOS TRENES -->
+<!-- ═══════════════════════════════════════ -->
+
 <div id="lastTrainWidget" style="
-  position:fixed; bottom:80px; right:20px; z-index:998;
-  background:#002B5C; border-radius:16px; padding:16px 18px;
-  width:310px; box-shadow:0 4px 24px rgba(0,43,92,.45);
+  position:fixed;
+  bottom:80px;
+  right:20px;
+  z-index:998;
+  width:320px;
+  transition:all .28s ease;
   font-family:'Inter',system-ui,sans-serif;
-  transition:opacity .3s,transform .3s;
-" role="complementary" aria-label="Últimos trenes del día">
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-    <span style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.5);">
-      <span id="ltw-dot" style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#f59e0b;margin-right:4px;animation:ltw-pulse 2s infinite;vertical-align:middle;"></span>
-      Últimos trenes de hoy
-    </span>
-    <button onclick="document.getElementById('lastTrainWidget').style.display='none'" style="background:rgba(255,255,255,.1);border:none;color:rgba(255,255,255,.6);width:22px;height:22px;border-radius:50%;font-size:14px;cursor:pointer;font-family:inherit;line-height:1;" aria-label="Cerrar widget">✕</button>
-  </div>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-    <div style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:10px 12px;">
-      <div style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:rgba(255,255,255,.45);margin-bottom:6px;">Once → Moreno</div>
-      <div id="ltw-once-last" style="font-size:26px;font-weight:800;color:#7FE0FF;line-height:1;letter-spacing:-1px;">--:--</div>
-      <div style="font-size:10px;color:rgba(255,255,255,.45);margin-top:2px;">último tren</div>
-      <div style="margin-top:8px;border-top:1px solid rgba(255,255,255,.08);padding-top:7px;">
-        <div style="font-size:9px;color:rgba(255,255,255,.35);margin-bottom:3px;">Penúltimo</div>
-        <div id="ltw-once-prev" style="font-size:14px;font-weight:700;color:rgba(255,255,255,.65);">--:--</div>
-      </div>
-    </div>
-    <div style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:10px 12px;">
-      <div style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:rgba(255,255,255,.45);margin-bottom:6px;">Moreno → Once</div>
-      <div id="ltw-mor-last" style="font-size:26px;font-weight:800;color:#7FE0FF;line-height:1;letter-spacing:-1px;">--:--</div>
-      <div style="font-size:10px;color:rgba(255,255,255,.45);margin-top:2px;">último tren</div>
-      <div style="margin-top:8px;border-top:1px solid rgba(255,255,255,.08);padding-top:7px;">
-        <div style="font-size:9px;color:rgba(255,255,255,.35);margin-bottom:3px;">Penúltimo</div>
-        <div id="ltw-mor-prev" style="font-size:14px;font-weight:700;color:rgba(255,255,255,.65);">--:--</div>
-      </div>
-    </div>
-  </div>
-    <!-- ESPECIALES FIN DE SEMANA -->
-<div id="specialWeekendBox" style="
-  margin-top:12px;
-  background:rgba(255,255,255,.05);
-  border:1px solid rgba(255,255,255,.10);
-  border-radius:12px;
-  padding:10px 12px;
 ">
 
-  <div style="
-    font-size:10px;
-    font-weight:700;
-    letter-spacing:1px;
-    text-transform:uppercase;
-    color:#fbbf24;
-    margin-bottom:8px;
-  ">
-    Modificaciones especiales · 09/05 y 10/05
-  </div>
-
-  <div style="
-    font-size:11px;
-    line-height:1.55;
-    color:rgba(255,255,255,.82);
+  <!-- WIDGET -->
+  <div id="ltw-card" style="
+    background:#002B5C;
+    border-radius:18px;
+    padding:16px 18px;
+    box-shadow:0 4px 24px rgba(0,43,92,.45);
+    transition:all .28s ease;
   ">
 
-    <div style="margin-bottom:8px;">
-      <strong>Sábado 09/05</strong><br>
+    <!-- HEADER -->
+    <div style="
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      margin-bottom:12px;
+    ">
 
-      Moreno → Once<br>
-      • 21:50 · Tren 3690 · Último a Once<br>
-      • 22:20 · Tren 3692 · Hasta Liniers<br><br>
+      <span style="
+        font-size:10px;
+        font-weight:700;
+        letter-spacing:1.5px;
+        text-transform:uppercase;
+        color:rgba(255,255,255,.55);
+      ">
+        🚆 Últimos trenes
+      </span>
 
-      Once → Moreno<br>
-      • 23:35 · Tren 3697 · Último a Moreno<br>
-      • 00:22 · Tren 3699 · Sale de Liniers
+      <button
+        id="ltw-minimize"
+        style="
+          background:rgba(255,255,255,.1);
+          border:none;
+          color:rgba(255,255,255,.7);
+          width:24px;
+          height:24px;
+          border-radius:50%;
+          cursor:pointer;
+          font-size:13px;
+        "
+      >
+        ✕
+      </button>
     </div>
 
-    <div>
-      <strong>Domingo 10/05</strong><br>
+    <!-- GRID -->
+    <div style="
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:12px;
+    ">
 
-      Moreno → Once<br>
-      • 07:24 · Tren 3618 · Primer tren<br><br>
+      <!-- ONCE -->
+      <div style="
+        background:rgba(255,255,255,.06);
+        border:1px solid rgba(255,255,255,.10);
+        border-radius:12px;
+        padding:10px 12px;
+      ">
 
-      Once → Moreno<br>
-      • 08:22 · Tren 3823 · Primer tren
+        <div style="
+          font-size:9px;
+          font-weight:700;
+          letter-spacing:1px;
+          text-transform:uppercase;
+          color:rgba(255,255,255,.45);
+          margin-bottom:6px;
+        ">
+          Once → Moreno
+        </div>
+
+        <div id="ltw-once-last" style="
+          font-size:28px;
+          font-weight:800;
+          color:#7FE0FF;
+          line-height:1;
+        ">
+          --:--
+        </div>
+
+        <div style="
+          font-size:10px;
+          color:rgba(255,255,255,.45);
+          margin-top:3px;
+        ">
+          último tren
+        </div>
+
+        <div style="
+          margin-top:8px;
+          border-top:1px solid rgba(255,255,255,.08);
+          padding-top:7px;
+        ">
+          <div style="
+            font-size:9px;
+            color:rgba(255,255,255,.35);
+          ">
+            Penúltimo
+          </div>
+
+          <div id="ltw-once-prev" style="
+            margin-top:2px;
+            font-size:14px;
+            font-weight:700;
+            color:rgba(255,255,255,.7);
+          ">
+            --:--
+          </div>
+        </div>
+
+      </div>
+
+      <!-- MORENO -->
+      <div style="
+        background:rgba(255,255,255,.06);
+        border:1px solid rgba(255,255,255,.10);
+        border-radius:12px;
+        padding:10px 12px;
+      ">
+
+        <div style="
+          font-size:9px;
+          font-weight:700;
+          letter-spacing:1px;
+          text-transform:uppercase;
+          color:rgba(255,255,255,.45);
+          margin-bottom:6px;
+        ">
+          Moreno → Once
+        </div>
+
+        <div id="ltw-mor-last" style="
+          font-size:28px;
+          font-weight:800;
+          color:#7FE0FF;
+          line-height:1;
+        ">
+          --:--
+        </div>
+
+        <div style="
+          font-size:10px;
+          color:rgba(255,255,255,.45);
+          margin-top:3px;
+        ">
+          último tren
+        </div>
+
+        <div style="
+          margin-top:8px;
+          border-top:1px solid rgba(255,255,255,.08);
+          padding-top:7px;
+        ">
+          <div style="
+            font-size:9px;
+            color:rgba(255,255,255,.35);
+          ">
+            Penúltimo
+          </div>
+
+          <div id="ltw-mor-prev" style="
+            margin-top:2px;
+            font-size:14px;
+            font-weight:700;
+            color:rgba(255,255,255,.7);
+          ">
+            --:--
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ESPECIALES -->
+    <div style="
+      margin-top:12px;
+      background:rgba(255,255,255,.05);
+      border:1px solid rgba(255,255,255,.10);
+      border-radius:12px;
+      padding:10px 12px;
+    ">
+
+      <div style="
+        font-size:10px;
+        font-weight:700;
+        letter-spacing:1px;
+        text-transform:uppercase;
+        color:#fbbf24;
+        margin-bottom:8px;
+      ">
+        Especial · 09/05 y 10/05
+      </div>
+
+      <div style="
+        font-size:11px;
+        line-height:1.5;
+        color:rgba(255,255,255,.82);
+      ">
+
+        <strong>Sábado 09/05</strong><br>
+        21:50 · Tren 3690 · Último Moreno → Once<br>
+        22:20 · Tren 3692 · Hasta Liniers<br>
+        23:35 · Tren 3697 · Último Once → Moreno<br>
+        00:22 · Tren 3699 · Sale de Liniers<br><br>
+
+        <strong>Domingo 10/05</strong><br>
+        07:24 · Tren 3618 · Primer Moreno → Once<br>
+        08:22 · Tren 3823 · Primer Once → Moreno
+
+      </div>
+    </div>
+
+    <!-- FOOTER -->
+    <div id="ltw-footer" style="
+      margin-top:10px;
+      text-align:center;
+      font-size:9px;
+      color:rgba(255,255,255,.28);
+    ">
+      Cronograma actualizado
     </div>
 
   </div>
+
+  <!-- BURBUJA -->
+  <button
+    id="ltw-bubble"
+    style="
+      display:none;
+      position:absolute;
+      right:0;
+      bottom:0;
+      width:58px;
+      height:58px;
+      border-radius:50%;
+      border:none;
+      cursor:pointer;
+      background:#002B5C;
+      color:white;
+      font-size:24px;
+      box-shadow:0 4px 20px rgba(0,0,0,.35);
+    "
+    aria-label="Abrir widget de trenes"
+  >
+    🚆
+  </button>
+
 </div>
-  <div id="ltw-footer" style="margin-top:10px;text-align:center;font-size:9px;color:rgba(255,255,255,.25);"></div>
-</div>
-<style>
-@keyframes ltw-pulse{0%,100%{opacity:1}50%{opacity:.3}}
-</style>
+
+<script>
+(function(){
+
+  const p2 = n => String(n).padStart(2,'0');
+
+  const day = new Date().getDay();
+
+  const dt =
+    day === 0 ? 'dom' :
+    day === 6 ? 'sab' : 'lv';
+
+  const on = {
+    lv:[[22,47],[23,10],[23,30],[23,55]],
+    sab:[[22,20],[22,50],[23,20],[23,55]],
+    dom:[[22,25],[23,0],[23,35]]
+  }[dt];
+
+  const mo = {
+    lv:[[21,54],[22,12],[22,30]],
+    sab:[[21,40],[22,10],[22,40]],
+    dom:[[21,30],[22,5],[22,40]]
+  }[dt];
+
+  const fmt = ([h,m]) => p2(h)+':'+p2(m);
+
+  document.getElementById('ltw-once-last').textContent =
+    fmt(on[on.length-1]);
+
+  document.getElementById('ltw-once-prev').textContent =
+    fmt(on[on.length-2]);
+
+  document.getElementById('ltw-mor-last').textContent =
+    fmt(mo[mo.length-1]);
+
+  document.getElementById('ltw-mor-prev').textContent =
+    fmt(mo[mo.length-2]);
+
+  // MINIMIZAR
+  const bubble = document.getElementById('ltw-bubble');
+  const card   = document.getElementById('ltw-card');
+
+  document.getElementById('ltw-minimize')
+    .addEventListener('click', () => {
+
+      card.style.opacity = '0';
+      card.style.transform = 'scale(.9)';
+      card.style.pointerEvents = 'none';
+
+      setTimeout(() => {
+        card.style.display = 'none';
+        bubble.style.display = 'block';
+      }, 180);
+
+    });
+
+  // RESTAURAR
+  bubble.addEventListener('click', () => {
+
+    bubble.style.display = 'none';
+
+    card.style.display = 'block';
+
+    requestAnimationFrame(() => {
+      card.style.opacity = '1';
+      card.style.transform = 'scale(1)';
+      card.style.pointerEvents = 'auto';
+    });
+
+  });
+
+})();
+</script>
 <script>
 (function(){
   const p2=n=>String(n).padStart(2,'0');
