@@ -1156,11 +1156,69 @@ footer { background: #001533; color: rgba(255,255,255,.55); padding: 32px 20px 2
     Te avisamos cuando el tren no funciona. Sin spam.
   </div>
   <div class="push-bar-actions">
-    <button type="button" class="push-bar-accept" id="pushBarAccept">Activar notificaciones</button>
+    <button id="pushBarAccept"
+onclick="OneSignalDeferred.push(async function(OneSignal){await OneSignal.Notifications.requestPermission();})">
+Activar notificaciones
+</button>
     <button type="button" class="push-bar-dismiss" id="pushBarDismiss" aria-label="Cerrar">✕</button>
   </div>
 </div>
-
+<!-- ═══ WIDGET FLOTANTE — ÚLTIMOS TRENES ═══ -->
+<div id="lastTrainWidget" style="
+  position:fixed; bottom:80px; right:20px; z-index:998;
+  background:#002B5C; border-radius:16px; padding:16px 18px;
+  width:310px; box-shadow:0 4px 24px rgba(0,43,92,.45);
+  font-family:'Inter',system-ui,sans-serif;
+  transition:opacity .3s,transform .3s;
+" role="complementary" aria-label="Últimos trenes del día">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+    <span style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.5);">
+      <span id="ltw-dot" style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#f59e0b;margin-right:4px;animation:ltw-pulse 2s infinite;vertical-align:middle;"></span>
+      Últimos trenes de hoy
+    </span>
+    <button onclick="document.getElementById('lastTrainWidget').style.display='none'" style="background:rgba(255,255,255,.1);border:none;color:rgba(255,255,255,.6);width:22px;height:22px;border-radius:50%;font-size:14px;cursor:pointer;font-family:inherit;line-height:1;" aria-label="Cerrar widget">✕</button>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+    <div style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:10px 12px;">
+      <div style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:rgba(255,255,255,.45);margin-bottom:6px;">Once → Moreno</div>
+      <div id="ltw-once-last" style="font-size:26px;font-weight:800;color:#7FE0FF;line-height:1;letter-spacing:-1px;">--:--</div>
+      <div style="font-size:10px;color:rgba(255,255,255,.45);margin-top:2px;">último tren</div>
+      <div style="margin-top:8px;border-top:1px solid rgba(255,255,255,.08);padding-top:7px;">
+        <div style="font-size:9px;color:rgba(255,255,255,.35);margin-bottom:3px;">Penúltimo</div>
+        <div id="ltw-once-prev" style="font-size:14px;font-weight:700;color:rgba(255,255,255,.65);">--:--</div>
+      </div>
+    </div>
+    <div style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:10px 12px;">
+      <div style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:rgba(255,255,255,.45);margin-bottom:6px;">Moreno → Once</div>
+      <div id="ltw-mor-last" style="font-size:26px;font-weight:800;color:#7FE0FF;line-height:1;letter-spacing:-1px;">--:--</div>
+      <div style="font-size:10px;color:rgba(255,255,255,.45);margin-top:2px;">último tren</div>
+      <div style="margin-top:8px;border-top:1px solid rgba(255,255,255,.08);padding-top:7px;">
+        <div style="font-size:9px;color:rgba(255,255,255,.35);margin-bottom:3px;">Penúltimo</div>
+        <div id="ltw-mor-prev" style="font-size:14px;font-weight:700;color:rgba(255,255,255,.65);">--:--</div>
+      </div>
+    </div>
+  </div>
+  <div id="ltw-footer" style="margin-top:10px;text-align:center;font-size:9px;color:rgba(255,255,255,.25);"></div>
+</div>
+<style>
+@keyframes ltw-pulse{0%,100%{opacity:1}50%{opacity:.3}}
+</style>
+<script>
+(function(){
+  const p2=n=>String(n).padStart(2,'0');
+  const d=new Date().getDay();
+  const dt=d===0?'dom':d===6?'sab':'lv';
+  const on={lv:[[22,47],[23,10],[23,30],[23,55]],sab:[[22,20],[22,50],[23,20],[23,55]],dom:[[22,25],[23,0],[23,35]]};
+  const mo={lv:[[21,54],[22,12],[22,30]],sab:[[21,40],[22,10],[22,40]],dom:[[21,30],[22,5],[22,40]]};
+  const sc_on=on[dt], sc_mo=mo[dt];
+  const fmt=([h,m])=>p2(h)+':'+p2(m);
+  document.getElementById('ltw-once-last').textContent=fmt(sc_on[sc_on.length-1]);
+  document.getElementById('ltw-once-prev').textContent=fmt(sc_on[sc_on.length-2]);
+  document.getElementById('ltw-mor-last').textContent=fmt(sc_mo[sc_mo.length-1]);
+  document.getElementById('ltw-mor-prev').textContent=fmt(sc_mo[sc_mo.length-2]);
+  document.getElementById('ltw-footer').textContent='Cronograma · '+(dt==='lv'?'Lunes a Viernes':dt==='sab'?'Sábado':'Domingo/Feriado');
+})();
+</script>
 <main id="main-content">
 
   <!-- HERO -->
@@ -1211,7 +1269,7 @@ footer { background: #001533; color: rgba(255,255,255,.55); padding: 32px 20px 2
 
   <!-- BANNER PUBLICITARIO SUPERIOR -->
   <div class="container">
-    <div class="ad-container ad-top">
+    <div class="ad-container ad-top" style="margin: 0 auto; border-radius: 0; border-left: none; border-right: none; border-top: none; display:flex; justify-content:center; align-items:center;">
       <span class="ad-label">Publicidad</span>
       <div class="ad-placeholder">
         <div class="ad-placeholder-icon">📢</div>
