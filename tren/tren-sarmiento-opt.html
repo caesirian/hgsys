@@ -1856,56 +1856,107 @@ Activar notificaciones
   </section>
 
   <div id="map" role="application" aria-label="Mapa interactivo de las estaciones del Tren Sarmiento"></div>
+<div id="loading" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;font-family:sans-serif;font-size:14px;z-index:9999;background:rgba(0,0,0,.6);padding:12px 20px;border-radius:8px;">Cargando estaciones desde OpenStreetMap...</div>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
-  // Coordenadas verificadas desde OSM/Wikidata — misma fuente que el tile CartoDB
-  // Fuente: https://www.wikidata.org/wiki/Q5842280 y equivalentes por estación
-  const stations = [
-    { id:  1, name: "Once",             lat: -34.6083, lng: -58.4101, color: "#22c55e" },
-    { id:  2, name: "Caballito",        lat: -34.6181, lng: -58.4393, color: "#22c55e" },
-    { id:  3, name: "Flores",           lat: -34.6287, lng: -58.4604, color: "#22c55e" },
-    { id:  4, name: "Floresta",         lat: -34.6298, lng: -58.4742, color: "#22c55e" },
-    { id:  5, name: "Villa Luro",       lat: -34.6302, lng: -58.4842, color: "#22c55e" },
-    { id:  6, name: "Liniers",          lat: -34.6333, lng: -58.5206, color: "#3b82f6" },
-    { id:  7, name: "Ciudadela",        lat: -34.6340, lng: -58.5349, color: "#3b82f6" },
-    { id:  8, name: "Ramos Mejía",      lat: -34.6367, lng: -58.5626, color: "#3b82f6" },
-    { id:  9, name: "Haedo",            lat: -34.6401, lng: -58.5886, color: "#3b82f6" },
-    { id: 10, name: "Morón",            lat: -34.6513, lng: -58.6197, color: "#8b5cf6" },
-    { id: 11, name: "Castelar",         lat: -34.6581, lng: -58.6608, color: "#8b5cf6" },
-    { id: 12, name: "Ituzaingó",        lat: -34.6583, lng: -58.6721, color: "#8b5cf6" },
-    { id: 13, name: "San A. de Padua",  lat: -34.6552, lng: -58.7007, color: "#8b5cf6" },
-    { id: 14, name: "Merlo",            lat: -34.6617, lng: -58.7286, color: "#8b5cf6" },
-    { id: 15, name: "Paso del Rey",     lat: -34.6464, lng: -58.7630, color: "#8b5cf6" },
-    { id: 16, name: "Moreno",           lat: -34.6428, lng: -58.7897, color: "#8b5cf6" },
-  ];
-
   const map = L.map('map').setView([-34.641, -58.600], 11);
 
   L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png', {
     attribution: '© OpenStreetMap contributors © CARTO'
   }).addTo(map);
 
-  // Línea de la vía
-  L.polyline(stations.map(s => [s.lat, s.lng]), {
-    color: '#0095D4',
-    weight: 4,
-    opacity: 0.9
-  }).addTo(map);
+  const stationOrder = [
+    "Once","Caballito","Flores","Floresta","Villa Luro",
+    "Liniers","Ciudadela","Ramos Mejía","Haedo","Morón",
+    "Castelar","Ituzaingó","San Antonio de Padua","Merlo",
+    "Paso del Rey","Moreno"
+  ];
 
-  // Markers
-  stations.forEach(s => {
-    const icon = L.divIcon({
-      className: '',
-      html: `<div style="background:${s.color};color:#fff;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:11px;border:2.5px solid white;box-shadow:0 2px 6px rgba(0,0,0,.4);" aria-label="${s.name}">${s.id}</div>`,
-      iconSize: [26, 26],
-      iconAnchor: [13, 13]
+  const colorZones = {
+    "Once":"#22c55e","Caballito":"#22c55e","Flores":"#22c55e",
+    "Floresta":"#22c55e","Villa Luro":"#22c55e",
+    "Liniers":"#3b82f6","Ciudadela":"#3b82f6","Ramos Mejía":"#3b82f6","Haedo":"#3b82f6",
+    "Morón":"#8b5cf6","Castelar":"#8b5cf6","Ituzaingó":"#8b5cf6",
+    "San Antonio de Padua":"#8b5cf6","Merlo":"#8b5cf6",
+    "Paso del Rey":"#8b5cf6","Moreno":"#8b5cf6"
+  };
+
+  // Consulta Overpass API — obtiene los nodos exactos de OSM
+  // misma fuente que el tile de CartoDB
+  const query = `
+    [out:json][timeout:25];
+    (
+      node["railway"="station"]["network"~"Sarmiento",i](-34.70,-58.82,-34.59,-58.39);
+      node["railway"="station"]["line"~"Sarmiento",i](-34.70,-58.82,-34.59,-58.39);
+      node["railway"="station"]["name"~"Once|Caballito|Flores|Floresta|Liniers|Ciudadela|Haedo|Morón|Moron|Castelar|Ituzaingó|Padua|Merlo|Moreno",i](-34.70,-58.82,-34.59,-58.39);
+    );
+    out body;
+  `;
+
+  fetch("https://overpass-api.de/api/interpreter", {
+    method: "POST",
+    body: "data=" + encodeURIComponent(query)
+  })
+  .then(r => r.json())
+  .then(data => {
+    document.getElementById("loading").remove();
+
+    // Indexar resultados por nombre
+    const found = {};
+    data.elements.forEach(el => {
+      const name = (el.tags.name || "").trim();
+      found[name] = { lat: el.lat, lng: el.lon };
     });
-    L.marker([s.lat, s.lng], { icon })
-      .addTo(map)
-      .bindTooltip(s.name, { permanent: false, direction: 'top' });
+
+    console.log("Estaciones encontradas en OSM:", found);
+
+    // Resolver cada estación en el orden correcto
+    // con fallback por nombre parcial si no coincide exacto
+    const resolved = [];
+    stationOrder.forEach((target, idx) => {
+      // Buscar coincidencia exacta primero
+      let match = found[target];
+
+      // Si no, buscar coincidencia parcial
+      if (!match) {
+        const key = Object.keys(found).find(k =>
+          k.toLowerCase().includes(target.toLowerCase().split(" ")[0].toLowerCase())
+        );
+        if (key) match = found[key];
+      }
+
+      if (match) {
+        resolved.push({ id: idx + 1, name: target, ...match });
+      } else {
+        console.warn("No se encontró en OSM:", target);
+      }
+    });
+
+    // Trazar la vía
+    L.polyline(resolved.map(s => [s.lat, s.lng]), {
+      color: '#0095D4', weight: 4, opacity: 0.9
+    }).addTo(map);
+
+    // Crear markers
+    resolved.forEach(s => {
+      const color = colorZones[s.name] || "#8b5cf6";
+      const icon = L.divIcon({
+        className: '',
+        html: `<div style="background:${color};color:#fff;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:11px;border:2.5px solid white;box-shadow:0 2px 6px rgba(0,0,0,.4);">${s.id}</div>`,
+        iconSize: [26, 26],
+        iconAnchor: [13, 13]
+      });
+      L.marker([s.lat, s.lng], { icon })
+        .addTo(map)
+        .bindTooltip(s.name, { permanent: false, direction: 'top' });
+    });
+  })
+  .catch(err => {
+    document.getElementById("loading").textContent = "Error: " + err.message;
+    console.error(err);
   });
 </script>
 
