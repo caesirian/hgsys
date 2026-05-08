@@ -1532,8 +1532,8 @@ Activar notificaciones
   const p2=n=>String(n).padStart(2,'0');
   const d=new Date().getDay();
   const dt=d===0?'dom':d===6?'sab':'lv';
-  const on={lv:[[22,47],[23,10],[23,30],[23,55]],sab:[[22,20],[22,50],[23,20],[23,55]],dom:[[22,25],[23,0],[23,35]]};
-  const mo={lv:[[21,54],[22,12],[22,30]],sab:[[21,40],[22,10],[22,40]],dom:[[21,30],[22,5],[22,40]]};
+  const on={lv:[[22,47],[23,10],[23,25],[23,55]],sab:[[22,20],[22,50],[23,20],[23,55]],dom:[[22,25],[23,0],[23,35]]};
+  const mo={lv:[[21,36],[21,50],[22,20]],sab:[[21,40],[22,10],[22,40]],dom:[[21,30],[22,5],[22,40]]};
   const sc_on=on[dt], sc_mo=mo[dt];
   const fmt=([h,m])=>p2(h)+':'+p2(m);
   document.getElementById('ltw-once-last').textContent=fmt(sc_on[sc_on.length-1]);
