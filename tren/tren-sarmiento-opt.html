@@ -1048,7 +1048,7 @@ a:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible
 .feat-icon { color: var(--celeste); font-size: 1rem; flex-shrink: 0; margin-top: 1px; }
 
 /* ─── Footer ──────────────────────────────────────────────── */
-footer { background: #001533; color: rgba(255,255,255,.55); padding: 32px 20px 20px; font-size: 0.85rem; }
+footer { Buenas: #001533; color: rgba(255,255,255,.55); padding: 32px 20px 20px; font-size: 0.85rem; }
 .footer-inner { max-width: 1100px; margin: 0 auto; }
 .footer-cols { display: flex; flex-wrap: wrap; gap: 28px; margin-bottom: 24px; }
 .footer-col h2 { color: rgba(255,255,255,.8); font-size: 0.8rem; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 10px; font-weight: 700; }
@@ -1056,6 +1056,38 @@ footer { background: #001533; color: rgba(255,255,255,.55); padding: 32px 20px 2
 .footer-col a:hover, .footer-col a:focus-visible { color: var(--celeste); }
 .footer-brand { font-size: 1.2rem; font-weight: 800; color: #fff; margin-bottom: 6px; }
 .footer-divider { border-top: 1px solid rgba(255,255,255,.08); padding-top: 16px; font-size: 0.78rem; }
+
+/* ─── Social Media Icons ──────────────────────────────────── */
+.social-icons {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+.social-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s, box-shadow 0.2s;
+  text-decoration: none;
+  background: rgba(255,255,255,.95);
+  border: 1px solid rgba(255,255,255,.2);
+  padding: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.1);
+}
+.social-icon:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 12px rgba(0,0,0,.2);
+}
+.social-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
 
 /* ─── PUBLICIDAD ──────────────────────────────────────────── */
 .ad-container {
@@ -1146,7 +1178,7 @@ footer { background: #001533; color: rgba(255,255,255,.55); padding: 32px 20px 2
   <span class="ad-label">Publicidad</span>
   <div class="ad-placeholder">
     <div class="ad-placeholder-icon">📢</div>
-    <div>Espacio publicitario superior 728x90 (desktop) / 320x50 (mobile)</div>
+    <div>Publicitá aquí tu servicio o emprendimiento y llegá a miles de personas que viajan a diario en el Sarmiento. Escribinos a trensarmientoenlinea@gmail.com</div>
   </div>
 </div>
 
@@ -1405,15 +1437,19 @@ Activar notificaciones
         color:rgba(255,255,255,.82);
       ">
 
-        <strong>Sábado 09/05</strong><br>
-        21:50 · Tren 3690 · Último Moreno → Once<br>
-        22:20 · Tren 3692 · Hasta Liniers<br>
-        23:35 · Tren 3697 · Último Once → Moreno<br>
-        00:22 · Tren 3699 · Sale de Liniers<br><br>
-
-        <strong>Domingo 10/05</strong><br>
-        07:24 · Tren 3618 · Primer Moreno → Once<br>
-        08:22 · Tren 3823 · Primer Once → Moreno
+        <strong>Domingo 11/05 al Martes 13/05</strong><br><br>
+        
+        <strong>Once → Moreno:</strong><br>
+        04:55 · Primer tren Once → Moreno<br>
+        04:32 · Primer tren Liniers → Moreno<br>
+        23:02 · Último tren Once → Moreno<br>
+        00:09 · Último tren Flores → Moreno<br><br>
+        
+        <strong>Moreno → Once:</strong><br>
+        03:00 · Primer tren Moreno → Once<br>
+        02:55 · Primer tren Castelar → Liniers<br>
+        21:26 · Último tren Moreno → Once<br>
+        22:20 · Último tren Moreno → Flores
 
       </div>
     </div>
@@ -1597,7 +1633,7 @@ Activar notificaciones
       <span class="ad-label">Publicidad</span>
       <div class="ad-placeholder">
         <div class="ad-placeholder-icon">📢</div>
-        <div>Espacio publicitario 728x90 (desktop) / 320x50 (mobile)</div>
+        <div>Publicitá aquí tu servicio o emprendimiento y llegá a miles de personas que viajan a diario en el Sarmiento. Escribinos a trensarmientoenlinea@gmail.com</div>
       </div>
     </div>
   </div>
@@ -1617,7 +1653,7 @@ Activar notificaciones
       </div>
     </div>
     <div class="status-source" style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
-      <a href="https://www.instagram.com/trensarmientoenlinea_enlinea" target="_blank" rel="noopener noreferrer">📸 @trensarmientoenlinea_enlinea</a>
+      <a href="https://www.instagram.com/trensarmiento_enlinea" target="_blank" rel="noopener noreferrer">📸 @trensarmiento_enlinea</a>
       <span class="last-update-badge" id="lastUpdateBadge" title="Última verificación manual del estado">🕐 Verificado: —</span>
     </div>
   </div>
@@ -1683,7 +1719,7 @@ Activar notificaciones
           </div>
           <p class="result-disclaimer">
             ℹ️ Horarios orientativos basados en cronograma oficial. Para novedades seguinos en
-            <a href="https://www.instagram.com/trensarmientoenlinea_enlinea" target="_blank" rel="noopener noreferrer">Instagram</a> o
+            <a href="https://www.instagram.com/trensarmiento_enlinea" target="_blank" rel="noopener noreferrer">Instagram</a> o
             <a href="https://t.me/pasajerosdeltrensarmientoenlinea" target="_blank" rel="noopener noreferrer">Telegram ↗</a>
           </p>
         </div>
@@ -1705,15 +1741,6 @@ Activar notificaciones
               <div class="today-status" id="estadoGeneral">Estado general: <span class="badge-alerta" id="estadoBadge">⚠️ Con modificaciones</span></div>
               <p style="font-size:.88rem;color:var(--muted);margin-bottom:12px;">Novedades de la comunidad del Tren Sarmiento En Línea:</p>
               <div class="today-alerts" role="list" id="alertasList"></div>
-              <div style="margin-top:14px; background:var(--cel-bg); border:1px solid var(--cel-light); border-radius:8px; padding:10px 14px; font-size:.82rem; color:var(--muted);">
-                ℹ️ Las modificaciones en primeros y últimos trenes se actualizan <strong>semana a semana</strong>. Para saber los horarios exactos consultá:
-                <div style="display:flex; flex-direction:column; gap:6px; margin-top:8px;">
-                  <a href="https://www.instagram.com/trensarmientoenlinea_enlinea" target="_blank" rel="noopener noreferrer" style="color:var(--blue); font-weight:600;">📸 Instagram: @trensarmientoenlinea_enlinea</a>
-                  <a href="https://www.facebook.com/trensarmientoenlineaEnLinea" target="_blank" rel="noopener noreferrer" style="color:var(--blue); font-weight:600;">👥 Facebook: trensarmientoenlineaEnLinea</a>
-                  <a href="https://www.tiktok.com/@trensarmientoenlinea_enlinea" target="_blank" rel="noopener noreferrer" style="color:var(--blue); font-weight:600;">🎵 TikTok: @trensarmientoenlinea_enlinea</a>
-                  <a href="https://t.me/pasajerosdeltrensarmientoenlinea" target="_blank" rel="noopener noreferrer" style="color:var(--blue); font-weight:600;">💬 Chat de Pasajeros en Telegram</a>
-                </div>
-              </div>
             </div>
           </div>
         </div>
@@ -1729,35 +1756,13 @@ Activar notificaciones
             </div>-->
 
               
-            <!-- Fallback siempre visible, se oculta si el widget carga -->
+            <!-- Fallback siempre visible, se oculta si el widget carga 
             <div id="twitterFallback" style="padding:16px 20px;">
-              <p style="font-size:.85rem;font-weight:600;color:var(--navy);margin-bottom:10px;">Seguinos en nuestras redes:</p>
-              <div style="display:flex;flex-direction:column;gap:8px;">
-                <a href="https://www.instagram.com/trensarmientoenlinea_enlinea" target="_blank" rel="noopener noreferrer"
-                   style="display:flex;align-items:center;gap:10px;padding:11px 14px;background:var(--cel-bg);border:1px solid var(--border);border-radius:8px;text-decoration:none;color:var(--navy);font-weight:600;font-size:.9rem;">
-                  <span style="font-size:1.2rem;">📸</span>
-                  <div><strong>@trensarmientoenlinea_enlinea</strong><br/><span style="font-size:.78rem;color:var(--muted);font-weight:400;">Instagram · Novedades y alertas</span></div>
-                </a>
-                <a href="https://www.facebook.com/trensarmientoenlineaEnLinea" target="_blank" rel="noopener noreferrer"
-                   style="display:flex;align-items:center;gap:10px;padding:11px 14px;background:var(--cel-bg);border:1px solid var(--border);border-radius:8px;text-decoration:none;color:var(--navy);font-weight:600;font-size:.9rem;">
-                  <span style="font-size:1.2rem;">👥</span>
-                  <div><strong>trensarmientoenlineaEnLinea</strong><br/><span style="font-size:.78rem;color:var(--muted);font-weight:400;">Facebook · Comunidad de pasajeros</span></div>
-                </a>
-                <a href="https://www.tiktok.com/@trensarmientoenlinea_enlinea" target="_blank" rel="noopener noreferrer"
-                   style="display:flex;align-items:center;gap:10px;padding:11px 14px;background:var(--cel-bg);border:1px solid var(--border);border-radius:8px;text-decoration:none;color:var(--navy);font-weight:600;font-size:.9rem;">
-                  <span style="font-size:1.2rem;">🎵</span>
-                  <div><strong>@trensarmientoenlinea_enlinea</strong><br/><span style="font-size:.78rem;color:var(--muted);font-weight:400;">TikTok · Videos y actualizaciones</span></div>
-                </a>
-                <a href="https://t.me/pasajerosdeltrensarmientoenlinea" target="_blank" rel="noopener noreferrer"
-                   style="display:flex;align-items:center;gap:10px;padding:11px 14px;background:var(--cel-bg);border:1px solid var(--border);border-radius:8px;text-decoration:none;color:var(--navy);font-weight:600;font-size:.9rem;">
-                  <span style="font-size:1.2rem;">💬</span>
-                  <div><strong>Chat de Pasajeros</strong><br/><span style="font-size:.78rem;color:var(--muted);font-weight:400;">Telegram · t.me/pasajerosdeltrensarmientoenlinea</span></div>
-                </a>
-              </div>
+              <p style="font-size:.85rem;font-weight:600;color:var(--navy);margin-bottom:10px;">Seguinos en nuestras redes para estar al día con todas las novedades del Sarmiento.</p>
             </div>
             <p style="padding:6px 16px 12px;font-size:.72rem;color:var(--muted);">
-              Seguinos en <a href="https://www.instagram.com/trensarmientoenlinea_enlinea" target="_blank" rel="noopener noreferrer">Instagram</a> · <a href="https://www.facebook.com/trensarmientoenlineaEnLinea" target="_blank" rel="noopener noreferrer">Facebook</a> · <a href="https://t.me/pasajerosdeltrensarmientoenlinea" target="_blank" rel="noopener noreferrer">Telegram</a>
-            </p>
+              Encontranos en el footer de esta página
+            </p>-->
           </div>
         </div>
       </div>
@@ -1866,7 +1871,7 @@ Activar notificaciones
       <span class="ad-label">Publicidad</span>
       <div class="ad-placeholder">
         <div class="ad-placeholder-icon">💼</div>
-        <div>Banner horizontal 728x90 / 320x50</div>
+        <div>Publicitá aquí tu servicio o emprendimiento y llegá a miles de personas que viajan a diario en el Sarmiento. Escribinos a trensarmientoenlinea@gmail.com</div>
       </div>
     </div>
   </div>
@@ -2102,7 +2107,7 @@ Activar notificaciones
         </div>
         <div class="faq-item">
           <button type="button" class="faq-q" aria-expanded="false">¿Cómo me entero de un paro o cancelación? <span class="faq-icon" aria-hidden="true">+</span></button>
-          <div class="faq-a" hidden>Seguinos en <a href="https://www.instagram.com/trensarmientoenlinea_enlinea" target="_blank" rel="noopener noreferrer"><strong>@trensarmientoenlinea_enlinea</strong></a> en Instagram o unite al <a href="https://t.me/pasajerosdeltrensarmientoenlinea" target="_blank" rel="noopener noreferrer"><strong>Chat de Pasajeros</strong></a> en Telegram. Si hay paro, revisá la sección de estaciones para ver qué colectivos podés tomar.</div>
+          <div class="faq-a" hidden>Seguinos en <a href="https://www.instagram.com/trensarmiento_enlinea" target="_blank" rel="noopener noreferrer"><strong>@trensarmiento_enlinea</strong></a> en Instagram o unite al <a href="https://t.me/pasajerosdeltrensarmientoenlinea" target="_blank" rel="noopener noreferrer"><strong>Chat de Pasajeros</strong></a> en Telegram. Si hay paro, revisá la sección de estaciones para ver qué colectivos podés tomar.</div>
         </div>
         <div class="faq-item">
           <button type="button" class="faq-q" aria-expanded="false">Perdí algo en el tren, ¿dónde lo reporto? <span class="faq-icon" aria-hidden="true">+</span></button>
@@ -2122,7 +2127,7 @@ Activar notificaciones
       <span class="ad-label">Publicidad</span>
       <div class="ad-placeholder">
         <div class="ad-placeholder-icon">🌟</div>
-        <div>Banner horizontal inferior 728x90 / 320x50</div>
+        <div>Publicitá aquí tu servicio o emprendimiento y llegá a miles de personas que viajan a diario en el Sarmiento. Escribinos a trensarmientoenlinea@gmail.com</div>
       </div>
     </div>
   </div>
@@ -2132,15 +2137,9 @@ Activar notificaciones
     <div class="container">
       <div class="row" style="align-items:center;">
         <div class="col-half">
-          <span class="section-label" style="color:rgba(0,149,212,.9);">📱 Comunidad</span>
-          <h2 class="section-title" id="app-title" style="color:#fff;">Tren Sarmiento En Línea</h2>
-          <p class="section-sub">Seguinos en nuestras redes para recibir alertas, novedades y conectarte con otros pasajeros.</p>
-          <div class="app-btns" style="flex-direction:column;align-items:flex-start;gap:10px;">
-            <a href="https://www.instagram.com/trensarmientoenlinea_enlinea" target="_blank" rel="noopener noreferrer" class="app-btn" aria-label="Instagram Tren Sarmiento En Línea">📸 <span>@trensarmientoenlinea_enlinea en Instagram</span></a>
-            <a href="https://www.facebook.com/trensarmientoenlineaEnLinea" target="_blank" rel="noopener noreferrer" class="app-btn" aria-label="Facebook Tren Sarmiento En Línea">👥 <span>trensarmientoenlineaEnLinea en Facebook</span></a>
-            <a href="https://www.tiktok.com/@trensarmientoenlinea_enlinea" target="_blank" rel="noopener noreferrer" class="app-btn" aria-label="TikTok Tren Sarmiento En Línea">🎵 <span>@trensarmientoenlinea_enlinea en TikTok</span></a>
-            <a href="https://t.me/pasajerosdeltrensarmientoenlinea" target="_blank" rel="noopener noreferrer" class="app-btn app-btn-cel" aria-label="Chat de Pasajeros en Telegram">💬 <span>Chat de Pasajeros — Telegram</span></a>
-          </div>
+          <span class="section-label" style="color:rgba(0,149,212,.9);">🚆 Tren Sarmiento</span>
+          <h2 class="section-title" id="app-title" style="color:#fff;">Conectate con la comunidad</h2>
+          <p class="section-sub">Unite a nuestra comunidad de pasajeros para recibir alertas en tiempo real, compartir experiencias y estar al tanto de todas las novedades del Sarmiento. Encontranos en nuestras redes sociales.</p>
         </div>
         <div class="col-half" style="text-align:center;">
           <img
@@ -2182,11 +2181,20 @@ Activar notificaciones
       </div>
       <div class="footer-col">
         <h2>Seguinos</h2>
-        <a href="https://www.instagram.com/trensarmientoenlinea_enlinea" target="_blank" rel="noopener noreferrer">📸 Instagram</a>
-        <a href="https://www.facebook.com/trensarmientoenlineaEnLinea" target="_blank" rel="noopener noreferrer">👥 Facebook</a>
-        <a href="https://www.tiktok.com/@trensarmientoenlinea_enlinea" target="_blank" rel="noopener noreferrer">🎵 TikTok</a>
-        <a href="https://t.me/pasajerosdeltrensarmientoenlinea" target="_blank" rel="noopener noreferrer">💬 Chat de Pasajeros (Telegram)</a>
-        <a href="https://www.facebook.com/groups/2002389413227419/" target="_blank" rel="noopener noreferrer">🔍 Grupo Objetos Perdidos (Facebook)</a>
+        <div class="social-icons">
+          <a href="https://www.instagram.com/trensarmiento_enlinea" target="_blank" rel="noopener noreferrer" class="social-icon" aria-label="Instagram" title="Instagram">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/a/a5/Instagram_icon.png" alt="Instagram" />
+          </a>
+          <a href="https://www.facebook.com/trensarmientoenlinea" target="_blank" rel="noopener noreferrer" class="social-icon" aria-label="Facebook" title="Facebook">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/b/b9/2023_Facebook_icon.svg" alt="Facebook" />
+          </a>
+          <a href="https://www.tiktok.com/@trensarmiento_enlinea" target="_blank" rel="noopener noreferrer" class="social-icon" aria-label="TikTok" title="TikTok">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/3/34/Ionicons_logo-tiktok.svg" alt="TikTok" />
+          </a>
+          <a href="https://t.me/pasajerosdeltrensarmientoenlinea" target="_blank" rel="noopener noreferrer" class="social-icon" aria-label="Telegram" title="Telegram">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/8/83/Telegram_2019_Logo.svg" alt="Telegram" />
+          </a>
+        </div>
       </div>
 
       <!--
@@ -2239,12 +2247,13 @@ const ESTADO_JSON_URL = 'https://raw.githubusercontent.com/TU_USUARIO/tren-sarmi
 // ════════════════════════════════════════════════════════════
 let ESTADO_DIA = {
   estado: "modificado",
-  ultimaActualizacion: "29/04/2026 08:30",
+  ultimaActualizacion: "11/05/2026 08:00",
   fuente: "local",
   alertas: [
     "🚧 <strong>Andén provisorio en Morón (permanente):</strong> Los trenes hacia Once se detienen en andén provisorio. Acceso por calles Sarmiento y Azcuénaga. Medida indefinida por obras de renovación.",
-   
-        ]
+    "⚠️ <strong>Once - Moreno (11/5 al 13/5):</strong> Primer tren Liniers-Moreno 4:32hs, Once-Moreno 4:55hs. Último tren Once-Moreno 23:02hs, Flores-Moreno 00:09hs por obras.",
+    "⚠️ <strong>Moreno - Once (11/5 al 13/5):</strong> Primer tren Castelar-Liniers 2:55hs, Moreno-Once 3:00hs. Último tren Moreno-Once 21:26hs, Moreno-Flores 22:20hs por obras."
+  ]
 };
 
 // ─── Cargar estado desde GitHub, con fallback al objeto local ─
@@ -2303,7 +2312,7 @@ function applyEstadoDia() {
   // --- Texto del status bar ---
   const statusDetailMap = {
     normal:     'El servicio opera con normalidad en todos sus ramales.',
-    modificado: 'Este Sábado 09 y Domingo 10 circula con modificaciones en los últimos y primeros trenes por obras en zona de vías.',
+    modificado: 'Del 11/05 al 13/05 el servicio opera con modificaciones en sus primeros y ultimos trenes por Obras.',
     paro:       'ATENCIÓN: El servicio se encuentra suspendido. Consultá colectivos alternativos.'
   };
   const detailEl = document.getElementById('statusDetail');
