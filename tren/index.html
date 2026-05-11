@@ -162,7 +162,7 @@
   window.OneSignalDeferred = window.OneSignalDeferred || [];
   OneSignalDeferred.push(async function(OneSignal) {
     await OneSignal.init({
-      appId: "TU_APP_ID",
+      appId: "445c42f6-aa5b-4731-a072-9576adab63fc",
       safari_web_id: "",
       notifyButton: { enable: false }, // usamos nuestro propio botón
       promptOptions: {
@@ -530,7 +530,37 @@ a:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible
   flex-wrap: wrap;
 }
 .topbar a { color: #1c1200; font-weight: 700; }
+.local-chip-flores{
+  background:#7c3aed !important;
+  color:#fff !important;
+  border:1px solid #c4b5fd !important;
+}
 
+.local-chip-liniers{
+  background:#dc2626 !important;
+  color:#fff !important;
+  border:1px solid #fecaca !important;
+}
+
+.local-chip-merlo{
+  background:#059669 !important;
+  color:#fff !important;
+  border:1px solid #a7f3d0 !important;
+}
+
+.local-chip-castelar{
+  background:#d97706 !important;
+  color:#fff !important;
+  border:1px solid #fde68a !important;
+}
+
+.local-label{
+  display:block;
+  font-size:10px;
+  font-weight:700;
+  margin-top:2px;
+  opacity:.95;
+}
 /* ─── Navbar ──────────────────────────────────────────────── */
 .navbar {
   background: var(--navy);
@@ -553,7 +583,7 @@ a:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible
 .nav-logo-box {
   background: var(--celeste);
   border-radius: 8px;
-  width: 38px; height: 38px;
+  width: 45px; height: 45px;
   display: flex; align-items: center; justify-content: center;
   font-size: 1.2rem;
   flex-shrink: 0;
@@ -1018,7 +1048,7 @@ a:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible
 .feat-icon { color: var(--celeste); font-size: 1rem; flex-shrink: 0; margin-top: 1px; }
 
 /* ─── Footer ──────────────────────────────────────────────── */
-footer { background: #001533; color: rgba(255,255,255,.55); padding: 32px 20px 20px; font-size: 0.85rem; }
+footer { Buenas: #001533; color: rgba(255,255,255,.55); padding: 32px 20px 20px; font-size: 0.85rem; }
 .footer-inner { max-width: 1100px; margin: 0 auto; }
 .footer-cols { display: flex; flex-wrap: wrap; gap: 28px; margin-bottom: 24px; }
 .footer-col h2 { color: rgba(255,255,255,.8); font-size: 0.8rem; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 10px; font-weight: 700; }
@@ -1026,6 +1056,116 @@ footer { background: #001533; color: rgba(255,255,255,.55); padding: 32px 20px 2
 .footer-col a:hover, .footer-col a:focus-visible { color: var(--celeste); }
 .footer-brand { font-size: 1.2rem; font-weight: 800; color: #fff; margin-bottom: 6px; }
 .footer-divider { border-top: 1px solid rgba(255,255,255,.08); padding-top: 16px; font-size: 0.78rem; }
+
+/* ─── Social Media Icons ──────────────────────────────────── */
+.social-icons {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+.social-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s, box-shadow 0.2s;
+  text-decoration: none;
+  background: rgba(255,255,255,.95);
+  border: 1px solid rgba(255,255,255,.2);
+  padding: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.1);
+}
+.social-icon:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 12px rgba(0,0,0,.2);
+}
+.social-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+
+/* ─── PUBLICIDAD ──────────────────────────────────────────── */
+.ad-container {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+  margin: 16px auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+.ad-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--celeste), var(--blue), var(--celeste));
+}
+.ad-label {
+  position: absolute;
+  top: 4px;
+  right: 8px;
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  opacity: 0.6;
+}
+.ad-top {
+  max-width: 728px;
+  min-height: 90px;
+}
+.ad-mid {
+  max-width: 728px;
+  min-height: 90px;
+}
+.ad-square {
+  width: 300px;
+  min-height: 250px;
+  margin: 0 auto;
+}
+.ad-bottom {
+  max-width: 728px;
+  min-height: 90px;
+}
+@media (max-width: 768px) {
+  .ad-top, .ad-mid, .ad-bottom {
+    max-width: 320px;
+    min-height: 50px;
+  }
+  .ad-square {
+    width: 300px;
+    min-height: 250px;
+  }
+}
+.ad-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 14px;
+  text-align: center;
+  font-weight: 500;
+}
+.ad-placeholder-icon {
+  font-size: 32px;
+  opacity: 0.4;
+}
 </style>
 </head>
 
@@ -1033,18 +1173,20 @@ footer { background: #001533; color: rgba(255,255,255,.55); padding: 32px 20px 2
 <!-- Skip to content — accesibilidad teclado -->
 <a class="skip-link" href="#main-content">Ir al contenido principal</a>
 
-<!-- TOPBAR -->
-<div role="alert" aria-live="polite" class="topbar">
-  ⚠️ <strong>Obras en Morón:</strong> Andén provisorio para trenes hacia Once — acceso por Sarmiento y Azcuénaga.
-  <a href="#horarios">Ver horarios completos →</a>
+<!-- BANNER PUBLICITARIO TOP -->
+<div class="ad-container ad-top" style="margin: 0; border-radius: 0; border-left: none; border-right: none; border-top: none;">
+  <span class="ad-label">Publicidad</span>
+  <div class="ad-placeholder">
+    <div class="ad-placeholder-icon">📢</div>
+    <div>Publicitá aquí tu servicio o emprendimiento y llegá a miles de personas que viajan a diario en el Sarmiento. Escribinos a trensarmientoenlinea@gmail.com</div>
+  </div>
 </div>
 
-<!-- NAVBAR -->
 <nav class="navbar" id="navbar" aria-label="Navegación principal">
   <div class="nav-inner">
     <a href="#inicio" class="nav-brand" aria-label="Tren Sarmiento En Línea — inicio">
       <div class="nav-logo-box" aria-hidden="true" style="background:transparent;padding:0;">
-        <img src="logo.png" alt="" width="32" height="32"/>
+        <img src="logo.png" alt="" width="45" height="45"/>
       </div>
       <div>
         <span class="nav-brand-name">Tren Sarmiento En Línea</span>
@@ -1068,6 +1210,7 @@ footer { background: #001533; color: rgba(255,255,255,.55); padding: 32px 20px 2
   </div>
 </nav>
 
+
 <!-- PUSH OPT-IN BAR — aparece después de 8 segundos si no suscripto -->
 <div class="push-bar" id="pushBar" role="dialog" aria-label="Activar notificaciones de alerta" aria-live="polite">
   <div class="push-bar-text">
@@ -1075,11 +1218,367 @@ footer { background: #001533; color: rgba(255,255,255,.55); padding: 32px 20px 2
     Te avisamos cuando el tren no funciona. Sin spam.
   </div>
   <div class="push-bar-actions">
-    <button type="button" class="push-bar-accept" id="pushBarAccept">Activar notificaciones</button>
+    <button id="pushBarAccept"
+onclick="OneSignalDeferred.push(async function(OneSignal){await OneSignal.Notifications.requestPermission();})">
+Activar notificaciones
+</button>
     <button type="button" class="push-bar-dismiss" id="pushBarDismiss" aria-label="Cerrar">✕</button>
   </div>
 </div>
+<!-- ═══════════════════════════════════════ -->
+<!-- WIDGET ÚLTIMOS TRENES -->
+<!-- ═══════════════════════════════════════ -->
 
+<div id="lastTrainWidget" style="
+  position:fixed;
+  bottom:80px;
+  right:20px;
+  z-index:998;
+  width:320px;
+  transition:all .28s ease;
+  font-family:'Inter',system-ui,sans-serif;
+">
+
+  <!-- WIDGET -->
+  <div id="ltw-card" style="
+    background:#002B5C;
+    border-radius:18px;
+    padding:16px 18px;
+    box-shadow:0 4px 24px rgba(0,43,92,.45);
+    transition:all .28s ease;
+  ">
+
+    <!-- HEADER -->
+    <div style="
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      margin-bottom:12px;
+    ">
+
+      <span style="
+        font-size:10px;
+        font-weight:700;
+        letter-spacing:1.5px;
+        text-transform:uppercase;
+        color:rgba(255,255,255,.55);
+      ">
+        🚆 Últimos trenes
+      </span>
+
+      <button
+        id="ltw-minimize"
+        style="
+          background:rgba(255,255,255,.1);
+          border:none;
+          color:rgba(255,255,255,.7);
+          width:24px;
+          height:24px;
+          border-radius:50%;
+          cursor:pointer;
+          font-size:13px;
+        "
+      >
+        ✕
+      </button>
+    </div>
+
+    <!-- GRID -->
+    <div style="
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:12px;
+    ">
+
+      <!-- ONCE -->
+      <div style="
+        background:rgba(255,255,255,.06);
+        border:1px solid rgba(255,255,255,.10);
+        border-radius:12px;
+        padding:10px 12px;
+      ">
+
+        <div style="
+          font-size:9px;
+          font-weight:700;
+          letter-spacing:1px;
+          text-transform:uppercase;
+          color:rgba(255,255,255,.45);
+          margin-bottom:6px;
+        ">
+          Once → Moreno
+        </div>
+
+        <div id="ltw-once-last" style="
+          font-size:28px;
+          font-weight:800;
+          color:#7FE0FF;
+          line-height:1;
+        ">
+          --:--
+        </div>
+
+        <div style="
+          font-size:10px;
+          color:rgba(255,255,255,.45);
+          margin-top:3px;
+        ">
+          último tren
+        </div>
+
+        <div style="
+          margin-top:8px;
+          border-top:1px solid rgba(255,255,255,.08);
+          padding-top:7px;
+        ">
+          <div style="
+            font-size:9px;
+            color:rgba(255,255,255,.35);
+          ">
+            Penúltimo
+          </div>
+
+          <div id="ltw-once-prev" style="
+            margin-top:2px;
+            font-size:14px;
+            font-weight:700;
+            color:rgba(255,255,255,.7);
+          ">
+            --:--
+          </div>
+        </div>
+
+      </div>
+
+      <!-- MORENO -->
+      <div style="
+        background:rgba(255,255,255,.06);
+        border:1px solid rgba(255,255,255,.10);
+        border-radius:12px;
+        padding:10px 12px;
+      ">
+
+        <div style="
+          font-size:9px;
+          font-weight:700;
+          letter-spacing:1px;
+          text-transform:uppercase;
+          color:rgba(255,255,255,.45);
+          margin-bottom:6px;
+        ">
+          Moreno → Once
+        </div>
+
+        <div id="ltw-mor-last" style="
+          font-size:28px;
+          font-weight:800;
+          color:#7FE0FF;
+          line-height:1;
+        ">
+          --:--
+        </div>
+
+        <div style="
+          font-size:10px;
+          color:rgba(255,255,255,.45);
+          margin-top:3px;
+        ">
+          último tren
+        </div>
+
+        <div style="
+          margin-top:8px;
+          border-top:1px solid rgba(255,255,255,.08);
+          padding-top:7px;
+        ">
+          <div style="
+            font-size:9px;
+            color:rgba(255,255,255,.35);
+          ">
+            Penúltimo
+          </div>
+
+          <div id="ltw-mor-prev" style="
+            margin-top:2px;
+            font-size:14px;
+            font-weight:700;
+            color:rgba(255,255,255,.7);
+          ">
+            --:--
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ESPECIALES -->
+    <div style="
+      margin-top:12px;
+      background:rgba(255,255,255,.05);
+      border:1px solid rgba(255,255,255,.10);
+      border-radius:12px;
+      padding:10px 12px;
+    ">
+
+      <div style="
+        font-size:10px;
+        font-weight:700;
+        letter-spacing:1px;
+        text-transform:uppercase;
+        color:#fbbf24;
+        margin-bottom:8px;
+      ">
+        Especial · 09/05 y 10/05
+      </div>
+
+      <div style="
+        font-size:11px;
+        line-height:1.5;
+        color:rgba(255,255,255,.82);
+      ">
+
+        <strong>Domingo 11/05 al Martes 13/05</strong><br><br>
+        
+        <strong>Once → Moreno:</strong><br>
+        04:55 · Primer tren Once → Moreno<br>
+        04:32 · Primer tren Liniers → Moreno<br>
+        23:02 · Último tren Once → Moreno<br>
+        00:09 · Último tren Flores → Moreno<br><br>
+        
+        <strong>Moreno → Once:</strong><br>
+        03:00 · Primer tren Moreno → Once<br>
+        02:55 · Primer tren Castelar → Liniers<br>
+        21:26 · Último tren Moreno → Once<br>
+        22:20 · Último tren Moreno → Flores
+
+      </div>
+    </div>
+
+    <!-- FOOTER -->
+    <div id="ltw-footer" style="
+      margin-top:10px;
+      text-align:center;
+      font-size:9px;
+      color:rgba(255,255,255,.28);
+    ">
+      Cronograma actualizado
+    </div>
+
+  </div>
+
+  <!-- BURBUJA -->
+  <button
+    id="ltw-bubble"
+    style="
+      display:none;
+      position:absolute;
+      right:0;
+      bottom:0;
+      width:58px;
+      height:58px;
+      border-radius:50%;
+      border:none;
+      cursor:pointer;
+      background:#002B5C;
+      color:white;
+      font-size:24px;
+      box-shadow:0 4px 20px rgba(0,0,0,.35);
+    "
+    aria-label="Abrir widget de trenes"
+  >
+    🚆
+  </button>
+
+</div>
+
+<script>
+(function(){
+
+  const p2 = n => String(n).padStart(2,'0');
+
+  const day = new Date().getDay();
+
+  const dt =
+    day === 0 ? 'dom' :
+    day === 6 ? 'sab' : 'lv';
+
+  const on = {
+    lv:[[22,47],[23,10],[23,25],[23,55]],
+    sab:[[22,20],[22,50],[23,20],[23,55]],
+    dom:[[22,25],[23,0],[23,35]]
+  }[dt];
+
+  const mo = {
+    lv:[[21,54],[22,12],[22,30]],
+    sab:[[21,40],[22,10],[22,40]],
+    dom:[[21,30],[22,5],[22,40]]
+  }[dt];
+
+  const fmt = ([h,m]) => p2(h)+':'+p2(m);
+
+  document.getElementById('ltw-once-last').textContent =
+    fmt(on[on.length-1]);
+
+  document.getElementById('ltw-once-prev').textContent =
+    fmt(on[on.length-2]);
+
+  document.getElementById('ltw-mor-last').textContent =
+    fmt(mo[mo.length-1]);
+
+  document.getElementById('ltw-mor-prev').textContent =
+    fmt(mo[mo.length-2]);
+
+  // MINIMIZAR
+  const bubble = document.getElementById('ltw-bubble');
+  const card   = document.getElementById('ltw-card');
+
+  document.getElementById('ltw-minimize')
+    .addEventListener('click', () => {
+
+      card.style.opacity = '0';
+      card.style.transform = 'scale(.9)';
+      card.style.pointerEvents = 'none';
+
+      setTimeout(() => {
+        card.style.display = 'none';
+        bubble.style.display = 'block';
+      }, 180);
+
+    });
+
+  // RESTAURAR
+  bubble.addEventListener('click', () => {
+
+    bubble.style.display = 'none';
+
+    card.style.display = 'block';
+
+    requestAnimationFrame(() => {
+      card.style.opacity = '1';
+      card.style.transform = 'scale(1)';
+      card.style.pointerEvents = 'auto';
+    });
+
+  });
+
+})();
+</script>
+<script>
+(function(){
+  const p2=n=>String(n).padStart(2,'0');
+  const d=new Date().getDay();
+  const dt=d===0?'dom':d===6?'sab':'lv';
+  const on={lv:[[22,47],[23,10],[23,25],[23,55]],sab:[[22,20],[22,50],[23,20],[23,55]],dom:[[22,25],[23,0],[23,35]]};
+  const mo={lv:[[21,36],[21,50],[22,20]],sab:[[21,40],[22,10],[22,40]],dom:[[21,30],[22,5],[22,40]]};
+  const sc_on=on[dt], sc_mo=mo[dt];
+  const fmt=([h,m])=>p2(h)+':'+p2(m);
+  document.getElementById('ltw-once-last').textContent=fmt(sc_on[sc_on.length-1]);
+  document.getElementById('ltw-once-prev').textContent=fmt(sc_on[sc_on.length-2]);
+  document.getElementById('ltw-mor-last').textContent=fmt(sc_mo[sc_mo.length-1]);
+  document.getElementById('ltw-mor-prev').textContent=fmt(sc_mo[sc_mo.length-2]);
+  document.getElementById('ltw-footer').textContent='Cronograma · '+(dt==='lv'?'Lunes a Viernes':dt==='sab'?'Sábado':'Domingo/Feriado');
+})();
+</script>
 <main id="main-content">
 
   <!-- HERO -->
@@ -1128,6 +1627,17 @@ footer { background: #001533; color: rgba(255,255,255,.55); padding: 32px 20px 2
     </nav>
   </section>
 
+  <!-- BANNER PUBLICITARIO SUPERIOR -->
+  <div class="container">
+    <div class="ad-container ad-top" style="margin: 0 auto; border-radius: 0; border-left: none; border-right: none; border-top: none; display:flex; justify-content:center; align-items:center;">
+      <span class="ad-label">Publicidad</span>
+      <div class="ad-placeholder">
+        <div class="ad-placeholder-icon">📢</div>
+        <div>Publicitá aquí tu servicio o emprendimiento y llegá a miles de personas que viajan a diario en el Sarmiento. Escribinos a trensarmientoenlinea@gmail.com</div>
+      </div>
+    </div>
+  </div>
+
   <!-- STATUS BAR -->
   <div class="status-bar yellow" id="statusBar" role="status" aria-live="polite" aria-label="Estado del servicio">
     <div style="display:flex;align-items:center;gap:12px;">
@@ -1139,7 +1649,7 @@ footer { background: #001533; color: rgba(255,255,255,.55); padding: 32px 20px 2
       <div>
         <span class="status-dot" aria-hidden="true"></span>
         <span class="status-text" id="statusText">⚠️ Servicio con modificaciones</span>
-        <div class="status-detail" id="statusDetail">De lunes a viernes circula con modificaciones en los primeros y últimos trenes por obras en zona de vías.</div>
+        <div class="status-detail" id="statusDetail">Entre la Noche del Sábado 09 y mañana del Domingo 10 habrá servicio reducido por lo que el horario de los ultimos trenes se verá modificado.</div>
       </div>
     </div>
     <div class="status-source" style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
@@ -1231,54 +1741,27 @@ footer { background: #001533; color: rgba(255,255,255,.55); padding: 32px 20px 2
               <div class="today-status" id="estadoGeneral">Estado general: <span class="badge-alerta" id="estadoBadge">⚠️ Con modificaciones</span></div>
               <p style="font-size:.88rem;color:var(--muted);margin-bottom:12px;">Novedades de la comunidad del Tren Sarmiento En Línea:</p>
               <div class="today-alerts" role="list" id="alertasList"></div>
-              <div style="margin-top:14px; background:var(--cel-bg); border:1px solid var(--cel-light); border-radius:8px; padding:10px 14px; font-size:.82rem; color:var(--muted);">
-                ℹ️ Las modificaciones en primeros y últimos trenes se actualizan <strong>semana a semana</strong>. Para saber los horarios exactos consultá:
-                <div style="display:flex; flex-direction:column; gap:6px; margin-top:8px;">
-                  <a href="https://www.instagram.com/trensarmientoenlinea_enlinea" target="_blank" rel="noopener noreferrer" style="color:var(--blue); font-weight:600;">📸 Instagram: @trensarmientoenlinea_enlinea</a>
-                  <a href="https://www.facebook.com/trensarmientoenlineaEnLinea" target="_blank" rel="noopener noreferrer" style="color:var(--blue); font-weight:600;">👥 Facebook: trensarmientoenlineaEnLinea</a>
-                  <a href="https://www.tiktok.com/@trensarmientoenlinea_enlinea" target="_blank" rel="noopener noreferrer" style="color:var(--blue); font-weight:600;">🎵 TikTok: @trensarmientoenlinea_enlinea</a>
-                  <a href="https://t.me/pasajerosdeltrensarmientoenlinea" target="_blank" rel="noopener noreferrer" style="color:var(--blue); font-weight:600;">💬 Chat de Pasajeros en Telegram</a>
-                </div>
-              </div>
             </div>
           </div>
         </div>
         <div class="col-half">
           <div class="today-card">
-            <div class="today-header">📱 Alertas en tiempo real — @InfoTSarmiento</div>
+
+              
+            <!--<div class="today-header">📱 Alertas en tiempo real — @InfoTSarmiento</div>
             <div style="padding:0; min-height:50px;" id="twitterWrap">
               <a class="twitter-timeline" data-lang="es" data-height="280" data-theme="light"
                  data-chrome="noheader nofooter noborders transparent"
                  href="https://twitter.com/InfoTSarmiento?ref_src=twsrc%5Etfw">Cargando alertas…</a>
-            </div>
+            </div>-->
+
+              
             <!-- Fallback siempre visible, se oculta si el widget carga -->
             <div id="twitterFallback" style="padding:16px 20px;">
-              <p style="font-size:.85rem;font-weight:600;color:var(--navy);margin-bottom:10px;">Seguinos en nuestras redes:</p>
-              <div style="display:flex;flex-direction:column;gap:8px;">
-                <a href="https://www.instagram.com/trensarmientoenlinea_enlinea" target="_blank" rel="noopener noreferrer"
-                   style="display:flex;align-items:center;gap:10px;padding:11px 14px;background:var(--cel-bg);border:1px solid var(--border);border-radius:8px;text-decoration:none;color:var(--navy);font-weight:600;font-size:.9rem;">
-                  <span style="font-size:1.2rem;">📸</span>
-                  <div><strong>@trensarmientoenlinea_enlinea</strong><br/><span style="font-size:.78rem;color:var(--muted);font-weight:400;">Instagram · Novedades y alertas</span></div>
-                </a>
-                <a href="https://www.facebook.com/trensarmientoenlineaEnLinea" target="_blank" rel="noopener noreferrer"
-                   style="display:flex;align-items:center;gap:10px;padding:11px 14px;background:var(--cel-bg);border:1px solid var(--border);border-radius:8px;text-decoration:none;color:var(--navy);font-weight:600;font-size:.9rem;">
-                  <span style="font-size:1.2rem;">👥</span>
-                  <div><strong>trensarmientoenlineaEnLinea</strong><br/><span style="font-size:.78rem;color:var(--muted);font-weight:400;">Facebook · Comunidad de pasajeros</span></div>
-                </a>
-                <a href="https://www.tiktok.com/@trensarmientoenlinea_enlinea" target="_blank" rel="noopener noreferrer"
-                   style="display:flex;align-items:center;gap:10px;padding:11px 14px;background:var(--cel-bg);border:1px solid var(--border);border-radius:8px;text-decoration:none;color:var(--navy);font-weight:600;font-size:.9rem;">
-                  <span style="font-size:1.2rem;">🎵</span>
-                  <div><strong>@trensarmientoenlinea_enlinea</strong><br/><span style="font-size:.78rem;color:var(--muted);font-weight:400;">TikTok · Videos y actualizaciones</span></div>
-                </a>
-                <a href="https://t.me/pasajerosdeltrensarmientoenlinea" target="_blank" rel="noopener noreferrer"
-                   style="display:flex;align-items:center;gap:10px;padding:11px 14px;background:var(--cel-bg);border:1px solid var(--border);border-radius:8px;text-decoration:none;color:var(--navy);font-weight:600;font-size:.9rem;">
-                  <span style="font-size:1.2rem;">💬</span>
-                  <div><strong>Chat de Pasajeros</strong><br/><span style="font-size:.78rem;color:var(--muted);font-weight:400;">Telegram · t.me/pasajerosdeltrensarmientoenlinea</span></div>
-                </a>
-              </div>
+              <p style="font-size:.85rem;font-weight:600;color:var(--navy);margin-bottom:10px;">Seguinos en nuestras redes para estar al día con todas las novedades del Sarmiento.</p>
             </div>
             <p style="padding:6px 16px 12px;font-size:.72rem;color:var(--muted);">
-              Seguinos en <a href="https://www.instagram.com/trensarmientoenlinea_enlinea" target="_blank" rel="noopener noreferrer">Instagram</a> · <a href="https://www.facebook.com/trensarmientoenlineaEnLinea" target="_blank" rel="noopener noreferrer">Facebook</a> · <a href="https://t.me/pasajerosdeltrensarmientoenlinea" target="_blank" rel="noopener noreferrer">Telegram</a>
+              Encontranos en el footer de esta página
             </p>
           </div>
         </div>
@@ -1382,6 +1865,17 @@ footer { background: #001533; color: rgba(255,255,255,.55); padding: 32px 20px 2
     </div>
   </section>
 
+  <!-- BANNER PUBLICITARIO MEDIO -->
+  <div class="container">
+    <div class="ad-container ad-mid">
+      <span class="ad-label">Publicidad</span>
+      <div class="ad-placeholder">
+        <div class="ad-placeholder-icon">💼</div>
+        <div>Publicitá aquí tu servicio o emprendimiento y llegá a miles de personas que viajan a diario en el Sarmiento. Escribinos a trensarmientoenlinea@gmail.com</div>
+      </div>
+    </div>
+  </div>
+
   <!-- ESTACIONES -->
   <section class="section section-white" id="estaciones" aria-labelledby="estaciones-title">
     <div class="container">
@@ -1395,15 +1889,188 @@ footer { background: #001533; color: rgba(255,255,255,.55); padding: 32px 20px 2
       <div class="stations-list" id="stationsList" aria-label="Lista de estaciones"></div>
     </div>
   </section>
+<!--
+  <div id="map" role="application" aria-label="Mapa interactivo de las estaciones del Tren Sarmiento"></div>
+<div id="loading" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;font-family:sans-serif;font-size:14px;z-index:9999;background:rgba(0,0,0,.6);padding:12px 20px;border-radius:8px;">Cargando estaciones desde OpenStreetMap...</div>
 
-  <!-- MAPA -->
-  <section class="section section-navy" id="mapa" aria-labelledby="mapa-title">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+  const map = L.map('map').setView([-34.641, -58.600], 11);
+
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors © CARTO'
+  }).addTo(map);
+
+  const stationOrder = [
+    "Once","Caballito","Flores","Floresta","Villa Luro",
+    "Liniers","Ciudadela","Ramos Mejía","Haedo","Morón",
+    "Castelar","Ituzaingó","San Antonio de Padua","Merlo",
+    "Paso del Rey","Moreno"
+  ];
+
+  const colorZones = {
+    "Once":"#22c55e","Caballito":"#22c55e","Flores":"#22c55e",
+    "Floresta":"#22c55e","Villa Luro":"#22c55e",
+    "Liniers":"#3b82f6","Ciudadela":"#3b82f6","Ramos Mejía":"#3b82f6","Haedo":"#3b82f6",
+    "Morón":"#8b5cf6","Castelar":"#8b5cf6","Ituzaingó":"#8b5cf6",
+    "San Antonio de Padua":"#8b5cf6","Merlo":"#8b5cf6",
+    "Paso del Rey":"#8b5cf6","Moreno":"#8b5cf6"
+  };
+
+  // Consulta Overpass API — obtiene los nodos exactos de OSM
+  // misma fuente que el tile de CartoDB
+  const query = `
+    [out:json][timeout:25];
+    (
+      node["railway"="station"]["network"~"Sarmiento",i](-34.70,-58.82,-34.59,-58.39);
+      node["railway"="station"]["line"~"Sarmiento",i](-34.70,-58.82,-34.59,-58.39);
+      node["railway"="station"]["name"~"Once|Caballito|Flores|Floresta|Liniers|Ciudadela|Haedo|Morón|Moron|Castelar|Ituzaingó|Padua|Merlo|Moreno",i](-34.70,-58.82,-34.59,-58.39);
+    );
+    out body;
+  `;
+
+  fetch("https://overpass-api.de/api/interpreter", {
+    method: "POST",
+    body: "data=" + encodeURIComponent(query)
+  })
+  .then(r => r.json())
+  .then(data => {
+    document.getElementById("loading").remove();
+
+    // Indexar resultados por nombre
+    const found = {};
+    data.elements.forEach(el => {
+      const name = (el.tags.name || "").trim();
+      found[name] = { lat: el.lat, lng: el.lon };
+    });
+
+    console.log("Estaciones encontradas en OSM:", found);
+
+    // Resolver cada estación en el orden correcto
+    // con fallback por nombre parcial si no coincide exacto
+    const resolved = [];
+    stationOrder.forEach((target, idx) => {
+      // Buscar coincidencia exacta primero
+      let match = found[target];
+
+      // Si no, buscar coincidencia parcial
+      if (!match) {
+        const key = Object.keys(found).find(k =>
+          k.toLowerCase().includes(target.toLowerCase().split(" ")[0].toLowerCase())
+        );
+        if (key) match = found[key];
+      }
+
+      if (match) {
+        resolved.push({ id: idx + 1, name: target, ...match });
+      } else {
+        console.warn("No se encontró en OSM:", target);
+      }
+    });
+
+    // Trazar la vía
+    L.polyline(resolved.map(s => [s.lat, s.lng]), {
+      color: '#0095D4', weight: 4, opacity: 0.9
+    }).addTo(map);
+
+    // Crear markers
+    resolved.forEach(s => {
+      const color = colorZones[s.name] || "#8b5cf6";
+      const icon = L.divIcon({
+        className: '',
+        html: `<div style="background:${color};color:#fff;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:11px;border:2.5px solid white;box-shadow:0 2px 6px rgba(0,0,0,.4);">${s.id}</div>`,
+        iconSize: [26, 26],
+        iconAnchor: [13, 13]
+      });
+      L.marker([s.lat, s.lng], { icon })
+        .addTo(map)
+        .bindTooltip(s.name, { permanent: false, direction: 'top' });
+    });
+  })
+  .catch(err => {
+    document.getElementById("loading").textContent = "Error: " + err.message;
+    console.error(err);
+  });
+</script> 
+    
+    -->
+
+  <!-- OBJETOS PERDIDOS / ENCONTRADOS -->
+  <section class="section section-white" id="objetos-perdidos" aria-labelledby="objetos-title">
     <div class="container">
-      <span class="section-label">🗺️ Ramal eléctrico</span>
-      <h2 class="section-title" id="mapa-title">Mapa de estaciones</h2>
-      <p class="section-sub">Tocá cada estación para ver tarifas y sección.</p>
-      <div id="map" role="application" aria-label="Mapa interactivo de las estaciones del Tren Sarmiento"></div>
-      <p style="font-size:.72rem;color:rgba(255,255,255,.3);margin-top:8px;">© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer" style="color:rgba(255,255,255,.3);">OpenStreetMap</a> contributors © CARTO</p>
+      <span class="section-label">🔍 Ayuda comunitaria</span>
+      <h2 class="section-title" id="objetos-title">Objetos Perdidos y Encontrados</h2>
+      <p class="section-sub">Si perdiste algo en el tren o encontraste un objeto, podés reportarlo en la comunidad de pasajeros.</p>
+      
+      <div style="background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:32px 28px;border:2px solid var(--cel-light);">
+        <div style="display:flex;align-items:flex-start;gap:24px;flex-wrap:wrap;">
+          <div style="flex:1;min-width:280px;">
+            <div style="font-size:3rem;margin-bottom:12px;">📦</div>
+            <h3 style="font-size:1.3rem;font-weight:700;color:var(--navy);margin-bottom:12px;">¿Perdiste algo?</h3>
+            <p style="color:var(--muted);margin-bottom:16px;line-height:1.6;">
+              Reportá tu objeto perdido en el <strong>Grupo de Facebook</strong> oficial. 
+              La comunidad de pasajeros ayuda diariamente a recuperar mochilas, celulares, billeteras, documentos y más.
+            </p>
+            <a 
+              href="https://www.facebook.com/groups/2002389413227419/" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              style="display:inline-flex;align-items:center;gap:8px;background:var(--blue);color:#fff;padding:12px 20px;border-radius:10px;font-weight:600;text-decoration:none;transition:background .18s;"
+              onmouseover="this.style.background='var(--celeste)'"
+              onmouseout="this.style.background='var(--blue)'"
+            >
+              <span style="font-size:1.2rem;">👥</span>
+              Ir al Grupo de Facebook
+            </a>
+          </div>
+          
+          <div style="flex:1;min-width:280px;">
+            <div style="font-size:3rem;margin-bottom:12px;">🎒</div>
+            <h3 style="font-size:1.3rem;font-weight:700;color:var(--navy);margin-bottom:12px;">¿Encontraste algo?</h3>
+            <p style="color:var(--muted);margin-bottom:16px;line-height:1.6;">
+              Publicá una foto o descripción en el grupo. Tu ayuda puede hacer que alguien recupere algo muy importante.
+              También podés avisar en el <strong>Chat de Pasajeros</strong> en Telegram.
+            </p>
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              <a 
+                href="https://www.facebook.com/groups/2002389413227419/" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                style="display:inline-flex;align-items:center;gap:8px;background:rgba(0,85,164,.08);color:var(--blue);padding:10px 16px;border-radius:8px;font-weight:600;text-decoration:none;border:1.5px solid var(--cel-light);transition:background .18s;"
+                onmouseover="this.style.background='var(--cel-light)'"
+                onmouseout="this.style.background='rgba(0,85,164,.08)'"
+              >
+                <span>👥</span>
+                Publicar en Facebook
+              </a>
+              <a 
+                href="https://t.me/pasajerosdeltrensarmientoenlinea" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                style="display:inline-flex;align-items:center;gap:8px;background:rgba(0,85,164,.08);color:var(--blue);padding:10px 16px;border-radius:8px;font-weight:600;text-decoration:none;border:1.5px solid var(--cel-light);transition:background .18s;"
+                onmouseover="this.style.background='var(--cel-light)'"
+                onmouseout="this.style.background='rgba(0,85,164,.08)'"
+              >
+                <span>💬</span>
+                Avisar en Telegram
+              </a>
+            </div>
+          </div>
+        </div>
+        
+        <div style="margin-top:24px;padding:16px;background:var(--cel-bg);border-radius:8px;border-left:4px solid var(--celeste);">
+          <strong style="color:var(--navy);display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+            <span>💡</span>
+            Consejo útil:
+          </strong>
+          <p style="color:var(--muted);font-size:.9rem;line-height:1.6;margin:0;">
+            Incluí en tu publicación: descripción del objeto, en qué formación viajabas (Once o Moreno), 
+            horario aproximado y entre qué estaciones. Cuanto más detalle, mejor.
+          </p>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -1454,20 +2121,25 @@ footer { background: #001533; color: rgba(255,255,255,.55); padding: 32px 20px 2
     </div>
   </section>
 
+  <!-- BANNER PUBLICITARIO INFERIOR -->
+  <div class="container">
+    <div class="ad-container ad-bottom">
+      <span class="ad-label">Publicidad</span>
+      <div class="ad-placeholder">
+        <div class="ad-placeholder-icon">🌟</div>
+        <div>Publicitá aquí tu servicio o emprendimiento y llegá a miles de personas que viajan a diario en el Sarmiento. Escribinos a trensarmientoenlinea@gmail.com</div>
+      </div>
+    </div>
+  </div>
+
   <!-- COMUNIDAD -->
   <section class="app-section" id="app" aria-labelledby="app-title">
     <div class="container">
       <div class="row" style="align-items:center;">
         <div class="col-half">
-          <span class="section-label" style="color:rgba(0,149,212,.9);">📱 Comunidad</span>
-          <h2 class="section-title" id="app-title" style="color:#fff;">Tren Sarmiento En Línea</h2>
-          <p class="section-sub">Seguinos en nuestras redes para recibir alertas, novedades y conectarte con otros pasajeros.</p>
-          <div class="app-btns" style="flex-direction:column;align-items:flex-start;gap:10px;">
-            <a href="https://www.instagram.com/trensarmientoenlinea_enlinea" target="_blank" rel="noopener noreferrer" class="app-btn" aria-label="Instagram Tren Sarmiento En Línea">📸 <span>@trensarmientoenlinea_enlinea en Instagram</span></a>
-            <a href="https://www.facebook.com/trensarmientoenlineaEnLinea" target="_blank" rel="noopener noreferrer" class="app-btn" aria-label="Facebook Tren Sarmiento En Línea">👥 <span>trensarmientoenlineaEnLinea en Facebook</span></a>
-            <a href="https://www.tiktok.com/@trensarmientoenlinea_enlinea" target="_blank" rel="noopener noreferrer" class="app-btn" aria-label="TikTok Tren Sarmiento En Línea">🎵 <span>@trensarmientoenlinea_enlinea en TikTok</span></a>
-            <a href="https://t.me/pasajerosdeltrensarmientoenlinea" target="_blank" rel="noopener noreferrer" class="app-btn app-btn-cel" aria-label="Chat de Pasajeros en Telegram">💬 <span>Chat de Pasajeros — Telegram</span></a>
-          </div>
+          <span class="section-label" style="color:rgba(0,149,212,.9);">🚆 Tren Sarmiento</span>
+          <h2 class="section-title" id="app-title" style="color:#fff;">Conectate con la comunidad</h2>
+          <p class="section-sub">Unite a nuestra comunidad de pasajeros para recibir alertas en tiempo real, compartir experiencias y estar al tanto de todas las novedades del Sarmiento. Encontranos en nuestras redes sociales.</p>
         </div>
         <div class="col-half" style="text-align:center;">
           <img
@@ -1509,11 +2181,20 @@ footer { background: #001533; color: rgba(255,255,255,.55); padding: 32px 20px 2
       </div>
       <div class="footer-col">
         <h2>Seguinos</h2>
-        <a href="https://www.instagram.com/trensarmientoenlinea_enlinea" target="_blank" rel="noopener noreferrer">📸 Instagram</a>
-        <a href="https://www.facebook.com/trensarmientoenlineaEnLinea" target="_blank" rel="noopener noreferrer">👥 Facebook</a>
-        <a href="https://www.tiktok.com/@trensarmientoenlinea_enlinea" target="_blank" rel="noopener noreferrer">🎵 TikTok</a>
-        <a href="https://t.me/pasajerosdeltrensarmientoenlinea" target="_blank" rel="noopener noreferrer">💬 Chat de Pasajeros (Telegram)</a>
-        <a href="https://www.facebook.com/groups/2002389413227419/" target="_blank" rel="noopener noreferrer">🔍 Grupo Objetos Perdidos (Facebook)</a>
+        <div class="social-icons">
+          <a href="https://www.instagram.com/trensarmientoenlinea_enlinea" target="_blank" rel="noopener noreferrer" class="social-icon" aria-label="Instagram" title="Instagram">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/a/a5/Instagram_icon.png" alt="Instagram" />
+          </a>
+          <a href="https://www.facebook.com/trensarmientoenlineaEnLinea" target="_blank" rel="noopener noreferrer" class="social-icon" aria-label="Facebook" title="Facebook">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/b/b9/2023_Facebook_icon.svg" alt="Facebook" />
+          </a>
+          <a href="https://www.tiktok.com/@trensarmientoenlinea_enlinea" target="_blank" rel="noopener noreferrer" class="social-icon" aria-label="TikTok" title="TikTok">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/3/34/Ionicons_logo-tiktok.svg" alt="TikTok" />
+          </a>
+          <a href="https://t.me/pasajerosdeltrensarmientoenlinea" target="_blank" rel="noopener noreferrer" class="social-icon" aria-label="Telegram" title="Telegram">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/8/83/Telegram_2019_Logo.svg" alt="Telegram" />
+          </a>
+        </div>
       </div>
 
       <!--
@@ -1566,13 +2247,12 @@ const ESTADO_JSON_URL = 'https://raw.githubusercontent.com/TU_USUARIO/tren-sarmi
 // ════════════════════════════════════════════════════════════
 let ESTADO_DIA = {
   estado: "modificado",
-  ultimaActualizacion: "29/04/2026 08:30",
+  ultimaActualizacion: "11/05/2026 08:00",
   fuente: "local",
   alertas: [
     "🚧 <strong>Andén provisorio en Morón (permanente):</strong> Los trenes hacia Once se detienen en andén provisorio. Acceso por calles Sarmiento y Azcuénaga. Medida indefinida por obras de renovación.",
-    "🕐 <strong>Primeros y últimos trenes con horarios modificados (L a V):</strong> Por obras en zona de vías. Los trenes de madrugada y nocturnos pueden operar con recorrido limitado o cancelarse. El cronograma exacto varía semana a semana. Verificar antes de salir. Fuente: <a href='https://www.argentina.gob.ar/transporte/trenes-argentinos/modificaciones-en-el-servicio-y-novedades' target='_blank' rel='noopener noreferrer'>Trenes Argentinos — Modificaciones ↗</a>",
-    "🛤️ <strong>Ramal Merlo–Lobos con recorrido limitado:</strong> Los trenes circulan solo entre Merlo y Las Heras por obras de renovación de vías.",
-    "🛤️ <strong>Ramal Moreno–Mercedes con cronograma especial</strong> por obras de renovación de vías. <a href='https://www.argentina.gob.ar/sites/default/files/horario_moreno_-_mercedes_2026-03-11_-_web.pdf' target='_blank' rel='noopener noreferrer'>Ver cronograma especial PDF ↗</a>"
+    "⚠️ <strong>Once - Moreno (11/5 al 13/5):</strong> Primer tren Liniers-Moreno 4:32hs, Once-Moreno 4:55hs. Último tren Once-Moreno 23:02hs, Flores-Moreno 00:09hs por obras.",
+    "⚠️ <strong>Moreno - Once (11/5 al 13/5):</strong> Primer tren Castelar-Liniers 2:55hs, Moreno-Once 3:00hs. Último tren Moreno-Once 21:26hs, Moreno-Flores 22:20hs por obras."
   ]
 };
 
@@ -1632,7 +2312,7 @@ function applyEstadoDia() {
   // --- Texto del status bar ---
   const statusDetailMap = {
     normal:     'El servicio opera con normalidad en todos sus ramales.',
-    modificado: 'De lunes a viernes circula con modificaciones en los primeros y últimos trenes por obras en zona de vías.',
+    modificado: 'Del 11/05 al 13/05 el servicio opera con modificaciones en sus primeros y ultimos trenes por Obras.',
     paro:       'ATENCIÓN: El servicio se encuentra suspendido. Consultá colectivos alternativos.'
   };
   const detailEl = document.getElementById('statusDetail');
@@ -1726,9 +2406,9 @@ const OFFSET        = [0,8,13,17,21,25,30,35,40,46,52,56,61,65,68,71];
 // ─── Horarios ────────────────────────────────────────────────
 const S = {
   lv: {
-    once:   [[4,5],[4,35],[5,2],[5,22],[5,38],[5,48],[5,58],[6,8],[6,18],[6,28],[6,38],[6,48],[6,58],[7,6],[7,14],[7,22],[7,30],[7,38],[7,46],[7,54],[8,2],[8,10],[8,18],[8,26],[8,34],[8,44],[8,54],[9,4],[9,16],[9,28],[9,42],[9,56],[10,12],[10,28],[10,44],[11,0],[11,18],[11,36],[11,54],[12,12],[12,30],[12,48],[13,6],[13,24],[13,42],[14,0],[14,18],[14,36],[14,54],[15,12],[15,30],[15,48],[16,6],[16,24],[16,40],[16,52],[17,2],[17,12],[17,22],[17,32],[17,42],[17,52],[18,2],[18,12],[18,22],[18,32],[18,42],[18,52],[19,2],[19,14],[19,26],[19,40],[19,54],[20,8],[20,23],[20,38],[20,54],[21,10],[21,28],[21,46],[22,5],[22,25],[22,47],[23,10],[23,30],[23,55]],
-    moreno: [[3,21],[3,44],[4,15],[4,44],[5,1],[5,14],[5,26],[5,38],[5,48],[5,58],[6,8],[6,18],[6,28],[6,38],[6,48],[6,58],[7,8],[7,18],[7,28],[7,38],[7,48],[7,58],[8,8],[8,18],[8,28],[8,42],[8,56],[9,10],[9,24],[9,38],[9,54],[10,10],[10,26],[10,44],[11,2],[11,20],[11,38],[11,56],[12,14],[12,32],[12,50],[13,8],[13,26],[13,44],[14,2],[14,20],[14,38],[14,56],[15,14],[15,32],[15,50],[16,8],[16,26],[16,44],[16,58],[17,8],[17,18],[17,28],[17,38],[17,48],[17,58],[18,8],[18,18],[18,28],[18,38],[18,48],[18,58],[19,8],[19,20],[19,34],[19,48],[20,2],[20,16],[20,31],[20,46],[21,2],[21,19],[21,36],[21,54],[22,12],[22,30]]
-  },
+    once:   [[4,5],[4,35],[5,2],[5,22],[5,38],[5,48],[5,58],[6,8],[6,18],[6,28],[6,38],[6,48],[6,58],[7,6],[7,14],[7,22],[7,30],[7,38],[7,46],[7,54],[8,2],[8,10],[8,18],[8,26],[8,34],[8,44],[8,54],[9,4],[9,16],[9,28],[9,42],[9,56],[10,12],[10,28],[10,44],[11,0],[11,18],[11,36],[11,54],[12,12],[12,30],[12,48],[13,6],[13,24],[13,42],[14,0],[14,18],[14,36],[14,54],[15,12],[15,25],[15,30],[15,48],[16,6],[16,11],[16,24],[16,40],[16,52],[16,57],[17,2],[17,12],[17,22],[17,32],[17,42],[17,52],[17,56],[18,2],[18,12],[18,22],[18,32],[18,41],[18,42],[18,52],[19,2],[19,14],[19,26],[19,40],[19,54],[20,8],[20,23],[20,38],[20,54],[21,10],[21,28],[21,46],[22,5],[22,25],[22,47],[23,10],[23,25],[23,55]],
+moreno: [[3,21],[3,44],[4,15],[4,44],[5,1],[5,14],[5,26],[5,28],[5,38],[5,48],[5,58],[6,8],[6,13],[6,18],[6,28],[6,38],[6,48],[6,58],[7,1],[7,8],[7,18],[7,28],[7,38],[7,48],[7,50],[7,58],[8,8],[8,18],[8,28],[8,36],[8,42],[8,56],[9,10],[9,22],[9,24],[9,38],[9,54],[10,10],[10,26],[10,44],[11,2],[11,20],[11,38],[11,56],[12,14],[12,32],[12,50],[13,8],[13,26],[13,44],[14,2],[14,20],[14,38],[14,56],[15,14],[15,32],[15,50],[16,8],[16,26],[16,44],[16,58],[17,8],[17,18],[17,28],[17,38],[17,48],[17,58],[18,8],[18,18],[18,28],[18,38],[18,41],[18,48],[18,58],[19,8],[19,20],[19,28],[19,34],[19,48],[20,2],[20,14],[20,16],[20,31],[20,46],[21,2],[21,19],[21,36],[21,54],[22,12],[22,30]]
+},
   sab: {
     once:   [[5,5],[5,35],[6,5],[6,35],[7,5],[7,35],[8,5],[8,25],[8,45],[9,5],[9,25],[9,45],[10,5],[10,25],[10,45],[11,5],[11,25],[11,45],[12,5],[12,25],[12,45],[13,5],[13,25],[13,45],[14,5],[14,25],[14,45],[15,5],[15,25],[15,45],[16,5],[16,25],[16,45],[17,5],[17,25],[17,45],[18,5],[18,25],[18,45],[19,5],[19,25],[19,45],[20,5],[20,30],[20,55],[21,20],[21,50],[22,20],[22,50],[23,20],[23,55]],
     moreno: [[4,5],[4,35],[5,5],[5,35],[6,5],[6,35],[7,5],[7,35],[8,5],[8,35],[9,5],[9,30],[9,55],[10,20],[10,45],[11,10],[11,35],[12,0],[12,25],[12,50],[13,15],[13,40],[14,5],[14,30],[14,55],[15,20],[15,45],[16,10],[16,35],[17,0],[17,25],[17,50],[18,15],[18,40],[19,5],[19,30],[19,55],[20,20],[20,45],[21,10],[21,40],[22,10],[22,40]]
@@ -1910,6 +2590,26 @@ function showTab(tab) {
 
 function renderHorarios() {
   const now=getNow(), dt=getDayType();
+
+  const especiales = {
+    '15:25': {cls:'local-chip-flores', label:'🚉 Local Flores'},
+    '16:11': {cls:'local-chip-flores', label:'🚉 Local Flores'},
+    '16:57': {cls:'local-chip-flores', label:'🚉 Local Flores'},
+
+    '17:56': {cls:'local-chip-liniers', label:'🚉 Local Liniers'},
+    '18:41': {cls:'local-chip-liniers', label:'🚉 Local Liniers'},
+    '19:28': {cls:'local-chip-liniers', label:'🚉 Local Liniers'},
+    '20:14': {cls:'local-chip-liniers', label:'🚉 Local Liniers'},
+
+    '05:28': {cls:'local-chip-merlo', label:'🚉 Local Merlo'},
+    '06:13': {cls:'local-chip-merlo', label:'🚉 Local Merlo'},
+    '07:01': {cls:'local-chip-merlo', label:'🚉 Local Merlo'},
+
+    '07:50': {cls:'local-chip-castelar', label:'🚉 Local Castelar'},
+    '08:36': {cls:'local-chip-castelar', label:'🚉 Local Castelar'},
+    '09:22': {cls:'local-chip-castelar', label:'🚉 Local Castelar'}
+  };
+
   [
     {id:'lv-once',    sc:S.lv.once,    today:dt==='lv'},
     {id:'lv-moreno',  sc:S.lv.moreno,  today:dt==='lv'},
@@ -1918,18 +2618,34 @@ function renderHorarios() {
     {id:'dom-once',   sc:S.dom.once,   today:dt==='dom'},
     {id:'dom-moreno', sc:S.dom.moreno, today:dt==='dom'},
   ].forEach(({id,sc,today}) => {
+
     const el = document.getElementById(`grid-${id}`);
     if (!el) return;
+
     el.innerHTML = sc.map(([h,m]) => {
+
       const mins=toMins(h,m);
+      const hora = `${pad2(h)}:${pad2(m)}`;
+
       let cls='hora-chip';
+
       if (today) {
         if (mins<now-2) cls+=' pasada';
         else if (mins<=now+30) cls+=' proxima';
       }
-      return `<div class="${cls}" aria-label="${pad2(h)}:${pad2(m)}">${pad2(h)}:${pad2(m)}</div>`;
+
+      let extra = '';
+
+      if (especiales[hora]) {
+        cls += ' ' + especiales[hora].cls;
+        extra = `<span class="local-label">${especiales[hora].label}</span>`;
+      }
+
+      return `<div class="${cls}" aria-label="${hora}">${hora}${extra}</div>`;
+
     }).join('');
   });
+
   showTab(dt);
 }
 
@@ -2117,7 +2833,7 @@ renderRoute();
 // Si el appId es el placeholder, no hace nada (modo desarrollo)
 const ONE_SIGNAL_CONFIGURED = typeof OneSignalDeferred !== 'undefined' &&
   document.querySelector('script[src*="OneSignalSDK"]') &&
-  !document.querySelector('script[src*="OneSignalSDK"]')?.previousElementSibling?.textContent?.includes('TU_APP_ID');
+  !document.querySelector('script[src*="OneSignalSDK"]')?.previousElementSibling?.textContent?.includes('445c42f6-aa5b-4731-a072-9576adab63fc');
 
 (function initPush() {
   const pushBar     = document.getElementById('pushBar');
