@@ -2051,63 +2051,86 @@ Activar notificaciones
       </div>
     </div>
   </div>
+<div class="status-bar yellow" id="statusBar" role="status" aria-live="polite" aria-label="Estado del servicio">
 
-  <!-- STATUS BAR -->
-  <div class="status-bar yellow" id="statusBar" role="status" aria-live="polite" aria-label="Estado del servicio">
-    <div style="display:flex;align-items:center;gap:12px;">
-      <div class="semaforo-container">
-         <div id="semaforo" class="verde"></div>
-      </div>
-       
-      <div>
-        <span class="status-dot" aria-hidden="true"></span>
-        <span class="status-text" id="statusText">⚠️ Servicio con modificaciones</span>
-        <div id="alertaTexto">
-  Servicio funcionando normalmente.
-</div>
-        <div
-  id="adminPanel"
-  style="display:none;"
->
+  <div style="display:flex;align-items:center;gap:12px;">
 
-  <h3>Modo edición</h3>
+    <!-- SEMAFORO -->
+    <div
+      class="semaforo"
+      id="semaforo"
+      aria-hidden="true"
+      title="Semáforo de estado del servicio"
+    >
 
-  <select id="estadoSelect">
+      <div
+        class="semaforo-luz"
+        id="luzRoja"
+      ></div>
 
-    <option value="verde">
-      🟢 Normal
-    </option>
+      <div
+        class="semaforo-luz on-amarillo"
+        id="luzAmarilla"
+      ></div>
 
-    <option value="amarillo">
-      🟡 Demoras
-    </option>
+      <div
+        class="semaforo-luz"
+        id="luzVerde"
+      ></div>
 
-    <option value="rojo">
-      🔴 Interrumpido
-    </option>
-
-  </select>
-
-  <br><br>
-
-  <textarea
-    id="editarMensaje"
-    rows="5"
-    cols="40"
-  ></textarea>
-
-  <br><br>
-
-  <button id="guardarBtn">
-    Guardar cambios
-  </button>
-
-</div>
-      </div>
     </div>
-    <div class="status-source" style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
-      <a href="https://www.instagram.com/trensarmiento_enlinea" target="_blank" rel="noopener noreferrer">📸 @trensarmiento_enlinea</a>
-      <span class="last-update-badge" id="lastUpdateBadge" title="Última verificación manual del estado">🕐 Verificado: —</span>
+
+    <!-- TEXTOS -->
+    <div>
+
+      <span
+        class="status-dot"
+        aria-hidden="true"
+      ></span>
+
+      <span
+        class="status-text"
+        id="statusText"
+      >
+        ⚠️ Servicio con modificaciones — Miércoles 13/05/2026
+      </span>
+
+      <div
+        class="status-detail"
+        id="statusDetail"
+      >
+        Del 11/05 al 13/05 el servicio opera con modificaciones en sus primeros y últimos trenes por obras.
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- FUENTE -->
+  <div
+    class="status-source"
+    style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;"
+  >
+
+    <a
+      href="https://www.instagram.com/trensarmiento_enlinea"
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      📸 @trensarmiento_enlinea
+    </a>
+
+    <span
+      class="last-update-badge"
+      id="lastUpdateBadge"
+      title="Última verificación manual del estado"
+    >
+      🕐 Verificado: 11/05/2026 08:00 (datos locales)
+    </span>
+
+  </div>
+
+</div>
     <button id="loginBtn">
   Iniciar sesión
 </button>
