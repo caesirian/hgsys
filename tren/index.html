@@ -228,6 +228,34 @@ function actualizarSemaforo(estado) {
 
   semaforo.classList.add(estado);
 
+  const estadoTexto =
+    document.getElementById("estadoTexto");
+
+  switch(estado) {
+
+    case "verde":
+
+      estadoTexto.innerText =
+        "SERVICIO NORMAL";
+
+      break;
+
+    case "amarillo":
+
+      estadoTexto.innerText =
+        "DEMORAS";
+
+      break;
+
+    case "rojo":
+
+      estadoTexto.innerText =
+        "SERVICIO INTERRUMPIDO";
+
+      break;
+
+  }
+
 }
 
 
@@ -1331,35 +1359,96 @@ footer { Buenas: #001533; color: rgba(255,255,255,.55); padding: 32px 20px 20px;
 
 
 
-#semaforo {
+<style>
 
-  width: 120px;
-  height: 120px;
+.semaforo-container {
+
+  display: flex;
+  justify-content: center;
+  margin: 20px 0;
+
+}
+
+.semaforo {
+
+  width: 220px;
+  min-height: 220px;
+
   border-radius: 50%;
-  margin: 20px auto;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  text-align: center;
+
+  font-weight: bold;
+  font-size: 20px;
+
+  color: white;
+
+  transition: all .3s ease;
+
+  padding: 20px;
+
+  box-sizing: border-box;
 
 }
 
-.verde {
 
-  background: #00c853;
-  box-shadow: 0 0 25px #00c853;
+/* VERDE */
+
+.semaforo.verde {
+
+  background:
+    radial-gradient(
+      circle at 30% 30%,
+      #4cff88,
+      #009944
+    );
+
+  box-shadow:
+    0 0 40px rgba(0,255,120,.7);
+
+}
+
+
+/* AMARILLO */
+
+.semaforo.amarillo {
+
+  background:
+    radial-gradient(
+      circle at 30% 30%,
+      #fff176,
+      #fbc02d
+    );
+
+  box-shadow:
+    0 0 40px rgba(255,235,59,.7);
+
+  color: #222;
 
 }
 
-.amarillo {
 
-  background: #ffd600;
-  box-shadow: 0 0 25px #ffd600;
+/* ROJO */
+
+.semaforo.rojo {
+
+  background:
+    radial-gradient(
+      circle at 30% 30%,
+      #ff6b6b,
+      #c62828
+    );
+
+  box-shadow:
+    0 0 40px rgba(255,0,0,.7);
 
 }
 
-.rojo {
-
-  background: #d50000;
-  box-shadow: 0 0 25px #d50000;
-
-}
+</style>
 
 #adminPanel {
 
@@ -1966,8 +2055,10 @@ Activar notificaciones
   <!-- STATUS BAR -->
   <div class="status-bar yellow" id="statusBar" role="status" aria-live="polite" aria-label="Estado del servicio">
     <div style="display:flex;align-items:center;gap:12px;">
-      <div id="semaforo" class="verde"></div>
+      <div class="semaforo-container">
+         <div id="semaforo" class="verde"></div>
       </div>
+       
       <div>
         <span class="status-dot" aria-hidden="true"></span>
         <span class="status-text" id="statusText">⚠️ Servicio con modificaciones</span>
