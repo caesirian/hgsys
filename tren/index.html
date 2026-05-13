@@ -659,29 +659,122 @@ a:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible
   opacity: .8;
 }
 
-/* ─── Semáforo de estado ──────────────────────────────────── */
+
+
+
+
+<style>
+
+/* =========================
+   SEMAFORO
+========================= */
+
 .semaforo {
+
+  width: 28px;
+
+  padding: 6px 4px;
+
+  border-radius: 14px;
+
+  background: #111;
+
   display: flex;
+
   flex-direction: column;
+
   align-items: center;
+
   gap: 5px;
-  background: #0a0a0a;
-  border-radius: 20px;
-  padding: 8px 6px;
-  border: 2px solid #1a1a1a;
-  box-shadow: 0 2px 8px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.05);
-  flex-shrink: 0;
+
+  box-shadow:
+    inset 0 0 6px rgba(255,255,255,.08),
+    0 2px 6px rgba(0,0,0,.35);
+
 }
+
+
+/* =========================
+   LUCES
+========================= */
+
 .semaforo-luz {
-  width: 16px; height: 16px;
+
+  width: 14px;
+  height: 14px;
+
   border-radius: 50%;
-  background: #1a1a1a;
-  box-shadow: inset 0 1px 3px rgba(0,0,0,.5);
-  transition: background .4s, box-shadow .4s;
+
+  background: #2a2a2a;
+
+  opacity: .25;
+
+  transition:
+    background .25s ease,
+    box-shadow .25s ease,
+    opacity .25s ease;
+
 }
-.semaforo-luz.on-rojo   { background: #ef4444; box-shadow: 0 0 8px 2px rgba(239,68,68,.7), inset 0 1px 2px rgba(255,255,255,.2); }
-.semaforo-luz.on-amarillo { background: #f59e0b; box-shadow: 0 0 8px 2px rgba(245,158,11,.7), inset 0 1px 2px rgba(255,255,255,.2); }
-.semaforo-luz.on-verde  { background: #22c55e; box-shadow: 0 0 8px 2px rgba(34,197,94,.7), inset 0 1px 2px rgba(255,255,255,.2); }
+
+
+/* =========================
+   ROJO
+========================= */
+
+.on-rojo {
+
+  background: #ff1744;
+
+  opacity: 1;
+
+  box-shadow:
+    0 0 10px #ff1744,
+    0 0 20px rgba(255,23,68,.45);
+
+}
+
+
+/* =========================
+   AMARILLO
+========================= */
+
+.on-amarillo {
+
+  background: #ffd600;
+
+  opacity: 1;
+
+  box-shadow:
+    0 0 10px #ffd600,
+    0 0 20px rgba(255,214,0,.45);
+
+}
+
+
+/* =========================
+   VERDE
+========================= */
+
+.on-verde {
+
+  background: #00e676;
+
+  opacity: 1;
+
+  box-shadow:
+    0 0 10px #00e676,
+    0 0 20px rgba(0,230,118,.45);
+
+}
+
+</style>
+
+
+
+
+
+  
+
 
 /* ─── Push notification opt-in bar ───────────────────────── */
 .push-bar {
