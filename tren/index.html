@@ -220,37 +220,57 @@ onSnapshot(estadoRef, (snapshot) => {
 
 function actualizarSemaforo(estado) {
 
-  semaforo.classList.remove(
-    "verde",
-    "amarillo",
-    "rojo"
+  const luzRoja =
+    document.getElementById("luzRoja");
+
+  const luzAmarilla =
+    document.getElementById("luzAmarilla");
+
+  const luzVerde =
+    document.getElementById("luzVerde");
+
+  const statusBar =
+    document.getElementById("statusBar");
+
+  /* RESET */
+
+  luzRoja.classList.remove("on-rojo");
+
+  luzAmarilla.classList.remove("on-amarillo");
+
+  luzVerde.classList.remove("on-verde");
+
+  statusBar.classList.remove(
+    "red",
+    "yellow",
+    "green"
   );
 
-  semaforo.classList.add(estado);
-
-  const estadoTexto =
-    document.getElementById("estadoTexto");
+  /* ESTADOS */
 
   switch(estado) {
 
-    case "verde":
+    case "rojo":
 
-      estadoTexto.innerText =
-        "SERVICIO NORMAL";
+      luzRoja.classList.add("on-rojo");
+
+      statusBar.classList.add("red");
 
       break;
 
     case "amarillo":
 
-      estadoTexto.innerText =
-        "DEMORAS";
+      luzAmarilla.classList.add("on-amarillo");
+
+      statusBar.classList.add("yellow");
 
       break;
 
-    case "rojo":
+    default:
 
-      estadoTexto.innerText =
-        "SERVICIO INTERRUMPIDO";
+      luzVerde.classList.add("on-verde");
+
+      statusBar.classList.add("green");
 
       break;
 
@@ -573,6 +593,51 @@ a:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible
 }
 .wa-btn:hover { background: #1da851; color: #fff; }
 .wa-btn svg { flex-shrink: 0; }
+
+   .semaforo-luz {
+
+  width: 18px;
+  height: 18px;
+
+  border-radius: 50%;
+
+  background: #333;
+
+  opacity: .25;
+
+  transition: all .3s ease;
+
+}
+
+.on-rojo {
+
+  background: #ff1744;
+
+  opacity: 1;
+
+  box-shadow: 0 0 12px #ff1744;
+
+}
+
+.on-amarillo {
+
+  background: #ffd600;
+
+  opacity: 1;
+
+  box-shadow: 0 0 12px #ffd600;
+
+}
+
+.on-verde {
+
+  background: #00e676;
+
+  opacity: 1;
+
+  box-shadow: 0 0 12px #00e676;
+
+}
 
 /* ─── Última actualización ────────────────────────────────── */
 .last-update-badge {
