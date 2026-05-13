@@ -31,407 +31,279 @@
 <!-- AGREGAR ANTES DE </body> -->
 <!-- ═══════════════════════════════════════════════════════ -->
 
-<!-- Firebase -->
 <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import {
-    getAuth,
-    GoogleAuthProvider,
-    signInWithPopup,
-    signOut,
-    onAuthStateChanged
-  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-
-  import {
-    getFirestore,
-    doc,
-    getDoc,
-    setDoc,
-    serverTimestamp
-  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-  /* ═══════════════════════════════════════
-     CONFIG FIREBASE
-     REEMPLAZAR CON TUS DATOS
-  ═══════════════════════════════════════ */
-
-  const firebaseConfig = {
-    apiKey: "AIzaSyAZ83BcBLEvV1G7hFvI_cqhLSKJpRsH7c",
-    authDomain: "tren-sarmiento-en-linea.firebaseapp.com",
-    projectId: "tren-sarmiento-en-linea",
-    storageBucket: "tren-sarmiento-en-linea.firebasestorage.app",
-    messagingSenderId: "712333767897",
-    appId: "1:712333767897:web:c9557e3f2299c9806dfac8"
-  };
-
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db = getFirestore(app);
-  const provider = new GoogleAuthProvider();
-
-  /* ═══════════════════════════════════════
-     DOCUMENTO FIRESTORE
-  ═══════════════════════════════════════ */
-
-  const estadoRef = doc(db, "estadoServicio", "lineaSarmiento");
-
-  /* ═══════════════════════════════════════
-     ELEMENTOS DOM
-  ═══════════════════════════════════════ */
-
-  const statusBar = document.querySelector(".status-bar");
-  const statusText = document.querySelector(".status-text");
-  const statusDetail = document.querySelector(".status-detail");
-
-  const todayAlertsContainer = document.querySelector(".today-alerts");
-
-  /* ═══════════════════════════════════════
-     PANEL EDICIÓN
-  ═══════════════════════════════════════ */
-
-  const panel = document.createElement("div");
-
-  panel.innerHTML = `
-    <div id="firebaseEditor" style="
-      position:fixed;
-      bottom:18px;
-      left:18px;
-      z-index:9999;
-      width:320px;
-      background:#ffffff;
-      border-radius:14px;
-      box-shadow:0 10px 40px rgba(0,0,0,.25);
-      border:1px solid #dbe4ef;
-      overflow:hidden;
-      font-family:Inter,sans-serif;
-    ">
-
-      <div style="
-        background:#002B5C;
-        color:#fff;
-        padding:14px 16px;
-        font-size:14px;
-        font-weight:800;
-      ">
-        ⚙️ Modo edición
-      </div>
-
-      <div id="editorLoggedOut" style="padding:18px;">
-        <div style="
-          font-size:13px;
-          color:#4b5563;
-          margin-bottom:14px;
-          line-height:1.5;
-        ">
-          Iniciá sesión con Google para editar el estado del servicio y alertas.
-        </div>
-
-        <button id="googleLoginBtn" style="
-          width:100%;
-          background:#0055A4;
-          color:#fff;
-          border:none;
-          border-radius:10px;
-          padding:12px 16px;
-          font-size:14px;
-          font-weight:700;
-          cursor:pointer;
-        ">
-          Ingresar con Google
-        </button>
-      </div>
-
-      <div id="editorLoggedIn" style="display:none;padding:18px;">
-
-        <div style="
-          font-size:12px;
-          font-weight:700;
-          color:#64748b;
-          margin-bottom:14px;
-        ">
-          Sesión iniciada
-        </div>
-
-        <label style="
-          display:block;
-          font-size:12px;
-          font-weight:700;
-          margin-bottom:6px;
-          color:#002B5C;
-        ">
-          Estado del semáforo
-        </label>
-
-        <select id="estadoSelect" style="
-          width:100%;
-          padding:11px 12px;
-          border:1px solid #cbd5e1;
-          border-radius:10px;
-          margin-bottom:16px;
-          font-family:inherit;
-          font-size:14px;
-        ">
-          <option value="verde">🟢 Normal</option>
-          <option value="amarillo">🟡 Demoras</option>
-          <option value="rojo">🔴 Interrumpido</option>
-        </select>
-
-        <label style="
-          display:block;
-          font-size:12px;
-          font-weight:700;
-          margin-bottom:6px;
-          color:#002B5C;
-        ">
-          Texto de alerta
-        </label>
-
-        <textarea id="alertaInput" style="
-          width:100%;
-          min-height:110px;
-          resize:vertical;
-          padding:12px;
-          border:1px solid #cbd5e1;
-          border-radius:10px;
-          font-family:inherit;
-          font-size:14px;
-          margin-bottom:16px;
-        "></textarea>
-
-        <button id="guardarCambiosBtn" style="
-          width:100%;
-          background:#0095D4;
-          color:#fff;
-          border:none;
-          border-radius:10px;
-          padding:13px 16px;
-          font-size:14px;
-          font-weight:800;
-          cursor:pointer;
-          margin-bottom:10px;
-        ">
-          💾 Guardar cambios
-        </button>
-
-        <button id="logoutBtn" style="
-          width:100%;
-          background:#ef4444;
-          color:#fff;
-          border:none;
-          border-radius:10px;
-          padding:11px 16px;
-          font-size:13px;
-          font-weight:700;
-          cursor:pointer;
-        ">
-          Cerrar sesión
-        </button>
-
-      </div>
-    </div>
-  `;
-
-  document.body.appendChild(panel);
-
-  /* ═══════════════════════════════════════
-     ELEMENTOS PANEL
-  ═══════════════════════════════════════ */
-
-  const googleLoginBtn = document.getElementById("googleLoginBtn");
-  const logoutBtn = document.getElementById("logoutBtn");
-
-  const editorLoggedOut = document.getElementById("editorLoggedOut");
-  const editorLoggedIn = document.getElementById("editorLoggedIn");
-
-  const estadoSelect = document.getElementById("estadoSelect");
-  const alertaInput = document.getElementById("alertaInput");
-
-  const guardarCambiosBtn = document.getElementById("guardarCambiosBtn");
-
-  /* ═══════════════════════════════════════
-     CARGAR ESTADO DESDE FIRESTORE
-  ═══════════════════════════════════════ */
-
-  async function cargarEstado() {
-
-    try {
-
-      const snap = await getDoc(estadoRef);
-
-      if (!snap.exists()) return;
-
-      const data = snap.data();
-
-      aplicarEstadoVisual(data);
-
-      estadoSelect.value = data.estado || "verde";
-      alertaInput.value = data.alerta || "";
-
-    } catch (err) {
-      console.error("Error cargando Firestore:", err);
-    }
-
-  }
-
-  /* ═══════════════════════════════════════
-     APLICAR VISUALMENTE
-  ═══════════════════════════════════════ */
-
-  function aplicarEstadoVisual(data) {
-
-    const estado = data.estado || "verde";
-    const alerta = data.alerta || "";
-
-    statusBar.classList.remove("yellow");
-    statusBar.classList.remove("red");
-
-    if (estado === "amarillo") {
-      statusBar.classList.add("yellow");
-    }
-
-    if (estado === "rojo") {
-      statusBar.classList.add("red");
-    }
-
-    let badgeText = "🟢 Servicio normal";
-    let detailText = alerta;
-
-    if (estado === "amarillo") {
-      badgeText = "🟡 Servicio con demoras";
-    }
-
-    if (estado === "rojo") {
-      badgeText = "🔴 Servicio interrumpido";
-    }
-
-    if (statusText) {
-      statusText.innerHTML = `
-        <span class="status-dot"></span>
-        ${badgeText}
-      `;
-    }
-
-    if (statusDetail) {
-      statusDetail.textContent = detailText;
-    }
-
-    if (todayAlertsContainer) {
-
-      todayAlertsContainer.innerHTML = "";
-
-      if (alerta.trim() !== "") {
-
-        const item = document.createElement("div");
-
-        item.className = "today-alert-item";
-
-        item.textContent = alerta;
-
-        todayAlertsContainer.appendChild(item);
-
-      }
-
-    }
-
-  }
-
-  /* ═══════════════════════════════════════
-     LOGIN GOOGLE
-  ═══════════════════════════════════════ */
-
-  googleLoginBtn.addEventListener("click", async () => {
-
-    try {
 
+/* =========================
+   FIREBASE IMPORTS
+========================= */
+
+import { initializeApp }
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+
+import { getAnalytics }
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-analytics.js";
+
+import {
+  getAuth,
+  GoogleAuthProvider,
+  signInWithPopup,
+  signOut,
+  onAuthStateChanged
+}
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+import {
+  getFirestore,
+  doc,
+  getDoc,
+  setDoc,
+  onSnapshot
+}
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+
+/* =========================
+   FIREBASE CONFIG
+========================= */
+
+const firebaseConfig = {
+
+  apiKey: "AIzaSyAZ83BcBLEvV1G7hFvI_cqhLSKJpRsH7c",
+
+  authDomain:
+    "tren-sarmiento-en-linea.firebaseapp.com",
+
+  projectId:
+    "tren-sarmiento-en-linea",
+
+  storageBucket:
+    "tren-sarmiento-en-linea.firebasestorage.app",
+
+  messagingSenderId:
+    "712333767897",
+
+  appId:
+    "1:712333767897:web:c9557e3f2299c9806dfac8",
+
+  measurementId:
+    "G-BTW3JDC9DD"
+
+};
+
+
+/* =========================
+   INIT FIREBASE
+========================= */
+
+const app = initializeApp(firebaseConfig);
+
+const analytics = getAnalytics(app);
+
+const auth = getAuth(app);
+
+const db = getFirestore(app);
+
+const provider = new GoogleAuthProvider();
+
+
+/* =========================
+   ELEMENTOS HTML
+========================= */
+
+const semaforo =
+  document.getElementById("semaforo");
+
+const alertaTexto =
+  document.getElementById("alertaTexto");
+
+const adminPanel =
+  document.getElementById("adminPanel");
+
+const estadoSelect =
+  document.getElementById("estadoSelect");
+
+const editarMensaje =
+  document.getElementById("editarMensaje");
+
+const loginBtn =
+  document.getElementById("loginBtn");
+
+const logoutBtn =
+  document.getElementById("logoutBtn");
+
+const guardarBtn =
+  document.getElementById("guardarBtn");
+
+
+/* =========================
+   LOGIN GOOGLE
+========================= */
+
+loginBtn.addEventListener("click", async () => {
+
+  try {
+
+    const result =
       await signInWithPopup(auth, provider);
 
-    } catch (err) {
+    const user = result.user;
 
-      console.error(err);
-      alert("No se pudo iniciar sesión.");
+    console.log("Login OK:", user.email);
 
-    }
+  } catch(error) {
 
-  });
+    console.error(error);
 
-  /* ═══════════════════════════════════════
-     LOGOUT
-  ═══════════════════════════════════════ */
+    alert("Error en login");
 
-  logoutBtn.addEventListener("click", async () => {
+  }
 
-    await signOut(auth);
+});
 
-  });
 
-  /* ═══════════════════════════════════════
-     AUTH STATE
-  ═══════════════════════════════════════ */
+/* =========================
+   LOGOUT
+========================= */
 
-  onAuthStateChanged(auth, async (user) => {
+logoutBtn.addEventListener("click", async () => {
 
-    if (user) {
+  await signOut(auth);
 
-      editorLoggedOut.style.display = "none";
-      editorLoggedIn.style.display = "block";
+});
 
-    } else {
 
-      editorLoggedOut.style.display = "block";
-      editorLoggedIn.style.display = "none";
+/* =========================
+   CONTROL AUTH
+========================= */
 
-    }
+onAuthStateChanged(auth, (user) => {
 
-  });
+  if(user) {
 
-  /* ═══════════════════════════════════════
-     GUARDAR CAMBIOS
-  ═══════════════════════════════════════ */
+    console.log("Usuario:", user.email);
 
-  guardarCambiosBtn.addEventListener("click", async () => {
+    /* CAMBIAR POR TU MAIL */
+    if(
+      user.email ===
+      "TUEMAIL@gmail.com"
+    ) {
 
-    guardarCambiosBtn.disabled = true;
-    guardarCambiosBtn.innerHTML = "Guardando...";
+      adminPanel.style.display = "block";
 
-    try {
+      loginBtn.style.display = "none";
 
-      const payload = {
-        estado: estadoSelect.value,
-        alerta: alertaInput.value.trim(),
-        updatedAt: serverTimestamp()
-      };
-
-      await setDoc(estadoRef, payload);
-
-      aplicarEstadoVisual(payload);
-
-      guardarCambiosBtn.innerHTML = "✅ Guardado";
-
-      setTimeout(() => {
-        guardarCambiosBtn.innerHTML = "💾 Guardar cambios";
-        guardarCambiosBtn.disabled = false;
-      }, 1500);
-
-    } catch (err) {
-
-      console.error(err);
-
-      guardarCambiosBtn.innerHTML = "❌ Error";
-
-      setTimeout(() => {
-        guardarCambiosBtn.innerHTML = "💾 Guardar cambios";
-        guardarCambiosBtn.disabled = false;
-      }, 1500);
+      logoutBtn.style.display = "inline-block";
 
     }
 
-  });
+  } else {
 
-  /* ═══════════════════════════════════════
-     INIT
-  ═══════════════════════════════════════ */
+    adminPanel.style.display = "none";
 
-  cargarEstado();
+    loginBtn.style.display = "inline-block";
+
+    logoutBtn.style.display = "none";
+
+  }
+
+});
+
+
+/* =========================
+   LISTENER REALTIME
+========================= */
+
+const estadoRef =
+  doc(db, "estadoServicio", "actual");
+
+onSnapshot(estadoRef, (snapshot) => {
+
+  if(!snapshot.exists()) return;
+
+  const data = snapshot.data();
+
+  actualizarSemaforo(data.estado);
+
+  actualizarAlerta(data.mensaje);
+
+});
+
+
+/* =========================
+   ACTUALIZAR SEMAFORO
+========================= */
+
+function actualizarSemaforo(estado) {
+
+  semaforo.classList.remove(
+    "verde",
+    "amarillo",
+    "rojo"
+  );
+
+  semaforo.classList.add(estado);
+
+}
+
+
+/* =========================
+   ACTUALIZAR ALERTA
+========================= */
+
+function actualizarAlerta(texto) {
+
+  alertaTexto.innerText = texto;
+
+}
+
+
+/* =========================
+   GUARDAR CAMBIOS
+========================= */
+
+guardarBtn.addEventListener("click", async () => {
+
+  try {
+
+    const user = auth.currentUser;
+
+    if(!user) {
+
+      alert("No autenticado");
+
+      return;
+
+    }
+
+    const nuevoEstado =
+      estadoSelect.value;
+
+    const nuevoMensaje =
+      editarMensaje.value;
+
+    await setDoc(
+      estadoRef,
+      {
+        estado: nuevoEstado,
+        mensaje: nuevoMensaje,
+        actualizado:
+          new Date().toISOString(),
+        editor:
+          user.email
+      }
+    );
+
+    alert("Cambios guardados");
+
+  } catch(error) {
+
+    console.error(error);
+
+    alert("Error guardando");
+
+  }
+
+});
 
 </script>
 
@@ -1470,6 +1342,61 @@ footer { Buenas: #001533; color: rgba(255,255,255,.55); padding: 32px 20px 20px;
 .footer-brand { font-size: 1.2rem; font-weight: 800; color: #fff; margin-bottom: 6px; }
 .footer-divider { border-top: 1px solid rgba(255,255,255,.08); padding-top: 16px; font-size: 0.78rem; }
 
+
+
+
+
+#semaforo {
+
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  margin: 20px auto;
+
+}
+
+.verde {
+
+  background: #00c853;
+  box-shadow: 0 0 25px #00c853;
+
+}
+
+.amarillo {
+
+  background: #ffd600;
+  box-shadow: 0 0 25px #ffd600;
+
+}
+
+.rojo {
+
+  background: #d50000;
+  box-shadow: 0 0 25px #d50000;
+
+}
+
+#adminPanel {
+
+  margin-top: 30px;
+  padding: 20px;
+  border: 1px solid #444;
+  border-radius: 12px;
+
+}
+
+textarea {
+
+  width: 100%;
+  max-width: 500px;
+
+}
+
+
+
+
+
+  
 /* ─── Social Media Icons ──────────────────────────────────── */
 .social-icons {
   display: flex;
@@ -2054,20 +1981,67 @@ Activar notificaciones
   <!-- STATUS BAR -->
   <div class="status-bar yellow" id="statusBar" role="status" aria-live="polite" aria-label="Estado del servicio">
     <div style="display:flex;align-items:center;gap:12px;">
-      <div class="semaforo" id="semaforo" aria-hidden="true" title="Semáforo de estado del servicio">
-        <div class="semaforo-luz" id="luzRoja"></div>
-        <div class="semaforo-luz on-amarillo" id="luzAmarilla"></div>
-        <div class="semaforo-luz" id="luzVerde"></div>
+      <div id="semaforo" class="verde"></div>
       </div>
       <div>
         <span class="status-dot" aria-hidden="true"></span>
         <span class="status-text" id="statusText">⚠️ Servicio con modificaciones</span>
-        <div class="status-detail" id="statusDetail">Entre la Noche del Sábado 09 y mañana del Domingo 10 habrá servicio reducido por lo que el horario de los ultimos trenes se verá modificado.</div>
+        <div id="alertaTexto">
+  Servicio funcionando normalmente.
+</div>
+        <div
+  id="adminPanel"
+  style="display:none;"
+>
+
+  <h3>Modo edición</h3>
+
+  <select id="estadoSelect">
+
+    <option value="verde">
+      🟢 Normal
+    </option>
+
+    <option value="amarillo">
+      🟡 Demoras
+    </option>
+
+    <option value="rojo">
+      🔴 Interrumpido
+    </option>
+
+  </select>
+
+  <br><br>
+
+  <textarea
+    id="editarMensaje"
+    rows="5"
+    cols="40"
+  ></textarea>
+
+  <br><br>
+
+  <button id="guardarBtn">
+    Guardar cambios
+  </button>
+
+</div>
       </div>
     </div>
     <div class="status-source" style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
       <a href="https://www.instagram.com/trensarmiento_enlinea" target="_blank" rel="noopener noreferrer">📸 @trensarmiento_enlinea</a>
       <span class="last-update-badge" id="lastUpdateBadge" title="Última verificación manual del estado">🕐 Verificado: —</span>
+    <button id="loginBtn">
+  Iniciar sesión
+</button>
+
+<button
+  id="logoutBtn"
+  style="display:none;"
+>
+  Cerrar sesión
+</button>
     </div>
   </div>
 
