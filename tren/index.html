@@ -2212,7 +2212,52 @@ Activar notificaciones
 <div class="status-bar yellow" id="statusBar" role="status" aria-live="polite" aria-label="Estado del servicio">
 
   <div style="display:flex;align-items:center;gap:12px;">
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- ESTADO DEL SERVICIO -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
 
+<section class="status-section" id="estado">
+  <div class="status-card">
+    <div class="status-header">
+      <div class="semaforo" id="semaforo" role="img" aria-label="Semáforo de estado del servicio">
+        <div class="semaforo-luz" id="luzRoja" aria-label="Luz roja"></div>
+        <div class="semaforo-luz" id="luzAmarilla" aria-label="Luz amarilla"></div>
+        <div class="semaforo-luz" id="luzVerde" aria-label="Luz verde"></div>
+      </div>
+      <div class="status-info">
+        <span class="status-bar" id="statusBar">Cargando estado...</span>
+        <div class="alerta-box" id="alertaTexto">
+          <strong>ℹ️ Estado:</strong> Conectando con el servidor...
+        </div>
+      </div>
+    </div>
+
+    <!-- ──────────────────────────────────────────────────────────── -->
+    <!-- PANEL DE ADMINISTRACIÓN (SOLO VISIBLE PARA ADMIN) -->
+    <!-- ──────────────────────────────────────────────────────────── -->
+
+    <div class="admin-panel" id="adminPanel">
+      <h3>🔐 Panel de Administración</h3>
+      <div class="admin-form-group">
+        <label for="estadoSelect">Estado del Servicio:</label>
+        <select id="estadoSelect">
+          <option value="normal">🟢 Normal — Servicio funcionando correctamente</option>
+          <option value="demoras">🟡 Demoras — Servicio con retrasos</option>
+          <option value="interrumpido">🔴 Interrumpido — Paro o suspensión total</option>
+        </select>
+      </div>
+      <div class="admin-form-group">
+        <label for="editarMensaje">Mensaje de Alerta:</label>
+        <textarea id="editarMensaje" placeholder="Ej: El servicio funciona con normalidad. Próximo tren en 5 minutos."></textarea>
+      </div>
+      <div class="admin-actions">
+        <button class="btn btn-primary" id="guardarBtn">💾 Guardar Cambios</button>
+        <button class="btn btn-secondary" id="loginBtn">🔑 Iniciar Sesión con Google</button>
+        <button class="btn btn-danger" id="logoutBtn" style="display:none;">🚪 Cerrar Sesión</button>
+      </div>
+    </div>
+  </div>
+</section>
     <!-- SEMAFORO -->
     <div
       class="semaforo"
