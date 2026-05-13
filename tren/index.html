@@ -542,6 +542,146 @@ a { color: var(--blue); }
 }
 .skip-link:focus { top: 0; }
 
+
+
+/* ─── STATUS SECTION ─────────────────────────────────────── */
+.status-section {
+  max-width:1240px; margin:-30px auto 0;
+  padding:0 20px 40px;
+  position:relative; z-index:10;
+}
+.status-card {
+  background:var(--card-bg);
+  border:1px solid var(--card-border);
+  border-radius:16px; padding:32px;
+  box-shadow:0 8px 24px rgba(0,0,0,.3);
+}
+.status-header {
+  display:flex; align-items:center; gap:24px;
+  margin-bottom:24px; flex-wrap:wrap;
+}
+.semaforo {
+  display:flex; flex-direction:column; gap:10px;
+  padding:16px; background:rgba(0,0,0,.3); border-radius:12px;
+}
+.semaforo-luz {
+  width:48px; height:48px; border-radius:50%;
+  background:rgba(255,255,255,.1);
+  transition:all .3s;
+  box-shadow:inset 0 2px 4px rgba(0,0,0,.3);
+}
+.semaforo-luz.on-rojo {
+  background:var(--red);
+  box-shadow:0 0 20px var(--red), inset 0 2px 4px rgba(0,0,0,.3);
+}
+.semaforo-luz.on-amarillo {
+  background:var(--yellow);
+  box-shadow:0 0 20px var(--yellow), inset 0 2px 4px rgba(0,0,0,.3);
+}
+.semaforo-luz.on-verde {
+  background:var(--green);
+  box-shadow:0 0 20px var(--green), inset 0 2px 4px rgba(0,0,0,.3);
+}
+.status-info {
+  flex:1; min-width:240px;
+}
+.status-bar {
+  display:inline-block;
+  padding:8px 16px; border-radius:8px;
+  font-weight:700; font-size:.95rem;
+  margin-bottom:12px;
+}
+.status-bar.normal {
+  background:rgba(34,197,94,.15);
+  color:var(--green);
+  border:1px solid rgba(34,197,94,.3);
+}
+.status-bar.demoras {
+  background:rgba(250,204,21,.15);
+  color:var(--yellow);
+  border:1px solid rgba(250,204,21,.3);
+}
+.status-bar.interrumpido {
+  background:rgba(239,68,68,.15);
+  color:var(--red);
+  border:1px solid rgba(239,68,68,.3);
+}
+.alerta-box {
+  background:rgba(249,115,22,.1);
+  border-left:4px solid var(--orange);
+  padding:16px; border-radius:8px;
+  font-size:.95rem; color:var(--text);
+}
+.alerta-box strong { color:var(--orange); }
+@media (max-width:640px) {
+  .status-card { padding:20px; }
+  .status-header { gap:16px; }
+  .semaforo { padding:12px; }
+  .semaforo-luz { width:40px; height:40px; }
+}
+
+/* ─── ADMIN PANEL ────────────────────────────────────────── */
+.admin-panel {
+  margin-top:24px; padding:24px;
+  background:rgba(139,92,246,.08);
+  border:2px dashed var(--purple);
+  border-radius:12px;
+  display:none;
+}
+.admin-panel h3 {
+  color:var(--purple); margin-bottom:16px;
+  font-size:1.2rem;
+}
+.admin-form-group {
+  margin-bottom:16px;
+}
+.admin-form-group label {
+  display:block; margin-bottom:6px;
+  font-weight:600; color:var(--text);
+}
+.admin-form-group select,
+.admin-form-group textarea {
+  width:100%; padding:10px;
+  background:var(--card-bg);
+  border:1px solid var(--card-border);
+  border-radius:6px; color:var(--text);
+  font-family:inherit; font-size:.95rem;
+}
+.admin-form-group textarea {
+  min-height:80px; resize:vertical;
+}
+.admin-actions {
+  display:flex; gap:12px; flex-wrap:wrap;
+}
+.btn {
+  padding:10px 20px; border:none; border-radius:6px;
+  font-weight:600; cursor:pointer; transition:all .2s;
+  font-size:.95rem;
+}
+.btn-primary {
+  background:var(--blue); color:var(--white);
+}
+.btn-primary:hover {
+  background:var(--blue-light);
+  transform:translateY(-2px);
+  box-shadow:0 4px 12px rgba(0,149,212,.4);
+}
+.btn-secondary {
+  background:var(--card-bg); color:var(--text);
+  border:1px solid var(--card-border);
+}
+.btn-secondary:hover {
+  background:var(--card-border);
+}
+.btn-danger {
+  background:var(--red); color:var(--white);
+}
+.btn-danger:hover {
+  background:#dc2626;
+}
+
+
+
 /* ─── Focus visible global ────────────────────────────────── */
 :focus-visible {
   outline: 3px solid var(--celeste);
