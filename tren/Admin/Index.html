@@ -40,9 +40,6 @@
 import { initializeApp }
 from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 
-import { getAnalytics }
-from "https://www.gstatic.com/firebasejs/10.12.2/firebase-analytics.js";
-
 import {
   getAuth,
   GoogleAuthProvider,
@@ -81,34 +78,12 @@ const firebaseConfig = {
 ========================= */
 
 const app = initializeApp(firebaseConfig);
-
-const analytics = getAnalytics(app);
-
 const auth = getAuth(app);
-
 const db = getFirestore(app);
-
 const provider = new GoogleAuthProvider();
 
-
-/* =========================
-   ELEMENTOS HTML
-========================= */
-
-const semaforo =
-  document.getElementById("semaforo");
-
-const alertaTexto =
-  document.getElementById("alertaTexto");
-
-const adminPanel =
-  document.getElementById("adminPanel");
-
-const estadoSelect =
-  document.getElementById("estadoSelect");
-
-const editarMensaje =
-  document.getElementById("editarMensaje");
+/* Variable de sesión accesible en todos los handlers */
+let currentUser = null;
 
 const loginBtn =
   document.getElementById("loginBtn");
@@ -116,45 +91,63 @@ const loginBtn =
 const logoutBtn =
   document.getElementById("logoutBtn");
 
+const adminPanel =
+  document.getElementById("adminPanel");
+
 const guardarBtn =
   document.getElementById("guardarBtn");
+
+const estadoSelect =
+  document.getElementById("estadoSelect");
+
+const editarMensaje =
+  document.getElementById("editarMensaje");
+/* El semáforo y alertaTexto se acceden directamente por ID en las funciones */
+
 
 
 /* =========================
    LOGIN GOOGLE
 ========================= */
 
-loginBtn.addEventListener("click", async () => {
+loginBtn.addEventListener(
+  "click",
+  async () => {
 
-  try {
+    try {
 
-    const result =
-      await signInWithPopup(auth, provider);
+      const result =
+  await signInWithPopup(
+    auth,
+    provider
+  );
 
-    const user = result.user;
+    } catch(error) {
 
-    console.log("Login OK:", user.email);
+      console.error(error);
 
-  } catch(error) {
+      alert(
+        "Error iniciando sesión"
+      );
 
-    console.error(error);
-
-    alert("Error en login");
+    }
 
   }
-
-});
+);
 
 
 /* =========================
    LOGOUT
 ========================= */
 
-logoutBtn.addEventListener("click", async () => {
+logoutBtn.addEventListener(
+  "click",
+  async () => {
 
-  await signOut(auth);
+    await signOut(auth);
 
-});
+  }
+);
 
 
 /* =========================
@@ -162,6 +155,8 @@ logoutBtn.addEventListener("click", async () => {
 ========================= */
 
 onAuthStateChanged(auth, (user) => {
+
+  currentUser = user;
 
   if(user) {
 
@@ -174,6 +169,15 @@ onAuthStateChanged(auth, (user) => {
     ) {
 
       adminPanel.style.display = "block";
+
+      loginBtn.style.display = "none";
+
+      logoutBtn.style.display = "inline-block";
+
+    } else {
+
+      /* Usuario autenticado pero no autorizado */
+      adminPanel.style.display = "none";
 
       loginBtn.style.display = "none";
 
@@ -210,6 +214,10 @@ onSnapshot(estadoRef, (snapshot) => {
   actualizarSemaforo(data.estado);
 
   actualizarAlerta(data.mensaje);
+
+  /* Sincronizar el panel admin con los valores actuales de Firestore */
+  if (estadoSelect)  estadoSelect.value  = data.estado  || "normal";
+  if (editarMensaje) editarMensaje.value = data.mensaje || "";
 
 });
 
@@ -317,59 +325,57 @@ function actualizarAlerta(texto) {
    GUARDAR CAMBIOS
 ========================= */
 
-guardarBtn.addEventListener("click", async () => {
+guardarBtn.addEventListener(
+  "click",
+  async () => {
 
-  try {
+    const nuevoEstado  = estadoSelect.value;
+    const nuevoMensaje = editarMensaje.value.trim();
 
-    const user = auth.currentUser;
-
-    if(!user) {
-
-      alert("No autenticado");
-
+    if (!currentUser) {
+      alert("Debés iniciar sesión para guardar cambios.");
       return;
+    }
+
+    try {
+
+      await setDoc(
+  estadoRef,
+  {
+    estado: nuevoEstado,
+    mensaje: nuevoMensaje,
+    actualizado:
+      new Date().toISOString(),
+    editor:
+      currentUser.email
+  }
+);
+
+          
+
+      alert(
+        "Cambios guardados"
+      );
+
+    } catch(error) {
+
+      console.error(error);
+
+      alert(
+        "Error guardando cambios"
+      );
 
     }
 
-    const nuevoEstado =
-      estadoSelect.value;
-
-    const nuevoMensaje =
-      editarMensaje.value;
-
-    await setDoc(
-      estadoRef,
-      {
-        estado: nuevoEstado,
-        mensaje: nuevoMensaje,
-        actualizado:
-          new Date().toISOString(),
-        editor:
-          user.email
-      }
-    );
-
-    alert("Cambios guardados");
-
-  } catch(error) {
-
-    console.error(error);
-
-    alert("Error guardando");
-
   }
-
-});
+);
 
 </script>
 
 
 <script>
 !function(){
-    var //e=atob,
-        //t=e("NTQ5MTEzNDc5NjU2Mg=="),
-        //n=e("MTg2NTYxMQ=="),
-        o=function(e){
+    var o=function(e){
             var urlParams = new URLSearchParams(window.location.search);
             var utmSource = urlParams.get('utm_source');
             var utmMedium = urlParams.get('utm_medium');
@@ -406,14 +412,9 @@ guardarBtn.addEventListener("click", async () => {
 
             var a=new Date(),
                 r=a.toLocaleTimeString("es-AR"),
-                c=o(document.referrer),
-                i=encodeURIComponent("📱 NUEVO ACCESO AL PRESUPUESTADOR:\n📍 País: "+ipData.country_name+"\n🏙️ Ciudad: "+ipData.city+"\n📅 Fecha: "+a.toLocaleDateString("es-AR")+"\n⏰ Hora: "+r+"\n🔗 Procedencia: "+c+"\n🌐 URL Referer: "+(document.referrer||"Ninguna"));
+                c=o(document.referrer);
 
-            // WHATSAPP
-            //fetch("https://api.callmebot.com/whatsapp.php?phone="+t+"&text="+i+"&apikey="+n)
-            //    .catch(function(e){});
-
-            // REGISTRO EN GOOGLE SHEETS — >>> USA TU WEBAPP ACTUAL <<<
+            // REGISTRO EN GOOGLE SHEETS
             var sheetData = {
                 pagina: window.location.pathname,
                 url: window.location.href,
@@ -644,12 +645,13 @@ a { color: var(--blue); }
 }
 
 /* ─── ADMIN PANEL ────────────────────────────────────────── */
-.admin-panel {
-  margin-top:24px; padding:24px;
-  background:rgba(139,92,246,.08);
-  border:2px dashed var(--purple);
-  border-radius:12px;
+.admin-panel{
   display:none;
+  margin-top:20px;
+  padding:20px;
+  border-radius:16px;
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.08);
 }
 .admin-panel h3 {
   color:var(--purple); margin-bottom:16px;
@@ -1953,8 +1955,7 @@ textarea {
     Te avisamos cuando el tren no funciona. Sin spam.
   </div>
   <div class="push-bar-actions">
-    <button id="pushBarAccept"
-onclick="OneSignalDeferred.push(async function(OneSignal){await OneSignal.Notifications.requestPermission();})">
+    <button type="button" class="push-bar-accept" id="pushBarAccept">
 Activar notificaciones
 </button>
     <button type="button" class="push-bar-dismiss" id="pushBarDismiss" aria-label="Cerrar">✕</button>
@@ -2244,7 +2245,7 @@ Activar notificaciones
   }[dt];
 
   const mo = {
-    lv:[[21,54],[22,12],[22,30]],
+    lv:[[21,36],[21,50],[22,20]],
     sab:[[21,40],[22,10],[22,40]],
     dom:[[21,30],[22,5],[22,40]]
   }[dt];
@@ -2262,6 +2263,9 @@ Activar notificaciones
 
   document.getElementById('ltw-mor-prev').textContent =
     fmt(mo[mo.length-2]);
+
+  document.getElementById('ltw-footer').textContent =
+    'Cronograma · '+(dt==='lv'?'Lunes a Viernes':dt==='sab'?'Sábado':'Domingo/Feriado');
 
   // MINIMIZAR
   const bubble = document.getElementById('ltw-bubble');
@@ -2296,22 +2300,6 @@ Activar notificaciones
 
   });
 
-})();
-</script>
-<script>
-(function(){
-  const p2=n=>String(n).padStart(2,'0');
-  const d=new Date().getDay();
-  const dt=d===0?'dom':d===6?'sab':'lv';
-  const on={lv:[[22,47],[23,10],[23,25],[23,55]],sab:[[22,20],[22,50],[23,20],[23,55]],dom:[[22,25],[23,0],[23,35]]};
-  const mo={lv:[[21,36],[21,50],[22,20]],sab:[[21,40],[22,10],[22,40]],dom:[[21,30],[22,5],[22,40]]};
-  const sc_on=on[dt], sc_mo=mo[dt];
-  const fmt=([h,m])=>p2(h)+':'+p2(m);
-  document.getElementById('ltw-once-last').textContent=fmt(sc_on[sc_on.length-1]);
-  document.getElementById('ltw-once-prev').textContent=fmt(sc_on[sc_on.length-2]);
-  document.getElementById('ltw-mor-last').textContent=fmt(sc_mo[sc_mo.length-1]);
-  document.getElementById('ltw-mor-prev').textContent=fmt(sc_mo[sc_mo.length-2]);
-  document.getElementById('ltw-footer').textContent='Cronograma · '+(dt==='lv'?'Lunes a Viernes':dt==='sab'?'Sábado':'Domingo/Feriado');
 })();
 </script>
 <main id="main-content">
@@ -2372,7 +2360,7 @@ Activar notificaciones
       </div>
     </div>
   </div>
-<div class="status-bar yellow" id="statusBar" role="status" aria-live="polite" aria-label="Estado del servicio">
+
 
   <div style="display:flex;align-items:center;gap:12px;">
 <!-- ═══════════════════════════════════════════════════════════════ -->
@@ -2544,44 +2532,9 @@ Activar notificaciones
 
 </div>
 
-      <div class="admin-form-group">
+     
 
-        <label for="editarMensaje">
-          Mensaje de Alerta:
-        </label>
 
-        <textarea
-          id="editarMensaje"
-          placeholder="Escribí una alerta..."
-        ></textarea>
-
-      </div>
-
-      <div class="admin-actions">
-
-        <button
-          class="btn btn-primary"
-          id="guardarBtn"
-        >
-          💾 Guardar
-        </button>
-
-        <button
-          class="btn btn-secondary"
-          id="loginBtn"
-        >
-          🔑 Iniciar sesión
-        </button>
-
-        <button
-          class="btn btn-danger"
-          id="logoutBtn"
-          style="display:none;"
-        >
-          🚪 Cerrar sesión
-        </button>
-
-      </div>
 
     </div>
 
@@ -2608,10 +2561,10 @@ Activar notificaciones
 
     <span
       class="last-update-badge"
-      id="lastUpdateBadge"
+      id="lastUpdateSection"
       title="Última verificación manual del estado"
     >
-      🕐 Verificado: 11/05/2026 08:00 (datos locales)
+      🕐 Verificando...
     </span>
 
   </div>
@@ -2695,7 +2648,7 @@ Activar notificaciones
     <div class="container">
       <span class="section-label" id="estadoLabel">📡 Hoy</span>
       <h2 class="section-title" id="estado-title">Estado del servicio</h2>
-      <p class="section-sub">Novedades vigentes y alertas. <span class="last-update-badge" id="lastUpdateSection" style="vertical-align:middle;">🕐 Verificado: —</span></p>
+      <p class="section-sub">Novedades vigentes y alertas. <span class="last-update-badge" id="lastUpdateInline" style="vertical-align:middle;">🕐 Verificado: —</span></p>
       <div class="row">
         <div class="col-half">
           <div class="today-card">
@@ -3059,850 +3012,4 @@ Activar notificaciones
         <div class="faq-item">
           <button type="button" class="faq-q" aria-expanded="false">¿Puedo subir con bicicleta? <span class="faq-icon" aria-hidden="true">+</span></button>
           <div class="faq-a" hidden>Sí, <strong>fuera del horario pico</strong> (antes de las 6:30 y después de las 9:30 a la mañana; después de las 16:30 a la tarde). Hay vagones habilitados. En horario pico está prohibido.</div>
-        </div>
-        <div class="faq-item">
-          <button type="button" class="faq-q" aria-expanded="false">¿El tren tiene aire acondicionado? <span class="faq-icon" aria-hidden="true">+</span></button>
-          <div class="faq-a" hidden>Las formaciones <strong>CSR (trenes nuevos)</strong> cuentan con aire acondicionado. Las formaciones más antiguas no lo tienen. No hay wi-fi disponible en el servicio.</div>
-        </div>
-        <div class="faq-item">
-          <button type="button" class="faq-q" aria-expanded="false">¿Cuándo sale el último tren? <span class="faq-icon" aria-hidden="true">+</span></button>
-          <div class="faq-a" hidden><strong>Lunes a Viernes:</strong> Último desde Once a las <strong>23:55 hs</strong>; desde Moreno a las <strong>22:30 hs</strong>. <strong>Sábados:</strong> 23:55 / 22:40. <strong>Domingos:</strong> 23:35 / 22:40. Pueden estar modificados por obras.</div>
-        </div>
-        <div class="faq-item">
-          <button type="button" class="faq-q" aria-expanded="false">¿Cómo me entero de un paro o cancelación? <span class="faq-icon" aria-hidden="true">+</span></button>
-          <div class="faq-a" hidden>Seguinos en <a href="https://www.instagram.com/trensarmiento_enlinea" target="_blank" rel="noopener noreferrer"><strong>@trensarmiento_enlinea</strong></a> en Instagram o unite al <a href="https://t.me/pasajerosdeltrensarmientoenlinea" target="_blank" rel="noopener noreferrer"><strong>Chat de Pasajeros</strong></a> en Telegram. Si hay paro, revisá la sección de estaciones para ver qué colectivos podés tomar.</div>
-        </div>
-        <div class="faq-item">
-          <button type="button" class="faq-q" aria-expanded="false">Perdí algo en el tren, ¿dónde lo reporto? <span class="faq-icon" aria-hidden="true">+</span></button>
-          <div class="faq-a" hidden>Reportá objetos perdidos o encontrados en el <a href="https://www.facebook.com/groups/2002389413227419/" target="_blank" rel="noopener noreferrer"><strong>Grupo de Objetos Perdidos y Encontrados</strong></a> de Facebook. La comunidad de pasajeros ayuda a recuperar pertenencias. También podés preguntar en el <a href="https://t.me/pasajerosdeltrensarmientoenlinea" target="_blank" rel="noopener noreferrer"><strong>Chat de Pasajeros</strong></a> en Telegram.</div>
-        </div>
-        <div class="faq-item">
-          <button type="button" class="faq-q" aria-expanded="false">¿Qué es la Tarifa Social y cómo se obtiene? <span class="faq-icon" aria-hidden="true">+</span></button>
-          <div class="faq-a" hidden>Un <strong>descuento del 55%</strong> para jubilados, pensionados, beneficiarios de AUH, personal de trabajo doméstico, ex combatientes de Malvinas y Jefes de Hogar. Se solicita en ANSES o en boletería de estaciones con el DNI. La SUBE aplica el descuento automáticamente.</div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- BANNER PUBLICITARIO INFERIOR -->
-  <div class="container">
-    <div class="ad-container ad-bottom">
-      <span class="ad-label">Publicidad</span>
-      <div class="ad-placeholder">
-        <div class="ad-placeholder-icon">🌟</div>
-        <div>Publicitá aquí tu servicio o emprendimiento y llegá a miles de personas que viajan a diario en el Sarmiento. Escribinos a trensarmientoenlinea@gmail.com</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- COMUNIDAD -->
-  <section class="app-section" id="app" aria-labelledby="app-title">
-    <div class="container">
-      <div class="row" style="align-items:center;">
-        <div class="col-half">
-          <span class="section-label" style="color:rgba(0,149,212,.9);">🚆 Tren Sarmiento</span>
-          <h2 class="section-title" id="app-title" style="color:#fff;">Conectate con la comunidad</h2>
-          <p class="section-sub">Unite a nuestra comunidad de pasajeros para recibir alertas en tiempo real, compartir experiencias y estar al tanto de todas las novedades del Sarmiento. Encontranos en nuestras redes sociales.</p>
-        </div>
-        <div class="col-half" style="text-align:center;">
-          <img
-            src="https://commons.wikimedia.org/wiki/Special:FilePath/Nuevo_tren_en_Estaci%C3%B3n_Once_(L%C3%ADnea_Sarmiento)%2C_Buenos_Aires%2C_Enero_2015.JPG"
-            alt="Formación CSR del Tren Sarmiento en la Estación Once, enero de 2015"
-            width="560" height="374"
-            loading="lazy"
-            style="border-radius:12px;box-shadow:var(--shadow-lg);max-height:260px;object-fit:cover;width:100%;"
-            onerror="this.style.display='none'"
-          />
-          <p style="font-size:.7rem;color:rgba(255,255,255,.3);margin-top:6px;">© Wikimedia Commons · CC BY-SA</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-</main>
-
-<!-- FOOTER -->
-<footer>
-  <div class="footer-inner">
-    <div class="footer-cols">
-      <div class="footer-col" style="flex:2;min-width:200px;">
-        <div class="footer-brand">
-          <svg width="22" height="22" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" style="vertical-align:middle;margin-right:6px;" aria-hidden="true">
-            <circle cx="50" cy="50" r="46" fill="none" stroke="#fff" stroke-width="6"/>
-            <rect x="28" y="20" width="44" height="30" rx="6" fill="#fff"/>
-            <rect x="33" y="24" width="34" height="18" rx="3" fill="#0095D4"/>
-            <rect x="23" y="48" width="54" height="23" rx="4" fill="#fff"/>
-            <circle cx="33" cy="55" r="4" fill="#0095D4"/>
-            <circle cx="67" cy="55" r="4" fill="#0095D4"/>
-            <rect x="22" y="69" width="56" height="5" rx="2" fill="#fff"/>
-            <rect x="25" y="73" width="12" height="5" rx="2.5" fill="#fff"/>
-            <rect x="63" y="73" width="12" height="5" rx="2.5" fill="#fff"/>
-          </svg>
-          Tren Sarmiento En Línea
-        </div>
-        <p>Información para pasajeros del Ferrocarril Sarmiento. Horarios y tarifas basados en el cronograma oficial del Ministerio de Transporte de la Nación.</p>
-      </div>
-      <div class="footer-col">
-        <h2>Seguinos</h2>
-        <div class="social-icons">
-          <a href="https://www.instagram.com/trensarmiento_enlinea" target="_blank" rel="noopener noreferrer" class="social-icon" aria-label="Instagram" title="Instagram">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/a/a5/Instagram_icon.png" alt="Instagram" />
-          </a>
-          <a href="https://www.facebook.com/trensarmientoenlinea" target="_blank" rel="noopener noreferrer" class="social-icon" aria-label="Facebook" title="Facebook">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/b/b9/2023_Facebook_icon.svg" alt="Facebook" />
-          </a>
-          <a href="https://www.tiktok.com/@trensarmiento_enlinea" target="_blank" rel="noopener noreferrer" class="social-icon" aria-label="TikTok" title="TikTok">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/3/34/Ionicons_logo-tiktok.svg" alt="TikTok" />
-          </a>
-          <a href="https://t.me/pasajerosdeltrensarmientoenlinea" target="_blank" rel="noopener noreferrer" class="social-icon" aria-label="Telegram" title="Telegram">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/8/83/Telegram_2019_Logo.svg" alt="Telegram" />
-          </a>
-        </div>
-      </div>
-
-      <!--
-      <div class="footer-col">
-        <h2>Documentos oficiales</h2>
-        <a href="https://www.argentina.gob.ar/sites/default/files/once_-_moreno_-_horarios_2026-03-09_-_web.pdf" target="_blank" rel="noopener noreferrer">PDF Horarios Once–Moreno</a>
-        <a href="https://www.argentina.gob.ar/sites/default/files/plano_de_red_linea_sarmiento_1.pdf" target="_blank" rel="noopener noreferrer">Plano de red</a>
-        <a href="https://www.argentina.gob.ar/redsube/tarifas-de-transporte-publico-amba" target="_blank" rel="noopener noreferrer">Tarifas AMBA 2026</a>
-      </div>
--->
-      
-    </div>
-    <div class="footer-divider">
-      Tren Sarmiento En Línea · República Argentina · 2026 · Imágenes: Wikimedia Commons (CC BY-SA) · 
-    </div>
-  </div>
-</footer>
-
-<!-- ═══════════════════════════════════════════════════════════════
-     SCRIPTS — al final del body, no bloquean render
-═══════════════════════════════════════════════════════════════ -->
-<!-- Twitter widget carga diferida -->
-<script>
-window.addEventListener('load', function() {
-  var s = document.createElement('script');
-  s.src = 'https://platform.twitter.com/widgets.js';
-  s.async = true;
-  s.charset = 'utf-8';
-  document.body.appendChild(s);
-});
-</script>
-
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
-<script>
-// ─── Visually hidden utility ─────────────────────────────────
-const styleVH = document.createElement('style');
-styleVH.textContent = '.visually-hidden{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}';
-document.head.appendChild(styleVH);
-
-// ════════════════════════════════════════════════════════════
-// CMS REMOTO — estado.json en GitHub (o cualquier URL pública)
-// Para actualizar: editá el archivo en GitHub desde el celular.
-// El HTML lo lee con fetch() al cargar. Si falla, usa el fallback.
-//
-// URL del JSON remoto — reemplazá con tu repo:
-const ESTADO_JSON_URL = 'https://raw.githubusercontent.com/TU_USUARIO/tren-sarmiento-estado/main/estado.json';
-//
-// FALLBACK LOCAL — se usa si el fetch falla (sin conexión, repo no existe, etc.)
-// También es el "estado por defecto" mientras no hayas creado el repo.
-// ════════════════════════════════════════════════════════════
-let ESTADO_DIA = {
-  estado: "modificado",
-  ultimaActualizacion: "11/05/2026 08:00",
-  fuente: "local",
-  alertas: [
-    "🚧 <strong>Andén provisorio en Morón (permanente):</strong> Los trenes hacia Once se detienen en andén provisorio. Acceso por calles Sarmiento y Azcuénaga. Medida indefinida por obras de renovación.",
-    "⚠️ <strong>Once - Moreno (11/5 al 13/5):</strong> Primer tren Liniers-Moreno 4:32hs, Once-Moreno 4:55hs. Último tren Once-Moreno 23:02hs, Flores-Moreno 00:09hs por obras.",
-    "⚠️ <strong>Moreno - Once (11/5 al 13/5):</strong> Primer tren Castelar-Liniers 2:55hs, Moreno-Once 3:00hs. Último tren Moreno-Once 21:26hs, Moreno-Flores 22:20hs por obras."
-  ]
-};
-
-// ─── Cargar estado desde GitHub, con fallback al objeto local ─
-async function cargarEstadoRemoto() {
-  // Si la URL todavía tiene el placeholder, usamos solo el fallback
-  if (ESTADO_JSON_URL.includes('TU_USUARIO')) {
-    applyEstadoDia();
-    return;
-  }
-  try {
-    // Cache-busting: forzar fetch fresco (evita CDN cacheado de GitHub)
-    const url = `${ESTADO_JSON_URL}?t=${Math.floor(Date.now()/60000)}`; // cambia cada 1 min
-    const res  = await fetch(url, { cache: 'no-store' });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-    // Validación mínima antes de aplicar
-    if (data && data.estado && ['normal','modificado','paro'].includes(data.estado)) {
-      ESTADO_DIA = { ...ESTADO_DIA, ...data, fuente: 'remoto' };
-    }
-  } catch (err) {
-    console.warn('[trensarmientoenlinea] No se pudo cargar estado.json remoto, usando fallback local.', err.message);
-    ESTADO_DIA.fuente = 'local';
-  }
-  applyEstadoDia();
-}
-
-// ─── Aplicar ESTADO_DIA a toda la UI ────────────────────────
-function applyEstadoDia() {
-  const { estado, ultimaActualizacion, alertas, fuente } = ESTADO_DIA;
-
-  // --- Semáforo ---
-  const luces = { roja: document.getElementById('luzRoja'), amarilla: document.getElementById('luzAmarilla'), verde: document.getElementById('luzVerde') };
-  if (luces.roja) {
-    luces.roja.className    = 'semaforo-luz' + (estado === 'paro'       ? ' on-rojo'     : '');
-    luces.amarilla.className = 'semaforo-luz' + (estado === 'modificado' ? ' on-amarillo' : '');
-    luces.verde.className   = 'semaforo-luz' + (estado === 'normal'     ? ' on-verde'    : '');
-  }
-
-  // --- Badge "última actualización" ---
-  const fuenteLabel = fuente === 'remoto' ? '' : ' (datos locales)';
-  const badgeText = `🕐 Verificado: ${ultimaActualizacion}${fuenteLabel}`;
-  ['lastUpdateBadge','lastUpdateSection'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.textContent = badgeText;
-  });
-
-  // --- Status bar (la tira de color debajo del hero) ---
-  const bar = document.getElementById('statusBar');
-  if (bar) {
-    bar.classList.remove('yellow','red');
-    if (estado === 'paro')       bar.classList.add('red');
-    else if (estado === 'modificado') bar.classList.add('yellow');
-    // 'normal' = verde (default)
-  }
-
-  // --- Texto del status bar ---
-  const statusDetailMap = {
-    normal:     'El servicio opera con normalidad en todos sus ramales.',
-    modificado: 'El servicio opera con modificaciones en sus primeros y ultimos trenes por Obras.',
-    paro:       'ATENCIÓN: El servicio se encuentra suspendido. Consultá colectivos alternativos.'
-  };
-  const detailEl = document.getElementById('statusDetail');
-  if (detailEl) detailEl.textContent = statusDetailMap[estado] || '';
-
-  // --- Badge de estado en la sección "Estado HOY" ---
-  const badgeEl = document.getElementById('estadoBadge');
-  if (badgeEl) {
-    const badgeMap = {
-      normal:     { cls: 'badge-verde',  txt: '✅ Normal' },
-      modificado: { cls: 'badge-alerta', txt: '⚠️ Con modificaciones' },
-      paro:       { cls: 'badge-paro',   txt: '🚫 Paro total' }
-    };
-    const b = badgeMap[estado] || badgeMap.modificado;
-    badgeEl.className = b.cls;
-    badgeEl.textContent = b.txt;
-  }
-
-  // --- Lista de alertas ---
-  const list = document.getElementById('alertasList');
-  if (list) {
-    if (alertas && alertas.length) {
-      list.innerHTML = alertas.map(a =>
-        `<div class="today-alert-item" role="listitem">${a}</div>`
-      ).join('');
-    } else {
-      list.innerHTML = '<div class="today-alert-item" role="listitem">Sin alertas activas al momento.</div>';
-    }
-  }
-
-  // --- Banner paro en el buscador ---
-  const paroBanner = document.getElementById('paroBanner');
-  if (paroBanner) {
-    if (estado === 'paro') {
-      paroBanner.classList.add('show');
-    } else {
-      paroBanner.classList.remove('show');
-    }
-  }
-}
-
-// Cargar estado remoto al iniciar (con fallback automático)
-cargarEstadoRemoto();
-
-// ─── Paro: mostrar colectivos de la estación seleccionada ────
-function updateParoBuses(stId) {
-  const banner = document.getElementById('paroBannerBuses');
-  if (!banner) return;
-  if (ESTADO_DIA.estado !== 'paro' || stId === '' || stId === null) {
-    banner.innerHTML = '';
-    return;
-  }
-  const st = STATIONS[parseInt(stId)];
-  if (!st) return;
-  const buses = st.colectivos.slice(0, 10).join(', ') + (st.colectivos.length > 10 ? '...' : '');
-  banner.innerHTML = `
-    <strong>🚌 Colectivos cerca de ${st.name}:</strong>
-    <div class="paro-buses-tags">
-      ${st.colectivos.slice(0,10).map(b=>`<span class="paro-bus-tag">${b}</span>`).join('')}
-    </div>
-    <div style="margin-top:8px;font-size:.8rem;opacity:.85;">
-      Verificá recorridos en <a href="https://buenosaires.gob.ar/infraestructura/movilidad/colectivos" target="_blank" rel="noopener noreferrer" style="color:#fff;font-weight:700;">buenosaires.gob.ar ↗</a>
-    </div>
-  `;
-}
-
-// ─── Datos de estaciones ─────────────────────────────────────
-const STATIONS = [
-  { id:0,  name:"Once",            km:0,  sec:1, lat:-34.6083, lng:-58.4103, direccion:"Av. Pueyrredón y B. Mitre, Balvanera, CABA",               colectivos:["5","7","12","19","24","26","29","32","37","41","56","57","61","62","64","68","71","75","86","88","95","98","99","101","104","105","106","109","115","118","124","132","140","146","151","165","168","188"], subte:["Línea A (Plaza Miserere)","Línea H (Once)"],           conexiones:[], nota:"Terminal principal del Tren Sarmiento." },
-  { id:1,  name:"Caballito",       km:4,  sec:1, lat:-34.6187, lng:-58.4417, direccion:"Rojas s/n, Caballito, CABA",                                colectivos:["2","6","25","26","36","55","63","68","71","86","92","96","106","135","149","163","168","178","180"],                                                                                     subte:["Línea A (Primera Junta, Carabobo)","Línea E (Medrano)"], conexiones:[], nota:"" },
-  { id:2,  name:"Flores",          km:7,  sec:1, lat:-34.6273, lng:-58.4613, direccion:"Av. Rivadavia 6200, Flores, CABA",                          colectivos:["2","25","36","55","86","92","96","116","135","141","149","157","163","180","188"],                                                                                                      subte:["Línea A (Flores, Carabobo)"],                            conexiones:[], nota:"" },
-  { id:3,  name:"Floresta",        km:9,  sec:1, lat:-34.6307, lng:-58.4807, direccion:"Habana esq. Olivera, Floresta, CABA",                        colectivos:["55","96","116","135","141","157","163","180","188"],                                                                                                                                              subte:[],                                                       conexiones:[], nota:"" },
-  { id:4,  name:"Villa Luro",      km:11, sec:1, lat:-34.6313, lng:-58.5003, direccion:"Av. Luro esq. Ramón L. Falcón, Villa Luro, CABA",           colectivos:["55","96","100","116","135","141","157","163","180","188"],                                                                                                                                        subte:[],                                                       conexiones:[], nota:"" },
-  { id:5,  name:"Liniers",         km:13, sec:2, lat:-34.6367, lng:-58.5213, direccion:"Av. Rivadavia 11900, Liniers, CABA",                         colectivos:["96","97","99","100","103","107","116","126","128","136","141","180","188"],                                                                                                             subte:[],                                                       conexiones:[], nota:"Importante nodo de transporte del oeste porteño." },
-  { id:6,  name:"Ciudadela",       km:16, sec:2, lat:-34.6397, lng:-58.5380, direccion:"Av. Rivadavia, Ciudadela, La Matanza",                       colectivos:["99","100","103","117","126","136","141","164","180","188","237"],                                                                                                                               subte:[],                                                       conexiones:[], nota:"" },
-  { id:7,  name:"Ramos Mejía",     km:19, sec:2, lat:-34.6433, lng:-58.5617, direccion:"Av. Rivadavia s/n, Ramos Mejía, La Matanza",                 colectivos:["1","88","96","100","136","153","163","172","182","205","237","238","242","247","264"],                                                                                                    subte:[],                                                       conexiones:[], nota:"" },
-  { id:8,  name:"Haedo",           km:22, sec:2, lat:-34.6448, lng:-58.5830, direccion:"Av. Rivadavia s/n, Haedo, Morón",                            colectivos:["103","136","141","164","180","238","247","264","308"],                                                                                                                                       subte:[],                                                       conexiones:["Línea Roca ramal Haedo–Temperley"], nota:"Combinación con Línea Roca hacia el sur del conurbano." },
-  { id:9,  name:"Morón",           km:28, sec:3, lat:-34.6487, lng:-58.6183, direccion:"Av. Victorino de la Plaza s/n, Morón",                       colectivos:["141","164","180","183","236","237","238","242","247","257","264","308","325"],                                                                                                         subte:[],                                                       conexiones:[], nota:"⚠️ Andén provisorio hacia Once. Acceso por Sarmiento y Azcuénaga." },
-  { id:10, name:"Castelar",        km:32, sec:3, lat:-34.6513, lng:-58.6487, direccion:"Av. Rivadavia s/n, Castelar, Morón",                         colectivos:["141","164","180","236","238","264","308","325"],                                                                                                                                         subte:[],                                                       conexiones:[], nota:"" },
-  { id:11, name:"Ituzaingó",       km:35, sec:3, lat:-34.6583, lng:-58.6717, direccion:"Gaona s/n, Ituzaingó",                                       colectivos:["141","164","180","236","238","264","308","325","441"],                                                                                                                                      subte:[],                                                       conexiones:[], nota:"" },
-  { id:12, name:"San A. de Padua", km:39, sec:3, lat:-34.6647, lng:-58.7030, direccion:"Dr. Horacio Varela s/n, San Antonio de Padua, Merlo",        colectivos:["180","236","264","308","350","441","455"],                                                                                                                                                    subte:[],                                                       conexiones:[], nota:"" },
-  { id:13, name:"Merlo",           km:42, sec:3, lat:-34.6700, lng:-58.7283, direccion:"Av. Libertad s/n, Merlo",                                    colectivos:["180","236","240","264","281","282","283","284","350","408","440","441","455"],                                                                                                            subte:[],                                                       conexiones:["Ramal Merlo–Lobos (diésel)"], nota:"Cabecera del ramal diésel hacia Lobos." },
-  { id:14, name:"Paso del Rey",    km:46, sec:3, lat:-34.6637, lng:-58.7567, direccion:"Av. San Martín s/n, Paso del Rey, Moreno",                   colectivos:["180","236","440","441","500"],                                                                                                                                                               subte:[],                                                       conexiones:[], nota:"" },
-  { id:15, name:"Moreno",          km:52, sec:3, lat:-34.6503, lng:-58.7917, direccion:"Av. Libertad 1000, Moreno",                                  colectivos:["180","267","440","500","501","502"],                                                                                                                                                         subte:[],                                                       conexiones:["Ramal Moreno–Mercedes (diésel)"], nota:"Terminal oeste del ramal eléctrico. Conexión con ramal diésel a Mercedes." }
-];
-
-const PRECIOS       = {1:280, 2:360, 3:450};
-const PRECIO_SOCIAL = {1:126, 2:162, 3:202.50};
-const OFFSET        = [0,8,13,17,21,25,30,35,40,46,52,56,61,65,68,71];
-
-// ─── Horarios ────────────────────────────────────────────────
-const S = {
-  lv: {
-    once:   [[4,5],[4,35],[5,2],[5,22],[5,38],[5,48],[5,58],[6,8],[6,18],[6,28],[6,38],[6,48],[6,58],[7,6],[7,14],[7,22],[7,30],[7,38],[7,46],[7,54],[8,2],[8,10],[8,18],[8,26],[8,34],[8,44],[8,54],[9,4],[9,16],[9,28],[9,42],[9,56],[10,12],[10,28],[10,44],[11,0],[11,18],[11,36],[11,54],[12,12],[12,30],[12,48],[13,6],[13,24],[13,42],[14,0],[14,18],[14,36],[14,54],[15,12],[15,25],[15,30],[15,48],[16,6],[16,11],[16,24],[16,40],[16,52],[16,57],[17,2],[17,12],[17,22],[17,32],[17,42],[17,52],[17,56],[18,2],[18,12],[18,22],[18,32],[18,41],[18,42],[18,52],[19,2],[19,14],[19,26],[19,40],[19,54],[20,8],[20,23],[20,38],[20,54],[21,10],[21,28],[21,46],[22,5],[22,25],[22,47],[23,10],[23,25],[23,55]],
-moreno: [[3,21],[3,44],[4,15],[4,44],[5,1],[5,14],[5,26],[5,28],[5,38],[5,48],[5,58],[6,8],[6,13],[6,18],[6,28],[6,38],[6,48],[6,58],[7,1],[7,8],[7,18],[7,28],[7,38],[7,48],[7,50],[7,58],[8,8],[8,18],[8,28],[8,36],[8,42],[8,56],[9,10],[9,22],[9,24],[9,38],[9,54],[10,10],[10,26],[10,44],[11,2],[11,20],[11,38],[11,56],[12,14],[12,32],[12,50],[13,8],[13,26],[13,44],[14,2],[14,20],[14,38],[14,56],[15,14],[15,32],[15,50],[16,8],[16,26],[16,44],[16,58],[17,8],[17,18],[17,28],[17,38],[17,48],[17,58],[18,8],[18,18],[18,28],[18,38],[18,41],[18,48],[18,58],[19,8],[19,20],[19,28],[19,34],[19,48],[20,2],[20,14],[20,16],[20,31],[20,46],[21,2],[21,19],[21,36],[21,54],[22,12],[22,30]]
-},
-  sab: {
-    once:   [[5,5],[5,35],[6,5],[6,35],[7,5],[7,35],[8,5],[8,25],[8,45],[9,5],[9,25],[9,45],[10,5],[10,25],[10,45],[11,5],[11,25],[11,45],[12,5],[12,25],[12,45],[13,5],[13,25],[13,45],[14,5],[14,25],[14,45],[15,5],[15,25],[15,45],[16,5],[16,25],[16,45],[17,5],[17,25],[17,45],[18,5],[18,25],[18,45],[19,5],[19,25],[19,45],[20,5],[20,30],[20,55],[21,20],[21,50],[22,20],[22,50],[23,20],[23,55]],
-    moreno: [[4,5],[4,35],[5,5],[5,35],[6,5],[6,35],[7,5],[7,35],[8,5],[8,35],[9,5],[9,30],[9,55],[10,20],[10,45],[11,10],[11,35],[12,0],[12,25],[12,50],[13,15],[13,40],[14,5],[14,30],[14,55],[15,20],[15,45],[16,10],[16,35],[17,0],[17,25],[17,50],[18,15],[18,40],[19,5],[19,30],[19,55],[20,20],[20,45],[21,10],[21,40],[22,10],[22,40]]
-  },
-  dom: {
-    once:   [[6,5],[6,40],[7,15],[7,50],[8,25],[9,0],[9,35],[10,10],[10,45],[11,20],[11,55],[12,30],[13,5],[13,40],[14,15],[14,50],[15,25],[16,0],[16,35],[17,10],[17,45],[18,20],[18,55],[19,30],[20,5],[20,40],[21,15],[21,50],[22,25],[23,0],[23,35]],
-    moreno: [[5,10],[5,45],[6,20],[6,55],[7,30],[8,5],[8,40],[9,15],[9,50],[10,25],[11,0],[11,35],[12,10],[12,45],[13,20],[13,55],[14,30],[15,5],[15,40],[16,15],[16,50],[17,25],[18,0],[18,35],[19,10],[19,45],[20,20],[20,55],[21,30],[22,5],[22,40]]
-  }
-};
-
-// ─── Utils ───────────────────────────────────────────────────
-const toMins    = (h,m) => h*60+m;
-const pad2      = n => String(n).padStart(2,'0');
-const getDayType = () => { const d=new Date().getDay(); return d===0?'dom':d===6?'sab':'lv'; };
-const getNow    = () => { const n=new Date(); return toMins(n.getHours(),n.getMinutes()); };
-const getSec    = km => km<12?1:km<24?2:3;
-
-function formatCountdown(min) {
-  if (min<=0) return 'Saliendo ahora';
-  if (min<60) return `en ${min} min`;
-  const h=Math.floor(min/60), m=min%60;
-  return m===0?`en ${h}h`:`en ${h}h ${m}m`;
-}
-
-// ─── Fecha dinámica ───────────────────────────────────────────
-(function(){
-  const DIAS  = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
-  const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
-  const now   = new Date();
-  const dia   = DIAS[now.getDay()];
-  const diaCap= dia[0].toUpperCase()+dia.slice(1);
-  const fecha = `${diaCap}, ${now.getDate()} de ${MESES[now.getMonth()]} de ${now.getFullYear()}`;
-  const corta = `${pad2(now.getDate())}/${pad2(now.getMonth()+1)}/${now.getFullYear()}`;
-  document.getElementById('heroDate').textContent    = '📅 '+fecha;
-  document.getElementById('statusText').textContent  = `⚠️ Servicio con modificaciones — ${diaCap} ${corta}`;
-  document.getElementById('estadoLabel').textContent = '📡 Hoy — '+fecha;
-})();
-
-// ─── Buscador ─────────────────────────────────────────────────
-function getNextTrains(oI, dI) {
-  const toMoreno = dI > oI;
-  const sched    = toMoreno ? S[getDayType()].once : S[getDayType()].moreno;
-  const nowMins  = getNow();
-  const OFFSET_M = [...OFFSET].reverse().map(o=>71-o);
-  const origOff  = toMoreno ? OFFSET[oI]    : OFFSET_M[15-oI];
-  const destOff  = toMoreno ? OFFSET[dI]    : OFFSET_M[15-dI];
-  const trains   = [];
-  for (const [h,m] of sched) {
-    const depTerm   = toMins(h,m);
-    const depOrigin = depTerm + origOff;
-    const arrDest   = depTerm + destOff;
-    const until     = depOrigin - nowMins;
-    if (until >= -2 && until <= 180) {
-      trains.push({
-        depH:Math.floor(depOrigin/60)%24, depM:depOrigin%60,
-        arrH:Math.floor(arrDest/60)%24,   arrM:arrDest%60,
-        until:Math.max(0,until), travel:Math.abs(destOff-origOff)
-      });
-      if (trains.length>=4) break;
-    }
-  }
-  return trains;
-}
-
-function estimateFreq(oI, dI) {
-  const toMoreno = dI > oI;
-  const sched    = toMoreno ? S[getDayType()].once : S[getDayType()].moreno;
-  const now      = getNow();
-  const rel      = sched.filter(([h,m])=>toMins(h,m)>=now-30&&toMins(h,m)<=now+90);
-  if (rel.length<2) return null;
-  const gaps = [];
-  for (let i=1;i<Math.min(rel.length,5);i++) gaps.push(toMins(...rel[i])-toMins(...rel[i-1]));
-  const avg = Math.round(gaps.reduce((a,b)=>a+b,0)/gaps.length);
-  return avg<=1?null:avg;
-}
-
-function showError(msg) {
-  const el = document.getElementById('finderError');
-  el.textContent = msg; el.classList.add('show'); el.removeAttribute('hidden');
-}
-function hideError() {
-  const el = document.getElementById('finderError');
-  el.classList.remove('show');
-}
-
-function runSearch(oVal, dVal, scroll) {
-  hideError();
-  if (!oVal||!dVal) { showError('⚠️ Elegí tu estación de origen y destino.'); return; }
-  const oI=parseInt(oVal), dI=parseInt(dVal);
-  if (oI===dI) { showError('⚠️ El origen y el destino no pueden ser la misma estación.'); return; }
-
-  // Actualizar colectivos en banner de paro según origen
-  updateParoBuses(oVal);
-
-  const orig=STATIONS[oI], dest=STATIONS[dI];
-  const dist=Math.abs(orig.km-dest.km), sec=getSec(dist);
-  const precio=PRECIOS[sec], social=PRECIO_SOCIAL[sec];
-  const trains=getNextTrains(oI,dI), freq=estimateFreq(oI,dI);
-  const dayLabels={lv:'Lunes a Viernes',sab:'Sábado',dom:'Domingo / Feriado'};
-
-  document.getElementById('resultRoute').textContent = `${orig.name}  →  ${dest.name}`;
-  document.getElementById('resultInfo').innerHTML = `
-    <span>📏 ${dist} km</span>
-    <span>💳 Sección ${sec} · <strong style="color:#fff">$${precio} SUBE</strong></span>
-    <span>🕐 ~${Math.abs(OFFSET[dI]-OFFSET[oI])} min de viaje</span>
-    <span class="result-day-badge">📆 ${dayLabels[getDayType()]}</span>
-    <button type="button" class="refresh-btn" id="refreshBtn">↺ Actualizar</button>
-  `;
-  document.getElementById('refreshBtn').addEventListener('click', () => runSearch(oVal, dVal, false));
-
-  const grid = document.getElementById('trainsGrid');
-  if (!trains.length) {
-    grid.innerHTML = `<div class="no-trains">😴 No hay más trenes hoy en este horario.<br/>El servicio retoma mañana temprano.</div>`;
-  } else {
-    grid.innerHTML = trains.map((t,i)=>`
-      <div class="train-card${i===0?' next':''}">
-        <div>
-          <div class="train-time">${pad2(t.depH)}:${pad2(t.depM)}</div>
-          <div class="train-countdown">${formatCountdown(t.until)}</div>
-        </div>
-        <div class="train-detail">
-          <div class="train-badge">${i===0?'🚆 PRÓXIMO TREN':`Tren ${i+1}`}</div>
-          <div class="train-arrive">Llega a ${dest.name} ~${pad2(t.arrH)}:${pad2(t.arrM)} · ~${t.travel} min</div>
-          ${i===0&&freq?`<div class="train-freq">Frecuencia estimada: cada ~${freq} min</div>`:''}
-        </div>
-        <div class="train-price">
-          <div class="price-main">$${precio}</div>
-          <span class="price-label">con SUBE</span>
-          <span class="price-social">Social: $${social}</span>
-        </div>
-      </div>
-    `).join('');
-  }
-
-  const resEl = document.getElementById('finderResults');
-  resEl.classList.add('show');
-  if (scroll) resEl.scrollIntoView({behavior:'smooth',block:'nearest'});
-
-  // --- WhatsApp share ---
-  const waWrap = document.getElementById('waShareWrap');
-  const waBtn  = document.getElementById('waShareBtn');
-  if (waWrap && waBtn) {
-    if (trains.length > 0) {
-      const t0 = trains[0];
-      const travel = Math.abs(OFFSET[dI]-OFFSET[oI]);
-      const msg = `🚆 Tren Sarmiento: el próximo tren de ${orig.name} a ${dest.name} sale a las ${pad2(t0.depH)}:${pad2(t0.depM)}, tarda ~${travel} min y cuesta $${precio} con SUBE. (${formatCountdown(t0.until)})`;
-      waBtn.href = `https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`;
-      waWrap.style.display = 'block';
-    } else {
-      waWrap.style.display = 'none';
-    }
-  }
-}
-
-// Botones de búsqueda — sin onclick inline
-document.getElementById('mainBtnSearch').addEventListener('click', () =>
-  runSearch(document.getElementById('selOrigen').value, document.getElementById('selDestino').value, true)
-);
-document.getElementById('heroBtnSearch').addEventListener('click', () => {
-  const o = document.getElementById('heroOrigen').value;
-  const d = document.getElementById('heroDestino').value;
-  if (o) document.getElementById('selOrigen').value = o;
-  if (d) document.getElementById('selDestino').value = d;
-  document.getElementById('proximo').scrollIntoView({behavior:'smooth'});
-  setTimeout(() => runSearch(o, d, true), 400);
-});
-
-// ─── Horarios tabs ────────────────────────────────────────────
-function showTab(tab) {
-  ['lv','sab','dom'].forEach(t => {
-    const panel = document.getElementById(`horarios-${t}`);
-    const btn   = document.getElementById(`tab-${t}`);
-    const active = t===tab;
-    panel.classList.toggle('active', active);
-    btn.classList.toggle('active', active);
-    btn.setAttribute('aria-selected', active);
-  });
-}
-
-function renderHorarios() {
-  const now=getNow(), dt=getDayType();
-
-  const especiales = {
-    '15:25': {cls:'local-chip-flores', label:'🚉 Local Flores'},
-    '16:11': {cls:'local-chip-flores', label:'🚉 Local Flores'},
-    '16:57': {cls:'local-chip-flores', label:'🚉 Local Flores'},
-
-    '17:56': {cls:'local-chip-liniers', label:'🚉 Local Liniers'},
-    '18:41': {cls:'local-chip-liniers', label:'🚉 Local Liniers'},
-    '19:28': {cls:'local-chip-liniers', label:'🚉 Local Liniers'},
-    '20:14': {cls:'local-chip-liniers', label:'🚉 Local Liniers'},
-
-    '05:28': {cls:'local-chip-merlo', label:'🚉 Local Merlo'},
-    '06:13': {cls:'local-chip-merlo', label:'🚉 Local Merlo'},
-    '07:01': {cls:'local-chip-merlo', label:'🚉 Local Merlo'},
-
-    '07:50': {cls:'local-chip-castelar', label:'🚉 Local Castelar'},
-    '08:36': {cls:'local-chip-castelar', label:'🚉 Local Castelar'},
-    '09:22': {cls:'local-chip-castelar', label:'🚉 Local Castelar'}
-  };
-
-  [
-    {id:'lv-once',    sc:S.lv.once,    today:dt==='lv'},
-    {id:'lv-moreno',  sc:S.lv.moreno,  today:dt==='lv'},
-    {id:'sab-once',   sc:S.sab.once,   today:dt==='sab'},
-    {id:'sab-moreno', sc:S.sab.moreno, today:dt==='sab'},
-    {id:'dom-once',   sc:S.dom.once,   today:dt==='dom'},
-    {id:'dom-moreno', sc:S.dom.moreno, today:dt==='dom'},
-  ].forEach(({id,sc,today}) => {
-
-    const el = document.getElementById(`grid-${id}`);
-    if (!el) return;
-
-    el.innerHTML = sc.map(([h,m]) => {
-
-      const mins=toMins(h,m);
-      const hora = `${pad2(h)}:${pad2(m)}`;
-
-      let cls='hora-chip';
-
-      if (today) {
-        if (mins<now-2) cls+=' pasada';
-        else if (mins<=now+30) cls+=' proxima';
-      }
-
-      let extra = '';
-
-      if (especiales[hora]) {
-        cls += ' ' + especiales[hora].cls;
-        extra = `<span class="local-label">${especiales[hora].label}</span>`;
-      }
-
-      return `<div class="${cls}" aria-label="${hora}">${hora}${extra}</div>`;
-
-    }).join('');
-  });
-
-  showTab(dt);
-}
-
-// Tab keyboard navigation
-document.querySelector('.tab-row').addEventListener('keydown', e => {
-  const tabs = ['tab-lv','tab-sab','tab-dom'];
-  const idx  = tabs.indexOf(document.activeElement.id);
-  if (idx === -1) return;
-  if (e.key === 'ArrowRight') { e.preventDefault(); document.getElementById(tabs[(idx+1)%3]).focus(); }
-  if (e.key === 'ArrowLeft')  { e.preventDefault(); document.getElementById(tabs[(idx+2)%3]).focus(); }
-});
-document.querySelectorAll('.tab-btn').forEach(btn => {
-  btn.addEventListener('click', () => showTab(btn.id.replace('tab-','')));
-});
-
-// ─── Recorrido visual ─────────────────────────────────────────
-function renderRoute() {
-  const secC = {1:'',2:'sec2',3:'sec3'};
-  document.getElementById('routeDiagram').innerHTML = STATIONS.map((st,i) => `
-    <div class="route-stop" role="listitem">
-      <div class="route-dot-wrap">
-        ${i>0?'<div class="route-line" aria-hidden="true"></div>':'<div class="route-line empty" aria-hidden="true"></div>'}
-        <div class="route-dot ${secC[st.sec]}" tabindex="0" role="button"
-             aria-label="Estación ${st.name}, sección ${st.sec}, $${PRECIOS[st.sec]} con SUBE"
-             data-id="${st.id}"></div>
-        ${i<15?'<div class="route-line" aria-hidden="true"></div>':'<div class="route-line empty" aria-hidden="true"></div>'}
-      </div>
-      <div class="route-label">${st.name}</div>
-      <div class="route-price">$${PRECIOS[st.sec]}</div>
-    </div>
-  `).join('');
-
-  document.querySelectorAll('.route-dot').forEach(dot => {
-    const id = dot.dataset.id;
-    const action = () => document.getElementById(`sc-${id}`).scrollIntoView({behavior:'smooth'});
-    dot.addEventListener('click', action);
-    dot.addEventListener('keydown', e => { if (e.key==='Enter'||e.key===' ') { e.preventDefault(); action(); } });
-  });
-}
-
-// ─── Estaciones ───────────────────────────────────────────────
-function renderStations(filter='') {
-  const f    = filter.toLowerCase().trim();
-  const list = document.getElementById('stationsList');
-  const data = STATIONS.filter(s => s.name.toLowerCase().includes(f));
-
-  list.innerHTML = data.map(st => {
-    const secLabel = ['','Sección 1','Sección 2','Sección 3'][st.sec];
-    const secClass = ['','sec-1','sec-2','sec-3'][st.sec];
-    const precio   = PRECIOS[st.sec];
-    const buses    = st.colectivos.slice(0,8).join(', ')+(st.colectivos.length>8?' y más...':'');
-    const subteHtml = st.subte.length
-      ? `<div class="info-block"><div class="info-block-label">🚇 Subterráneo</div><div class="bus-tags">${st.subte.map(s=>`<span class="connection-tag">🚇 ${s}</span>`).join('')}</div></div>` : '';
-    const conexHtml = st.conexiones.length
-      ? `<div class="info-block"><div class="info-block-label">🔗 Combinaciones</div><div class="bus-tags">${st.conexiones.map(c=>`<span class="connection-tag">🚆 ${c}</span>`).join('')}</div></div>` : '';
-    const notaHtml  = st.nota
-      ? `<div class="today-alert-item" style="margin-bottom:10px;">${st.nota}</div>` : '';
-
-    return `
-    <div class="station-card" id="sc-${st.id}">
-      <button type="button" class="station-header" aria-expanded="false" aria-controls="sb-${st.id}" id="sh-${st.id}">
-        <div class="station-num" aria-hidden="true">${st.id+1}</div>
-        <div style="flex:1;min-width:0;">
-          <div class="station-name">${st.name}</div>
-          <div class="station-addr">${st.direccion}</div>
-        </div>
-        <span class="station-sec-badge ${secClass}">${secLabel} · $${precio}</span>
-        <span class="station-toggle" aria-hidden="true">▼</span>
-      </button>
-      <div class="station-body" id="sb-${st.id}" hidden>
-        ${notaHtml}
-        <div class="station-grid-info">
-          <div>
-            ${subteHtml}${conexHtml}
-            <div class="info-block">
-              <div class="info-block-label">📍 Dirección</div>
-              <p style="font-size:.88rem;">${st.direccion}</p>
-            </div>
-          </div>
-          <div>
-            <div class="info-block">
-              <div class="info-block-label">💳 Tarifa desde Once</div>
-              <p style="font-size:.88rem;">
-                ${secLabel}: <strong>$${precio}</strong> con SUBE<br/>
-                Tarifa Social: <strong style="color:var(--green)">$${PRECIO_SOCIAL[st.sec]}</strong><br/>
-                Sin SUBE/Efectivo: $900
-              </p>
-            </div>
-          </div>
-        </div>
-        <div class="info-block" style="margin-top:10px;">
-          <div class="info-block-label">🚌 Colectivos en la zona</div>
-          <div class="bus-tags" role="list" aria-label="Colectivos cerca de ${st.name}">${st.colectivos.map(b=>`<span class="bus-tag" role="listitem">${b}</span>`).join('')}</div>
-        </div>
-        <div class="emergency-box" role="note">
-          <strong>🚨 Si el tren no funciona (paro o cancelación):</strong><br/>
-          Cerca de <strong>${st.name}</strong> podés tomar los colectivos <strong>${buses}</strong>.
-          Verificá recorridos en <a href="https://buenosaires.gob.ar/infraestructura/movilidad/colectivos" target="_blank" rel="noopener noreferrer" style="color:var(--red);">buenosaires.gob.ar ↗</a>
-        </div>
-      </div>
-    </div>`;
-  }).join('');
-
-  // Bind toggle events
-  document.querySelectorAll('.station-header').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const card   = btn.closest('.station-card');
-      const body   = card.querySelector('.station-body');
-      const isOpen = card.classList.toggle('open');
-      btn.setAttribute('aria-expanded', isOpen);
-      body.hidden = !isOpen;
-    });
-  });
-}
-
-document.getElementById('stationSearch').addEventListener('input', function() {
-  renderStations(this.value);
-});
-
-// ─── FAQ — keyboard accessible ────────────────────────────────
-document.querySelectorAll('.faq-q').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const item   = btn.closest('.faq-item');
-    const answer = item.querySelector('.faq-a');
-    const isOpen = item.classList.toggle('open');
-    btn.setAttribute('aria-expanded', isOpen);
-    answer.hidden = !isOpen;
-  });
-});
-
-// ─── Mapa Leaflet ─────────────────────────────────────────────
-window.addEventListener('load', function() {
-  if (typeof L === 'undefined') return;
-  const map = L.map('map').setView([-34.66,-58.60],11);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{
-    attribution:'© OpenStreetMap contributors © CARTO', subdomains:'abcd', maxZoom:19
-  }).addTo(map);
-  L.polyline(STATIONS.map(s=>[s.lat,s.lng]),{color:'#0095D4',weight:4,opacity:.9}).addTo(map);
-  const mSec={1:'#22c55e',2:'#3b82f6',3:'#8b5cf6'};
-  STATIONS.forEach((st,i) => {
-    const icon=L.divIcon({className:'',html:`<div style="background:${mSec[st.sec]};color:#fff;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:11px;border:2.5px solid white;box-shadow:0 2px 6px rgba(0,0,0,.4);" aria-label="${st.name}">${i+1}</div>`,iconSize:[26,26],iconAnchor:[13,13]});
-    L.marker([st.lat,st.lng],{icon,alt:st.name}).addTo(map).bindPopup(`
-      <div style="font-family:Inter,sans-serif;min-width:160px;">
-        <b style="font-size:1rem;color:#002B5C;">${i+1}. ${st.name}</b><br/>
-        <span style="font-size:.8rem;color:#555;">Sección ${st.sec} · <b>$${PRECIOS[st.sec]}</b> con SUBE</span>
-        ${st.nota?`<br/><span style="font-size:.75rem;color:#d97706;">${st.nota}</span>`:''}
-      </div>
-    `);
-  });
-});
-
-// ─── Twitter widget: si carga, ocultar el fallback ────────────
-setTimeout(() => {
-  const hasFrame = document.querySelector('#twitterWrap iframe');
-  if (hasFrame) {
-    // El widget cargó exitosamente — ocultar el fallback
-    document.getElementById('twitterFallback').style.display = 'none';
-    document.getElementById('twitterWrap').style.minHeight = '280px';
-  }
-  // Si no cargó (sin sesión X activa), el fallback ya está visible — no hacer nada
-}, 5000);
-
-// ─── Navbar toggle ────────────────────────────────────────────
-const navToggle = document.getElementById('navToggle');
-const navLinks  = document.getElementById('navLinks');
-navToggle.addEventListener('click', () => {
-  const open = navLinks.classList.toggle('open');
-  navToggle.setAttribute('aria-expanded', open);
-});
-
-// Smooth scroll + cerrar menú
-document.querySelectorAll('a[href^="#"]').forEach(a => {
-  a.addEventListener('click', e => {
-    const el = document.getElementById(a.getAttribute('href').slice(1));
-    if (el) { e.preventDefault(); el.scrollIntoView({behavior:'smooth'}); navLinks.classList.remove('open'); navToggle.setAttribute('aria-expanded','false'); }
-  });
-});
-
-// ─── Init ─────────────────────────────────────────────────────
-renderStations();
-renderHorarios();
-renderRoute();
-
-// ─── Push notifications (OneSignal) ──────────────────────────
-// Si el appId es el placeholder, no hace nada (modo desarrollo)
-const ONE_SIGNAL_CONFIGURED = typeof OneSignalDeferred !== 'undefined' &&
-  document.querySelector('script[src*="OneSignalSDK"]') &&
-  !document.querySelector('script[src*="OneSignalSDK"]')?.previousElementSibling?.textContent?.includes('445c42f6-aa5b-4731-a072-9576adab63fc');
-
-(function initPush() {
-  const pushBar     = document.getElementById('pushBar');
-  const pushAccept  = document.getElementById('pushBarAccept');
-  const pushDismiss = document.getElementById('pushBarDismiss');
-  const navBell     = document.getElementById('navBell');
-
-  // Leer estado guardado en localStorage
-  const pushState = localStorage.getItem('pushNotifState'); // 'subscribed' | 'dismissed'
-
-  function hidePushBar() {
-    pushBar.classList.remove('show');
-  }
-
-  function updateBellUI(subscribed) {
-    if (!navBell) return;
-    if (subscribed) {
-      navBell.classList.add('subscribed');
-      navBell.classList.remove('has-dot');
-      navBell.setAttribute('aria-label', 'Notificaciones activadas — tocá para gestionar');
-      navBell.setAttribute('title', 'Notificaciones activadas');
-    } else {
-      navBell.classList.remove('subscribed');
-      navBell.setAttribute('aria-label', 'Activar notificaciones de paro y alertas');
-    }
-  }
-
-  // Verificar suscripción actual via OneSignal
-  function checkSubscription() {
-    if (typeof OneSignalDeferred === 'undefined') return;
-    OneSignalDeferred.push(function(OneSignal) {
-      OneSignal.User.PushSubscription.optedIn
-        ? updateBellUI(true)
-        : updateBellUI(false);
-    });
-  }
-
-  // Pedir permiso y suscribir
-  async function subscribeToPush() {
-    if (typeof OneSignalDeferred === 'undefined') {
-      alert('Las notificaciones no están configuradas aún. Completá el setup de OneSignal primero.');
-      return;
-    }
-    OneSignalDeferred.push(async function(OneSignal) {
-      try {
-        await OneSignal.Notifications.requestPermission();
-        const subscribed = OneSignal.User.PushSubscription.optedIn;
-        if (subscribed) {
-          localStorage.setItem('pushNotifState', 'subscribed');
-          updateBellUI(true);
-          hidePushBar();
-          // Pequeño feedback visual
-          navBell.textContent = '🔔';
-        }
-      } catch(e) {
-        console.warn('[Push] No se pudo suscribir:', e);
-      }
-    });
-  }
-
-  // Mostrar la barra opt-in si no se suscribió ni rechazó antes
-  if (pushState !== 'subscribed' && pushState !== 'dismissed') {
-    setTimeout(() => {
-      // Solo mostrar si el API de notificaciones está disponible
-      if ('Notification' in window && Notification.permission === 'default') {
-        pushBar.classList.add('show');
-        navBell.classList.add('has-dot'); // punto indicador en la campana
-      }
-    }, 8000);
-  }
-
-  // Si ya está suscripto, actualizar UI inmediatamente
-  if (pushState === 'subscribed') {
-    updateBellUI(true);
-  }
-
-  // Botón "Activar" en la barra
-  pushAccept?.addEventListener('click', subscribeToPush);
-
-  // Botón "✕" en la barra
-  pushDismiss?.addEventListener('click', () => {
-    hidePushBar();
-    localStorage.setItem('pushNotifState', 'dismissed');
-    navBell.classList.remove('has-dot');
-  });
-
-  // Campana en el navbar
-  navBell?.addEventListener('click', () => {
-    if (localStorage.getItem('pushNotifState') === 'subscribed') {
-      // Ya suscripto — podría abrir gestión, por ahora confirmamos estado
-      OneSignalDeferred?.push(function(OneSignal) {
-        const opted = OneSignal.User.PushSubscription.optedIn;
-        alert(opted
-          ? '✅ Las notificaciones están activas. Te avisaremos cuando haya paro o alerta importante.'
-          : '⚠️ Las notificaciones fueron desactivadas en tu navegador. Podés reactivarlas desde la configuración del sitio.');
-      });
-    } else {
-      // No suscripto — mostrar barra
-      pushBar.classList.add('show');
-      navBell.classList.remove('has-dot');
-    }
-  });
-
-  // Verificar estado real al cargar
-  checkSubscription();
-})();
-</script>
-</body>
-</html>
+        <
