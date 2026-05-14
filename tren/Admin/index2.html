@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+  rojo.classList.remove("on-rojo");
+  amarillo.classList.remove("on-amarillo");
+  verde.classList.remove("on-verde");
+
+  switch(estado) {
+
+    case "paro":
+
+      rojo.classList.add("on-rojo");
+
+      document.getElementById("statusTexto").innerText =
+        "Servicio interrumpido";
+
+      break;
+
+    case "modificado":
+
+      amarillo.classList.add("on-amarillo");
+
+      document.getElementById("statusTexto").innerText =
+        "Servicio con demoras";
+
+      break;
+
+    default:
+
+      verde.classList.add("on-verde");
+
+      document.getElementById("statusTexto").innerText =
+        "Servicio normal";
+
+      break;
+
+  }
+
+}
+
+guardarBtn.addEventListener("click", async () => {
+
+  if(!currentUser) {
+
+    alert("Debés iniciar sesión");
+    return;
+
+  }
+
+  try {
+
+    await setDoc(estadoRef, {
+      estado: estadoSelect.value,
+      mensaje: editarMensaje.value.trim(),
+      actualizado: new Date().toISOString(),
+      editor: currentUser.email
+    });
+
+    alert("Cambios guardados correctamente");
+
+  } catch(error) {
+
+    console.error(error);
+    alert("Error guardando cambios");
+
+  }
+
+});
+
+</script>
+
+</body>
+</html>
