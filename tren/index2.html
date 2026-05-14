@@ -1236,10 +1236,10 @@ onSnapshot(estadoRef, (snapshot) => {
   const data = snapshot.data();
   console.log('[Firebase] Estado recibido:', data);
   
-  // Actualizar semáforo
-  actualizarSemaforo(data.estado || 'normal');
+  // Actualizar semáforo (ahora pasamos todos los datos)
+  actualizarSemaforo(data);
   
-  // Actualizar mensaje de alerta
+  // Actualizar mensaje de alerta principal
   actualizarAlerta(data.mensaje || '');
   
 });
@@ -1248,7 +1248,10 @@ onSnapshot(estadoRef, (snapshot) => {
    ACTUALIZAR SEMAFORO
 ========================= */
 
-function actualizarSemaforo(estado) {
+function actualizarSemaforo(data) {
+  
+  const estado = data.estado || 'normal';
+  const mensaje = data.mensaje || '';
   
   const luzRoja = document.getElementById("luzRoja");
   const luzAmarilla = document.getElementById("luzAmarilla");
@@ -1259,7 +1262,7 @@ function actualizarSemaforo(estado) {
   
   // Esperar a que el DOM esté listo
   if (!luzRoja || !luzAmarilla || !luzVerde) {
-    setTimeout(() => actualizarSemaforo(estado), 100);
+    setTimeout(() => actualizarSemaforo(data), 100);
     return;
   }
   
@@ -1272,6 +1275,13 @@ function actualizarSemaforo(estado) {
     statusBar.classList.remove("yellow", "red");
   }
   
+  // Mensajes por defecto (fallback si no viene mensaje de la BD)
+  const mensajesDefault = {
+    normal: 'El servicio opera con normalidad en ramal Once-Moreno.',
+    modificado: 'Demoras o cambios operativos.',
+    paro: 'ATENCIÓN: El servicio se encuentra suspendido. Consultá colectivos alternativos.'
+  };
+  
   // APLICAR ESTADO
   switch(estado) {
     
@@ -1279,21 +1289,24 @@ function actualizarSemaforo(estado) {
       luzRoja.classList.add("on-rojo");
       if (statusBar) statusBar.classList.add("red");
       if (statusTexto) statusTexto.innerText = "Servicio interrumpido";
-      if (statusDetail) statusDetail.innerText = "El servicio se encuentra suspendido o afectado.";
+      // Usar mensaje de la BD o el default para paro
+      if (statusDetail) statusDetail.innerText = mensaje || mensajesDefault.paro;
       break;
     
     case "modificado":
       luzAmarilla.classList.add("on-amarillo");
       if (statusBar) statusBar.classList.add("yellow");
       if (statusTexto) statusTexto.innerText = "Servicio con modificaciones";
-      if (statusDetail) statusDetail.innerText = "Demoras o cambios operativos.";
+      // Usar mensaje de la BD o el default para modificado
+      if (statusDetail) statusDetail.innerText = mensaje || mensajesDefault.modificado;
       break;
     
     default: // "normal"
       luzVerde.classList.add("on-verde");
       // statusBar sin clases = verde (por defecto)
       if (statusTexto) statusTexto.innerText = "Servicio normal";
-      if (statusDetail) statusDetail.innerText = "El servicio funciona normalmente.";
+      // Usar mensaje de la BD o el default para normal
+      if (statusDetail) statusDetail.innerText = mensaje || mensajesDefault.normal;
       break;
   }
   
