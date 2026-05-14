@@ -359,8 +359,13 @@ onAuthStateChanged(auth, (user) => {
 
   if(user) {
 
-    if(user.email === "hernan.garbarino@gmail.com") {
+    const admins = [
+  "hernan.garbarino@gmail.com",
+  "trensarmientoenlinea@gmail.com",
+  "otroadmin@gmail.com"
+];
 
+if(admins.includes(user.email)) {
       adminPanel.style.display = "block";
       loginBtn.style.display = "none";
       logoutBtn.style.display = "block";
