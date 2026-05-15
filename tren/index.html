@@ -1224,14 +1224,14 @@ footer { Buenas: #001533; color: rgb(18 17 17 / 55%); padding: 32px 20px 20px; f
 <!-- PUSH OPT-IN BAR — aparece después de 8 segundos si no suscripto -->
 <div class="push-bar" id="pushBar" role="dialog" aria-label="Activar notificaciones de alerta" aria-live="polite">
   <div class="push-bar-text">
-    <strong>🔔 PROXIMAMENTE: Recibí alertas de paro y modificaciones</strong>
-    Te avisaremos cuando el tren no funciona. Sin spam.
+    <strong>🔔 Recibí alertas de paro y modificaciones</strong>
+    Te avisamos cuando el tren no funciona. Sin spam.
   </div>
   <div class="push-bar-actions">
-    <!--<button id="pushBarAccept"
+    <button id="pushBarAccept"
 onclick="OneSignalDeferred.push(async function(OneSignal){await OneSignal.Notifications.requestPermission();})">
 Activar notificaciones
-</button>-->
+</button>
     <button type="button" class="push-bar-dismiss" id="pushBarDismiss" aria-label="Cerrar">✕</button>
   </div>
 </div>
@@ -1656,26 +1656,30 @@ Activar notificaciones
     </div>
   </div>
 
-  <!-- STATUS BAR -->
   <div class="status-bar yellow" id="statusBar" role="status" aria-live="polite" aria-label="Estado del servicio">
     <div style="display:flex;align-items:center;gap:12px;">
       <div class="semaforo" id="semaforo" aria-hidden="true" title="Semáforo de estado del servicio">
         <div class="semaforo-luz" id="luzRoja"></div>
-        <div class="semaforo-luz on-amarillo" id="luzAmarilla"></div>
+        <div class="semaforo-luz" id="luzAmarilla"></div>
         <div class="semaforo-luz" id="luzVerde"></div>
       </div>
-      <div>
+        <div>
+            <span class="status-dot" aria-hidden="true"></span>
+        <span id="statusTexto" class="status-text">⚠️ Servicio con modificaciones</span>
+
+        <div id="statusDetail" class="status-detail">Demoras o cambios operativos.</div>
+      </div>
+       <!--<div>
         <span class="status-dot" aria-hidden="true"></span>
         <span class="status-text" id="statusText">⚠️ Servicio con modificaciones</span>
         <div class="status-detail" id="statusDetail">Entre la Noche del Sábado 09 y mañana del Domingo 10 habrá servicio reducido por lo que el horario de los ultimos trenes se verá modificado.</div>
-      </div>
+      </div>-->
     </div>
     <div class="status-source" style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
       <a href="https://www.instagram.com/trensarmiento_enlinea" target="_blank" rel="noopener noreferrer">📸 @trensarmiento_enlinea</a>
       <span class="last-update-badge" id="lastUpdateBadge" title="Última verificación manual del estado">🕐 Verificado: —</span>
     </div>
   </div>
-
   <!-- PRÓXIMO TREN -->
   <section class="section section-cel" id="proximo" aria-labelledby="proximo-title">
     <div class="container">
@@ -2823,4 +2827,170 @@ setTimeout(() => {
     document.getElementById('twitterFallback').style.display = 'none';
     document.getElementById('twitterWrap').style.minHeight = '280px';
   }
-  // 
+  // Si no cargó (sin sesión X activa), el fallback ya está visible — no hacer nada
+}, 5000);
+
+// ─── Navbar toggle ────────────────────────────────────────────
+const navToggle = document.getElementById('navToggle');
+const navLinks  = document.getElementById('navLinks');
+navToggle.addEventListener('click', () => {
+  const open = navLinks.classList.toggle('open');
+  navToggle.setAttribute('aria-expanded', open);
+});
+
+// Smooth scroll + cerrar menú
+document.querySelectorAll('a[href^="#"]').forEach(a => {
+  a.addEventListener('click', e => {
+    const el = document.getElementById(a.getAttribute('href').slice(1));
+    if (el) { e.preventDefault(); el.scrollIntoView({behavior:'smooth'}); navLinks.classList.remove('open'); navToggle.setAttribute('aria-expanded','false'); }
+  });
+});
+
+// ─── Init ─────────────────────────────────────────────────────
+renderStations();
+renderHorarios();
+renderRoute();
+
+// ─── Push notifications (OneSignal) ──────────────────────────
+// Si el appId es el placeholder, no hace nada (modo desarrollo)
+const ONE_SIGNAL_CONFIGURED = typeof OneSignalDeferred !== 'undefined' &&
+  document.querySelector('script[src*="OneSignalSDK"]') &&
+  !document.querySelector('script[src*="OneSignalSDK"]')?.previousElementSibling?.textContent?.includes('445c42f6-aa5b-4731-a072-9576adab63fc');
+
+(function initPush() {
+  const pushBar     = document.getElementById('pushBar');
+  const pushAccept  = document.getElementById('pushBarAccept');
+  const pushDismiss = document.getElementById('pushBarDismiss');
+  const navBell     = document.getElementById('navBell');
+
+  // Leer estado guardado en localStorage
+  const pushState = localStorage.getItem('pushNotifState'); // 'subscribed' | 'dismissed'
+
+  function hidePushBar() {
+    pushBar.classList.remove('show');
+  }
+
+  function updateBellUI(subscribed) {
+    if (!navBell) return;
+    if (subscribed) {
+      navBell.classList.add('subscribed');
+      navBell.classList.remove('has-dot');
+      navBell.setAttribute('aria-label', 'Notificaciones activadas — tocá para gestionar');
+      navBell.setAttribute('title', 'Notificaciones activadas');
+    } else {
+      navBell.classList.remove('subscribed');
+      navBell.setAttribute('aria-label', 'Activar notificaciones de paro y alertas');
+    }
+  }
+
+  // Verificar suscripción actual via OneSignal
+  function checkSubscription() {
+    if (typeof OneSignalDeferred === 'undefined') return;
+    OneSignalDeferred.push(function(OneSignal) {
+      OneSignal.User.PushSubscription.optedIn
+        ? updateBellUI(true)
+        : updateBellUI(false);
+    });
+  }
+
+  // Pedir permiso y suscribir
+  async function subscribeToPush() {
+    if (typeof OneSignalDeferred === 'undefined') {
+      alert('Las notificaciones no están configuradas aún. Completá el setup de OneSignal primero.');
+      return;
+    }
+    OneSignalDeferred.push(async function(OneSignal) {
+      try {
+        await OneSignal.Notifications.requestPermission();
+        const subscribed = OneSignal.User.PushSubscription.optedIn;
+        if (subscribed) {
+          localStorage.setItem('pushNotifState', 'subscribed');
+          updateBellUI(true);
+          hidePushBar();
+          // Pequeño feedback visual
+          navBell.textContent = '🔔';
+        }
+      } catch(e) {
+        console.warn('[Push] No se pudo suscribir:', e);
+      }
+    });
+  }
+
+  // Mostrar la barra opt-in si no se suscribió ni rechazó antes
+  if (pushState !== 'subscribed' && pushState !== 'dismissed') {
+    setTimeout(() => {
+      // Solo mostrar si el API de notificaciones está disponible
+      if ('Notification' in window && Notification.permission === 'default') {
+        pushBar.classList.add('show');
+        navBell.classList.add('has-dot'); // punto indicador en la campana
+      }
+    }, 8000);
+  }
+
+  // Si ya está suscripto, actualizar UI inmediatamente
+  if (pushState === 'subscribed') {
+    updateBellUI(true);
+  }
+
+  // Botón "Activar" en la barra
+  pushAccept?.addEventListener('click', subscribeToPush);
+
+  // Botón "✕" en la barra
+  pushDismiss?.addEventListener('click', () => {
+    hidePushBar();
+    localStorage.setItem('pushNotifState', 'dismissed');
+    navBell.classList.remove('has-dot');
+  });
+
+  // Campana en el navbar
+  navBell?.addEventListener('click', () => {
+    if (localStorage.getItem('pushNotifState') === 'subscribed') {
+      // Ya suscripto — podría abrir gestión, por ahora confirmamos estado
+      OneSignalDeferred?.push(function(OneSignal) {
+        const opted = OneSignal.User.PushSubscription.optedIn;
+        alert(opted
+          ? '✅ Las notificaciones están activas. Te avisaremos cuando haya paro o alerta importante.'
+          : '⚠️ Las notificaciones fueron desactivadas en tu navegador. Podés reactivarlas desde la configuración del sitio.');
+      });
+    } else {
+      // No suscripto — mostrar barra
+      pushBar.classList.add('show');
+      navBell.classList.remove('has-dot');
+    }
+  });
+
+  // Verificar estado real al cargar
+  checkSubscription();
+})();
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SECCIÓN DE CONTACTO PUBLICITARIO                                -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section id="contacto-publicidad" style="background: linear-gradient(135deg, #0055A4 0%, #002B5C 100%); padding: 3rem 1.5rem; margin-top: 4rem;">
+  <div style="max-width: 800px; margin: 0 auto; text-align: center;">
+    <div style="background: white; border-radius: 16px; padding: 2.5rem 2rem; box-shadow: 0 20px 60px rgba(0,0,0,0.3); border: 4px solid #FFD700;">
+      <div style="font-size: 3rem; margin-bottom: 1rem;">📢</div>
+      <h2 style="color: #002B5C; font-size: 2rem; font-weight: 800; margin-bottom: 1rem; line-height: 1.2;">
+        ¿Querés publicitar en este sitio?
+      </h2>
+      <p style="color: #5A7A99; font-size: 1.1rem; margin-bottom: 1.5rem; line-height: 1.6;">
+        Llegá a miles de usuarios que consultan horarios y estado del Tren Sarmiento todos los días.
+      </p>
+      <div style="background: #EEF6FB; border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; border-left: 4px solid #0095D4;">
+        <p style="color: #1A2C42; font-size: 0.95rem; margin-bottom: 0.5rem; font-weight: 600;">
+          📧 Contactanos a:
+        </p>
+        <a href="mailto:trensarmientoenlinea@gmail.com" style="color: #0055A4; font-size: 1.3rem; font-weight: 700; text-decoration: none; word-break: break-all; display: inline-block; transition: all 0.3s ease;">
+          trensarmientoenlinea@gmail.com
+        </a>
+      </div>
+      <p style="color: #5A7A99; font-size: 0.9rem; margin: 0;">
+        Te responderemos a la brevedad con nuestras opciones de publicidad y tarifas.
+      </p>
+    </div>
+  </div>
+</section>
+
+</body>
+</html>
