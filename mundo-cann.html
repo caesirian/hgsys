@@ -37,11 +37,11 @@
 
     .container { width: min(1200px, 92%); margin: 0 auto; padding: 24px 0 64px; }
     .glass-card {
-      background: linear-gradient(145deg, rgba(255,255,255,0.12), rgba(255,255,255,0.05));
-      border: 1px solid var(--glass-border);
-      border-radius: var(--radius-organic);
-      backdrop-filter: blur(12px);
-      box-shadow: var(--shadow-tactile);
+      background: linear-gradient(145deg, rgba(255,255,255,0.14), rgba(255,255,255,0.06));
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 30px 20px 34px 18px;
+      backdrop-filter: blur(14px);
+      box-shadow: 0 10px 30px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.28);
     }
 
     .topbar { display: flex; justify-content: space-between; align-items: center; gap: 14px; padding: 14px 18px; flex-wrap: wrap; }
@@ -62,16 +62,28 @@
     }
     .cta:hover { transform: translateY(-4px) scale(1.02); box-shadow: 0 12px 18px rgba(0,229,255,0.25); }
 
+    .playful-title { font-family: 'Bricolage Grotesque', sans-serif; line-height: 1.02; }
+    .playful-title span { display: inline-block; }
+    .playful-title span:nth-child(odd) { transform: translateY(-2px) rotate(-1deg); font-weight: 800; }
+    .playful-title span:nth-child(even) { transform: translateY(3px) rotate(1deg); font-weight: 600; }
+
     .hero-grid {
       margin-top: 24px;
       display: grid;
-      grid-template-columns: 1fr 1.5fr 1fr;
+      grid-template-columns: 1.1fr 1.5fr 0.9fr;
+      grid-template-areas:
+        "left main right"
+        "left main right";
       gap: 16px;
+      align-items: stretch;
     }
-    .hero-item { padding: 18px; min-height: 180px; }
+    .hero-item { padding: 20px; min-height: 190px; border-radius: 32px 22px 34px 20px; }
+    .hero-item:nth-child(1) { grid-area: left; }
+    .hero-item:nth-child(2) { grid-area: main; min-height: 340px; }
+    .hero-item:nth-child(3) { grid-area: right; }
     .hero-main {
       grid-column: 2 / 3;
-      min-height: 320px;
+      min-height: 340px;
       display: grid;
       align-content: space-between;
       background: linear-gradient(160deg, rgba(106,13,173,0.85), rgba(10,40,70,0.65));
@@ -116,7 +128,7 @@
     .metric strong { color: var(--accent-cyan); font-size: 1.3rem; }
 
     @media (max-width: 920px) {
-      .hero-grid { grid-template-columns: 1fr; }
+      .hero-grid { grid-template-columns: 1fr; grid-template-areas: "main" "left" "right"; }
       .hero-main { grid-column: auto; }
       .dashboard { grid-template-columns: 1fr; }
     }
@@ -165,19 +177,19 @@
     <section class="hero-grid">
       <article class="hero-item glass-card">
         <span class="tag">Regulación</span>
-        <h3>REPROCANN 2025</h3>
+        <h3 class="playful-title"><span>REPROCANN</span> <span>2025</span></h3>
         <p>Nuevas validaciones y trazabilidad digital para pacientes, cultivadores y ONGs.</p>
       </article>
       <article class="hero-item hero-main glass-card">
         <div>
           <span class="tag">Noticia destacada</span>
-          <h1>Ecosistema cannábico con datos en tiempo real y enfoque científico</h1>
+          <h1 class="playful-title"><span>Ecosistema</span> <span>cannábico</span> <span>con</span> <span>datos</span> <span>en</span> <span>tiempo</span> <span>real</span></h1>
         </div>
         <p>Noticias, papers, tutoriales de cultivo y comunidad en una plataforma energética, moderna y centrada en UX.</p>
       </article>
       <article class="hero-item glass-card">
         <span class="tag" style="background: var(--accent-cyan)">Ciencia</span>
-        <h3>CBD & Evidencia</h3>
+        <h3 class="playful-title"><span>CBD</span> <span>&</span> <span>Evidencia</span></h3>
         <p>Resumen visual de papers clínicos, interacciones y nuevas líneas de investigación.</p>
       </article>
     </section>
