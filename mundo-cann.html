@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mundo Cann | Ecosistema Informativo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+  <style>
+    :root {
+      --bg: #0A2846;
+      --card-culture: #6A0DAD;
+      --accent-lime: #C1FF72;
+      --accent-cyan: #00E5FF;
+      --text-main: #e7f3ff;
+      --text-soft: #b3ccde;
+      --glass: rgba(255, 255, 255, 0.08);
+      --glass-border: rgba(255, 255, 255, 0.16);
+      --radius-organic: 28px;
+      --shadow-tactile: 0 10px 30px rgba(0, 0, 0, 0.24);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: radial-gradient(circle at 15% 10%, rgba(0, 229, 255, 0.12), transparent 38%),
+                  radial-gradient(circle at 82% 22%, rgba(193, 255, 114, 0.1), transparent 32%),
+                  var(--bg);
+      color: var(--text-main);
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+    }
+    h1,h2,h3 { font-family: 'Bricolage Grotesque', sans-serif; margin: 0; letter-spacing: .2px; }
+
+    .container { width: min(1200px, 92%); margin: 0 auto; padding: 24px 0 64px; }
+    .glass-card {
+      background: linear-gradient(145deg, rgba(255,255,255,0.12), rgba(255,255,255,0.05));
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-organic);
+      backdrop-filter: blur(12px);
+      box-shadow: var(--shadow-tactile);
+    }
+
+    .topbar { display: flex; justify-content: space-between; align-items: center; gap: 14px; padding: 14px 18px; }
+    .logo { font-size: 1.1rem; font-weight: 800; }
+    .logo span { color: var(--accent-lime); }
+    .cta {
+      border: none;
+      color: #062235;
+      background: linear-gradient(95deg, var(--accent-lime), var(--accent-cyan));
+      border-radius: 999px;
+      padding: 11px 18px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform .25s ease, box-shadow .25s ease;
+    }
+    .cta:hover { transform: translateY(-4px) scale(1.02); box-shadow: 0 12px 18px rgba(0,229,255,0.25); }
+
+    .hero-grid {
+      margin-top: 24px;
+      display: grid;
+      grid-template-columns: 1fr 1.5fr 1fr;
+      gap: 16px;
+    }
+    .hero-item { padding: 18px; min-height: 180px; }
+    .hero-main {
+      grid-column: 2 / 3;
+      min-height: 320px;
+      display: grid;
+      align-content: space-between;
+      background: linear-gradient(160deg, rgba(106,13,173,0.85), rgba(10,40,70,0.65));
+    }
+    .tag { display: inline-block; color: #05243b; background: var(--accent-lime); padding: 6px 10px; border-radius: 999px; font-weight: 700; font-size: .8rem; }
+    .hero-main p, .hero-item p { color: var(--text-soft); }
+
+    .section-title { margin: 36px 0 14px; font-size: 1.3rem; }
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 16px;
+    }
+    .module-card {
+      padding: 18px;
+      transition: transform .28s ease, border-color .28s ease;
+      border: 1px solid rgba(255,255,255,0.13);
+    }
+    .module-card:hover {
+      transform: translateY(-7px);
+      border-color: var(--accent-cyan);
+    }
+    .module-card.culture { background: linear-gradient(150deg, rgba(106,13,173,0.5), rgba(106,13,173,0.16)); }
+
+    table { width: 100%; border-collapse: collapse; overflow: hidden; border-radius: 20px; }
+    th, td { padding: 12px 14px; text-align: left; }
+    th { background: rgba(0,229,255,0.14); }
+    tr:nth-child(even) td { background: rgba(255,255,255,0.04); }
+
+    .dashboard {
+      margin-top: 28px;
+      display: grid;
+      grid-template-columns: 1.2fr .8fr;
+      gap: 16px;
+    }
+    .metric {
+      padding: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .metric strong { color: var(--accent-cyan); font-size: 1.3rem; }
+
+    @media (max-width: 920px) {
+      .hero-grid { grid-template-columns: 1fr; }
+      .hero-main { grid-column: auto; }
+      .dashboard { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="topbar glass-card">
+      <div class="logo">Mundo <span>Cann</span></div>
+      <button class="cta" id="personalizeBtn">Activar Lectura Personalizada</button>
+    </header>
+
+    <section class="hero-grid">
+      <article class="hero-item glass-card">
+        <span class="tag">Regulación</span>
+        <h3>REPROCANN 2025</h3>
+        <p>Nuevas validaciones y trazabilidad digital para pacientes, cultivadores y ONGs.</p>
+      </article>
+      <article class="hero-item hero-main glass-card">
+        <div>
+          <span class="tag">Noticia destacada</span>
+          <h1>Ecosistema cannábico con datos en tiempo real y enfoque científico</h1>
+        </div>
+        <p>Noticias, papers, tutoriales de cultivo y comunidad en una plataforma energética, moderna y centrada en UX.</p>
+      </article>
+      <article class="hero-item glass-card">
+        <span class="tag" style="background: var(--accent-cyan)">Ciencia</span>
+        <h3>CBD & Evidencia</h3>
+        <p>Resumen visual de papers clínicos, interacciones y nuevas líneas de investigación.</p>
+      </article>
+    </section>
+
+    <h2 class="section-title">Secciones del ecosistema</h2>
+    <section class="cards-grid">
+      <article class="module-card glass-card culture"><h3>Noticias</h3><p>Regulación, políticas públicas, licencias y REPROCANN.</p></article>
+      <article class="module-card glass-card"><h3>Ciencia</h3><p>Papers, cannabinoides y dosificación basada en evidencia.</p></article>
+      <article class="module-card glass-card"><h3>Cultivo</h3><p>Tutoriales paso a paso, control de plagas y rendimiento indoor/outdoor.</p></article>
+      <article class="module-card glass-card"><h3>Industria</h3><p>Hemp business, inversiones y tendencias B2B.</p></article>
+      <article class="module-card glass-card"><h3>Foros comunitarios</h3><p>Debates por perfil: pacientes, growers, profesionales de salud y ONG.</p></article>
+    </section>
+
+    <h2 class="section-title">Módulo Legal · REPROCANN 2025</h2>
+    <section class="glass-card" style="padding: 10px;">
+      <table id="legalTable">
+        <thead>
+          <tr><th>Categoría</th><th>Validación</th><th>Vigencia</th><th>Estado</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <section class="dashboard">
+      <article class="metric glass-card"><span>Contenido recomendado hoy</span><strong id="recCount">0</strong></article>
+      <article class="metric glass-card"><span>Alertas científicas activas</span><strong>12</strong></article>
+    </section>
+  </div>
+
+  <script type="module">
+    // Firebase-ready structure (replace with real config)
+    const reproData = [
+      { categoria: 'Autocultivador', validacion: 'Documento médico + domicilio', vigencia: '12 meses', estado: 'Activa' },
+      { categoria: 'Cultivo 3ra parte', validacion: 'Vínculo paciente-cultivador + consentimiento', vigencia: '12 meses', estado: 'Revisión' },
+      { categoria: 'ONG', validacion: 'Personería + nómina pacientes + protocolo', vigencia: '12 meses', estado: 'Activa' }
+    ];
+
+    const tbody = document.querySelector('#legalTable tbody');
+    reproData.forEach(row => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${row.categoria}</td><td>${row.validacion}</td><td>${row.vigencia}</td><td>${row.estado}</td>`;
+      tbody.appendChild(tr);
+    });
+
+    const behaviorProfiles = {
+      ciencia: ['Nuevos papers CBD', 'Meta-análisis dolor crónico', 'Interacciones farmacológicas'],
+      cultivo: ['Guía VPD en indoor', 'Sustratos vivos', 'Plan nutricional vegetativo']
+    };
+
+    document.getElementById('personalizeBtn').addEventListener('click', () => {
+      const type = Math.random() > 0.5 ? 'ciencia' : 'cultivo';
+      const recs = behaviorProfiles[type];
+      document.getElementById('recCount').textContent = recs.length;
+      alert(`Perfil detectado: ${type.toUpperCase()}\nRecomendaciones:\n- ${recs.join('\n- ')}`);
+    });
+
+    gsap.from('.topbar, .hero-item, .module-card, .metric, table', {
+      y: 26,
+      opacity: 0,
+      duration: 0.8,
+      stagger: 0.08,
+      ease: 'power2.out'
+    });
+  </script>
+</body>
+</html>
