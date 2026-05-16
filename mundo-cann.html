@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+  <link rel="stylesheet" href="global.css">
   <style>
     :root {
       --bg: #0A2846;
@@ -43,13 +44,16 @@
       box-shadow: var(--shadow-tactile);
     }
 
-    .topbar { display: flex; justify-content: space-between; align-items: center; gap: 14px; padding: 14px 18px; }
+    .topbar { display: flex; justify-content: space-between; align-items: center; gap: 14px; padding: 14px 18px; flex-wrap: wrap; }
+    .site-menu { display:flex; gap:12px; flex-wrap:wrap; }
+    .site-menu a { color: var(--text-main); text-decoration:none; font-weight:600; }
+    .site-menu a:hover { color: var(--accent-lime); text-decoration: underline; }
     .logo { font-size: 1.1rem; font-weight: 800; }
     .logo span { color: var(--accent-lime); }
     .cta {
       border: none;
       color: #062235;
-      background: linear-gradient(95deg, var(--accent-lime), var(--accent-cyan));
+      background: var(--accent-lime);
       border-radius: 999px;
       padding: 11px 18px;
       font-weight: 700;
@@ -117,12 +121,45 @@
       .dashboard { grid-template-columns: 1fr; }
     }
   </style>
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "NewsMediaOrganization",
+        "name": "Mundo Cann",
+        "url": "https://www.trensarmiento.com.ar/mundo-cann.html",
+        "areaServed": "AR",
+        "knowsAbout": ["REPROCANN", "salud", "cannabis medicinal"],
+        "sameAs": []
+      },
+      {
+        "@type": "CollectionPage",
+        "name": "Portal de noticias médicas y salud cannábica",
+        "url": "https://www.trensarmiento.com.ar/mundo-cann.html",
+        "about": ["REPROCANN", "Ciencia", "Cultivo"],
+        "hasPart": [
+          {"@type": "NewsArticle", "headline": "REPROCANN 2025", "articleSection": "REPROCANN", "datePublished": "2026-05-16"},
+          {"@type": "NewsArticle", "headline": "CBD & Evidencia", "articleSection": "Ciencia", "datePublished": "2026-05-16"},
+          {"@type": "NewsArticle", "headline": "Cultivo medicinal basado en evidencia", "articleSection": "Cultivo", "datePublished": "2026-05-16"}
+        ]
+      }
+    ]
+  }
+  </script>
 </head>
 <body>
   <div class="container">
     <header class="topbar glass-card">
+      <nav class="site-menu" aria-label="Navegación principal REPROCANN">
+        <a href="/mundo-cann.html">Inicio</a>
+        <a href="/noticias/reprocann-actualizaciones.html">Noticias REPROCANN</a>
+        <a href="/noticias/ciencia-cannabis.html">Ciencia</a>
+        <a href="/noticias/cultivo-medicinal.html">Cultivo</a>
+      </nav>
       <div class="logo">Mundo <span>Cann</span></div>
-      <button class="cta" id="personalizeBtn">Activar Lectura Personalizada</button>
+      <button class="cta cta-primary" id="personalizeBtn">Activar Lectura Personalizada</button>
     </header>
 
     <section class="hero-grid">
@@ -146,12 +183,12 @@
     </section>
 
     <h2 class="section-title">Secciones del ecosistema</h2>
-    <section class="cards-grid">
-      <article class="module-card glass-card culture"><h3>Noticias</h3><p>Regulación, políticas públicas, licencias y REPROCANN.</p></article>
-      <article class="module-card glass-card"><h3>Ciencia</h3><p>Papers, cannabinoides y dosificación basada en evidencia.</p></article>
-      <article class="module-card glass-card"><h3>Cultivo</h3><p>Tutoriales paso a paso, control de plagas y rendimiento indoor/outdoor.</p></article>
-      <article class="module-card glass-card"><h3>Industria</h3><p>Hemp business, inversiones y tendencias B2B.</p></article>
-      <article class="module-card glass-card"><h3>Foros comunitarios</h3><p>Debates por perfil: pacientes, growers, profesionales de salud y ONG.</p></article>
+    <section class="cards-grid news-grid-asymmetric">
+      <article class="module-card news-card glass-card hover-lift culture"><h3>Noticias</h3><p>Regulación, políticas públicas, licencias y REPROCANN.</p></article>
+      <article class="module-card news-card glass-card hover-lift"><h3>Ciencia</h3><p>Papers, cannabinoides y dosificación basada en evidencia.</p></article>
+      <article class="module-card news-card glass-card hover-lift"><h3>Cultivo</h3><p>Tutoriales paso a paso, control de plagas y rendimiento indoor/outdoor.</p></article>
+      <article class="module-card news-card glass-card hover-lift"><h3>Industria</h3><p>Hemp business, inversiones y tendencias B2B.</p></article>
+      <article class="module-card news-card glass-card hover-lift"><h3>Foros comunitarios</h3><p>Debates por perfil: pacientes, growers, profesionales de salud y ONG.</p></article>
     </section>
 
     <h2 class="section-title">Módulo Legal · REPROCANN 2025</h2>
@@ -205,5 +242,6 @@
       ease: 'power2.out'
     });
   </script>
+  <script src="webp-loader.js"></script>
 </body>
 </html>
