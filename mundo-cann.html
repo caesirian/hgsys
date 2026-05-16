@@ -6,8 +6,9 @@
   <title>Mundo Cann | Ecosistema Informativo</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+  <link rel="stylesheet" href="global.css">
   <style>
     :root {
       --bg: #0A2846;
@@ -25,8 +26,9 @@
     * { box-sizing: border-box; }
     body {
       margin: 0;
-      background: radial-gradient(circle at 15% 10%, rgba(0, 229, 255, 0.12), transparent 38%),
-                  radial-gradient(circle at 82% 22%, rgba(193, 255, 114, 0.1), transparent 32%),
+      background: radial-gradient(circle at 12% 8%, rgba(106, 13, 173, 0.28), transparent 34%),
+                  radial-gradient(circle at 78% 16%, rgba(193, 255, 114, 0.12), transparent 34%),
+                  radial-gradient(circle at 50% 64%, rgba(106, 13, 173, 0.2), transparent 42%),
                   var(--bg);
       color: var(--text-main);
       font-family: 'Inter', sans-serif;
@@ -36,20 +38,23 @@
 
     .container { width: min(1200px, 92%); margin: 0 auto; padding: 24px 0 64px; }
     .glass-card {
-      background: linear-gradient(145deg, rgba(255,255,255,0.12), rgba(255,255,255,0.05));
-      border: 1px solid var(--glass-border);
-      border-radius: var(--radius-organic);
-      backdrop-filter: blur(12px);
-      box-shadow: var(--shadow-tactile);
+      background: linear-gradient(145deg, rgba(255,255,255,0.14), rgba(255,255,255,0.06));
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 24px;
+      backdrop-filter: blur(14px);
+      box-shadow: 0 10px 30px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.28);
     }
 
-    .topbar { display: flex; justify-content: space-between; align-items: center; gap: 14px; padding: 14px 18px; }
-    .logo { font-size: 1.1rem; font-weight: 800; }
-    .logo span { color: var(--accent-lime); }
+    .topbar { display: flex; justify-content: space-between; align-items: center; gap: 14px; padding: 14px 18px; flex-wrap: wrap; }
+    .site-menu { display:flex; gap:12px; flex-wrap:wrap; }
+    .site-menu a { color: var(--text-main); text-decoration:none; font-weight:600; }
+    .site-menu a:hover { color: var(--accent-lime); text-decoration: underline; }
+    .logo { font-size: 1.35rem; color: var(--accent-lime); letter-spacing: .4px; }
+    .logo span { color: var(--accent-lime); margin-right: 3px; }
     .cta {
       border: none;
       color: #062235;
-      background: linear-gradient(95deg, var(--accent-lime), var(--accent-cyan));
+      background: var(--accent-lime);
       border-radius: 999px;
       padding: 11px 18px;
       font-weight: 700;
@@ -58,16 +63,30 @@
     }
     .cta:hover { transform: translateY(-4px) scale(1.02); box-shadow: 0 12px 18px rgba(0,229,255,0.25); }
 
+    .playful-title { font-family: 'Bricolage Grotesque', sans-serif; line-height: 1.02; }
+    .playful-title span { display: inline-block; }
+    .playful-title span:nth-child(odd) { transform: translateY(-3px) rotate(-1.4deg); font-weight: 800; }
+    .playful-title span:nth-child(even) { transform: translateY(4px) rotate(1.3deg); font-weight: 500; }
+    .logo.playful-title span:nth-child(1) { font-weight: 800; transform: translateY(-2px) rotate(-2deg); }
+    .logo.playful-title span:nth-child(2) { font-weight: 500; transform: translateY(3px) rotate(2deg); }
+
     .hero-grid {
       margin-top: 24px;
       display: grid;
-      grid-template-columns: 1fr 1.5fr 1fr;
+      grid-template-columns: 1.1fr 1.5fr 0.9fr;
+      grid-template-areas:
+        "left main right"
+        "left main right";
       gap: 16px;
+      align-items: stretch;
     }
-    .hero-item { padding: 18px; min-height: 180px; }
+    .hero-item { padding: 20px; min-height: 190px; border-radius: 24px; }
+    .hero-item:nth-child(1) { grid-area: left; }
+    .hero-item:nth-child(2) { grid-area: main; min-height: 340px; }
+    .hero-item:nth-child(3) { grid-area: right; }
     .hero-main {
       grid-column: 2 / 3;
-      min-height: 320px;
+      min-height: 340px;
       display: grid;
       align-content: space-between;
       background: linear-gradient(160deg, rgba(106,13,173,0.85), rgba(10,40,70,0.65));
@@ -78,9 +97,15 @@
     .section-title { margin: 36px 0 14px; font-size: 1.3rem; }
     .cards-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      grid-template-columns: 1.2fr 1fr 1.1fr;
+      grid-auto-rows: minmax(160px, auto);
       gap: 16px;
     }
+    .cards-grid .module-card:nth-child(1) { grid-column: 1 / 2; grid-row: span 2; }
+    .cards-grid .module-card:nth-child(2) { grid-column: 2 / 3; grid-row: span 1; }
+    .cards-grid .module-card:nth-child(3) { grid-column: 3 / 4; grid-row: span 2; }
+    .cards-grid .module-card:nth-child(4) { grid-column: 2 / 3; grid-row: span 2; }
+    .cards-grid .module-card:nth-child(5) { grid-column: 1 / 2; grid-row: span 1; }
     .module-card {
       padding: 18px;
       transition: transform .28s ease, border-color .28s ease;
@@ -110,48 +135,106 @@
       align-items: center;
     }
     .metric strong { color: var(--accent-cyan); font-size: 1.3rem; }
+    .container > section { position: relative; overflow: hidden; }
+    .container > section::before {
+      content: "";
+      position: absolute;
+      inset: -30% -15% auto auto;
+      width: 260px; height: 260px;
+      background: radial-gradient(circle, rgba(106,13,173,.28), transparent 68%);
+      pointer-events: none;
+    }
+
+    .splash-cursor {
+      position: fixed; width: 16px; height: 16px; border-radius: 50%;
+      pointer-events: none; z-index: 9999; transform: translate(-50%, -50%);
+      border: 2px solid rgba(193,255,114,.8); box-shadow: 0 0 0 4px rgba(193,255,114,.12);
+      transition: transform .08s linear;
+    }
+    .click-splash {
+      position: fixed; width: 10px; height: 10px; border-radius: 999px; pointer-events: none;
+      background: radial-gradient(circle, rgba(193,255,114,.65), rgba(106,13,173,.45) 45%, transparent 70%);
+      transform: translate(-50%, -50%) scale(0.1); animation: splash-pop .55s ease-out forwards; z-index: 9998;
+    }
+    @keyframes splash-pop { to { transform: translate(-50%, -50%) scale(9); opacity: 0; } }
+
 
     @media (max-width: 920px) {
-      .hero-grid { grid-template-columns: 1fr; }
+      .hero-grid { grid-template-columns: 1fr; grid-template-areas: "main" "left" "right"; }
       .hero-main { grid-column: auto; }
       .dashboard { grid-template-columns: 1fr; }
+      .cards-grid { grid-template-columns: 1fr; }
+      .cards-grid .module-card { grid-column: auto !important; grid-row: auto !important; }
     }
   </style>
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "NewsMediaOrganization",
+        "name": "Mundo Cann",
+        "url": "https://www.trensarmiento.com.ar/mundo-cann.html",
+        "areaServed": "AR",
+        "knowsAbout": ["REPROCANN", "salud", "cannabis medicinal"],
+        "sameAs": []
+      },
+      {
+        "@type": "CollectionPage",
+        "name": "Portal de noticias médicas y salud cannábica",
+        "url": "https://www.trensarmiento.com.ar/mundo-cann.html",
+        "about": ["REPROCANN", "Ciencia", "Cultivo"],
+        "hasPart": [
+          {"@type": "NewsArticle", "headline": "REPROCANN 2025", "articleSection": "REPROCANN", "datePublished": "2026-05-16"},
+          {"@type": "NewsArticle", "headline": "CBD & Evidencia", "articleSection": "Ciencia", "datePublished": "2026-05-16"},
+          {"@type": "NewsArticle", "headline": "Cultivo medicinal basado en evidencia", "articleSection": "Cultivo", "datePublished": "2026-05-16"}
+        ]
+      }
+    ]
+  }
+  </script>
 </head>
 <body>
   <div class="container">
     <header class="topbar glass-card">
-      <div class="logo">Mundo <span>Cann</span></div>
-      <button class="cta" id="personalizeBtn">Activar Lectura Personalizada</button>
+      <nav class="site-menu" aria-label="Navegación principal REPROCANN">
+        <a href="/mundo-cann.html">Inicio</a>
+        <a href="/noticias/reprocann-actualizaciones.html">Noticias REPROCANN</a>
+        <a href="/noticias/ciencia-cannabis.html">Ciencia</a>
+        <a href="/noticias/cultivo-medicinal.html">Cultivo</a>
+      </nav>
+      <div class="logo playful-title"><span>Mundo</span><span>Cann</span></div>
+      <button class="cta cta-primary" id="personalizeBtn">Activar Lectura Personalizada</button>
     </header>
 
     <section class="hero-grid">
       <article class="hero-item glass-card">
         <span class="tag">Regulación</span>
-        <h3>REPROCANN 2025</h3>
+        <h3 class="playful-title"><span>REPROCANN</span> <span>2025</span></h3>
         <p>Nuevas validaciones y trazabilidad digital para pacientes, cultivadores y ONGs.</p>
       </article>
       <article class="hero-item hero-main glass-card">
         <div>
           <span class="tag">Noticia destacada</span>
-          <h1>Ecosistema cannábico con datos en tiempo real y enfoque científico</h1>
+          <h1 class="playful-title"><span>Ecosistema</span> <span>cannábico</span> <span>con</span> <span>datos</span> <span>en</span> <span>tiempo</span> <span>real</span></h1>
         </div>
         <p>Noticias, papers, tutoriales de cultivo y comunidad en una plataforma energética, moderna y centrada en UX.</p>
       </article>
       <article class="hero-item glass-card">
         <span class="tag" style="background: var(--accent-cyan)">Ciencia</span>
-        <h3>CBD & Evidencia</h3>
+        <h3 class="playful-title"><span>CBD</span> <span>&</span> <span>Evidencia</span></h3>
         <p>Resumen visual de papers clínicos, interacciones y nuevas líneas de investigación.</p>
       </article>
     </section>
 
     <h2 class="section-title">Secciones del ecosistema</h2>
-    <section class="cards-grid">
-      <article class="module-card glass-card culture"><h3>Noticias</h3><p>Regulación, políticas públicas, licencias y REPROCANN.</p></article>
-      <article class="module-card glass-card"><h3>Ciencia</h3><p>Papers, cannabinoides y dosificación basada en evidencia.</p></article>
-      <article class="module-card glass-card"><h3>Cultivo</h3><p>Tutoriales paso a paso, control de plagas y rendimiento indoor/outdoor.</p></article>
-      <article class="module-card glass-card"><h3>Industria</h3><p>Hemp business, inversiones y tendencias B2B.</p></article>
-      <article class="module-card glass-card"><h3>Foros comunitarios</h3><p>Debates por perfil: pacientes, growers, profesionales de salud y ONG.</p></article>
+    <section class="cards-grid news-grid-asymmetric">
+      <article class="module-card news-card glass-card hover-lift culture"><h3>Noticias</h3><p>Regulación, políticas públicas, licencias y REPROCANN.</p></article>
+      <article class="module-card news-card glass-card hover-lift"><h3>Ciencia</h3><p>Papers, cannabinoides y dosificación basada en evidencia.</p></article>
+      <article class="module-card news-card glass-card hover-lift"><h3>Cultivo</h3><p>Tutoriales paso a paso, control de plagas y rendimiento indoor/outdoor.</p></article>
+      <article class="module-card news-card glass-card hover-lift"><h3>Industria</h3><p>Hemp business, inversiones y tendencias B2B.</p></article>
+      <article class="module-card news-card glass-card hover-lift"><h3>Foros comunitarios</h3><p>Debates por perfil: pacientes, growers, profesionales de salud y ONG.</p></article>
     </section>
 
     <h2 class="section-title">Módulo Legal · REPROCANN 2025</h2>
@@ -204,6 +287,26 @@
       stagger: 0.08,
       ease: 'power2.out'
     });
+
+    const cursor = document.createElement('div');
+    cursor.className = 'splash-cursor';
+    document.body.appendChild(cursor);
+
+    window.addEventListener('pointermove', (event) => {
+      cursor.style.left = `${event.clientX}px`;
+      cursor.style.top = `${event.clientY}px`;
+    });
+
+    window.addEventListener('pointerdown', (event) => {
+      const splash = document.createElement('div');
+      splash.className = 'click-splash';
+      splash.style.left = `${event.clientX}px`;
+      splash.style.top = `${event.clientY}px`;
+      document.body.appendChild(splash);
+      setTimeout(() => splash.remove(), 650);
+    });
+
   </script>
+  <script src="webp-loader.js"></script>
 </body>
 </html>

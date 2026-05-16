@@ -26,12 +26,55 @@
     <input name="profesional_matricula" placeholder="Matrícula profesional"><br>
 
     <button type="submit">Generar PDF</button>
+  
+
+    <label>
+      Tipo de certificado
+      <select name="tipo_certificado" required>
+        <option value="">Seleccionar</option>
+        <option value="autocultivador">Autocultivador</option>
+        <option value="ong">ONG</option>
+        <option value="tercero">Tercero</option>
+      </select>
+    </label><br>
+    <input name="fecha_emision_certificado" type="date" required><br>
+
+    <h3>Consentimiento Informado Bilateral</h3>
+    <label><input type="checkbox" name="consentimiento_paciente" required> Aceptación del paciente</label><br>
+    <label><input type="checkbox" name="consentimiento_cuidador" required> Aceptación de cuidador/tercero</label><br>
+    <textarea name="consentimiento_texto" required placeholder="Texto de consentimiento informado"></textarea><br>
+    <input name="firma_digital_medico" required placeholder="Firma digital médica"><br>
+    <select name="tipo_firma_digital_medico" required>
+      <option value="">Tipo de firma digital médica</option>
+      <option value="firma_digital_cualificada">Firma digital cualificada</option>
+      <option value="firma_digital_remota">Firma digital remota</option>
+      <option value="firma_digital_token">Firma digital con token</option>
+    </select><br>
   </form>
 
+  <script src="./ReprocannEngine.js"></script>
   <script>
     document.getElementById("reprocannForm").onsubmit = e => {
       e.preventDefault();
       const data = Object.fromEntries(new FormData(e.target));
+
+      const validation = ReprocannEngine.validateRegistration({
+        profile: data.tipo_certificado,
+        issueDate: data.fecha_emision_certificado,
+        bilateralConsent: {
+          patientAccepted: Boolean(data.consentimiento_paciente),
+          caregiverAccepted: Boolean(data.consentimiento_cuidador),
+          informedText: data.consentimiento_texto,
+          medicalDigitalSignature: data.firma_digital_medico,
+          medicalSignatureType: data.tipo_firma_digital_medico,
+        },
+      });
+
+      if (!validation.isValid) {
+        alert(validation.consentValidation.errors.join("\n") || "El certificado está vencido.");
+        return;
+      }
+
       google.script.run
         .withSuccessHandler(url => window.open(url))
         .generarPDF(data);

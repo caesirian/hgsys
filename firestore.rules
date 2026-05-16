@@ -1,0 +1,47 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function validCategoriaArticulo() {
+      return request.resource.data.categoria in ['REPROCANN', 'Ciencia', 'Cultivo'];
+    }
+
+    // Colección raíz: articulos (noticias, papers, tutoriales)
+    match /articulos/{articuloId} {
+      allow read: if true;
+      allow create, update: if isAuthenticated()
+        && validCategoriaArticulo()
+        && request.resource.data.tipo in ['noticia', 'paper', 'tutorial'];
+      allow delete: if false;
+    }
+
+    // Colección raíz: foros + subcolección mensajes
+    match /foros/{foroId} {
+      allow read: if true;
+      allow create, update: if isAuthenticated();
+      allow delete: if false;
+
+      match /mensajes/{mensajeId} {
+        allow read: if true;
+        allow create: if isAuthenticated()
+          && request.resource.data.autorId == request.auth.uid;
+        allow update, delete: if false;
+      }
+    }
+
+    // Colección raíz: usuarios
+    match /usuarios/{userId} {
+      allow read: if isOwner(userId);
+      allow create, update: if isOwner(userId);
+      allow delete: if false;
+    }
+  }
+}

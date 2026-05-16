@@ -1,0 +1,46 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "articulos",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "tipo", "order": "ASCENDING" },
+        { "fieldPath": "categoria", "order": "ASCENDING" },
+        { "fieldPath": "fechaPublicacion", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "articulos",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "categoria", "order": "ASCENDING" },
+        { "fieldPath": "fechaPublicacion", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "articulos",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "categoria", "order": "ASCENDING" },
+        { "fieldPath": "fechaPublicacion", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "foros",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "categoria", "order": "ASCENDING" },
+        { "fieldPath": "ultimaActividad", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "mensajes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "foroId", "order": "ASCENDING" },
+        { "fieldPath": "fecha", "order": "DESCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}
