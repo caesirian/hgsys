@@ -1,209 +1,70 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mundo Cann | Ecosistema Informativo</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
-  <style>
-    :root {
-      --bg: #0A2846;
-      --card-culture: #6A0DAD;
-      --accent-lime: #C1FF72;
-      --accent-cyan: #00E5FF;
-      --text-main: #e7f3ff;
-      --text-soft: #b3ccde;
-      --glass: rgba(255, 255, 255, 0.08);
-      --glass-border: rgba(255, 255, 255, 0.16);
-      --radius-organic: 28px;
-      --shadow-tactile: 0 10px 30px rgba(0, 0, 0, 0.24);
-    }
-
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      background: radial-gradient(circle at 15% 10%, rgba(0, 229, 255, 0.12), transparent 38%),
-                  radial-gradient(circle at 82% 22%, rgba(193, 255, 114, 0.1), transparent 32%),
-                  var(--bg);
-      color: var(--text-main);
-      font-family: 'Inter', sans-serif;
-      min-height: 100vh;
-    }
-    h1,h2,h3 { font-family: 'Bricolage Grotesque', sans-serif; margin: 0; letter-spacing: .2px; }
-
-    .container { width: min(1200px, 92%); margin: 0 auto; padding: 24px 0 64px; }
-    .glass-card {
-      background: linear-gradient(145deg, rgba(255,255,255,0.12), rgba(255,255,255,0.05));
-      border: 1px solid var(--glass-border);
-      border-radius: var(--radius-organic);
-      backdrop-filter: blur(12px);
-      box-shadow: var(--shadow-tactile);
-    }
-
-    .topbar { display: flex; justify-content: space-between; align-items: center; gap: 14px; padding: 14px 18px; }
-    .logo { font-size: 1.1rem; font-weight: 800; }
-    .logo span { color: var(--accent-lime); }
-    .cta {
-      border: none;
-      color: #062235;
-      background: linear-gradient(95deg, var(--accent-lime), var(--accent-cyan));
-      border-radius: 999px;
-      padding: 11px 18px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: transform .25s ease, box-shadow .25s ease;
-    }
-    .cta:hover { transform: translateY(-4px) scale(1.02); box-shadow: 0 12px 18px rgba(0,229,255,0.25); }
-
-    .hero-grid {
-      margin-top: 24px;
-      display: grid;
-      grid-template-columns: 1fr 1.5fr 1fr;
-      gap: 16px;
-    }
-    .hero-item { padding: 18px; min-height: 180px; }
-    .hero-main {
-      grid-column: 2 / 3;
-      min-height: 320px;
-      display: grid;
-      align-content: space-between;
-      background: linear-gradient(160deg, rgba(106,13,173,0.85), rgba(10,40,70,0.65));
-    }
-    .tag { display: inline-block; color: #05243b; background: var(--accent-lime); padding: 6px 10px; border-radius: 999px; font-weight: 700; font-size: .8rem; }
-    .hero-main p, .hero-item p { color: var(--text-soft); }
-
-    .section-title { margin: 36px 0 14px; font-size: 1.3rem; }
-    .cards-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      gap: 16px;
-    }
-    .module-card {
-      padding: 18px;
-      transition: transform .28s ease, border-color .28s ease;
-      border: 1px solid rgba(255,255,255,0.13);
-    }
-    .module-card:hover {
-      transform: translateY(-7px);
-      border-color: var(--accent-cyan);
-    }
-    .module-card.culture { background: linear-gradient(150deg, rgba(106,13,173,0.5), rgba(106,13,173,0.16)); }
-
-    table { width: 100%; border-collapse: collapse; overflow: hidden; border-radius: 20px; }
-    th, td { padding: 12px 14px; text-align: left; }
-    th { background: rgba(0,229,255,0.14); }
-    tr:nth-child(even) td { background: rgba(255,255,255,0.04); }
-
-    .dashboard {
-      margin-top: 28px;
-      display: grid;
-      grid-template-columns: 1.2fr .8fr;
-      gap: 16px;
-    }
-    .metric {
-      padding: 20px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .metric strong { color: var(--accent-cyan); font-size: 1.3rem; }
-
-    @media (max-width: 920px) {
-      .hero-grid { grid-template-columns: 1fr; }
-      .hero-main { grid-column: auto; }
-      .dashboard { grid-template-columns: 1fr; }
-    }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Mundo Cann — Ecosistema Cannábico</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+:root{--bg:#0A2846;--bg2:#102F52;--card:#6A0DAD;--cyan:#00E5FF;--lime:#C1FF72;--text:#F5F7FA;--muted:#AFC2D3;--glass:rgba(255,255,255,.08);--border:rgba(255,255,255,.12);--radius:24px;--shadow:0 10px 30px rgba(0,0,0,.35)}
+body{background:radial-gradient(circle at 10% 8%,rgba(106,13,173,.3),transparent 34%),radial-gradient(circle at 74% 20%,rgba(193,255,114,.1),transparent 34%),radial-gradient(circle at 50% 70%,rgba(106,13,173,.24),transparent 44%),var(--bg);color:var(--text);font-family:'Inter',sans-serif;overflow-x:hidden}
+.bg-orb{position:fixed;border-radius:50%;filter:blur(100px);z-index:-1;opacity:.35}.orb1{width:500px;height:500px;background:#6A0DAD;top:-150px;left:-150px}.orb2{width:450px;height:450px;background:#00E5FF;bottom:-200px;right:-100px}.orb3{width:300px;height:300px;background:#C1FF72;top:40%;left:50%}
+header{position:sticky;top:0;z-index:999;backdrop-filter:blur(20px);background:rgba(10,40,70,.72);border-bottom:1px solid rgba(255,255,255,.08)}
+.header-container{max-width:1500px;margin:auto;padding:18px 30px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.logo{display:flex;align-items:center;gap:14px}.logo-icon{width:52px;height:52px;border-radius:18px;background:linear-gradient(135deg,#00E5FF,#6A0DAD);display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:0 0 25px rgba(0,229,255,.35)}
+.logo h1{font-family:'Bricolage Grotesque',sans-serif;font-size:1.5rem;letter-spacing:-1px;color:var(--lime)}
+.jump span{display:inline-block}.jump span:nth-child(odd){font-weight:800;transform:translateY(-3px) rotate(-1.4deg)}.jump span:nth-child(even){font-weight:500;transform:translateY(3px) rotate(1.3deg)}
+nav{display:flex;gap:12px}nav a{text-decoration:none;color:var(--text);padding:12px 18px;border-radius:18px;transition:.3s ease;font-weight:500}nav a:hover{background:rgba(255,255,255,.06);transform:translateY(-3px)}
+.header-actions{display:flex;align-items:center;gap:14px}.search{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.06);padding:12px 16px;border-radius:18px;width:240px;color:white;outline:none}
+.cta,.btn-primary{border:none;background:var(--lime);color:#0A2846;font-weight:700;padding:13px 20px;border-radius:18px;cursor:pointer;transition:.3s ease}.cta:hover,.btn:hover{transform:translateY(-4px) scale(1.03);box-shadow:0 12px 30px rgba(193,255,114,.35)}
+main{max-width:1500px;margin:auto;padding:30px}
+.card{position:relative;border-radius:var(--radius);overflow:hidden;background:linear-gradient(160deg,rgba(255,255,255,.12),rgba(255,255,255,.04));border:1px solid var(--border);backdrop-filter:blur(18px);box-shadow:var(--shadow);transition:.4s ease}.card:hover,.hover-lift:hover{transform:translateY(-8px) scale(1.01)}
+.hero-grid{display:grid;grid-template-columns:2fr 1fr 1fr;grid-template-rows:300px 300px;gap:22px}.hero-main{grid-row:span 2;position:relative}.hero-main::before{content:'';position:absolute;inset:0;background:linear-gradient(180deg,transparent,rgba(0,0,0,.75))}
+.hero-image{position:absolute;inset:0;background:url('https://images.unsplash.com/photo-1603909223429-69bb7101f420?q=80&w=1600&auto=format&fit=crop') center/cover}
+.hero-content{position:absolute;bottom:0;padding:38px;z-index:2}.tag{display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border-radius:999px;background:rgba(0,229,255,.14);border:1px solid rgba(0,229,255,.35);color:var(--cyan);font-size:.85rem;margin-bottom:20px}
+.hero-content h2,.section-title h2,.side-card h3,.news-body h3,.widget h3,.forum-card h3{font-family:'Bricolage Grotesque',sans-serif}
+.hero-content h2{font-size:3.1rem;line-height:1;max-width:700px;margin-bottom:18px}.hero-content p{color:#D5DFEA;max-width:600px;line-height:1.7;margin-bottom:24px}
+.hero-buttons{display:flex;gap:16px}.btn{padding:14px 20px;border-radius:18px;border:none;cursor:pointer;font-weight:700;transition:.3s ease}.btn-secondary{background:rgba(255,255,255,.08);color:white}
+.side-card{padding:28px;display:flex;flex-direction:column;justify-content:space-between}.side-card p{color:var(--muted);line-height:1.7}.side-card .mini-stat{margin-top:22px;display:flex;justify-content:space-between}
+.badge{padding:8px 12px;border-radius:999px;background:rgba(193,255,114,.14);border:1px solid rgba(193,255,114,.3);color:var(--lime);font-size:.8rem}
+.content-grid{margin-top:34px;display:grid;grid-template-columns:1.6fr .9fr;gap:24px}.section-title{display:flex;justify-content:space-between;align-items:center;margin-bottom:22px}
+.news-grid{display:grid;gap:22px;grid-template-columns:1.1fr 1fr;grid-auto-rows:1fr}.news-card{display:grid;grid-template-columns:280px 1fr;gap:20px;padding:20px}.news-grid .news-card:first-child{grid-column:1/3}
+.news-thumb{border-radius:22px;background:url('https://images.unsplash.com/photo-1536819114556-1e4f4f4b1c3e?q=80&w=1200&auto=format&fit=crop') center/cover;min-height:220px}.news-body{display:flex;flex-direction:column;justify-content:center}.news-body h3{font-size:2rem;line-height:1.1;margin-bottom:16px}.news-body p{color:var(--muted);line-height:1.8;margin-bottom:18px}
+.sidebar{display:flex;flex-direction:column;gap:22px}.widget{padding:24px}.widget h3{margin-bottom:20px;font-size:1.4rem}.widget-item{padding:16px 0;border-bottom:1px solid rgba(255,255,255,.06)}.widget-item:last-child{border-bottom:none}.widget-item p{color:var(--muted);font-size:.92rem;line-height:1.6}
+.live-dot{width:10px;height:10px;border-radius:50%;background:var(--lime);box-shadow:0 0 16px var(--lime);display:inline-block;margin-right:10px}
+.forum-grid{margin-top:30px;display:grid;grid-template-columns:repeat(3,1fr);gap:22px}.forum-card{padding:26px}.forum-card p{color:var(--muted);line-height:1.7;margin-bottom:18px}.forum-footer{display:flex;justify-content:space-between;align-items:center}
+footer{margin-top:80px;padding:40px 30px;border-top:1px solid rgba(255,255,255,.08);color:var(--muted)}
+.splash-cursor{position:fixed;width:16px;height:16px;border-radius:50%;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);border:2px solid rgba(193,255,114,.8);box-shadow:0 0 0 4px rgba(193,255,114,.12)}
+.click-splash{position:fixed;width:10px;height:10px;border-radius:999px;pointer-events:none;background:radial-gradient(circle,rgba(193,255,114,.65),rgba(106,13,173,.45) 45%,transparent 70%);transform:translate(-50%,-50%) scale(.1);animation:splash-pop .55s ease-out forwards;z-index:9998}@keyframes splash-pop{to{transform:translate(-50%,-50%) scale(9);opacity:0}}
+@media(max-width:1200px){.hero-grid{grid-template-columns:1fr;grid-template-rows:auto}.content-grid{grid-template-columns:1fr}.forum-grid{grid-template-columns:1fr}.news-grid{grid-template-columns:1fr}.news-grid .news-card:first-child{grid-column:auto}}
+@media(max-width:900px){nav,.header-actions{display:none}.hero-content h2{font-size:2.2rem}.news-card{grid-template-columns:1fr}}
+</style>
 </head>
 <body>
-  <div class="container">
-    <header class="topbar glass-card">
-      <div class="logo">Mundo <span>Cann</span></div>
-      <button class="cta" id="personalizeBtn">Activar Lectura Personalizada</button>
-    </header>
-
-    <section class="hero-grid">
-      <article class="hero-item glass-card">
-        <span class="tag">Regulación</span>
-        <h3>REPROCANN 2025</h3>
-        <p>Nuevas validaciones y trazabilidad digital para pacientes, cultivadores y ONGs.</p>
-      </article>
-      <article class="hero-item hero-main glass-card">
-        <div>
-          <span class="tag">Noticia destacada</span>
-          <h1>Ecosistema cannábico con datos en tiempo real y enfoque científico</h1>
-        </div>
-        <p>Noticias, papers, tutoriales de cultivo y comunidad en una plataforma energética, moderna y centrada en UX.</p>
-      </article>
-      <article class="hero-item glass-card">
-        <span class="tag" style="background: var(--accent-cyan)">Ciencia</span>
-        <h3>CBD & Evidencia</h3>
-        <p>Resumen visual de papers clínicos, interacciones y nuevas líneas de investigación.</p>
-      </article>
-    </section>
-
-    <h2 class="section-title">Secciones del ecosistema</h2>
-    <section class="cards-grid">
-      <article class="module-card glass-card culture"><h3>Noticias</h3><p>Regulación, políticas públicas, licencias y REPROCANN.</p></article>
-      <article class="module-card glass-card"><h3>Ciencia</h3><p>Papers, cannabinoides y dosificación basada en evidencia.</p></article>
-      <article class="module-card glass-card"><h3>Cultivo</h3><p>Tutoriales paso a paso, control de plagas y rendimiento indoor/outdoor.</p></article>
-      <article class="module-card glass-card"><h3>Industria</h3><p>Hemp business, inversiones y tendencias B2B.</p></article>
-      <article class="module-card glass-card"><h3>Foros comunitarios</h3><p>Debates por perfil: pacientes, growers, profesionales de salud y ONG.</p></article>
-    </section>
-
-    <h2 class="section-title">Módulo Legal · REPROCANN 2025</h2>
-    <section class="glass-card" style="padding: 10px;">
-      <table id="legalTable">
-        <thead>
-          <tr><th>Categoría</th><th>Validación</th><th>Vigencia</th><th>Estado</th></tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </section>
-
-    <section class="dashboard">
-      <article class="metric glass-card"><span>Contenido recomendado hoy</span><strong id="recCount">0</strong></article>
-      <article class="metric glass-card"><span>Alertas científicas activas</span><strong>12</strong></article>
-    </section>
-  </div>
-
-  <script type="module">
-    // Firebase-ready structure (replace with real config)
-    const reproData = [
-      { categoria: 'Autocultivador', validacion: 'Documento médico + domicilio', vigencia: '12 meses', estado: 'Activa' },
-      { categoria: 'Cultivo 3ra parte', validacion: 'Vínculo paciente-cultivador + consentimiento', vigencia: '12 meses', estado: 'Revisión' },
-      { categoria: 'ONG', validacion: 'Personería + nómina pacientes + protocolo', vigencia: '12 meses', estado: 'Activa' }
-    ];
-
-    const tbody = document.querySelector('#legalTable tbody');
-    reproData.forEach(row => {
-      const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${row.categoria}</td><td>${row.validacion}</td><td>${row.vigencia}</td><td>${row.estado}</td>`;
-      tbody.appendChild(tr);
-    });
-
-    const behaviorProfiles = {
-      ciencia: ['Nuevos papers CBD', 'Meta-análisis dolor crónico', 'Interacciones farmacológicas'],
-      cultivo: ['Guía VPD en indoor', 'Sustratos vivos', 'Plan nutricional vegetativo']
-    };
-
-    document.getElementById('personalizeBtn').addEventListener('click', () => {
-      const type = Math.random() > 0.5 ? 'ciencia' : 'cultivo';
-      const recs = behaviorProfiles[type];
-      document.getElementById('recCount').textContent = recs.length;
-      alert(`Perfil detectado: ${type.toUpperCase()}\nRecomendaciones:\n- ${recs.join('\n- ')}`);
-    });
-
-    gsap.from('.topbar, .hero-item, .module-card, .metric, table', {
-      y: 26,
-      opacity: 0,
-      duration: 0.8,
-      stagger: 0.08,
-      ease: 'power2.out'
-    });
-  </script>
+<div class="bg-orb orb1"></div><div class="bg-orb orb2"></div><div class="bg-orb orb3"></div>
+<header><div class="header-container"><div class="logo"><div class="logo-icon">🌿</div><h1 class="jump"><span>Mundo</span><span>Cann</span></h1></div><nav><a href="/noticias/reprocann-actualizaciones.html">Noticias</a><a href="/noticias/ciencia-cannabis.html">Ciencia</a><a href="/noticias/cultivo-medicinal.html">Cultivo</a><a href="#">Industria</a><a href="#">Foros</a></nav><div class="header-actions"><input type="text" class="search" placeholder="Buscar artículos..."><button class="cta">Comunidad</button></div></div></header>
+<main>
+<section class="hero-grid">
+<article class="hero-main card"><div class="hero-image"></div><div class="hero-content"><div class="tag">🔬 Ciencia & Regulación</div><h2 class="jump"><span>El</span> <span>futuro</span> <span>del</span> <span>cannabis</span> <span>medicinal</span> <span>en</span> <span>LATAM</span></h2><p>Noticias en tiempo real, regulación REPROCANN, papers científicos, cultivo inteligente y comunidad.</p><div class="hero-buttons"><button class="btn btn-primary">Explorar noticias</button><button class="btn btn-secondary">Ver regulación</button></div></div></article>
+<div class="side-card card hover-lift"><div><span class="badge">REPROCANN</span><h3>Validaciones 2026</h3><p>Estado de categorías, autorizaciones y novedades regulatorias.</p></div><div class="mini-stat"><strong>+142</strong><span>Actualizaciones</span></div></div>
+<div class="side-card card hover-lift"><div><span class="badge">CBD Papers</span><h3>Ciencia Cannábica</h3><p>Últimos estudios clínicos sobre cannabinoides, terpenos y neurociencia.</p></div><div class="mini-stat"><strong>+87</strong><span>Papers indexados</span></div></div>
+</section>
+<section class="content-grid"><div><div class="section-title"><h2>Noticias Destacadas</h2><span class="badge">LIVE FEED</span></div><div class="news-grid"><article class="news-card card hover-lift"><div class="news-thumb"></div><div class="news-body"><div class="tag">📜 Regulación</div><h3>Nuevos criterios de aprobación REPROCANN para 2026</h3><p>Actualizaciones regulatorias, validaciones, transporte y nuevas categorías de cultivo.</p><button class="btn btn-primary">Leer más</button></div></article><article class="news-card card hover-lift"><div class="news-thumb"></div><div class="news-body"><div class="tag">🌱 Cultivo</div><h3>Optimización de floración y engorde de cálices</h3><p>Técnicas avanzadas indoor para maximizar resina, biomasa y compuestos activos.</p><button class="btn btn-primary">Ver guía</button></div></article></div></div>
+<aside class="sidebar"><div class="widget card hover-lift"><h3><span class="live-dot"></span>Actualizaciones Live</h3><div class="widget-item"><h4>Cambios regulatorios</h4><p>Nuevas disposiciones REPROCANN publicadas.</p></div><div class="widget-item"><h4>Paper CBD</h4><p>Estudios recientes sobre ansiedad y sueño.</p></div><div class="widget-item"><h4>Comunidad</h4><p>Nuevos temas activos en foros.</p></div></div><div class="widget card hover-lift"><h3>Dashboard</h3><div class="widget-item"><h4>Usuarios Online</h4><p>2.845 activos ahora</p></div><div class="widget-item"><h4>Papers indexados</h4><p>12.421 documentos científicos</p></div><div class="widget-item"><h4>Guías de cultivo</h4><p>328 tutoriales publicados</p></div></div></aside></section>
+<section style="margin-top:60px;"><div class="section-title"><h2>Comunidad & Foros</h2><button class="btn btn-secondary">Ver todo</button></div><div class="forum-grid"><div class="forum-card card hover-lift"><div class="tag">Indoor</div><h3>LED y fotoperíodos</h3><p>Debate avanzado sobre PPFD, VPD y optimización lumínica.</p><div class="forum-footer"><span>184 respuestas</span><span class="badge">Trending</span></div></div><div class="forum-card card hover-lift"><div class="tag">Ciencia</div><h3>Sistema endocannabinoide</h3><p>Conversaciones científicas sobre receptores, neurotransmisores y terapias.</p><div class="forum-footer"><span>98 respuestas</span><span class="badge">Popular</span></div></div><div class="forum-card card hover-lift"><div class="tag">Industria</div><h3>Cáñamo industrial LATAM</h3><p>Biomateriales, textiles, bioplásticos y nuevas inversiones.</p><div class="forum-footer"><span>63 respuestas</span><span class="badge">Activo</span></div></div></div></section>
+</main>
+<footer><div style="max-width:1500px;margin:auto;display:flex;justify-content:space-between;flex-wrap:wrap;gap:20px;"><div><h3 style="font-family:'Bricolage Grotesque';margin-bottom:12px;">MundoCann</h3><p>Ecosistema digital cannábico de nueva generación.</p></div><div><p>© 2026 MundoCann — Todos los derechos reservados</p></div></div></footer>
+<script>
+gsap.from('.hero-main',{opacity:0,y:80,duration:1});gsap.from('.side-card',{opacity:0,y:40,stagger:.15,duration:1});gsap.from('.news-card',{opacity:0,y:40,stagger:.2,duration:1,delay:.4});gsap.from('.widget',{opacity:0,x:30,stagger:.2,duration:1,delay:.5});
+const cursor=document.createElement('div');cursor.className='splash-cursor';document.body.appendChild(cursor);
+window.addEventListener('pointermove',(e)=>{cursor.style.left=`${e.clientX}px`;cursor.style.top=`${e.clientY}px`;});
+window.addEventListener('pointerdown',(e)=>{const splash=document.createElement('div');splash.className='click-splash';splash.style.left=`${e.clientX}px`;splash.style.top=`${e.clientY}px`;document.body.appendChild(splash);setTimeout(()=>splash.remove(),650);});
+</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"CollectionPage","name":"Mundo Cann","about":["REPROCANN","Ciencia","Cultivo"],"inLanguage":"es-AR","url":"https://hgsolucionesweb.com.ar/mundo-cann.html"}</script>
 </body>
 </html>

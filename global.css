@@ -1,0 +1,89 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg-electric-navy: #0A2846;
+    --lime-neon: #C1FF72;
+  }
+
+  body {
+    @apply m-0 min-h-screen text-slate-100;
+    background:
+      radial-gradient(circle at 15% 10%, rgba(0, 229, 255, 0.12), transparent 38%),
+      radial-gradient(circle at 82% 22%, rgba(193, 255, 114, 0.10), transparent 32%),
+      var(--bg-electric-navy);
+  }
+}
+
+@layer components {
+  .cta-primary {
+    @apply rounded-full px-5 py-3 font-bold transition-all duration-300;
+    color: #062235;
+    background: var(--lime-neon);
+    box-shadow: 0 10px 26px rgba(193, 255, 114, 0.25);
+  }
+
+  .cta-primary:hover {
+    @apply -translate-y-1;
+    box-shadow: 0 18px 34px rgba(193, 255, 114, 0.35);
+  }
+
+  .glass-card {
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.05));
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    backdrop-filter: blur(14px);
+    @apply rounded-3xl shadow-2xl;
+  }
+
+  .hover-lift {
+    @apply transition-transform duration-300;
+  }
+
+  .hover-lift:hover {
+    transform: translateY(-10px) scale(1.015);
+  }
+
+  .news-grid-asymmetric {
+    @apply grid gap-4;
+    grid-template-columns: 1.1fr 1.4fr 1fr;
+    grid-auto-rows: minmax(170px, auto);
+  }
+
+  .news-grid-asymmetric .news-card:nth-child(1) {
+    grid-column: 1 / 2;
+    grid-row: span 2;
+  }
+
+  .news-grid-asymmetric .news-card:nth-child(2) {
+    grid-column: 2 / 3;
+    grid-row: span 1;
+  }
+
+  .news-grid-asymmetric .news-card:nth-child(3) {
+    grid-column: 3 / 4;
+    grid-row: span 2;
+  }
+
+  .news-grid-asymmetric .news-card:nth-child(4) {
+    grid-column: 2 / 3;
+    grid-row: span 2;
+  }
+
+  .news-grid-asymmetric .news-card:nth-child(5) {
+    grid-column: 1 / 2;
+    grid-row: span 1;
+  }
+
+  @media (max-width: 920px) {
+    .news-grid-asymmetric {
+      grid-template-columns: 1fr;
+    }
+
+    .news-grid-asymmetric .news-card {
+      grid-column: auto !important;
+      grid-row: auto !important;
+    }
+  }
+}
