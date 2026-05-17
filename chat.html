@@ -677,16 +677,59 @@
         <i class="fas fa-plug"></i>
     </button>
 
-    <script>
-        // Variables globales
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+        import {
+            getFirestore,
+            collection,
+            addDoc,
+            query,
+            orderBy,
+            limit,
+            onSnapshot,
+            serverTimestamp
+        } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+
+        // Reemplazar con tu proyecto Firebase
+        const firebaseConfig = {
+            apiKey: "REEMPLAZAR_API_KEY",
+            authDomain: "REEMPLAZAR_AUTH_DOMAIN",
+            projectId: "REEMPLAZAR_PROJECT_ID",
+            storageBucket: "REEMPLAZAR_STORAGE_BUCKET",
+            messagingSenderId: "REEMPLAZAR_MESSAGING_SENDER_ID",
+            appId: "REEMPLAZAR_APP_ID"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
         let chatOpen = false;
         let activeWindow = null;
         let isDragging = false;
         let dragOffset = { x: 0, y: 0 };
+        let unreadCount = 0;
+        let knownMessageIds = new Set();
 
-        // Inicialización cuando el DOM esté listo
+        const sanitizeText = (value, maxLength = 400) => value.replace(/[<>]/g, '').trim().slice(0, maxLength);
+
+        const renderMessage = (container, sender, text, isUser = false) => {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user' : 'other'}`;
+
+            const senderDiv = document.createElement('div');
+            senderDiv.className = 'message-sender';
+            senderDiv.textContent = sender;
+
+            const textDiv = document.createElement('div');
+            textDiv.className = 'message-text';
+            textDiv.textContent = text;
+
+            messageDiv.append(senderDiv, textDiv);
+            container.appendChild(messageDiv);
+        };
+
         document.addEventListener('DOMContentLoaded', function() {
-            // Configurar eventos del chat
             const toggleChatBtn = document.getElementById('toggleChat');
             const closeChatBtn = document.getElementById('closeChat');
             const chatWindow = document.getElementById('chatWindow');
@@ -694,238 +737,149 @@
             const sendMessageBtn = document.getElementById('sendMessage');
             const chatMessages = document.getElementById('chatMessages');
             const chatNotification = document.getElementById('chatNotification');
-            
-            // Configurar eventos de las ventanas flotantes
             const userNameInput = document.getElementById('userName');
             const ageRangeSelect = document.getElementById('ageRange');
             const busLineSelect = document.getElementById('busLine');
             const originInput = document.getElementById('origin');
             const destinationInput = document.getElementById('destination');
             const connectButton = document.getElementById('connectButton');
-            
-            // Mostrar/ocultar chat
+
+            chatMessages.innerHTML = '';
+            chatNotification.textContent = '0';
+            chatNotification.style.display = 'none';
+
+            const chatQuery = query(collection(db, 'foros'), orderBy('createdAt', 'asc'), limit(200));
+            onSnapshot(chatQuery, (snapshot) => {
+                chatMessages.innerHTML = '';
+                const previousIds = new Set(knownMessageIds);
+                knownMessageIds = new Set();
+
+                snapshot.forEach((docSnap) => {
+                    const data = docSnap.data();
+                    const sender = sanitizeText(data.sender || 'Anónimo', 40) || 'Anónimo';
+                    const text = sanitizeText(data.text || '');
+                    if (!text) return;
+
+                    const messageId = docSnap.id;
+                    knownMessageIds.add(messageId);
+                    const isOwn = messageId === window.lastSentMessageId;
+                    renderMessage(chatMessages, sender, text, isOwn);
+
+                    if (!chatOpen && !previousIds.has(messageId)) unreadCount += 1;
+                });
+
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+                if (unreadCount > 0 && !chatOpen) {
+                    chatNotification.textContent = String(unreadCount);
+                    chatNotification.style.display = 'flex';
+                }
+            });
+
             toggleChatBtn.addEventListener('click', function() {
                 chatOpen = !chatOpen;
                 if (chatOpen) {
                     chatWindow.classList.add('active');
+                    unreadCount = 0;
                     chatNotification.style.display = 'none';
                 } else {
                     chatWindow.classList.remove('active');
                 }
             });
-            
+
             closeChatBtn.addEventListener('click', function() {
                 chatOpen = false;
                 chatWindow.classList.remove('active');
             });
-            
-            // Enviar mensaje de chat
-            function sendMessage() {
-                const messageText = chatInput.value.trim();
-                if (messageText === '') return;
-                
-                const messageDiv = document.createElement('div');
-                messageDiv.className = 'message user';
-                messageDiv.innerHTML = `
-                    <div class="message-sender">Tú</div>
-                    <div class="message-text">${messageText}</div>
-                `;
-                
-                chatMessages.appendChild(messageDiv);
+
+            async function sendMessage() {
+                const rawMessage = chatInput.value;
+                const messageText = sanitizeText(rawMessage);
+                if (!messageText) return;
+
+                const senderName = sanitizeText(userNameInput.value, 40) || 'Anónimo';
+                const docRef = await addDoc(collection(db, 'foros'), {
+                    sender: senderName,
+                    text: messageText,
+                    createdAt: serverTimestamp()
+                });
+
+                window.lastSentMessageId = docRef.id;
                 chatInput.value = '';
-                
-                // Auto-scroll al último mensaje
-                chatMessages.scrollTop = chatMessages.scrollHeight;
-                
-                // Simular respuesta automática después de 1 segundo
-                setTimeout(() => {
-                    const responses = [
-                        "¡Interesante!",
-                        "¿Alguien más tiene algo que agregar?",
-                        "Me gusta esa idea",
-                        "¿En qué parada estamos?"
-                    ];
-                    
-                    const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-                    const responseDiv = document.createElement('div');
-                    responseDiv.className = 'message other';
-                    responseDiv.innerHTML = `
-                        <div class="message-sender">Viajero</div>
-                        <div class="message-text">${randomResponse}</div>
-                    `;
-                    
-                    chatMessages.appendChild(responseDiv);
-                    chatMessages.scrollTop = chatMessages.scrollHeight;
-                    
-                    // Actualizar notificación
-                    const currentCount = parseInt(chatNotification.textContent);
-                    chatNotification.textContent = currentCount + 1;
-                    chatNotification.style.display = 'flex';
-                }, 1000);
             }
-            
-            sendMessageBtn.addEventListener('click', sendMessage);
-            
-            chatInput.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    sendMessage();
-                }
-            });
-            
-            // Actualizar información en tiempo real
+
+            sendMessageBtn.addEventListener('click', () => sendMessage().catch(console.error));
+            chatInput.addEventListener('keypress', function(e) { if (e.key === 'Enter') sendMessage().catch(console.error); });
+
             userNameInput.addEventListener('input', function() {
-                const currentNameElement = document.getElementById('currentName');
-                if (userNameInput.value.trim() === '') {
-                    currentNameElement.textContent = 'Anónimo';
-                } else {
-                    currentNameElement.textContent = userNameInput.value;
-                }
+                document.getElementById('currentName').textContent = userNameInput.value.trim() || 'Anónimo';
             });
-            
             ageRangeSelect.addEventListener('change', function() {
-                const currentAgeElement = document.getElementById('currentAge');
                 const selectedOption = ageRangeSelect.options[ageRangeSelect.selectedIndex];
-                
-                if (selectedOption.value === '') {
-                    currentAgeElement.textContent = 'No especificado';
-                } else {
-                    currentAgeElement.textContent = selectedOption.text;
-                }
+                document.getElementById('currentAge').textContent = selectedOption.value === '' ? 'No especificado' : selectedOption.text;
             });
-            
             busLineSelect.addEventListener('change', function() {
-                const currentLineElement = document.getElementById('currentLine');
-                currentLineElement.textContent = busLineSelect.options[busLineSelect.selectedIndex].text;
+                document.getElementById('currentLine').textContent = busLineSelect.options[busLineSelect.selectedIndex].text;
             });
-            
             originInput.addEventListener('input', updateRouteDisplay);
             destinationInput.addEventListener('input', updateRouteDisplay);
-            
             function updateRouteDisplay() {
                 const origin = originInput.value.trim();
                 const destination = destinationInput.value.trim();
                 const currentRouteElement = document.getElementById('currentRoute');
-                
-                if (origin === '' && destination === '') {
-                    currentRouteElement.textContent = 'No especificado';
-                } else if (origin === '') {
-                    currentRouteElement.textContent = `→ ${destination}`;
-                } else if (destination === '') {
-                    currentRouteElement.textContent = `${origin} →`;
-                } else {
-                    currentRouteElement.textContent = `${origin} → ${destination}`;
-                }
+                if (origin === '' && destination === '') currentRouteElement.textContent = 'No especificado';
+                else if (origin === '') currentRouteElement.textContent = `→ ${destination}`;
+                else if (destination === '') currentRouteElement.textContent = `${origin} →`;
+                else currentRouteElement.textContent = `${origin} → ${destination}`;
             }
-            
-            // Configurar botón de conexión
+
             connectButton.addEventListener('click', function() {
-                // Obtener datos de todas las ventanas
-                const userData = {
-                    name: userNameInput.value || 'Anónimo',
-                    ageRange: ageRangeSelect.value ? ageRangeSelect.options[ageRangeSelect.selectedIndex].text : 'No especificado',
-                    line: busLineSelect.options[busLineSelect.selectedIndex].text,
-                    route: document.getElementById('currentRoute').textContent
-                };
-                
-                // Cambiar estado del botón
-                connectButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-                connectButton.style.background = 'linear-gradient(135deg, #28ca42 0%, #1e7e34 100%)';
-                
-                // Simular conexión
-                setTimeout(() => {
-                    // Mostrar mensaje en el chat
-                    const connectionMessage = document.createElement('div');
-                    connectionMessage.className = 'message other';
-                    connectionMessage.innerHTML = `
-                        <div class="message-sender">Sistema</div>
-                        <div class="message-text">${userData.name} se ha unido al viaje ${userData.line}</div>
-                    `;
-                    
-                    chatMessages.appendChild(connectionMessage);
-                    chatMessages.scrollTop = chatMessages.scrollHeight;
-                    
-                    // Restaurar botón
-                    connectButton.innerHTML = '<i class="fas fa-check"></i>';
-                    
-                    // Cambiar a estado "conectado" por 2 segundos
-                    setTimeout(() => {
-                        connectButton.innerHTML = '<i class="fas fa-plug"></i>';
-                        connectButton.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
-                    }, 2000);
-                }, 1500);
+                connectButton.innerHTML = '<i class="fas fa-check"></i>';
+                setTimeout(() => { connectButton.innerHTML = '<i class="fas fa-plug"></i>'; }, 1200);
             });
-            
-            // Hacer ventanas arrastrables
+
             const windows = document.querySelectorAll('.floating-window');
             const windowHeaders = document.querySelectorAll('.window-header');
-            
-            windowHeaders.forEach(header => {
-                header.addEventListener('mousedown', startDrag);
-            });
-            
+            windowHeaders.forEach(header => header.addEventListener('mousedown', startDrag));
             function startDrag(e) {
                 if (e.target.classList.contains('window-control')) return;
-                
                 activeWindow = this.parentElement;
                 isDragging = true;
-                
                 const rect = activeWindow.getBoundingClientRect();
                 dragOffset.x = e.clientX - rect.left;
                 dragOffset.y = e.clientY - rect.top;
-                
                 document.addEventListener('mousemove', drag);
                 document.addEventListener('mouseup', stopDrag);
-                
-                // Traer al frente la ventana activa
-                windows.forEach(window => {
-                    window.style.zIndex = '10';
-                });
+                windows.forEach(window => { window.style.zIndex = '10'; });
                 activeWindow.style.zIndex = '100';
-                
                 e.preventDefault();
             }
-            
             function drag(e) {
                 if (!isDragging || !activeWindow) return;
-                
                 const x = e.clientX - dragOffset.x;
                 const y = e.clientY - dragOffset.y;
-                
-                // Limitar movimiento dentro de la ventana
                 const maxX = window.innerWidth - activeWindow.offsetWidth;
                 const maxY = window.innerHeight - activeWindow.offsetHeight;
-                
                 activeWindow.style.left = Math.max(0, Math.min(x, maxX)) + 'px';
-                activeWindow.style.top = Math.max(60, Math.min(y, maxY)) + 'px'; // 60px es la altura de la barra de chat
+                activeWindow.style.top = Math.max(60, Math.min(y, maxY)) + 'px';
             }
-            
             function stopDrag() {
                 isDragging = false;
                 activeWindow = null;
                 document.removeEventListener('mousemove', drag);
                 document.removeEventListener('mouseup', stopDrag);
             }
-            
-            // Control de ventanas (minimizar, maximizar, cerrar)
+
             const windowControls = document.querySelectorAll('.window-control');
-            
             windowControls.forEach(control => {
                 control.addEventListener('click', function() {
                     const window = this.closest('.floating-window');
-                    
                     if (this.classList.contains('close-btn')) {
-                        // Efecto de cerrar ventana
                         window.style.transform = 'scale(0.8)';
                         window.style.opacity = '0';
-                        
-                        setTimeout(() => {
-                            window.style.display = 'none';
-                        }, 300);
+                        setTimeout(() => { window.style.display = 'none'; }, 300);
                     } else if (this.classList.contains('minimize-btn')) {
-                        // Efecto de minimizar ventana
                         const content = window.querySelector('.window-content');
                         const dragIndicator = window.querySelector('.drag-indicator');
-                        
                         if (content.style.display === 'none') {
                             content.style.display = 'block';
                             dragIndicator.style.display = 'flex';
@@ -936,42 +890,20 @@
                             window.style.height = window.querySelector('.window-header').offsetHeight + 'px';
                         }
                     } else if (this.classList.contains('maximize-btn')) {
-                        // Efecto de maximizar ventana
                         if (window.style.width === '90vw' && window.style.height === '80vh') {
-                            window.style.width = '';
-                            window.style.height = '';
-                            window.style.left = '';
-                            window.style.top = '';
-                            window.style.transform = '';
+                            window.style.width = ''; window.style.height = ''; window.style.left = ''; window.style.top = ''; window.style.transform = '';
                         } else {
-                            window.style.width = '90vw';
-                            window.style.height = '80vh';
-                            window.style.left = '5vw';
-                            window.style.top = '15vh';
-                            window.style.transform = 'translate(0, 0)';
+                            window.style.width = '90vw'; window.style.height = '80vh'; window.style.left = '5vw'; window.style.top = '15vh'; window.style.transform = 'translate(0, 0)';
                         }
                     }
                 });
             });
-            
-            // Configurar valores por defecto
+
             originInput.value = 'Plaza Italia';
             destinationInput.value = 'Puente Saavedra';
             updateRouteDisplay();
-            
-            // Simular actividad inicial en el chat
-            setTimeout(() => {
-                const welcomeMessage = document.createElement('div');
-                welcomeMessage.className = 'message other';
-                welcomeMessage.innerHTML = `
-                    <div class="message-sender">Sistema</div>
-                    <div class="message-text">¡Bienvenido a Viaje Conectado! Completa tus datos y únete al chat.</div>
-                `;
-                
-                chatMessages.appendChild(welcomeMessage);
-                chatMessages.scrollTop = chatMessages.scrollHeight;
-            }, 1000);
         });
     </script>
+
 </body>
 </html>
