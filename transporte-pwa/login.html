@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Transporte Colaborativo - Login</title>
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="stylesheet" href="./css/styles.css" />
+  </head>
+  <body>
+    <main class="auth-layout">
+      <section class="panel">
+        <h1>Transporte Colaborativo</h1>
+        <p>Iniciá sesión para reportar eventos y consultar el estado en tiempo real.</p>
+        <button id="google-login" class="btn-primary">Ingresar con Google</button>
+        <p id="auth-feedback" class="muted"></p>
+      </section>
+    </main>
+
+    <script type="module" src="./js/firebase.js"></script>
+    <script type="module" src="./js/login.js"></script>
+  </body>
+</html>

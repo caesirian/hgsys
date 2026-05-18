@@ -1,0 +1,8 @@
+{
+  "name": "Transporte Colaborativo",
+  "short_name": "Transporte",
+  "start_url": "./login.html",
+  "display": "standalone",
+  "background_color": "#0b1220",
+  "theme_color": "#0f1729"
+}
