@@ -37,6 +37,13 @@ service cloud.firestore {
       }
     }
 
+
+    // Colección raíz: eventos (transporte colaborativo)
+    match /eventos/{eventoId} {
+      allow read, create: if isAuthenticated();
+      allow update, delete: if false;
+    }
+
     // Colección raíz: usuarios
     match /usuarios/{userId} {
       allow read: if isOwner(userId);
