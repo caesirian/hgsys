@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Transporte Colaborativo - Reportes</title>
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="stylesheet" href="./css/styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <h1>Panel de Reportes</h1>
+      <nav>
+        <a href="./estado.html">Estado actual</a>
+        <button id="logout" class="btn-secondary">Cerrar sesión</button>
+      </nav>
+    </header>
+
+    <main class="layout-grid">
+      <section class="panel">
+        <h2>Informe de Evento</h2>
+        <form id="evento-form">
+          <label for="tipoEvento">Tipo de evento</label>
+          <select id="tipoEvento" name="tipoEvento" required>
+            <option value="">Seleccioná una opción</option>
+            <option value="retraso_importante">Retraso importante</option>
+            <option value="afluencia_alta">Afluencia alta</option>
+            <option value="accidente">Accidente</option>
+            <option value="servicio_normal">Servicio normal</option>
+          </select>
+
+          <label for="latitud">Latitud</label>
+          <input id="latitud" name="latitud" type="text" readonly required />
+
+          <label for="longitud">Longitud</label>
+          <input id="longitud" name="longitud" type="text" readonly required />
+
+          <button type="button" id="gps-btn" class="btn-secondary">Capturar ubicación</button>
+          <button type="submit" class="btn-primary">Enviar reporte</button>
+        </form>
+        <p id="form-feedback" class="muted"></p>
+      </section>
+    </main>
+
+    <script type="module" src="./js/firebase.js"></script>
+    <script type="module" src="./js/index.js"></script>
+  </body>
+</html>
