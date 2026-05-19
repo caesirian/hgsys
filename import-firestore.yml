@@ -1,0 +1,32 @@
+name: Importar Tren Sarmiento → Firestore
+
+on:
+  # Ejecutar manualmente desde la pestaña Actions de GitHub
+  workflow_dispatch:
+
+  # Opcional: ejecutar automáticamente al hacer push a main
+  # push:
+  #   branches: [main]
+  #   paths:
+  #     - 'import.js'
+
+jobs:
+  importar-firestore:
+    name: 🚆 Importar horarios a Firestore
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Clonar repositorio
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Configurar Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: 📦 Instalar dependencias
+        run: npm install
+
+      - name: 🚆 Ejecutar importación a Firestore
+        run: node import.js

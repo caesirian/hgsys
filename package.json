@@ -1,0 +1,13 @@
+{
+  "name": "tren-sarmiento-firestore-import",
+  "version": "1.0.0",
+  "description": "Importación de horarios del Tren Sarmiento a Firestore",
+  "main": "import.js",
+  "type": "module",
+  "scripts": {
+    "import": "node import.js"
+  },
+  "dependencies": {
+    "firebase": "^10.12.0"
+  }
+}
