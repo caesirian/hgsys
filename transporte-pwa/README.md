@@ -27,5 +27,5 @@ Luego abrí:
 
 ## Sobre conflictos de fusión
 Para reducir conflictos, este módulo vive aislado en `transporte-pwa/` y no requiere cambios adicionales fuera de:
-- `firestore.rules` (regla de colección `eventos`)
-- `.gitignore` (evita subir dependencias locales)
+- configuración de Firebase Console (Auth + Firestore)
+- carpeta aislada `transporte-pwa/` sin tocar archivos raíz

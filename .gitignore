@@ -1,6 +1,0 @@
-
-# Local dependencies (do not commit)
-gun-peer/node_modules/
-
-# Firebase local override for Transporte PWA
-transporte-pwa/.env.local
