@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Noticias · Tren Sarmiento En Línea</title>
+  <meta name="description" content="Últimas noticias del Tren Sarmiento. Novedades, alertas y actualizaciones del servicio ferroviario Once–Moreno."/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg:       #060f1e;
+      --navy:     #081628;
+      --card:     #0d1f38;
+      --card2:    #112040;
+      --border:   rgba(255,255,255,0.07);
+      --border2:  rgba(0,168,255,0.2);
+      --text:     #f0f4ff;
+      --muted:    #7a9cc0;
+      --celeste:  #00a8ff;
+      --blue:     #0057ff;
+      --green:    #00e676;
+      --yellow:   #ffd600;
+      --red:      #ff1744;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: "Inter", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+
+    /* ── Fondo animado ── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background:
+        radial-gradient(ellipse 60% 40% at 80% 10%, rgba(0,168,255,0.09), transparent),
+        radial-gradient(ellipse 50% 50% at 10% 80%, rgba(0,87,255,0.07), transparent);
+    }
+
+    /* ── Header ── */
+    .site-header {
+      background: rgba(8,22,40,0.96);
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(12px);
+      position: sticky; top: 0; z-index: 100;
+      padding: 14px 20px;
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    }
+    .header-brand {
+      display: flex; align-items: center; gap: 10px;
+      text-decoration: none; color: inherit;
+    }
+    .header-brand-icon {
+      font-size: 22px; line-height: 1;
+    }
+    .header-brand-text {
+      font-size: 14px; font-weight: 800; color: #fff;
+      letter-spacing: -.2px; line-height: 1.2;
+    }
+    .header-brand-text span {
+      display: block; font-size: 10px; font-weight: 500;
+      color: var(--muted); letter-spacing: .5px; text-transform: uppercase;
+    }
+    .header-back {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 13px; font-weight: 600; color: var(--celeste);
+      text-decoration: none; transition: opacity .18s;
+    }
+    .header-back:hover { opacity: .75; }
+
+    /* ── Wrap ── */
+    .wrap {
+      max-width: 860px; margin: 0 auto;
+      padding: 36px 18px 72px;
+      position: relative; z-index: 1;
+    }
+
+    /* ── Hero ── */
+    .hero {
+      margin-bottom: 36px;
+    }
+    .hero-eyebrow {
+      display: inline-flex; align-items: center; gap: 7px;
+      background: rgba(0,168,255,0.1); border: 1px solid rgba(0,168,255,0.25);
+      border-radius: 20px; padding: 5px 14px;
+      font-size: 11px; font-weight: 700; color: var(--celeste);
+      letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 16px;
+    }
+    .hero h1 {
+      font-size: clamp(28px, 5vw, 42px);
+      font-weight: 800; letter-spacing: -.5px; line-height: 1.15;
+      margin-bottom: 10px;
+    }
+    .hero h1 span { color: var(--celeste); }
+    .hero-sub {
+      font-size: 15px; color: var(--muted); max-width: 500px;
+    }
+
+    /* ── Filtro/buscador ── */
+    .search-bar {
+      display: flex; gap: 10px; margin-bottom: 28px; flex-wrap: wrap;
+    }
+    .search-input-wrap {
+      flex: 1; min-width: 200px; position: relative;
+    }
+    .search-input-wrap::before {
+      content: '🔍'; position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+      font-size: 14px; pointer-events: none;
+    }
+    .search-input {
+      width: 100%; background: var(--card); border: 1px solid var(--border);
+      border-radius: 12px; padding: 11px 14px 11px 40px;
+      font-family: inherit; font-size: 14px; color: var(--text); outline: none;
+      transition: border-color .18s;
+    }
+    .search-input:focus { border-color: var(--celeste); }
+    .search-input::placeholder { color: var(--muted); }
+
+    /* ── Contador ── */
+    .results-info {
+      font-size: 13px; color: var(--muted); margin-bottom: 20px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .results-info strong { color: var(--celeste); }
+
+    /* ── Grid de noticias ── */
+    .news-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 18px;
+    }
+
+    /* Noticia destacada (primera) */
+    .news-grid .news-card:first-child {
+      grid-column: 1 / -1;
+    }
+
+    /* ── Card noticia ── */
+    .news-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      overflow: hidden;
+      transition: transform .2s, border-color .2s, box-shadow .2s;
+      cursor: pointer;
+      display: flex; flex-direction: column;
+      animation: cardIn .35s ease both;
+    }
+    .news-card:hover {
+      transform: translateY(-3px);
+      border-color: var(--border2);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.4), 0 0 0 1px rgba(0,168,255,0.1);
+    }
+    @keyframes cardIn {
+      from { opacity:0; transform: translateY(12px); }
+      to   { opacity:1; transform: translateY(0); }
+    }
+
+    /* Card imagen */
+    .card-img {
+      width: 100%; aspect-ratio: 16/9; object-fit: cover;
+      display: block; background: var(--card2);
+      transition: opacity .2s;
+    }
+    .card-no-img {
+      width: 100%; aspect-ratio: 16/9;
+      background: linear-gradient(135deg, var(--card2), #0a1e3d);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 40px; color: rgba(255,255,255,0.1);
+    }
+    /* Imagen destacada más alta */
+    .news-card:first-child .card-img,
+    .news-card:first-child .card-no-img {
+      aspect-ratio: 21/9;
+    }
+
+    /* Card body */
+    .card-body {
+      padding: 18px 18px 20px;
+      display: flex; flex-direction: column; flex: 1;
+    }
+    .card-meta {
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 10px; flex-wrap: wrap;
+    }
+    .card-date {
+      font-size: 11px; font-weight: 600; color: var(--muted);
+      letter-spacing: .3px;
+      display: flex; align-items: center; gap: 4px;
+    }
+    .card-badge {
+      font-size: 10px; font-weight: 700; letter-spacing: .8px;
+      text-transform: uppercase;
+      background: rgba(0,168,255,0.12); color: var(--celeste);
+      border: 1px solid rgba(0,168,255,0.2);
+      border-radius: 20px; padding: 2px 9px;
+    }
+    .card-badge.destacada {
+      background: rgba(255,214,0,0.12); color: var(--yellow);
+      border-color: rgba(255,214,0,0.25);
+    }
+    .card-title {
+      font-size: 17px; font-weight: 800; line-height: 1.3;
+      margin-bottom: 10px; letter-spacing: -.2px;
+      color: #fff;
+    }
+    /* Título más grande en la destacada */
+    .news-card:first-child .card-title {
+      font-size: clamp(18px, 3vw, 26px);
+    }
+    .card-excerpt {
+      font-size: 13px; color: var(--muted); line-height: 1.65;
+      display: -webkit-box; -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical; overflow: hidden;
+      flex: 1; margin-bottom: 14px;
+    }
+    .news-card:first-child .card-excerpt { -webkit-line-clamp: 4; }
+    .card-footer {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-top: auto; padding-top: 14px;
+      border-top: 1px solid var(--border);
+    }
+    .card-read-more {
+      font-size: 13px; font-weight: 700; color: var(--celeste);
+      display: flex; align-items: center; gap: 5px;
+      transition: gap .18s;
+    }
+    .news-card:hover .card-read-more { gap: 8px; }
+    .card-piedefoto {
+      font-size: 11px; color: var(--muted); font-style: italic;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      max-width: 55%;
+    }
+
+    /* ── Modal noticia completa ── */
+    .modal-overlay {
+      position: fixed; inset: 0; z-index: 200;
+      background: rgba(4,10,22,0.93);
+      backdrop-filter: blur(8px);
+      display: flex; align-items: flex-start; justify-content: center;
+      padding: 20px 16px 40px;
+      overflow-y: auto;
+      opacity: 0; pointer-events: none;
+      transition: opacity .25s;
+    }
+    .modal-overlay.open { opacity: 1; pointer-events: all; }
+    .modal {
+      background: var(--card);
+      border: 1px solid var(--border2);
+      border-radius: 22px;
+      width: 100%; max-width: 720px;
+      overflow: hidden;
+      transform: translateY(20px);
+      transition: transform .25s;
+      margin-top: 10px;
+    }
+    .modal-overlay.open .modal { transform: translateY(0); }
+    .modal-img {
+      width: 100%; aspect-ratio: 16/9;
+      object-fit: cover; display: block; background: var(--card2);
+    }
+    .modal-no-img {
+      width: 100%; aspect-ratio: 16/9;
+      background: linear-gradient(135deg, var(--card2), #0a1e3d);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 60px; color: rgba(255,255,255,0.08);
+    }
+    .modal-body { padding: 26px 24px 32px; }
+    .modal-meta {
+      display: flex; align-items: center; gap: 12px;
+      margin-bottom: 14px; flex-wrap: wrap;
+    }
+    .modal-date {
+      font-size: 12px; font-weight: 600; color: var(--muted);
+    }
+    .modal-title {
+      font-size: clamp(20px, 4vw, 30px);
+      font-weight: 800; letter-spacing: -.3px; line-height: 1.2;
+      margin-bottom: 16px; color: #fff;
+    }
+    .modal-piedefoto {
+      font-size: 12px; color: var(--muted); font-style: italic;
+      margin-bottom: 20px; padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .modal-content {
+      font-size: 15px; line-height: 1.8; color: #c8d8f0;
+      white-space: pre-wrap;
+    }
+    .modal-close {
+      position: absolute; top: 18px; right: 18px;
+      background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.1);
+      color: #fff; border-radius: 50%; width: 36px; height: 36px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; font-size: 16px; font-weight: 700;
+      transition: background .18s; z-index: 10;
+    }
+    .modal-close:hover { background: rgba(255,23,68,0.4); }
+    .modal-wrapper { position: relative; }
+
+    /* ── Loading ── */
+    .loading-wrap {
+      display: flex; flex-direction: column; align-items: center;
+      gap: 14px; padding: 60px 20px; color: var(--muted);
+    }
+    .spinner {
+      width: 36px; height: 36px; border-radius: 50%;
+      border: 3px solid var(--border);
+      border-top-color: var(--celeste);
+      animation: spin .7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-txt { font-size: 13px; letter-spacing: .3px; }
+
+    /* ── Vacío ── */
+    .empty-wrap {
+      text-align: center; padding: 60px 20px; color: var(--muted);
+    }
+    .empty-icon { font-size: 48px; margin-bottom: 12px; }
+    .empty-txt  { font-size: 14px; }
+
+    /* ── Footer ── */
+    .site-footer {
+      background: var(--navy); border-top: 1px solid var(--border);
+      text-align: center; padding: 20px;
+      font-size: 12px; color: var(--muted);
+      position: relative; z-index: 1;
+    }
+    .site-footer a { color: var(--celeste); text-decoration: none; }
+
+    @media(max-width: 600px) {
+      .news-grid { grid-template-columns: 1fr; }
+      .news-card:first-child { grid-column: 1; }
+      .modal-body { padding: 18px 16px 24px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Header -->
+<header class="site-header">
+  <a class="header-brand" href="https://trensarmientoenlinea.com.ar">
+    <div class="header-brand-icon">🚆</div>
+    <div class="header-brand-text">
+      Tren Sarmiento En Línea
+      <span>Ramal Once – Moreno</span>
+    </div>
+  </a>
+  <a class="header-back" href="https://trensarmientoenlinea.com.ar">
+    ← Volver al inicio
+  </a>
+</header>
+
+<!-- Contenido -->
+<div class="wrap">
+
+  <!-- Hero -->
+  <div class="hero">
+    <div class="hero-eyebrow">📰 Últimas novedades</div>
+    <h1>Noticias del <span>Tren Sarmiento</span></h1>
+    <p class="hero-sub">Novedades, alertas y actualizaciones del servicio ferroviario Once–Moreno.</p>
+  </div>
+
+  <!-- Buscador -->
+  <div class="search-bar">
+    <div class="search-input-wrap">
+      <input class="search-input" type="text" id="searchInput" placeholder="Buscar en las noticias…"/>
+    </div>
+  </div>
+
+  <!-- Contador resultados -->
+  <div class="results-info" id="resultsInfo" style="display:none">
+    <strong id="resultsCount">0</strong> resultado/s para "<span id="resultsQuery"></span>"
+    · <a href="#" onclick="clearSearch()" style="color:var(--celeste);text-decoration:none">Limpiar</a>
+  </div>
+
+  <!-- Grid noticias -->
+  <div id="newsGrid">
+    <div class="loading-wrap">
+      <div class="spinner"></div>
+      <div class="loading-txt">Cargando noticias…</div>
+    </div>
+  </div>
+
+</div><!-- /wrap -->
+
+<!-- Modal -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+  <div class="modal-wrapper">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div class="modal">
+      <div id="modalImgWrap"></div>
+      <div class="modal-body">
+        <div class="modal-meta">
+          <div class="modal-date" id="modalDate"></div>
+          <div class="card-badge" id="modalBadge" style="display:none">Destacada</div>
+        </div>
+        <div class="modal-title" id="modalTitle"></div>
+        <div class="modal-piedefoto" id="modalPieDeFoto" style="display:none"></div>
+        <div class="modal-content" id="modalContent"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Footer -->
+<footer class="site-footer">
+  <a href="https://trensarmientoenlinea.com.ar">Tren Sarmiento En Línea</a> · República Argentina · 2026
+</footer>
+
+<!-- Firebase -->
+<script type="module">
+  import { initializeApp }
+    from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getFirestore, collection, query, orderBy, where, onSnapshot }
+    from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey:            "AIzaSyAZ83BcBLEvVJ1G7hFvI_cqhLSKJpRsH7c",
+    authDomain:        "tren-sarmiento-en-linea.firebaseapp.com",
+    projectId:         "tren-sarmiento-en-linea",
+    storageBucket:     "tren-sarmiento-en-linea.firebasestorage.app",
+    messagingSenderId: "712333767897",
+    appId:             "1:712333767897:web:c9557e3f2299c9806dfac8"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db  = getFirestore(app);
+
+  let _todas = [];   // cache completo
+  let _query = '';   // búsqueda activa
+
+  // Escuchar noticias publicadas, orden por fechaMs desc
+  const q = query(
+    collection(db, "noticias"),
+    where("publicado", "==", true),
+    orderBy("fechaMs", "desc")
+  );
+
+  onSnapshot(q, snap => {
+    _todas = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    render(_query);
+  }, err => {
+    document.getElementById("newsGrid").innerHTML = `
+      <div class="empty-wrap">
+        <div class="empty-icon">❌</div>
+        <div class="empty-txt">No se pudieron cargar las noticias.<br><small style="opacity:.6">${err.message}</small></div>
+      </div>`;
+  });
+
+  // ── Render ────────────────────────────────────────────────
+  function render(busqueda = '') {
+    const grid = document.getElementById("newsGrid");
+    const info = document.getElementById("resultsInfo");
+
+    let lista = _todas;
+    if (busqueda) {
+      const term = busqueda.toLowerCase();
+      lista = _todas.filter(n =>
+        (n.titulo||'').toLowerCase().includes(term) ||
+        (n.contenido||'').toLowerCase().includes(term)
+      );
+      info.style.display = 'flex';
+      document.getElementById("resultsCount").textContent = lista.length;
+      document.getElementById("resultsQuery").textContent = busqueda;
+    } else {
+      info.style.display = 'none';
+    }
+
+    if (!lista.length) {
+      grid.innerHTML = `
+        <div class="empty-wrap">
+          <div class="empty-icon">📭</div>
+          <div class="empty-txt">${busqueda ? 'Sin resultados para esa búsqueda.' : 'Todavía no hay noticias publicadas.'}</div>
+        </div>`;
+      return;
+    }
+
+    grid.innerHTML = `<div class="news-grid">${lista.map((n,i) => buildCard(n,i)).join('')}</div>`;
+  }
+
+  function fmtFecha(fechaStr) {
+    if (!fechaStr) return '';
+    try {
+      const d = new Date(fechaStr);
+      const meses = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+      const p = n => String(n).padStart(2,'0');
+      return `${p(d.getDate())} ${meses[d.getMonth()]} ${d.getFullYear()} · ${p(d.getHours())}:${p(d.getMinutes())}`;
+    } catch { return fechaStr; }
+  }
+
+  function excerpt(texto, max=160) {
+    if (!texto) return '';
+    return texto.length > max ? texto.slice(0, max).trim() + '…' : texto;
+  }
+
+  function buildCard(n, index) {
+    const esDestacada = index === 0;
+    const img = n.foto
+      ? `<img class="card-img" src="${esc(n.foto)}" alt="${esc(n.titulo)}" loading="${index<3?'eager':'lazy'}"/>`
+      : `<div class="card-no-img">🚆</div>`;
+    return `
+    <div class="news-card" onclick="abrirNoticia('${n.id}')"
+         style="animation-delay:${index*0.04}s">
+      ${img}
+      <div class="card-body">
+        <div class="card-meta">
+          <div class="card-date">📅 ${fmtFecha(n.fecha)}</div>
+          ${esDestacada ? '<div class="card-badge destacada">⭐ Destacada</div>' : '<div class="card-badge">Noticia</div>'}
+        </div>
+        <div class="card-title">${esc(n.titulo||'Sin título')}</div>
+        <div class="card-excerpt">${esc(excerpt(n.contenido))}</div>
+        <div class="card-footer">
+          <div class="card-read-more">Leer más →</div>
+          ${n.piedefoto ? `<div class="card-piedefoto">📷 ${esc(n.piedefoto)}</div>` : ''}
+        </div>
+      </div>
+    </div>`;
+  }
+
+  // ── Modal ──────────────────────────────────────────────────
+  window.abrirNoticia = function(id) {
+    const n = _todas.find(x => x.id === id);
+    if (!n) return;
+
+    document.getElementById("modalImgWrap").innerHTML = n.foto
+      ? `<img class="modal-img" src="${esc(n.foto)}" alt="${esc(n.titulo)}"/>`
+      : `<div class="modal-no-img">🚆</div>`;
+
+    document.getElementById("modalDate").textContent    = '📅 ' + fmtFecha(n.fecha);
+    document.getElementById("modalTitle").textContent   = n.titulo || 'Sin título';
+    document.getElementById("modalContent").textContent = n.contenido || '';
+
+    const pf = document.getElementById("modalPieDeFoto");
+    if (n.piedefoto) { pf.textContent = '📷 ' + n.piedefoto; pf.style.display='block'; }
+    else             { pf.style.display='none'; }
+
+    document.getElementById("modalOverlay").classList.add("open");
+    document.body.style.overflow = "hidden";
+  };
+
+  window.closeModal = function(ev) {
+    if (ev && ev.target !== document.getElementById("modalOverlay") && !ev.target.classList.contains('modal-close')) return;
+    document.getElementById("modalOverlay").classList.remove("open");
+    document.body.style.overflow = "";
+  };
+
+  // Cerrar con Escape
+  document.addEventListener("keydown", e => { if (e.key==="Escape") window.closeModal({}); });
+
+  // ── Búsqueda ───────────────────────────────────────────────
+  let _debounce;
+  document.getElementById("searchInput").addEventListener("input", function() {
+    _query = this.value.trim();
+    clearTimeout(_debounce);
+    _debounce = setTimeout(() => render(_query), 280);
+  });
+
+  window.clearSearch = function(e) {
+    if(e) e.preventDefault();
+    _query = '';
+    document.getElementById("searchInput").value = '';
+    render('');
+  };
+
+  // ── Escape HTML ────────────────────────────────────────────
+  function esc(s) {
+    return String(s||'')
+      .replace(/&/g,'&amp;').replace(/"/g,'&quot;')
+      .replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+</script>
+</body>
+</html>
