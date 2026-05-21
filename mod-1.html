@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin | Tren Sarmiento En Línea</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #081120; --card: #111c2f; --border: rgba(255,255,255,0.08);
+      --text: #fff; --muted: #94a3b8;
+      --blue: #00a8ff; --green: #00e676; --yellow: #ffd600; --red: #ff1744;
+    }
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      font-family:"Inter",sans-serif; min-height:100vh;
+      display:flex; align-items:flex-start; justify-content:center; padding:24px;
+      background: radial-gradient(circle at top right,rgba(0,168,255,.12),transparent 30%),
+                  radial-gradient(circle at bottom left,rgba(0,230,118,.08),transparent 30%),
+                  var(--bg);
+      color:var(--text);
+    }
+    .admin-card {
+      width:100%; max-width:720px;
+      background:rgba(17,28,47,.94); border:1px solid var(--border);
+      border-radius:24px; padding:32px;
+      backdrop-filter:blur(14px); box-shadow:0 20px 50px rgba(0,0,0,.45);
+    }
+    .logo {
+      width:72px; height:72px; border-radius:18px;
+      background:linear-gradient(135deg,#00a8ff,#0057ff);
+      display:flex; align-items:center; justify-content:center;
+      margin:0 auto 22px; font-size:34px;
+    }
+    h1 { text-align:center; font-size:28px; font-weight:800; margin-bottom:8px; }
+    .subtitle { text-align:center; color:var(--muted); margin-bottom:24px; font-size:14px; }
+    .preview {
+      display:flex; gap:18px; align-items:center;
+      background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.05);
+      border-radius:18px; padding:18px; margin-bottom:24px;
+    }
+    .semaforo {
+      width:34px; background:#050505; border-radius:18px; padding:7px 5px;
+      display:flex; flex-direction:column; align-items:center; gap:6px;
+    }
+    .luz { width:16px; height:16px; border-radius:50%; background:#333; opacity:.25; transition:.25s; }
+    .on-rojo    { background:var(--red);    opacity:1; box-shadow:0 0 16px var(--red); }
+    .on-amarillo{ background:var(--yellow); opacity:1; box-shadow:0 0 16px var(--yellow); }
+    .on-verde   { background:var(--green);  opacity:1; box-shadow:0 0 16px var(--green); }
+    .status-info h2 { font-size:17px; margin-bottom:4px; }
+    .status-info p  { color:var(--muted); font-size:13px; }
+    .admin-panel { display:none; margin-top:12px; }
+    .hidden { display:none !important; }
+    .menu-grid {
+      display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+      gap:12px; margin-bottom:18px;
+    }
+    .section-card {
+      background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.05);
+      border-radius:16px; padding:16px;
+    }
+    .section-title       { font-size:18px; font-weight:700; margin-bottom:10px; }
+    .section-description { color:var(--muted); font-size:13px; margin-bottom:14px; }
+    .form-group { margin-bottom:14px; }
+    label { display:block; margin-bottom:8px; font-size:14px; font-weight:600; }
+    select, textarea, input {
+      width:100%; border:none; border-radius:14px; padding:12px;
+      font-family:inherit; font-size:14px; color:white;
+      background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.06);
+      outline:none; transition:border-color .18s;
+    }
+    select:focus, textarea:focus, input:focus { border-color:rgba(0,168,255,.5); }
+    textarea { resize:vertical; min-height:100px; }
+    button {
+      width:100%; border:none; border-radius:14px; padding:13px;
+      font-family:inherit; font-size:15px; font-weight:700;
+      cursor:pointer; transition:.2s ease;
+    }
+    .primary-btn { background:linear-gradient(135deg,#00a8ff,#0057ff); color:white; }
+    .primary-btn:hover { transform:translateY(-2px); box-shadow:0 8px 20px rgba(0,168,255,.35); }
+    .primary-btn:disabled { opacity:.5; cursor:not-allowed; transform:none; box-shadow:none; }
+    .secondary-btn { background:rgba(255,255,255,.08); color:white; margin-top:10px; }
+    .secondary-btn:hover { background:rgba(255,255,255,.15); }
+    .footer { text-align:center; margin-top:20px; font-size:12px; color:var(--muted); }
+    @media(max-width:640px){ .admin-card { padding:22px; } }
+
+    /* ── Upload zona ── */
+    .upload-zone {
+      border:2px dashed rgba(255,255,255,.1); border-radius:14px; padding:22px;
+      text-align:center; cursor:pointer; transition:all .2s;
+      background:rgba(255,255,255,.03); position:relative;
+    }
+    .upload-zone:hover,.upload-zone.drag-over { border-color:var(--blue); background:rgba(0,168,255,.07); }
+    .upload-zone input[type=file] { position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%; z-index:2; }
+    .upload-zone-txt { font-size:13px; color:var(--muted); margin-top:6px; line-height:1.5; }
+    .upload-zone-txt strong { color:var(--blue); }
+    .prog-wrap { display:none; margin-top:10px; }
+    .prog-bar  { height:4px; background:rgba(255,255,255,.1); border-radius:2px; overflow:hidden; }
+    .prog-fill { height:100%; background:var(--blue); border-radius:2px; transition:width .3s; width:0%; }
+    .prog-txt  { font-size:12px; color:var(--muted); margin-top:5px; }
+    .mode-tabs { display:flex; gap:8px; margin-bottom:10px; }
+    .mode-tab  { flex:1; padding:9px; border-radius:10px; font-family:inherit; font-size:13px; font-weight:700; cursor:pointer; transition:all .18s; width:auto; }
+    .mode-tab.on  { background:rgba(0,168,255,.18); border:1.5px solid var(--blue); color:var(--blue); }
+    .mode-tab.off { background:rgba(255,255,255,.05); border:1.5px solid rgba(255,255,255,.08); color:var(--muted); }
+    .wm-note {
+      margin-top:10px; font-size:12px; color:var(--muted);
+      background:rgba(0,168,255,.07); border:1px solid rgba(0,168,255,.15);
+      border-radius:10px; padding:9px 12px; display:flex; gap:7px;
+    }
+    .wm-note strong { color:var(--blue); }
+    .char-cnt { font-size:11px; color:var(--muted); margin-top:4px; text-align:right; }
+    .check-row { display:flex; align-items:center; gap:9px; font-size:13px; color:var(--muted); cursor:pointer; margin-top:4px; }
+    .check-row input[type=checkbox] { width:16px; height:16px; accent-color:var(--blue); cursor:pointer; flex-shrink:0; }
+
+    /* ══ EDITOR DE RECORTE ══ */
+    .crop-panel {
+      display:none; margin-top:12px;
+      background:rgba(0,0,0,.3); border:1px solid rgba(0,168,255,.25);
+      border-radius:16px; overflow:hidden;
+    }
+    .crop-panel.open { display:block; }
+    .crop-toolbar {
+      padding:10px 14px; display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+      background:rgba(0,168,255,.06); border-bottom:1px solid rgba(0,168,255,.15);
+    }
+    .crop-toolbar-ttl { font-size:13px; font-weight:700; color:var(--blue); flex:1; }
+    .ratio-btn {
+      padding:5px 12px; border-radius:8px; font-family:inherit; font-size:12px; font-weight:700;
+      cursor:pointer; border:1px solid rgba(255,255,255,.12);
+      background:rgba(255,255,255,.06); color:var(--muted); width:auto; transition:all .18s;
+    }
+    .ratio-btn.active { background:rgba(0,168,255,.2); border-color:var(--blue); color:var(--blue); }
+    .crop-stage {
+      position:relative; overflow:hidden; background:#000; user-select:none;
+      touch-action:none;
+    }
+    .crop-base-img { display:block; width:100%; height:auto; max-height:420px; object-fit:contain; }
+    /* Overlay oscuro fuera del recorte */
+    .crop-overlay {
+      position:absolute; inset:0; pointer-events:none;
+    }
+    /* Recuadro de selección */
+    .crop-box {
+      position:absolute; border:2px solid #00a8ff;
+      box-shadow:0 0 0 9999px rgba(0,0,0,.55);
+      cursor:move; touch-action:none;
+    }
+    .crop-box::before, .crop-box::after {
+      content:''; position:absolute; background:rgba(255,255,255,.25);
+    }
+    .crop-box::before { left:33.33%; right:33.33%; top:0; bottom:0; }
+    .crop-box::after  { top:33.33%; bottom:33.33%; left:0; right:0; }
+    /* Handles en las esquinas */
+    .crop-handle {
+      position:absolute; width:18px; height:18px;
+      background:#00a8ff; border-radius:3px;
+    }
+    .crop-handle.nw { top:-4px;  left:-4px;  cursor:nw-resize; }
+    .crop-handle.ne { top:-4px;  right:-4px; cursor:ne-resize; }
+    .crop-handle.sw { bottom:-4px; left:-4px;  cursor:sw-resize; }
+    .crop-handle.se { bottom:-4px; right:-4px; cursor:se-resize; }
+    /* Preview de la marca de agua dentro del recuadro */
+    .crop-wm-preview {
+      position:absolute; bottom:10px; right:10px;
+      background:rgba(0,0,0,.5); color:rgba(255,255,255,.9);
+      font-weight:700; border-radius:4px; padding:3px 7px;
+      pointer-events:none; white-space:nowrap;
+      font-family:Arial,sans-serif;
+    }
+    .crop-actions {
+      padding:12px 14px; display:flex; gap:8px;
+    }
+    .crop-actions .primary-btn { margin:0; }
+    .crop-actions .secondary-btn { margin:0; }
+    /* Vista previa final después del recorte */
+    .final-preview {
+      display:none; margin-top:12px; border-radius:12px; overflow:hidden; position:relative;
+    }
+    .final-preview img { width:100%; display:block; max-height:320px; object-fit:contain; background:#000; }
+    .final-preview-rm {
+      position:absolute; top:8px; right:8px;
+      background:rgba(0,0,0,.7); color:#fff; border:none;
+      border-radius:8px; padding:4px 12px; font-size:12px;
+      cursor:pointer; font-family:inherit; font-weight:700; width:auto;
+    }
+    .final-info {
+      margin-top:7px; font-size:11px; color:var(--muted);
+      display:flex; align-items:center; gap:6px;
+    }
+
+    /* ── Listado ── */
+    .lst-header { display:flex; align-items:center; justify-content:space-between; margin:20px 0 12px; flex-wrap:wrap; gap:8px; }
+    .lst-header-ttl { font-size:15px; font-weight:700; }
+    .lst-cnt { font-size:12px; color:var(--muted); }
+    .ni { background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.06); border-radius:14px; overflow:hidden; margin-bottom:10px; transition:border-color .2s; }
+    .ni.editing { border-color:rgba(0,168,255,.5); box-shadow:0 0 0 3px rgba(0,168,255,.08); }
+    .ni-head { display:flex; align-items:center; gap:12px; padding:12px 14px; cursor:pointer; }
+    .ni-thumb { width:54px; height:40px; border-radius:9px; object-fit:cover; flex-shrink:0; background:rgba(255,255,255,.05); }
+    .ni-nopic { width:54px; height:40px; border-radius:9px; flex-shrink:0; background:rgba(255,255,255,.04); border:1px dashed rgba(255,255,255,.1); display:flex; align-items:center; justify-content:center; font-size:16px; color:var(--muted); }
+    .ni-meta { flex:1; min-width:0; }
+    .ni-ttl  { font-size:13px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:2px; }
+    .ni-date { font-size:11px; color:var(--muted); }
+    .ni-btns { display:flex; gap:6px; flex-shrink:0; }
+    .bico { background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.08); color:var(--muted); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:14px; cursor:pointer; transition:all .18s; width:auto; padding:0 10px; height:32px; }
+    .bico:hover { color:#fff; border-color:rgba(0,168,255,.4); }
+    .bico.del:hover { color:var(--red); border-color:var(--red); background:rgba(255,23,68,.1); }
+    .bico.on  { color:var(--blue); border-color:var(--blue); background:rgba(0,168,255,.12); }
+    .ni-form  { display:none; padding:14px; border-top:1px solid rgba(255,255,255,.06); background:rgba(0,168,255,.03); }
+    .ni.editing .ni-form { display:block; }
+    .edit-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    @media(max-width:480px){ .edit-row { grid-template-columns:1fr; } }
+    .edit-acts { display:flex; gap:8px; margin-top:12px; }
+    .edit-acts .primary-btn,.edit-acts .secondary-btn { margin:0; }
+    .bdg { display:inline-block; font-size:10px; font-weight:700; padding:2px 7px; border-radius:20px; margin-left:5px; vertical-align:middle; }
+    .bdg.pub { background:rgba(0,230,118,.15); color:var(--green); border:1px solid rgba(0,230,118,.3); }
+    .bdg.bor { background:rgba(255,214,0,.12); color:var(--yellow); border:1px solid rgba(255,214,0,.3); }
+    .lst-empty { text-align:center; padding:28px 14px; color:var(--muted); font-size:13px; background:rgba(255,255,255,.02); border:1px dashed rgba(255,255,255,.07); border-radius:14px; }
+  </style>
+</head>
+<body>
+<div class="admin-card">
+  <div class="logo">💻</div>
+  <h1>Panel de Administración</h1>
+  <div class="subtitle">Tren Sarmiento En Línea</div>
+
+  <div class="preview">
+    <div class="semaforo">
+      <div class="luz" id="luzRoja"></div>
+      <div class="luz" id="luzAmarilla"></div>
+      <div class="luz" id="luzVerde"></div>
+    </div>
+    <div class="status-info">
+      <h2 id="statusTexto">Servicio normal</h2>
+      <p id="statusDetail">Sin alertas activas.</p>
+    </div>
+  </div>
+
+  <button id="loginBtn" class="primary-btn">Iniciar sesión con Google</button>
+  <button id="logoutBtn" class="secondary-btn" style="display:none">Cerrar sesión</button>
+
+  <div class="admin-panel" id="adminPanel">
+    <div class="menu-grid">
+      <button class="primary-btn" id="btnEstado">Estado de trenes</button>
+      <button class="primary-btn" id="btnPuntosSube">Puntos SUBE</button>
+      <button class="primary-btn" id="btnNoticias">Noticias</button>
+      <button class="primary-btn" id="btnCronograma">Cronograma</button>
+    </div>
+
+    <!-- Estado -->
+    <div id="seccionEstado" class="section-card hidden">
+      <div class="section-title">Estado de trenes</div>
+      <div class="section-description">Actualizá el semáforo y el mensaje operativo.</div>
+      <div class="form-group">
+        <label for="estadoSelect">Estado del servicio</label>
+        <select id="estadoSelect">
+          <option value="normal">Servicio normal</option>
+          <option value="modificado">Servicio con demoras</option>
+          <option value="paro">Servicio interrumpido</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="editarMensaje">Mensaje / alerta</label>
+        <textarea id="editarMensaje" placeholder="Escribí una alerta para los pasajeros..."></textarea>
+      </div>
+      <button id="guardarEstadoBtn" class="primary-btn">Guardar estado</button>
+    </div>
+
+    <!-- Puntos SUBE -->
+    <div id="seccionPuntosSube" class="section-card hidden">
+      <div class="section-title">Puntos SUBE</div>
+      <div class="section-description">Cargá locales donde se puede comprar o cargar SUBE.</div>
+      <div class="form-group"><label for="subeNombre">Nombre del local</label><input id="subeNombre" type="text" placeholder="Ej: Kiosco Estación Once"/></div>
+      <div class="form-group"><label for="subeDireccion">Dirección</label><input id="subeDireccion" type="text" placeholder="Ej: Av. Rivadavia 2800"/></div>
+      <div class="form-group"><label for="subeLocalidad">Localidad</label><input id="subeLocalidad" type="text" placeholder="Ej: Once"/></div>
+      <div class="form-group"><label for="subeTarifas">Tarifas</label><textarea id="subeTarifas" placeholder="Ej: Carga mínima $500, comisión $0"></textarea></div>
+      <button id="guardarSubeBtn" class="primary-btn">Guardar punto SUBE</button>
+    </div>
+
+    <!-- Noticias -->
+    <div id="seccionNoticias" class="section-card hidden">
+      <div class="section-title">Noticias</div>
+      <div class="section-description">Publicá y administrá noticias del servicio.</div>
+
+      <div class="form-group">
+        <label for="nTitulo">Título *</label>
+        <input id="nTitulo" type="text" placeholder="Titular de la noticia…" maxlength="120"/>
+        <div class="char-cnt" id="nTituloChars">0 / 120</div>
+      </div>
+      <div class="form-group">
+        <label for="nContenido">Contenido *</label>
+        <textarea id="nContenido" placeholder="Texto completo de la noticia…" style="min-height:130px"></textarea>
+      </div>
+
+      <!-- Imagen -->
+      <div class="form-group">
+        <label>Imagen de portada</label>
+        <div class="mode-tabs">
+          <button class="mode-tab on" id="tabUp"  onclick="setImgMode('up')">📤 Subir imagen</button>
+          <button class="mode-tab off" id="tabUrl" onclick="setImgMode('url')">🔗 URL directa</button>
+        </div>
+
+        <div id="modeUp">
+          <!-- Zona de carga -->
+          <div id="uploadZone" class="upload-zone">
+            <input type="file" id="imgFile" accept="image/*"/>
+            <div style="font-size:26px;margin-bottom:6px">📷</div>
+            <div class="upload-zone-txt"><strong>Tocá para elegir</strong> o arrastrá una foto<br/>JPG · PNG · WEBP · máx 10 MB</div>
+          </div>
+
+          <!-- Editor de recorte -->
+          <div class="crop-panel" id="cropPanel">
+            <div class="crop-toolbar">
+              <div class="crop-toolbar-ttl">✂️ Ajustá el recorte</div>
+              <button class="ratio-btn active" id="rFree"  onclick="setRatio(0)">Libre</button>
+              <button class="ratio-btn" id="r169"  onclick="setRatio(16/9)">16:9</button>
+              <button class="ratio-btn" id="r43"   onclick="setRatio(4/3)">4:3</button>
+              <button class="ratio-btn" id="r11"   onclick="setRatio(1)">1:1</button>
+              <button class="ratio-btn" id="r34"   onclick="setRatio(3/4)">3:4</button>
+            </div>
+            <div class="crop-stage" id="cropStage">
+              <img id="cropBaseImg" class="crop-base-img" src="" alt=""/>
+              <div class="crop-box" id="cropBox">
+                <div class="crop-handle nw" data-h="nw"></div>
+                <div class="crop-handle ne" data-h="ne"></div>
+                <div class="crop-handle sw" data-h="sw"></div>
+                <div class="crop-handle se" data-h="se"></div>
+                <div class="crop-wm-preview" id="wmPreview">trensarmientoenlinea.com.ar</div>
+              </div>
+            </div>
+            <div class="crop-actions">
+              <button class="primary-btn" onclick="aplicarRecorte()">✅ Confirmar recorte</button>
+              <button class="secondary-btn" onclick="cancelarRecorte()">Cancelar</button>
+            </div>
+          </div>
+
+          <!-- Vista previa final (post-recorte) -->
+          <div class="final-preview" id="finalPreview">
+            <img id="finalImg" src="" alt="Vista previa"/>
+            <button class="final-preview-rm" onclick="quitarImg()">✕ Cambiar imagen</button>
+          </div>
+          <div class="final-info" id="finalInfo" style="display:none">
+            <span>✅</span><span id="finalDims"></span>
+            <span style="color:rgba(255,255,255,.3)">·</span>
+            <span>Marca de agua incluida</span>
+          </div>
+
+          <div class="prog-wrap" id="progWrap">
+            <div class="prog-bar"><div class="prog-fill" id="progFill"></div></div>
+            <div class="prog-txt" id="progTxt">Procesando…</div>
+          </div>
+          <div class="wm-note" style="margin-top:10px">
+            <span>✅</span>
+            <div><strong>Marca de agua gratis:</strong> se aplica en tu dispositivo.
+            La imagen llega con <strong>trensarmientoenlinea.com.ar</strong> en la esquina inferior.</div>
+          </div>
+          <canvas id="wmc" style="display:none"></canvas>
+        </div>
+
+        <div id="modeUrl" style="display:none">
+          <input id="nFotoUrl" type="url" placeholder="https://ejemplo.com/imagen.jpg"/>
+          <div style="font-size:12px;color:var(--muted);margin-top:5px">URL guardada tal cual, sin marca de agua automática.</div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="nPieFoto">Pie de foto</label>
+        <input id="nPieFoto" type="text" placeholder="Crédito o descripción de la imagen…" maxlength="200"/>
+      </div>
+      <div class="form-group">
+        <label for="nFecha">Fecha y hora de publicación *</label>
+        <input id="nFecha" type="datetime-local"/>
+      </div>
+      <button id="publicarBtn" class="primary-btn">🚀 Publicar noticia</button>
+
+      <!-- Listado -->
+      <div class="lst-header">
+        <div class="lst-header-ttl">📋 Noticias publicadas</div>
+        <div class="lst-cnt" id="lstCnt">—</div>
+      </div>
+      <div id="lstNoticias"><div class="lst-empty">Cargando…</div></div>
+    </div>
+
+    <!-- Cronograma -->
+    <div id="seccionCronograma" class="section-card hidden">
+      <div class="section-title">Cronograma Especial</div>
+      <div class="section-description">Sección preparada para futura carga de cronogramas especiales.</div>
+    </div>
+  </div>
+
+  <div class="footer">Firebase Auth + Firestore · Cloudinary</div>
+</div>
+
+<script type="module">
+import { initializeApp }
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import {
+  getFirestore, collection, doc, addDoc, setDoc, updateDoc, deleteDoc,
+  onSnapshot, serverTimestamp, query, orderBy
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey:            "AIzaSyAZ83BcBLEvVJ1G7hFvI_cqhLSKJpRsH7c",
+  authDomain:        "tren-sarmiento-en-linea.firebaseapp.com",
+  projectId:         "tren-sarmiento-en-linea",
+  storageBucket:     "tren-sarmiento-en-linea.firebasestorage.app",
+  messagingSenderId: "712333767897",
+  appId:             "1:712333767897:web:c9557e3f2299c9806dfac8"
+};
+const admins    = ["hernan.garbarino@gmail.com","trensarmientoenlinea@gmail.com","otroadmin@gmail.com"];
+const CL_CLOUD  = "dc4jzoeku";
+const CL_PRESET = "trenes"; // ← tu preset unsigned en Cloudinary
+
+const app      = initializeApp(firebaseConfig);
+const auth     = getAuth(app);
+const db       = getFirestore(app);
+const provider = new GoogleAuthProvider();
+const estadoRef     = doc(db,"estadoServicio","actual");
+const puntosSubeRef = collection(db,"puntoSube");
+const noticiasRef   = collection(db,"noticias");
+let currentUser = null;
+const sanitize  = v => v.replace(/<[^>]*>?/gm,"").trim();
+
+// ── Auth ───────────────────────────────────────────────────────
+document.getElementById("loginBtn").addEventListener("click", async () => {
+  try { await signInWithPopup(auth,provider); } catch(e){ alert("Error iniciando sesión"); }
+});
+document.getElementById("logoutBtn").addEventListener("click", () => signOut(auth));
+
+onAuthStateChanged(auth, user => {
+  currentUser = user;
+  const lBtn = document.getElementById("loginBtn");
+  const oBtn = document.getElementById("logoutBtn");
+  const panel = document.getElementById("adminPanel");
+  if (user) {
+    lBtn.style.display="none"; oBtn.style.display="block";
+    if (admins.includes(user.email)) { panel.style.display="block"; mostrarSeccion("Estado"); }
+    else { panel.style.display="none"; alert("Usuario sin permisos"); }
+  } else {
+    panel.style.display="none"; lBtn.style.display="block"; oBtn.style.display="none";
+  }
+});
+
+// ── Navegación ─────────────────────────────────────────────────
+const SECS = ["Estado","PuntosSube","Noticias","Cronograma"];
+function mostrarSeccion(n) {
+  SECS.forEach(s => document.getElementById("seccion"+s).classList.add("hidden"));
+  document.getElementById("seccion"+n).classList.remove("hidden");
+  if (n==="Noticias" && !_lstIniciado) initLst();
+}
+document.getElementById("btnEstado").addEventListener("click",     () => mostrarSeccion("Estado"));
+document.getElementById("btnPuntosSube").addEventListener("click", () => mostrarSeccion("PuntosSube"));
+document.getElementById("btnNoticias").addEventListener("click",   () => mostrarSeccion("Noticias"));
+document.getElementById("btnCronograma").addEventListener("click", () => mostrarSeccion("Cronograma"));
+
+// ── Semáforo ───────────────────────────────────────────────────
+onSnapshot(estadoRef, snap => {
+  if (!snap.exists()) return;
+  const d = snap.data();
+  actualizarSemaforo(d.estado||"normal");
+  document.getElementById("statusDetail").innerText = d.mensaje||"Sin alertas activas.";
+  document.getElementById("estadoSelect").value = d.estado||"normal";
+  document.getElementById("editarMensaje").value = d.mensaje||"";
+});
+function actualizarSemaforo(e) {
+  const r=document.getElementById("luzRoja"),a=document.getElementById("luzAmarilla"),v=document.getElementById("luzVerde");
+  r.classList.remove("on-rojo"); a.classList.remove("on-amarillo"); v.classList.remove("on-verde");
+  if (e==="paro"){ r.classList.add("on-rojo"); document.getElementById("statusTexto").innerText="Servicio interrumpido"; }
+  else if (e==="modificado"){ a.classList.add("on-amarillo"); document.getElementById("statusTexto").innerText="Servicio con demoras"; }
+  else { v.classList.add("on-verde"); document.getElementById("statusTexto").innerText="Servicio normal"; }
+}
+
+// ── Guardar estado ─────────────────────────────────────────────
+document.getElementById("guardarEstadoBtn").addEventListener("click", async () => {
+  if (!isAdmin()) return;
+  try {
+    await setDoc(estadoRef,{
+      estado: document.getElementById("estadoSelect").value,
+      mensaje: sanitize(document.getElementById("editarMensaje").value),
+      actualizado: new Date().toISOString(), editor: currentUser.email
+    });
+    alert("Estado guardado");
+  } catch(e){ alert("Error: "+e.message); }
+});
+
+// ── Guardar SUBE ───────────────────────────────────────────────
+document.getElementById("guardarSubeBtn").addEventListener("click", async () => {
+  if (!isAdmin()) return;
+  const nombre=sanitize(document.getElementById("subeNombre").value);
+  const dir=sanitize(document.getElementById("subeDireccion").value);
+  const loc=sanitize(document.getElementById("subeLocalidad").value);
+  const tar=sanitize(document.getElementById("subeTarifas").value);
+  if (!nombre||!dir||!loc||!tar) return alert("Completá todos los campos");
+  try {
+    await addDoc(puntosSubeRef,{nombre,direccion:dir,localidad:loc,tarifas:tar,creadoPor:currentUser.email,creadoEn:serverTimestamp()});
+    ["subeNombre","subeDireccion","subeLocalidad","subeTarifas"].forEach(id=>document.getElementById(id).value="");
+    alert("Punto SUBE guardado");
+  } catch(e){ alert("Error: "+e.message); }
+});
+
+function isAdmin() {
+  if (!currentUser||!admins.includes(currentUser.email)){ alert("Sin permisos"); return false; } return true;
+}
+
+// ══════════════════════════════════════════════════════════════
+// EDITOR DE RECORTE
+// ══════════════════════════════════════════════════════════════
+
+window.setImgMode = function(m) {
+  document.getElementById("modeUp").style.display  = m==="up"  ? "" : "none";
+  document.getElementById("modeUrl").style.display = m==="url" ? "" : "none";
+  document.getElementById("tabUp").className  = "mode-tab "+(m==="up" ?"on":"off");
+  document.getElementById("tabUrl").className = "mode-tab "+(m==="url"?"on":"off");
+};
+
+// Drag & drop en zona de carga
+const uz = document.getElementById("uploadZone");
+uz.addEventListener("dragover",  e=>{e.preventDefault();uz.classList.add("drag-over");});
+uz.addEventListener("dragleave", ()=>uz.classList.remove("drag-over"));
+uz.addEventListener("drop", e=>{
+  e.preventDefault(); uz.classList.remove("drag-over");
+  const f=e.dataTransfer.files[0]; if(f){document.getElementById("imgFile").files=e.dataTransfer.files;onFileSelected(f);}
+});
+document.getElementById("imgFile").addEventListener("change", e=>{
+  if(e.target.files[0]) onFileSelected(e.target.files[0]);
+});
+
+let _file       = null;  // archivo original
+let _cropBlob   = null;  // blob con recorte + watermark listo para subir
+let _ratio      = 0;     // 0 = libre
+let _srcImg     = null;  // Image() cargada
+let _stageW     = 0;
+let _stageH     = 0;
+// Recuadro en px relativos al stage
+let _box = { x:0, y:0, w:0, h:0 };
+let _drag = null; // { type:'move'|handle, startX, startY, origBox }
+
+function onFileSelected(f) {
+  _file = f; _cropBlob = null;
+  const url = URL.createObjectURL(f);
+  const img  = new Image();
+  img.onload = () => {
+    _srcImg = img;
+    document.getElementById("cropBaseImg").src = url;
+    // Esperar que el DOM renderice para medir el stage
+    requestAnimationFrame(() => {
+      const stage = document.getElementById("cropStage");
+      _stageW = stage.offsetWidth;
+      // La imagen se muestra con width:100%, calcular altura proporcional
+      _stageH = Math.round(_stageW * img.height / img.width);
+      // Iniciar caja ocupando todo
+      _box = {x:0, y:0, w:_stageW, h:_stageH};
+      if (_ratio > 0) enforceRatio();
+      document.getElementById("cropPanel").classList.add("open");
+      document.getElementById("finalPreview").style.display = "none";
+      document.getElementById("finalInfo").style.display    = "none";
+      document.getElementById("uploadZone").style.display   = "none";
+      renderBox();
+    });
+  };
+  img.src = url;
+}
+
+function setRatio(r) {
+  _ratio = r;
+  ["rFree","r169","r43","r11","r34"].forEach(id=>document.getElementById(id).classList.remove("active"));
+  const map = {0:"rFree",[16/9]:"r169",[4/3]:"r43",1:"r11",[3/4]:"r34"};
+  const key = Object.keys(map).find(k=>Math.abs(parseFloat(k)-r)<0.001) || "rFree";
+  document.getElementById(map[key]||"rFree").classList.add("active");
+  if (r>0) enforceRatio();
+  renderBox();
+}
+window.setRatio = setRatio;
+
+function enforceRatio() {
+  // Ajustar altura según ratio manteniendo ancho, sin salir del stage
+  let h = Math.round(_box.w / _ratio);
+  if (h > _stageH) { h = _stageH; _box.w = Math.round(h * _ratio); }
+  _box.h = h;
+  clampBox();
+}
+
+function clampBox() {
+  const MIN = 40;
+  _box.w = Math.max(MIN, Math.min(_box.w, _stageW));
+  _box.h = Math.max(MIN, Math.min(_box.h, _stageH));
+  _box.x = Math.max(0, Math.min(_box.x, _stageW - _box.w));
+  _box.y = Math.max(0, Math.min(_box.y, _stageH - _box.h));
+}
+
+function renderBox() {
+  const el = document.getElementById("cropBox");
+  el.style.left   = _box.x + "px";
+  el.style.top    = _box.y + "px";
+  el.style.width  = _box.w + "px";
+  el.style.height = _box.h + "px";
+  // Escalar fuente del watermark según ancho del box
+  const fs = Math.max(9, Math.round(_box.w * 0.055));
+  document.getElementById("wmPreview").style.fontSize = fs+"px";
+}
+
+// ── Interacción: mouse y touch ─────────────────────────────────
+function getPos(e, stage) {
+  const r = stage.getBoundingClientRect();
+  const src = e.touches ? e.touches[0] : e;
+  return { x: src.clientX - r.left, y: src.clientY - r.top };
+}
+
+const cropBox = document.getElementById("cropBox");
+
+function onDragStart(e, type) {
+  e.preventDefault(); e.stopPropagation();
+  const stage = document.getElementById("cropStage");
+  const pos   = getPos(e, stage);
+  _drag = { type, startX:pos.x, startY:pos.y, origBox:{..._box} };
+}
+
+cropBox.addEventListener("mousedown",  e => onDragStart(e,"move"));
+cropBox.addEventListener("touchstart", e => onDragStart(e,"move"), {passive:false});
+
+document.querySelectorAll(".crop-handle").forEach(h => {
+  h.addEventListener("mousedown",  e => { e.stopPropagation(); onDragStart(e, h.dataset.h); });
+  h.addEventListener("touchstart", e => { e.stopPropagation(); onDragStart(e, h.dataset.h); }, {passive:false});
+});
+
+function onDragMove(e) {
+  if (!_drag) return;
+  e.preventDefault();
+  const stage = document.getElementById("cropStage");
+  const pos   = getPos(e, stage);
+  const dx    = pos.x - _drag.startX;
+  const dy    = pos.y - _drag.startY;
+  const ob    = _drag.origBox;
+
+  if (_drag.type === "move") {
+    _box.x = ob.x + dx;
+    _box.y = ob.y + dy;
+  } else {
+    // Resize según handle
+    let nx=ob.x, ny=ob.y, nw=ob.w, nh=ob.h;
+    if (_drag.type.includes("e")) nw = ob.w + dx;
+    if (_drag.type.includes("s")) nh = ob.h + dy;
+    if (_drag.type.includes("w")) { nx = ob.x+dx; nw = ob.w-dx; }
+    if (_drag.type.includes("n")) { ny = ob.y+dy; nh = ob.h-dy; }
+    _box = {x:nx, y:ny, w:nw, h:nh};
+    if (_ratio>0) {
+      // Fijar ratio según el eje predominante
+      if (_drag.type.includes("n")||_drag.type.includes("s")) {
+        const newW = Math.round(_box.h * _ratio);
+        if (_drag.type.includes("w")) _box.x -= (newW - _box.w);
+        _box.w = newW;
+      } else {
+        const newH = Math.round(_box.w / _ratio);
+        if (_drag.type.includes("n")) _box.y -= (newH - _box.h);
+        _box.h = newH;
+      }
+    }
+  }
+  clampBox(); renderBox();
+}
+
+function onDragEnd() { _drag = null; }
+
+window.addEventListener("mousemove",  onDragMove);
+window.addEventListener("touchmove",  onDragMove, {passive:false});
+window.addEventListener("mouseup",    onDragEnd);
+window.addEventListener("touchend",   onDragEnd);
+
+// ── Aplicar recorte + watermark ────────────────────────────────
+window.aplicarRecorte = function() {
+  if (!_srcImg) return;
+  // Calcular factores de escala: stage px → imagen px real
+  const scaleX = _srcImg.width  / _stageW;
+  const scaleY = _srcImg.height / _stageH;
+  const sx = _box.x * scaleX, sy = _box.y * scaleY;
+  const sw = _box.w * scaleX, sh = _box.h * scaleY;
+
+  const canvas = document.getElementById("wmc");
+  canvas.width  = Math.round(sw);
+  canvas.height = Math.round(sh);
+  const ctx = canvas.getContext("2d");
+  ctx.drawImage(_srcImg, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
+
+  // Watermark
+  const WM = "trensarmientoenlinea.com.ar";
+  const fs = Math.max(13, Math.round(canvas.width * 0.028));
+  ctx.font = `bold ${fs}px Arial,sans-serif`;
+  const mg=Math.round(fs*.7), pd=Math.round(fs*.4);
+  const tw = ctx.measureText(WM).width;
+  const bx=canvas.width-tw-mg-pd*2, by=canvas.height-fs-mg-pd*2, bw=tw+pd*2, bh=fs+pd*2;
+  ctx.fillStyle="rgba(0,0,0,.5)";
+  ctx.beginPath();
+  ctx.roundRect ? ctx.roundRect(bx,by,bw,bh,5) : ctx.rect(bx,by,bw,bh);
+  ctx.fill();
+  ctx.fillStyle="rgba(255,255,255,.95)";
+  ctx.textBaseline="top";
+  ctx.fillText(WM, bx+pd, by+pd);
+
+  canvas.toBlob(blob => {
+    _cropBlob = blob;
+    // Mostrar preview final
+    document.getElementById("finalImg").src = URL.createObjectURL(blob);
+    document.getElementById("finalPreview").style.display = "block";
+    document.getElementById("finalDims").textContent = `${canvas.width} × ${canvas.height} px`;
+    document.getElementById("finalInfo").style.display = "flex";
+    document.getElementById("cropPanel").classList.remove("open");
+  }, "image/jpeg", 0.88);
+};
+
+window.cancelarRecorte = function() {
+  document.getElementById("cropPanel").classList.remove("open");
+  document.getElementById("uploadZone").style.display = "";
+  _file = null; _cropBlob = null;
+};
+
+function quitarImg() {
+  _file=null; _cropBlob=null;
+  document.getElementById("imgFile").value="";
+  document.getElementById("finalPreview").style.display="none";
+  document.getElementById("finalInfo").style.display="none";
+  document.getElementById("uploadZone").style.display="";
+  document.getElementById("cropPanel").classList.remove("open");
+}
+window.quitarImg = quitarImg;
+
+// ── Subir a Cloudinary ─────────────────────────────────────────
+async function subirImagen() {
+  if (!_cropBlob) throw new Error("No hay imagen recortada");
+  const prog=document.getElementById("progWrap");
+  const fill=document.getElementById("progFill");
+  const txt =document.getElementById("progTxt");
+  prog.style.display="block"; fill.style.width="20%"; txt.textContent="☁️ Subiendo imagen…";
+  const fd = new FormData();
+  fd.append("file", _cropBlob, "noticia.jpg");
+  fd.append("upload_preset", CL_PRESET);
+  const res = await fetch(`https://api.cloudinary.com/v1_1/${CL_CLOUD}/image/upload`,{method:"POST",body:fd});
+  fill.style.width="90%";
+  if (!res.ok){ const e=await res.json().catch(()=>({})); throw new Error(e.error?.message||`Error HTTP ${res.status}`); }
+  const data = await res.json();
+  fill.style.width="100%"; txt.textContent="✅ ¡Imagen subida!";
+  setTimeout(()=>{prog.style.display="none"; fill.style.width="0%";},2000);
+  return data.secure_url;
+}
+
+// Contador título
+document.getElementById("nTitulo").addEventListener("input", function(){
+  document.getElementById("nTituloChars").textContent=`${this.value.length} / 120`;
+});
+
+// Fecha por defecto
+(function(){
+  const now=new Date(); now.setMinutes(now.getMinutes()-now.getTimezoneOffset());
+  document.getElementById("nFecha").value=now.toISOString().slice(0,16);
+})();
+
+// ── Publicar noticia ───────────────────────────────────────────
+document.getElementById("publicarBtn").addEventListener("click", async () => {
+  if (!isAdmin()) return;
+  const titulo    = document.getElementById("nTitulo").value.trim();
+  const contenido = document.getElementById("nContenido").value.trim();
+  const fecha     = document.getElementById("nFecha").value;
+  if (!titulo)    { alert("El título es obligatorio"); return; }
+  if (!contenido) { alert("El contenido es obligatorio"); return; }
+  if (!fecha)     { alert("La fecha es obligatoria"); return; }
+
+  const btn = document.getElementById("publicarBtn");
+  btn.disabled=true; btn.textContent="⏳ Publicando…";
+
+  let foto = "";
+  const mURL = document.getElementById("modeUrl").style.display !== "none";
+  try {
+    if (mURL) foto = document.getElementById("nFotoUrl").value.trim();
+    else if (_cropBlob) foto = await subirImagen();
+    else if (_file) { alert("Confirmá el recorte de la imagen antes de publicar"); btn.disabled=false; btn.textContent="🚀 Publicar noticia"; return; }
+  } catch(e){ alert("Error al subir imagen: "+e.message); btn.disabled=false; btn.textContent="🚀 Publicar noticia"; return; }
+
+  try {
+    await addDoc(noticiasRef,{
+      titulo, contenido, foto,
+      piedefoto: document.getElementById("nPieFoto").value.trim(),
+      fecha, fechaMs: new Date(fecha).getTime(),
+      publicado:true, creadoPor:currentUser.email, creadoEn:serverTimestamp()
+    });
+    ["nTitulo","nContenido","nPieFoto","nFotoUrl"].forEach(id=>document.getElementById(id).value="");
+    document.getElementById("nTituloChars").textContent="0 / 120";
+    quitarImg();
+    const now=new Date(); now.setMinutes(now.getMinutes()-now.getTimezoneOffset());
+    document.getElementById("nFecha").value=now.toISOString().slice(0,16);
+    alert("✅ Noticia publicada correctamente");
+  } catch(e){ alert("Error al guardar en Firestore: "+e.message); }
+  btn.disabled=false; btn.textContent="🚀 Publicar noticia";
+});
+
+// ══════════════════════════════════════════════════════════════
+// LISTADO + EDICIÓN INLINE
+// ══════════════════════════════════════════════════════════════
+let _cache={}, _editId=null, _lstIniciado=false;
+function fmtF(s){
+  if(!s)return"—";
+  try{const d=new Date(s),p=n=>String(n).padStart(2,"0");return`${p(d.getDate())}/${p(d.getMonth()+1)}/${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}`;}catch{return s;}
+}
+function esc(s){return String(s||"").replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+
+function buildItem(id,n){
+  const thumb = n.foto?`<img class="ni-thumb" src="${n.foto}" alt="" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">` : "";
+  const nopic = `<div class="ni-nopic" ${n.foto?'style="display:none"':""}>📷</div>`;
+  const bdg   = `<span class="bdg ${n.publicado!==false?"pub":"bor"}">${n.publicado!==false?"PUB":"BORR"}</span>`;
+  const fi    = n.fecha?n.fecha.slice(0,16):"";
+  return `
+  <div class="ni" id="ni-${id}">
+    <div class="ni-head" onclick="togEdit('${id}')">
+      ${thumb}${nopic}
+      <div class="ni-meta">
+        <div class="ni-ttl">${esc(n.titulo||"(sin título)")}${bdg}</div>
+        <div class="ni-date">${fmtF(n.fecha)}</div>
+      </div>
+      <div class="ni-btns" onclick="event.stopPropagation()">
+        <button class="bico ${_editId===id?"on":""}" id="eb-${id}" onclick="togEdit('${id}')">✏️</button>
+        <button class="bico del" onclick="eliminar('${id}')">🗑️</button>
+      </div>
+    </div>
+    <div class="ni-form" id="ef-${id}">
+      <div class="form-group"><label>Título</label><input type="text" id="et-${id}" value="${esc(n.titulo)}" maxlength="120"/></div>
+      <div class="form-group"><label>Contenido</label><textarea id="ec-${id}" style="min-height:90px">${esc(n.contenido||"")}</textarea></div>
+      <div class="edit-row">
+        <div class="form-group" style="margin:0"><label>URL de foto</label><input type="url" id="ef2-${id}" value="${esc(n.foto||"")}" placeholder="https://…"/></div>
+        <div class="form-group" style="margin:0"><label>Pie de foto</label><input type="text" id="ep-${id}" value="${esc(n.piedefoto||"")}"/></div>
+      </div>
+      <div class="form-group" style="margin-top:10px"><label>Fecha y hora</label><input type="datetime-local" id="efe-${id}" value="${fi}"/></div>
+      <label class="check-row"><input type="checkbox" id="epub-${id}" ${n.publicado!==false?"checked":""}/> Publicado (visible en el sitio)</label>
+      <div class="edit-acts" style="margin-top:12px">
+        <button class="primary-btn" id="sv-${id}" onclick="guardarEdit('${id}')">💾 Guardar cambios</button>
+        <button class="secondary-btn" onclick="togEdit('${id}')">Cancelar</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+window.togEdit = function(id){
+  if(_editId&&_editId!==id){document.getElementById("ni-"+_editId)?.classList.remove("editing");document.getElementById("eb-"+_editId)?.classList.remove("on");}
+  const item=document.getElementById("ni-"+id), eb=document.getElementById("eb-"+id);
+  if(_editId===id){item.classList.remove("editing");eb.classList.remove("on");_editId=null;}
+  else{item.classList.add("editing");eb.classList.add("on");_editId=id;setTimeout(()=>item.scrollIntoView({behavior:"smooth",block:"nearest"}),80);}
+};
+
+window.guardarEdit = async function(id){
+  if(!isAdmin())return;
+  const btn=document.getElementById("sv-"+id);
+  btn.disabled=true; btn.textContent="⏳ Guardando…";
+  const titulo=document.getElementById("et-"+id).value.trim();
+  const contenido=document.getElementById("ec-"+id).value.trim();
+  const fecha=document.getElementById("efe-"+id).value;
+  if(!titulo||!contenido){alert("Título y contenido son obligatorios");btn.disabled=false;btn.textContent="💾 Guardar cambios";return;}
+  try{
+    await updateDoc(doc(db,"noticias",id),{
+      titulo,contenido,
+      foto:document.getElementById("ef2-"+id).value.trim(),
+      piedefoto:document.getElementById("ep-"+id).value.trim(),
+      fecha,fechaMs:fecha?new Date(fecha).getTime():null,
+      publicado:document.getElementById("epub-"+id).checked,
+      editadoPor:currentUser.email,editadoEn:serverTimestamp()
+    });
+    togEdit(id); alert("✅ Noticia actualizada");
+  }catch(e){alert("Error: "+e.message);}
+  btn.disabled=false; btn.textContent="💾 Guardar cambios";
+};
+
+window.eliminar = async function(id){
+  if(!isAdmin())return;
+  if(!confirm(`¿Eliminar "${_cache[id]?.titulo||"esta noticia"}"?\n\nEsta acción no se puede deshacer.`))return;
+  try{await deleteDoc(doc(db,"noticias",id));if(_editId===id)_editId=null;}catch(e){alert("Error: "+e.message);}
+};
+
+function initLst(){
+  _lstIniciado=true;
+  const lst=document.getElementById("lstNoticias"), cnt=document.getElementById("lstCnt");
+  onSnapshot(query(noticiasRef,orderBy("fechaMs","desc")), snap=>{
+    _cache={};
+    snap.forEach(d=>{_cache[d.id]=d.data();});
+    if(snap.empty){lst.innerHTML="<div class='lst-empty'>📭 Todavía no hay noticias.</div>";cnt.textContent="0 noticias";return;}
+    cnt.textContent=`${snap.size} noticia${snap.size!==1?"s":""}`;
+    const was=_editId;
+    lst.innerHTML=snap.docs.map(d=>buildItem(d.id,d.data())).join("");
+    if(was&&document.getElementById("ni-"+was)){document.getElementById("ni-"+was).classList.add("editing");document.getElementById("eb-"+was)?.classList.add("on");}
+  },err=>{lst.innerHTML=`<div class='lst-empty'>❌ Error cargando noticias.<br><small>${err.message}</small></div>`;});
+}
+</script>
+</body>
+</html>
