@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Línea Sarmiento — Horarios 2026</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0d0f14; --surface:#13161e; --border:#252a38;
+  --accent:#f0c040; --accent2:#4fa8e8; --accent3:#e05c3a;
+  --text:#e8eaf0; --muted:#6b7280; --green:#3ecf8e;
+  --orange:#f97316; --header-h:#1e2330;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-serif;font-size:14px;min-height:100vh}
+
+.hero{position:relative;padding:48px 32px 36px;background:linear-gradient(135deg,#0d0f14 0%,#111827 60%,#0d1320 100%);border-bottom:2px solid var(--accent);overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent,transparent 60px,rgba(240,192,64,.03) 60px,rgba(240,192,64,.03) 61px)}
+.hero-rail{position:absolute;bottom:0;left:0;right:0;height:4px;background:repeating-linear-gradient(90deg,var(--accent) 0px,var(--accent) 24px,transparent 24px,transparent 32px);opacity:.45}
+.hero-tag{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.18em;color:var(--accent);text-transform:uppercase;margin-bottom:12px}
+.hero h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(42px,7vw,80px);letter-spacing:.04em;line-height:.95;color:#fff}
+.hero h1 span{color:var(--accent)}
+.hero-sub{margin-top:10px;font-size:13px;color:var(--muted);font-family:'IBM Plex Mono',monospace}
+.hero-update{position:absolute;top:20px;right:24px;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:.06em}
+
+.tabs-wrapper{padding:24px 32px 0;background:var(--surface);border-bottom:1px solid var(--border)}
+.tabs{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.06em;text-transform:uppercase;padding:10px 18px 12px;border:none;background:transparent;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap;transition:color .15s}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+
+.content{padding:28px 32px 60px}
+.ramal-panel{display:none}
+.ramal-panel.active{display:block;animation:fadein .2s ease}
+@keyframes fadein{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+.ramal-header{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:20px}
+.ramal-title{font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:.04em;color:#fff}
+.ramal-subtitle{font-size:12px;color:var(--muted);margin-top:3px}
+.badges{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.badge{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;padding:4px 10px;border-radius:20px;border:1px solid}
+.badge.e{color:var(--green);border-color:var(--green);background:rgba(62,207,142,.08)}
+.badge.d{color:var(--orange);border-color:var(--orange);background:rgba(249,115,22,.08)}
+.badge.l{color:var(--accent2);border-color:var(--accent2);background:rgba(79,168,232,.08)}
+
+.info-cards{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px}
+.info-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 16px;min-width:130px}
+.ic-label{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+.ic-value{font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--accent);line-height:1}
+.ic-unit{font-size:10px;color:var(--muted);margin-top:2px}
+
+.alert{background:rgba(224,92,58,.08);border:1px solid rgba(224,92,58,.3);border-radius:8px;padding:11px 16px;margin-bottom:18px;font-size:12px;color:#f87171;display:flex;gap:8px;align-items:flex-start;line-height:1.6}
+
+.dir-header{display:flex;align-items:center;gap:10px;margin:22px 0 10px}
+.dir-label{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:.04em;white-space:nowrap}
+.dir-label.ida{color:var(--green)}
+.dir-label.vuelta{color:var(--orange)}
+.dir-label.info{color:var(--accent2)}
+.dir-line{flex:1;height:1px;background:var(--border)}
+
+.table-scroll{overflow-x:auto;border-radius:10px;border:1px solid var(--border);margin-bottom:4px}
+table{width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;font-size:12px}
+thead tr{background:var(--header-h)}
+thead th{padding:10px 14px;text-align:left;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);white-space:nowrap;border-bottom:1px solid var(--border)}
+thead th.tc{text-align:center}
+tbody tr{border-bottom:1px solid var(--border);transition:background .1s}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:rgba(240,192,64,.04)}
+tbody tr.alt{background:rgba(255,255,255,.018)}
+tbody tr.alt:hover{background:rgba(240,192,64,.05)}
+tbody td{padding:9px 14px;white-space:nowrap}
+td.tc{text-align:center;font-weight:600}
+td.dash{color:var(--muted);font-weight:400;text-align:center}
+td.tnum{color:var(--accent);font-weight:600;font-size:11px}
+td.estacion{color:var(--text);font-family:'IBM Plex Sans',sans-serif}
+td.obs{font-size:11px;color:var(--muted);font-family:'IBM Plex Sans',sans-serif;font-style:italic}
+
+.stations-strip{display:flex;overflow-x:auto;padding:16px 0 8px;scrollbar-width:thin;scrollbar-color:var(--border) transparent}
+.stn{display:flex;flex-direction:column;align-items:center;min-width:70px;position:relative}
+.stn::before{content:'';position:absolute;top:7px;left:0;right:50%;height:2px;background:var(--border)}
+.stn:first-child::before{display:none}
+.stn-dot{width:14px;height:14px;border-radius:50%;border:2px solid var(--accent);background:var(--bg);position:relative;z-index:1}
+.stn:first-child .stn-dot,.stn:last-child .stn-dot{background:var(--accent);width:16px;height:16px}
+.stn-name{margin-top:6px;font-size:9px;text-align:center;color:var(--muted);line-height:1.3;max-width:66px}
+.stn:first-child .stn-name,.stn:last-child .stn-name{color:var(--accent);font-weight:600}
+
+.tarifa-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px;margin-top:4px}
+.tarifa-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 14px}
+.tc-tramo{font-size:12px;color:var(--text);margin-bottom:8px}
+.tc-row{display:flex;justify-content:space-between;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted);margin-bottom:3px}
+.tc-row .price{color:var(--green);font-weight:600}
+
+.state-msg{text-align:center;padding:60px 20px;color:var(--muted);font-family:'IBM Plex Mono',monospace;font-size:13px}
+.state-msg .big{font-size:40px;margin-bottom:12px}
+.spinner{display:inline-block;width:30px;height:30px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;margin-bottom:12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+footer{text-align:center;padding:20px;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);border-top:1px solid var(--border);letter-spacing:.06em}
+
+@media(max-width:640px){
+  .hero{padding:28px 16px 24px}
+  .tabs-wrapper{padding:16px 16px 0}
+  .content{padding:20px 16px 48px}
+}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-tag">🚂 Trenes Argentinos · Área Metropolitana de Buenos Aires</div>
+  <h1>LÍNEA<br><span>SARMIENTO</span></h1>
+  <div class="hero-sub">Once · Moreno · Merlo · Lobos · Mercedes · Bragado</div>
+  <div class="hero-update" id="hero-update">Cargando…</div>
+  <div class="hero-rail"></div>
+</div>
+
+<div class="tabs-wrapper">
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('lv',this)">Once–Moreno L/V</button>
+    <button class="tab" onclick="showTab('sab',this)">Sábados</button>
+    <button class="tab" onclick="showTab('dom',this)">Dom / Feriados</button>
+    <button class="tab" onclick="showTab('ml',this)">Merlo–Lobos</button>
+    <button class="tab" onclick="showTab('mm',this)">Moreno–Mercedes</button>
+    <button class="tab" onclick="showTab('bg',this)">Bragado LD</button>
+    <button class="tab" onclick="showTab('tf',this)">Tarifas</button>
+    <button class="tab" onclick="showTab('est',this)">Estaciones</button>
+  </div>
+</div>
+
+<div class="content">
+
+  <div id="panel-lv" class="ramal-panel active">
+    <div class="ramal-header">
+      <div><div class="ramal-title">Once ↔ Moreno</div><div class="ramal-subtitle">Lunes a Viernes</div></div>
+      <div class="badges">
+        <span class="badge e">⚡ Eléctrico</span><span class="badge e">16 estaciones</span>
+        <span class="badge e">~70 min</span><span class="badge e">Servicio 24h</span>
+      </div>
+    </div>
+    <div class="info-cards">
+      <div class="info-card"><div class="ic-label">1er tren → Moreno</div><div class="ic-value">04:02</div><div class="ic-unit">desde Once</div></div>
+      <div class="info-card"><div class="ic-label">Último → Moreno</div><div class="ic-value">23:50</div><div class="ic-unit">desde Once</div></div>
+      <div class="info-card"><div class="ic-label">1er tren → Once</div><div class="ic-value">03:10</div><div class="ic-unit">desde Moreno</div></div>
+      <div class="info-card"><div class="ic-label">Último → Once</div><div class="ic-value">22:30</div><div class="ic-unit">desde Moreno</div></div>
+      <div class="info-card"><div class="ic-label">Frec. pico</div><div class="ic-value">~8'</div><div class="ic-unit">entre servicios</div></div>
+    </div>
+    <div id="data-lv"><div class="state-msg"><div class="spinner"></div><br>Cargando datos…</div></div>
+    <div class="dir-header" style="margin-top:24px;"><span class="dir-label info">Recorrido</span><div class="dir-line"></div></div>
+    <div class="stations-strip" id="strip-om"></div>
+  </div>
+
+  <div id="panel-sab" class="ramal-panel">
+    <div class="ramal-header">
+      <div><div class="ramal-title">Once ↔ Moreno</div><div class="ramal-subtitle">Sábados</div></div>
+      <div class="badges"><span class="badge e">⚡ Eléctrico</span><span class="badge e">~10' diurno</span></div>
+    </div>
+    <div class="info-cards">
+      <div class="info-card"><div class="ic-label">1er → Moreno</div><div class="ic-value">04:05</div><div class="ic-unit">desde Once</div></div>
+      <div class="info-card"><div class="ic-label">Último → Moreno</div><div class="ic-value">23:50</div><div class="ic-unit">desde Once</div></div>
+      <div class="info-card"><div class="ic-label">1er → Once</div><div class="ic-value">03:00</div><div class="ic-unit">desde Moreno</div></div>
+      <div class="info-card"><div class="ic-label">Último → Once</div><div class="ic-value">22:30</div><div class="ic-unit">desde Moreno</div></div>
+    </div>
+    <div id="data-sab"><div class="state-msg"><div class="spinner"></div><br>Cargando datos…</div></div>
+  </div>
+
+  <div id="panel-dom" class="ramal-panel">
+    <div class="ramal-header">
+      <div><div class="ramal-title">Once ↔ Moreno</div><div class="ramal-subtitle">Domingos y Feriados</div></div>
+      <div class="badges"><span class="badge e">⚡ Eléctrico</span><span class="badge e">~15' diurno</span></div>
+    </div>
+    <div class="info-cards">
+      <div class="info-card"><div class="ic-label">1er → Moreno</div><div class="ic-value">04:05</div><div class="ic-unit">desde Once</div></div>
+      <div class="info-card"><div class="ic-label">Último → Moreno</div><div class="ic-value">23:50</div><div class="ic-unit">desde Once</div></div>
+      <div class="info-card"><div class="ic-label">Frecuencia diurna</div><div class="ic-value">~27'</div><div class="ic-unit">entre servicios</div></div>
+    </div>
+    <div id="data-dom"><div class="state-msg"><div class="spinner"></div><br>Cargando datos…</div></div>
+  </div>
+
+  <div id="panel-ml" class="ramal-panel">
+    <div class="ramal-header">
+      <div><div class="ramal-title">Merlo ↔ Lobos</div><div class="ramal-subtitle">Todos los días · vía Marcos Paz y Las Heras</div></div>
+      <div class="badges"><span class="badge d">🛢 Diésel</span><span class="badge d">13 estaciones</span><span class="badge d">68 km</span></div>
+    </div>
+    <div class="alert"><span>⚠️</span>Recorrido limitado Merlo–Las Heras por obras. Verificar destino en cada servicio.</div>
+    <div id="data-ml"><div class="state-msg"><div class="spinner"></div><br>Cargando datos…</div></div>
+  </div>
+
+  <div id="panel-mm" class="ramal-panel">
+    <div class="ramal-header">
+      <div><div class="ramal-title">Moreno ↔ Mercedes</div><div class="ramal-subtitle">Todos los días · vía Gral. Rodríguez y Luján</div></div>
+      <div class="badges"><span class="badge d">🛢 Diésel</span><span class="badge d">13 estaciones</span><span class="badge d">62 km</span></div>
+    </div>
+    <div class="alert"><span>⚠️</span>Posibles demoras y cancelaciones por obras. Verificar estado antes de viajar.</div>
+    <div id="data-mm"><div class="state-msg"><div class="spinner"></div><br>Cargando datos…</div></div>
+  </div>
+
+  <div id="panel-bg" class="ramal-panel">
+    <div class="ramal-header">
+      <div><div class="ramal-title">Once ↔ Bragado</div><div class="ramal-subtitle">Lunes · Miércoles · Viernes</div></div>
+      <div class="badges"><span class="badge l">✈ Larga Distancia</span><span class="badge l">363 km</span><span class="badge l">~5h 20min</span></div>
+    </div>
+    <div class="info-cards">
+      <div class="info-card"><div class="ic-label">Sale de Once</div><div class="ic-value">07:10</div><div class="ic-unit">L / Mi / V</div></div>
+      <div class="info-card"><div class="ic-label">Llega Bragado</div><div class="ic-value">13:26</div><div class="ic-unit">aprox.</div></div>
+      <div class="info-card"><div class="ic-label">Vuelta Bragado</div><div class="ic-value">14:30</div><div class="ic-unit">mismos días</div></div>
+      <div class="info-card"><div class="ic-label">Llega Once</div><div class="ic-value">20:46</div><div class="ic-unit">aprox.</div></div>
+      <div class="info-card"><div class="ic-label">Compra online</div><div class="ic-value" style="font-size:12px;padding-top:4px"><a href="https://webventas.sofse.gob.ar" target="_blank" style="color:var(--accent2)">sofse.gob.ar</a></div></div>
+    </div>
+    <div id="data-bg"><div class="state-msg"><div class="spinner"></div><br>Cargando datos…</div></div>
+  </div>
+
+  <div id="panel-tf" class="ramal-panel">
+    <div class="ramal-header"><div><div class="ramal-title">Tarifas</div><div class="ramal-subtitle">Precios en pesos · Mayo 2026</div></div></div>
+    <div id="data-tf"><div class="state-msg"><div class="spinner"></div><br>Cargando datos…</div></div>
+  </div>
+
+  <div id="panel-est" class="ramal-panel">
+    <div class="ramal-header"><div><div class="ramal-title">Estaciones</div><div class="ramal-subtitle">Todos los ramales</div></div></div>
+    <div id="data-est"><div class="state-msg"><div class="spinner"></div><br>Cargando datos…</div></div>
+  </div>
+
+</div>
+
+<footer>LÍNEA SARMIENTO · TRENES ARGENTINOS OPERACIONES (SOFSE) · DATOS: trensarmiento.com.ar · 2026</footer>
+
+<script>
+// ─────────────────────────────────────────────────────────────────────────────
+//  CONFIGURACIÓN — pegá la URL de tu Web App de Apps Script acá abajo
+// ─────────────────────────────────────────────────────────────────────────────
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/TU_DEPLOYMENT_ID/exec';
+// ─────────────────────────────────────────────────────────────────────────────
+
+const CONFIG = {
+  lv:  { hoja: 'Once-Moreno LV',  tipo: 'frecuencias' },
+  sab: { hoja: 'Once-Moreno SAB', tipo: 'frecuencias' },
+  dom: { hoja: 'Once-Moreno DOM', tipo: 'frecuencias' },
+  ml:  { hoja: 'Merlo-Lobos',     tipo: 'horario' },
+  mm:  { hoja: 'Moreno-Mercedes', tipo: 'horario' },
+  bg:  { hoja: 'Bragado LD',      tipo: 'horario' },
+  tf:  { hoja: 'TARIFAS',         tipo: 'tarifas' },
+  est: { hoja: 'ESTACIONES',      tipo: 'estaciones' },
+};
+
+const EST_OM = ["Once","Caballito","Flores","Floresta","Villa Luro","Liniers",
+  "Ciudadela","Ramos Mejía","Haedo","Morón","Castelar","Ituzaingó",
+  "S.A. de Padua","Merlo","Paso del Rey","Moreno"];
+
+function showTab(id, btn) {
+  document.querySelectorAll('.ramal-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('panel-' + id).classList.add('active');
+  btn.classList.add('active');
+}
+
+async function fetchHoja(nombre) {
+  const url = `${APPS_SCRIPT_URL}?hoja=${encodeURIComponent(nombre)}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const json = await res.json();
+  if (json.error) throw new Error(json.error);
+  return json.rows || [];
+}
+
+async function init() {
+  buildStrip();
+  document.getElementById('hero-update').textContent =
+    'Actualizado ' + new Date().toLocaleDateString('es-AR',{day:'numeric',month:'long',year:'numeric'});
+
+  const results = await Promise.allSettled(
+    Object.entries(CONFIG).map(async ([id, cfg]) => {
+      const rows = await fetchHoja(cfg.hoja);
+      return { id, cfg, rows };
+    })
+  );
+
+  results.forEach(r => {
+    if (r.status === 'rejected') {
+      const id = r.reason?.id;
+      if (id) showError(id, r.reason.message);
+      return;
+    }
+    const { id, cfg, rows } = r.value;
+    render(id, cfg, rows);
+  });
+}
+
+function showError(id, msg) {
+  const c = document.getElementById('data-' + id);
+  if (c) c.innerHTML = `<div class="state-msg"><div class="big">❌</div>${msg}</div>`;
+}
+
+function render(id, cfg, rows) {
+  const c = document.getElementById('data-' + id);
+  if (!rows || rows.length < 2) {
+    c.innerHTML = `<div class="state-msg"><div class="big">📭</div>Sin datos en esta hoja</div>`;
+    return;
+  }
+  const map = { frecuencias: renderFrecuencias, horario: renderHorario,
+                tarifas: renderTarifas, estaciones: renderEstaciones };
+  c.innerHTML = (map[cfg.tipo] || renderTabla)(rows);
+}
+
+function splitSections(rows) {
+  const secs = []; let cur = [];
+  rows.forEach(row => {
+    const ne = row.filter(c => String(c).trim());
+    if (ne.length <= 1) { if (cur.length > 1) { secs.push(cur); cur = []; } }
+    else cur.push(row);
+  });
+  if (cur.length > 1) secs.push(cur);
+  return secs.length ? secs : [rows];
+}
+
+const isTime = v => /^\d{1,2}:\d{2}$/.test(String(v||'').trim());
+
+function renderTabla(rows) {
+  const heads = rows[0], data = rows.slice(1);
+  let h = `<div class="table-scroll"><table><thead><tr>`;
+  heads.forEach((th, i) => {
+    h += `<th class="${data.some(r => isTime(r[i]))?'tc':''}">${th}</th>`;
+  });
+  h += `</tr></thead><tbody>`;
+  data.forEach((row, ri) => {
+    h += `<tr class="${ri%2?'alt':''}">`;
+    heads.forEach((_, ci) => {
+      const v = String(row[ci]||'').trim();
+      let cls = '';
+      if (ci===0 && /^\d{4}[A-Z]?$/.test(v))  cls='tnum';
+      else if (ci===0)                          cls='estacion';
+      else if (isTime(v))                       cls='tc';
+      else if (!v||v==='—'||v==='-')            cls='dash';
+      else if (ci===heads.length-1)             cls='obs';
+      h += `<td class="${cls}">${v||'—'}</td>`;
+    });
+    h += `</tr>`;
+  });
+  return h + `</tbody></table></div>`;
+}
+
+function renderFrecuencias(rows) {
+  const secs = splitSections(rows);
+  const dirs = [
+    {label:'→ Trenes a Moreno', cls:'ida'},
+    {label:'← Trenes a Once',   cls:'vuelta'},
+  ];
+  return secs.map((sec, i) => {
+    const d = dirs[i]||{label:`Sección ${i+1}`,cls:'info'};
+    return `<div class="dir-header${i?` style="margin-top:20px"`:''}">
+      <span class="dir-label ${d.cls}">${d.label}</span><div class="dir-line"></div>
+    </div>` + renderTabla(sec);
+  }).join('');
+}
+
+function renderHorario(rows) {
+  const secs = splitSections(rows);
+  const dirs = [
+    {label:'→ A destino — Lunes a Sábados',  cls:'ida'},
+    {label:'← A origen — Lunes a Sábados',   cls:'vuelta'},
+    {label:'→ A destino — Dom / Feriados',    cls:'ida'},
+    {label:'← A origen — Dom / Feriados',     cls:'vuelta'},
+  ];
+  return secs.map((sec, i) => {
+    const d = dirs[i]||{label:`Sección ${i+1}`,cls:'info'};
+    return `<div class="dir-header${i?` style="margin-top:22px"`:''}">
+      <span class="dir-label ${d.cls}">${d.label}</span><div class="dir-line"></div>
+    </div>` + renderTabla(sec);
+  }).join('');
+}
+
+function renderTarifas(rows) {
+  const secs = splitSections(rows);
+  const titulos = ['Once–Moreno (SUBE)','Merlo–Lobos (SUBE)',
+    'Moreno–Mercedes (SUBE)','Bragado (Larga Distancia)'];
+  return secs.map((sec, i) => {
+    const titulo = titulos[i]||`Sección ${i+1}`;
+    const heads = sec[0]||[];
+    let body = '';
+    const priceCols = heads.filter((_,ci)=>ci>0&&sec.slice(1).some(r=>r[ci])).length;
+    if (priceCols >= 1) {
+      body = `<div class="tarifa-grid">` +
+        sec.slice(1).map(row => {
+          if (!row[0]) return '';
+          return `<div class="tarifa-card"><div class="tc-tramo">${row[0]}</div>` +
+            heads.slice(1).map((lbl,ci) => {
+              const v = row[ci+1];
+              return v ? `<div class="tc-row"><span>${lbl}</span><span class="price">$${v}</span></div>` : '';
+            }).join('') + `</div>`;
+        }).join('') + `</div>`;
+    } else {
+      body = renderTabla(sec);
+    }
+    return `<div${i?` style="margin-top:24px"`:''}><div class="dir-header">
+      <span class="dir-label info">${titulo}</span><div class="dir-line"></div>
+    </div>${body}</div>`;
+  }).join('');
+}
+
+function renderEstaciones(rows) {
+  const secs = splitSections(rows);
+  const colores = ['var(--accent2)','var(--green)','var(--orange)'];
+  return secs.map((sec, i) => {
+    const titulo = String(sec[0]?.[0]||`Ramal ${i+1}`);
+    return `<div${i?` style="margin-top:24px"`:''}><div class="dir-header">
+      <span class="dir-label" style="color:${colores[i%3]}">${titulo}</span>
+      <div class="dir-line"></div>
+    </div>` + renderTabla(sec) + `</div>`;
+  }).join('') || renderTabla(rows);
+}
+
+function buildStrip() {
+  document.getElementById('strip-om').innerHTML = EST_OM.map(e =>
+    `<div class="stn"><div class="stn-dot"></div><div class="stn-name">${e}</div></div>`
+  ).join('');
+}
+
+init().catch(err => {
+  console.error(err);
+  document.getElementById('hero-update').textContent = '⚠ Error al cargar';
+});
+</script>
+</body>
+</html>
