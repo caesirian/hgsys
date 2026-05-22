@@ -1,483 +1,621 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title> Línea Sarmiento (Once - Moreno)</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+<title>Tablero AVL - Línea Sarmiento</title>
+
+<!-- Leaflet -->
+<link
+  rel="stylesheet"
+  href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+/>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<style>
+    *{
+        margin:0;
+        padding:0;
+        box-sizing:border-box;
+        font-family:Arial, Helvetica, sans-serif;
+    }
+
+    body{
+        background:#0f172a;
+        color:#f1f5f9;
+        overflow:hidden;
+    }
+
+    .container{
+        display:flex;
+        width:100vw;
+        height:100vh;
+    }
+
+    #map{
+        flex:1;
+        height:100%;
+        z-index:1;
+    }
+
+    .sidebar{
+        width:380px;
+        background:#111827;
+        border-left:1px solid #1e293b;
+        padding:20px;
+        overflow-y:auto;
+    }
+
+    .title{
+        font-size:22px;
+        font-weight:bold;
+        margin-bottom:5px;
+    }
+
+    .subtitle{
+        color:#94a3b8;
+        font-size:14px;
+        margin-bottom:20px;
+    }
+
+    .panel{
+        background:#1e293b;
+        border-radius:14px;
+        padding:16px;
+        margin-bottom:18px;
+        border:1px solid #334155;
+    }
+
+    .panel h2{
+        font-size:16px;
+        margin-bottom:12px;
+        color:#f8fafc;
+    }
+
+    .filters{
+        display:flex;
+        gap:10px;
+        flex-wrap:wrap;
+    }
+
+    .filter-btn{
+        background:#334155;
+        border:none;
+        color:white;
+        padding:10px 14px;
+        border-radius:10px;
+        cursor:pointer;
+        transition:0.2s;
+        font-size:14px;
+    }
+
+    .filter-btn.active{
+        background:#2563eb;
+    }
+
+    .legend-item{
+        display:flex;
+        align-items:center;
+        gap:10px;
+        margin-bottom:10px;
+    }
+
+    .status-dot{
+        width:12px;
+        height:12px;
+        border-radius:50%;
+    }
+
+    .normal{
+        background:#22c55e;
+    }
+
+    .delay{
+        background:#f59e0b;
+    }
+
+    .interrupt{
+        background:#ef4444;
+    }
+
+    .arrival-card{
+        background:#0f172a;
+        border:1px solid #334155;
+        padding:12px;
+        border-radius:12px;
+        margin-bottom:10px;
+    }
+
+    .arrival-destination{
+        font-weight:bold;
+        font-size:15px;
+    }
+
+    .arrival-time{
+        color:#38bdf8;
+        margin-top:5px;
+        font-size:14px;
+    }
+
+    .station-title{
+        margin-bottom:12px;
+        color:#93c5fd;
+        font-size:15px;
+    }
+
+    .refresh{
+        margin-top:10px;
+        color:#94a3b8;
+        font-size:12px;
+    }
+
+    .train-marker{
+        background:#2563eb;
+        border:2px solid white;
+        width:16px;
+        height:16px;
+        border-radius:50%;
+        box-shadow:0 0 12px rgba(37,99,235,0.8);
+    }
+
+    .towards-once{
+        background:#ef4444;
+    }
+
+    .towards-moreno{
+        background:#22c55e;
+    }
+
+    @media(max-width: 900px){
+
+        .container{
+            flex-direction:column;
         }
 
-        body {
-            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
-            background: #eef2f5;
-            padding: 20px;
-            color: #1e2a3e;
+        .sidebar{
+            width:100%;
+            height:40%;
+            border-left:none;
+            border-top:1px solid #1e293b;
         }
 
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 28px;
-            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
-            overflow: hidden;
+        #map{
+            height:60%;
         }
+    }
 
-        /* header */
-        .header {
-            background: #0a2b3e;
-            color: white;
-            padding: 20px 24px;
-        }
+    .leaflet-popup-content-wrapper{
+        background:#111827;
+        color:white;
+        border-radius:10px;
+    }
 
-        .route {
-            display: flex;
-            align-items: baseline;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-bottom: 8px;
-        }
+    .leaflet-popup-tip{
+        background:#111827;
+    }
 
-        .route h1 {
-            font-size: 1.7rem;
-            font-weight: 600;
-            letter-spacing: -0.3px;
-        }
-
-        .badge-line {
-            background: #f4a261;
-            color: #1e2a3e;
-            font-weight: 600;
-            font-size: 0.75rem;
-            padding: 4px 10px;
-            border-radius: 40px;
-        }
-
-        .direction {
-            font-size: 0.85rem;
-            opacity: 0.8;
-            display: flex;
-            gap: 12px;
-            margin-top: 6px;
-        }
-
-        /* main content */
-        .content {
-            padding: 20px 24px 28px;
-        }
-
-        /* tarjeta alerta / estado */
-        .alert-card {
-            background: #fff9e8;
-            border-left: 5px solid #f4a261;
-            border-radius: 20px;
-            padding: 16px 18px;
-            margin-bottom: 24px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
-        }
-
-        .alert-title {
-            font-weight: 700;
-            font-size: 0.9rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: #c46e2b;
-            margin-bottom: 8px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .alert-text {
-            font-size: 1rem;
-            line-height: 1.4;
-            color: #2c3e2f;
-        }
-
-        .alert-empty {
-            background: #e9f4f0;
-            border-left-color: #2a9d8f;
-        }
-
-        /* grid estado */
-        .info-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 14px;
-            margin-bottom: 28px;
-        }
-
-        .info-card {
-            background: #f8fafc;
-            border-radius: 20px;
-            padding: 14px 16px;
-            border: 1px solid #e2e8f0;
-        }
-
-        .info-label {
-            font-size: 0.7rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            color: #5a6e7c;
-            letter-spacing: 0.5px;
-        }
-
-        .info-value {
-            font-size: 1.4rem;
-            font-weight: 700;
-            margin-top: 6px;
-            display: flex;
-            align-items: baseline;
-            gap: 6px;
-            flex-wrap: wrap;
-        }
-
-        .status-badge {
-            font-size: 0.75rem;
-            font-weight: 500;
-            background: #e2e8f0;
-            padding: 4px 10px;
-            border-radius: 30px;
-        }
-
-        .status-normal {
-            background: #d1fae5;
-            color: #065f46;
-        }
-
-        .status-warning {
-            background: #ffedd5;
-            color: #9b4a00;
-        }
-
-        .status-critical {
-            background: #ffe4e2;
-            color: #b91c1c;
-        }
-
-        /* tabla horarios */
-        .schedule-section h3 {
-            font-weight: 600;
-            font-size: 1.2rem;
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-
-        .refresh-info {
-            font-size: 0.7rem;
-            font-weight: normal;
-            background: #eef2f5;
-            padding: 4px 10px;
-            border-radius: 40px;
-            color: #2c5f8a;
-        }
-
-        .train-table {
-            width: 100%;
-            border-collapse: collapse;
-            background: white;
-            border-radius: 20px;
-            overflow: hidden;
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-        }
-
-        .train-table th {
-            text-align: left;
-            padding: 12px 12px;
-            background: #f1f5f9;
-            font-weight: 600;
-            font-size: 0.75rem;
-            color: #334155;
-        }
-
-        .train-table td {
-            padding: 12px 12px;
-            border-bottom: 1px solid #e9edf2;
-            font-size: 0.9rem;
-        }
-
-        .btn-refresh {
-            background: #0f2f3f;
-            border: none;
-            color: white;
-            font-weight: 500;
-            padding: 8px 18px;
-            border-radius: 40px;
-            font-size: 0.8rem;
-            cursor: pointer;
-            transition: 0.2s;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .btn-refresh:hover {
-            background: #1e4a62;
-        }
-
-        .last-updated {
-            font-size: 0.7rem;
-            color: #5f7d9c;
-            margin-top: 16px;
-            text-align: right;
-        }
-
-        footer {
-            font-size: 0.7rem;
-            text-align: center;
-            padding: 16px 0 20px 0;
-            color: #6b7f8f;
-            border-top: 1px solid #eef2f5;
-            margin-top: 20px;
-        }
-
-        @media (max-width: 550px) {
-            .info-grid {
-                grid-template-columns: 1fr;
-            }
-            .route h1 {
-                font-size: 1.3rem;
-            }
-        }
-    </style>
+</style>
 </head>
+
 <body>
+
 <div class="container">
-    <div class="header">
-        <div class="route">
-            <h1>🚆 Once · Moreno</h1>
-            <span class="badge-line">Línea Sarmiento</span>
+
+    <div id="map"></div>
+
+    <div class="sidebar">
+
+        <div class="title">Línea Sarmiento</div>
+        <div class="subtitle">
+            Sistema AVL en tiempo real · Once ↔ Moreno
         </div>
-        <div class="direction">
-            <span>⬇️ Sentido Moreno</span>
-            <span>⬆️ Sentido Once</span>
+
+        <div class="panel">
+            <h2>Filtrar Sentido</h2>
+
+            <div class="filters">
+                <button class="filter-btn active" data-filter="all">
+                    Todos
+                </button>
+
+                <button class="filter-btn active" data-filter="once">
+                    Hacia Once
+                </button>
+
+                <button class="filter-btn active" data-filter="moreno">
+                    Hacia Moreno
+                </button>
+            </div>
         </div>
-        <div class="direction" style="font-size: 0.7rem; opacity: 0.7;">
-            Tiempos estimados · información en directo
+
+        <div class="panel">
+            <h2>Estado del Servicio</h2>
+
+            <div class="legend-item">
+                <div class="status-dot normal"></div>
+                <span>Normal</span>
+            </div>
+
+            <div class="legend-item">
+                <div class="status-dot delay"></div>
+                <span>Atrasado</span>
+            </div>
+
+            <div class="legend-item">
+                <div class="status-dot interrupt"></div>
+                <span>Interrumpido</span>
+            </div>
         </div>
+
+        <div class="panel">
+            <h2>Próximos Arribos</h2>
+
+            <div class="station-title">Estación Once</div>
+            <div id="arrivals-once"></div>
+
+            <br>
+
+            <div class="station-title">Estación Moreno</div>
+            <div id="arrivals-moreno"></div>
+
+            <div class="refresh">
+                Actualización automática cada 30 segundos
+            </div>
+        </div>
+
     </div>
 
-    <div class="content">
-        <div id="alertContainer">
-            <!-- alertas dinámicas se cargan acá -->
-        </div>
-
-        <div class="info-grid">
-            <div class="info-card">
-                <div class="info-label">ESTADO GENERAL</div>
-                <div class="info-value" id="estadoGeneral">
-                    <span>⚫ Cargando...</span>
-                </div>
-            </div>
-            <div class="info-card">
-                <div class="info-label">PRÓXIMO TREN</div>
-                <div class="info-value" id="proximoTren">
-                    <span>⏳ Obteniendo datos</span>
-                </div>
-            </div>
-        </div>
-
-        <div class="schedule-section">
-            <h3>
-                📍 Próximas salidas desde Once
-                <button class="btn-refresh" id="refreshBtn">⟳ Actualizar ahora</button>
-                <span class="refresh-info" id="refreshTimer">Actualización cada 30s</span>
-            </h3>
-            <div style="overflow-x: auto;">
-                <table class="train-table" id="horariosTable">
-                    <thead>
-                        <tr><th>Hora</th><th>Destino</th><th>Estado</th></tr>
-                    </thead>
-                    <tbody id="horariosBody">
-                        <tr><td colspan="3">Cargando horarios en tiempo real...</td></tr>
-                    </tbody>
-                </table>
-            </div>
-            <div class="last-updated" id="lastUpdate"></div>
-        </div>
-        <footer>
-            Datos proporcionados por <strong>api-trenes (ariedro.dev)</strong> · Bypasser de SOFSE.<br>
-            ⚠️ Proyecto comunitario no oficial – puede presentar intermitencias.
-        </footer>
-    </div>
 </div>
 
 <script>
-    // --- CONFIGURACIÓN ---
-    // IDs de estaciones relevantes (obtenidos de la API /estaciones/buscar)
-    // Once (id: 5)  -  Moreno (id: 10)  según la base de datos SOFSE
-    const ESTACION_ONCE_ID = 5;
-    const ESTACION_MORENO_ID = 10;
-    const LINEA_SARMIENTO = 5;        // la línea Sarmiento se identifica con id 5 en la API
-    const API_BASE = 'https://ariedro.dev/api-trenes';
 
-    let refreshInterval = null;
+    // =========================================================
+    // CONFIGURACIÓN GENERAL
+    // =========================================================
 
-    // --- helper: fetch JSON robusto ---
-    async function fetchAPI(endpoint) {
-        try {
-            const response = await fetch(`${API_BASE}${endpoint}`);
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            return await response.json();
-        } catch (error) {
-            console.error(`Error en ${endpoint}:`, error);
-            return null;
+    const map = L.map('map', {
+        zoomControl:true
+    }).setView([-34.6037, -58.592], 11);
+
+    L.tileLayer(
+        'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+        {
+            attribution: '&copy; OpenStreetMap'
         }
-    }
+    ).addTo(map);
 
-    // --- 1. Alertas de servicio (GET /alertas) ---
-    async function cargarAlertas() {
-        const data = await fetchAPI('/alertas');
-        const alertContainer = document.getElementById('alertContainer');
-        if (!data || !Array.isArray(data) || data.length === 0) {
-            alertContainer.innerHTML = `
-                <div class="alert-card alert-empty">
-                    <div class="alert-title">🟢 Sin incidencias reportadas</div>
-                    <div class="alert-text">El servicio de la línea Sarmiento se encuentra operativo sin novedades mayores.</div>
-                </div>`;
-            return;
-        }
+    // =========================================================
+    // RECORRIDO SARMIENTO ONCE - MORENO
+    // =========================================================
 
-        // Filtrar alertas relacionadas con la línea Sarmiento o con términos generales
-        const sarmientoAlerts = data.filter(alert => {
-            const titulo = (alert.titulo || '').toLowerCase();
-            const desc = (alert.descripcion || '').toLowerCase();
-            return titulo.includes('sarmiento') || desc.includes('sarmiento') || titulo.includes('once') || desc.includes('moreno') || titulo.includes('linea 5');
-        });
-        const activeAlerts = sarmientoAlerts.length ? sarmientoAlerts : data.slice(0, 1); // si no encuentra, muestra la primera alerta general
+    const sarmientoLine = [
+        [-34.6098, -58.4080], // Once
+        [-34.6182, -58.4387], // Caballito
+        [-34.6295, -58.4639], // Flores
+        [-34.6408, -58.4842], // Floresta
+        [-34.6488, -58.5079], // Villa Luro
+        [-34.6539, -58.5277], // Liniers
+        [-34.6632, -58.5623], // Ciudadela
+        [-34.6669, -58.5921], // Ramos
+        [-34.6698, -58.6254], // Haedo
+        [-34.6687, -58.6559], // Morón
+        [-34.6527, -58.7021], // Castelar
+        [-34.6400, -58.7295], // Ituzaingó
+        [-34.6345, -58.7792], // Merlo
+        [-34.6492, -58.8058], // Paso del Rey
+        [-34.6348, -58.7910], // Moreno
+    ];
 
-        let alertHtml = '';
-        for (let alert of activeAlerts.slice(0, 2)) {
-            const titulo = alert.titulo || 'Alerta de servicio';
-            const descripcion = alert.descripcion || 'Consulta el estado en estaciones';
-            alertHtml += `
-                <div class="alert-card">
-                    <div class="alert-title">⚠️ ${titulo}</div>
-                    <div class="alert-text">${descripcion}</div>
-                </div>`;
-        }
-        alertContainer.innerHTML = alertHtml;
-    }
+    const lineLayer = L.polyline(sarmientoLine, {
+        color:'#38bdf8',
+        weight:5,
+        opacity:0.8
+    }).addTo(map);
 
-    // --- 2. Estado general + próximo tren (usando estaciones/horarios) ---
-    async function cargarEstadoGeneral() {
-        // Intentamos obtener horarios desde Once hacia Moreno para conocer el próximo tren y demoras relativas.
-        const horariosData = await fetchAPI(`/estaciones/${ESTACION_ONCE_ID}/horarios?lineas=${LINEA_SARMIENTO}&limit=5`);
-        const estadoDiv = document.getElementById('estadoGeneral');
-        const proximoDiv = document.getElementById('proximoTren');
-
-        if (!horariosData || !horariosData.results || horariosData.results.length === 0) {
-            estadoDiv.innerHTML = '<span>🔴 Sin datos de horarios</span>';
-            proximoDiv.innerHTML = '<span>⏳ Sin información</span>';
-            return;
-        }
-
-        // Extraer el primer tren de la lista (próxima salida desde Once con destino Moreno u otra)
-        const primerTren = horariosData.results[0];
-        const horaSalida = primerTren.salida || primerTren.horario_salida || '--:--';
-        const destino = primerTren.destino_nombre || (primerTren.estacion_destino_id === ESTACION_MORENO_ID ? 'Moreno' : 'Varios');
-
-        // Estado general: intentamos extraer demora / normalidad según alertas o atributos
-        let estadoTexto = '✅ Servicio normal';
-        let estadoColor = 'status-normal';
-        // Verificar si existe alguna alerta que denote demora o reducción
-        const alertasRaw = await fetchAPI('/alertas');
-        let hayDemora = false;
-        if (alertasRaw && Array.isArray(alertasRaw)) {
-            hayDemora = alertasRaw.some(a => {
-                const tit = (a.titulo || '').toLowerCase();
-                const desc = (a.descripcion || '').toLowerCase();
-                return (tit.includes('demora') || desc.includes('demora') || tit.includes('reducido') || tit.includes('retraso'));
-            });
-        }
-        if (hayDemora) {
-            estadoTexto = '🟠 Posibles demoras - servicio reducido';
-            estadoColor = 'status-warning';
-        }
-
-        estadoDiv.innerHTML = `<span class="status-badge ${estadoColor}">${estadoTexto}</span>`;
-        proximoDiv.innerHTML = `<span>🚆 ${horaSalida}  →  ${destino}</span><span class="status-badge status-normal">Estimado</span>`;
-    }
-
-    // --- 3. Tabla de próximos trenes (horarios reales desde la API) ---
-    async function cargarHorarios() {
-        const body = document.getElementById('horariosBody');
-        body.innerHTML = '<tr><td colspan="3">Actualizando horarios...</td></tr>';
-        
-        // Obtener horarios desde la estación Once (cabecera)
-        const data = await fetchAPI(`/estaciones/${ESTACION_ONCE_ID}/horarios?lineas=${LINEA_SARMIENTO}&limit=8`);
-        
-        if (!data || !data.results || data.results.length === 0) {
-            body.innerHTML = '<tr><td colspan="3">No se pudieron cargar los horarios o no hay servicios programados.</td></tr>';
-            return;
-        }
-
-        let rows = '';
-        for (let tren of data.results) {
-            const hora = tren.salida || tren.horario_salida || '--:--';
-            let destino = tren.destino_nombre || '';
-            if (!destino && tren.estacion_destino_id === ESTACION_MORENO_ID) destino = 'Moreno';
-            else if (!destino && tren.estacion_destino_id) destino = `Estación ${tren.estacion_destino_id}`;
-            else if (!destino) destino = 'Servicio regular';
-            
-            let estadoViaje = '⏱ A tiempo';
-            if (tren.demora && tren.demora > 0) estadoViaje = `⏰ Demora ${tren.demora} min`;
-            else if (tren.estado === 'cancelado') estadoViaje = '❌ Cancelado';
-            else if (tren.estado === 'demorado') estadoViaje = '⚠️ Demorado';
-            
-            rows += `<tr>
-                        <td><strong>${hora}</strong></td>
-                        <td>${destino}</td>
-                        <td>${estadoViaje}</td>
-                     </tr>`;
-        }
-        body.innerHTML = rows;
-    }
-
-    // --- 4. Actualización completa (todos los datos + timestamp) ---
-    async function actualizarTodo() {
-        const updateSpan = document.getElementById('lastUpdate');
-        updateSpan.innerText = 'Actualizando...';
-        try {
-            await Promise.all([
-                cargarAlertas(),
-                cargarEstadoGeneral(),
-                cargarHorarios()
-            ]);
-            const ahora = new Date();
-            updateSpan.innerText = `Última actualización: ${ahora.toLocaleTimeString('es-AR')} hs`;
-        } catch (err) {
-            console.warn('Error en actualización:', err);
-            updateSpan.innerText = 'Error al actualizar, reintentando...';
-        }
-    }
-
-    // --- inicialización y refresco automático cada 30 segundos ---
-    function iniciarRefresh() {
-        if (refreshInterval) clearInterval(refreshInterval);
-        actualizarTodo();
-        refreshInterval = setInterval(() => {
-            actualizarTodo();
-        }, 30000);  // 30 segundos
-    }
-
-    // Manual refresh con botón + reseteo del timer automático
-    document.getElementById('refreshBtn').addEventListener('click', () => {
-        actualizarTodo();
-        if (refreshInterval) {
-            clearInterval(refreshInterval);
-            iniciarRefresh(); // reinicia el contador de 30s
-        }
+    map.fitBounds(lineLayer.getBounds(), {
+        padding:[20,20]
     });
 
-    iniciarRefresh();
+    // =========================================================
+    // ESTACIONES
+    // =========================================================
+
+    const stations = [
+        {name:'Once', coords:[-34.6098, -58.4080]},
+        {name:'Caballito', coords:[-34.6182, -58.4387]},
+        {name:'Flores', coords:[-34.6295, -58.4639]},
+        {name:'Floresta', coords:[-34.6408, -58.4842]},
+        {name:'Villa Luro', coords:[-34.6488, -58.5079]},
+        {name:'Liniers', coords:[-34.6539, -58.5277]},
+        {name:'Ciudadela', coords:[-34.6632, -58.5623]},
+        {name:'Ramos Mejía', coords:[-34.6669, -58.5921]},
+        {name:'Haedo', coords:[-34.6698, -58.6254]},
+        {name:'Morón', coords:[-34.6687, -58.6559]},
+        {name:'Castelar', coords:[-34.6527, -58.7021]},
+        {name:'Ituzaingó', coords:[-34.6400, -58.7295]},
+        {name:'Merlo', coords:[-34.6345, -58.7792]},
+        {name:'Paso del Rey', coords:[-34.6492, -58.8058]},
+        {name:'Moreno', coords:[-34.6348, -58.7910]},
+    ];
+
+    stations.forEach(station => {
+        L.circleMarker(station.coords,{
+            radius:5,
+            color:'#fff',
+            fillColor:'#fff',
+            fillOpacity:1
+        })
+        .bindPopup(`<b>${station.name}</b>`)
+        .addTo(map);
+    });
+
+    // =========================================================
+    // MARCADORES DE TRENES
+    // =========================================================
+
+    let trainMarkers = [];
+
+    let filters = {
+        once:true,
+        moreno:true
+    };
+
+    function createTrainIcon(direction){
+
+        const className =
+            direction === 'once'
+            ? 'train-marker towards-once'
+            : 'train-marker towards-moreno';
+
+        return L.divIcon({
+            html:`<div class="${className}"></div>`,
+            className:'',
+            iconSize:[16,16]
+        });
+    }
+
+    function clearTrainMarkers(){
+        trainMarkers.forEach(marker => map.removeLayer(marker));
+        trainMarkers = [];
+    }
+
+    // =========================================================
+    // SIMULACIÓN AVL + GTFS RT
+    // =========================================================
+    // IMPORTANTE:
+    // Reemplazar esta lógica mockeada por el consumo real
+    // del feed GTFS-Realtime de Transporte Público BA.
+    //
+    // Ejemplo:
+    // fetch("GTFS_REALTIME_URL")
+    //
+    // Decodificar protobuf usando:
+    // https://github.com/google/transit/tree/master/gtfs-realtime
+    //
+    // =========================================================
+
+    async function updateTrainPositions(){
+
+        clearTrainMarkers();
+
+        // MOCK DATA
+        // Simula trenes sobre la traza
+        const trains = [
+            {
+                id:'S01',
+                lat:-34.646,
+                lng:-58.520,
+                direction:'once',
+                status:'Normal'
+            },
+            {
+                id:'S02',
+                lat:-34.666,
+                lng:-58.610,
+                direction:'moreno',
+                status:'Atrasado'
+            },
+            {
+                id:'S03',
+                lat:-34.642,
+                lng:-58.735,
+                direction:'once',
+                status:'Normal'
+            },
+            {
+                id:'S04',
+                lat:-34.635,
+                lng:-58.790,
+                direction:'moreno',
+                status:'Interrumpido'
+            }
+        ];
+
+        trains.forEach(train => {
+
+            if(train.direction === 'once' && !filters.once){
+                return;
+            }
+
+            if(train.direction === 'moreno' && !filters.moreno){
+                return;
+            }
+
+            const marker = L.marker(
+                [train.lat, train.lng],
+                {
+                    icon:createTrainIcon(train.direction)
+                }
+            )
+            .bindPopup(`
+                <b>Tren ${train.id}</b><br>
+                Sentido: ${
+                    train.direction === 'once'
+                    ? 'Hacia Once'
+                    : 'Hacia Moreno'
+                }<br>
+                Estado: ${train.status}
+            `)
+            .addTo(map);
+
+            trainMarkers.push(marker);
+        });
+
+    }
+
+    // =========================================================
+    // API ARRIBOS SOFSE
+    // =========================================================
+
+    async function fetchArrivals(stationId, containerId){
+
+        const container = document.getElementById(containerId);
+
+        container.innerHTML = `
+            <div class="arrival-card">
+                Cargando arribos...
+            </div>
+        `;
+
+        try{
+
+            const response = await fetch(
+                `https://ariedro.dev/api-trenes/arribos/estacion/${stationId}`
+            );
+
+            const data = await response.json();
+
+            container.innerHTML = '';
+
+            // Adaptar según estructura real devuelta
+            const arrivals = data.slice(0,5);
+
+            arrivals.forEach(arrival => {
+
+                const div = document.createElement('div');
+
+                div.className = 'arrival-card';
+
+                div.innerHTML = `
+                    <div class="arrival-destination">
+                        ${arrival.destino || 'Destino'}
+                    </div>
+
+                    <div class="arrival-time">
+                        ${arrival.hora || '--:--'}
+                    </div>
+                `;
+
+                container.appendChild(div);
+            });
+
+        }catch(error){
+
+            console.error(error);
+
+            container.innerHTML = `
+                <div class="arrival-card">
+                    No fue posible obtener datos.
+                </div>
+            `;
+        }
+
+    }
+
+    // =========================================================
+    // FILTROS
+    // =========================================================
+
+    document.querySelectorAll('.filter-btn')
+    .forEach(btn => {
+
+        btn.addEventListener('click', () => {
+
+            const filter = btn.dataset.filter;
+
+            if(filter === 'all'){
+
+                const active =
+                    btn.classList.contains('active');
+
+                if(active){
+
+                    filters.once = false;
+                    filters.moreno = false;
+
+                    document.querySelectorAll('.filter-btn')
+                    .forEach(b => b.classList.remove('active'));
+
+                }else{
+
+                    filters.once = true;
+                    filters.moreno = true;
+
+                    document.querySelectorAll('.filter-btn')
+                    .forEach(b => b.classList.add('active'));
+                }
+
+            }else{
+
+                filters[filter] = !filters[filter];
+
+                btn.classList.toggle('active');
+            }
+
+            updateTrainPositions();
+
+        });
+
+    });
+
+    // =========================================================
+    // ACTUALIZACIÓN GENERAL
+    // =========================================================
+
+    async function refreshAll(){
+
+        updateTrainPositions();
+
+        fetchArrivals(1, 'arrivals-once');
+        fetchArrivals(16, 'arrivals-moreno');
+
+    }
+
+    refreshAll();
+
+    setInterval(refreshAll, 30000);
+
+    // =========================================================
+    // NOTAS DE SEGURIDAD / CORS
+    // =========================================================
+    //
+    // Algunas APIs ferroviarias pueden bloquear requests
+    // directos desde navegador por políticas CORS.
+    //
+    // En producción se recomienda:
+    //
+    // 1. Utilizar un backend proxy propio:
+    //
+    //    Frontend -> Tu Backend -> API SOFSE
+    //
+    // 2. Reenviar cabeceras utilizadas por la app oficial:
+    //
+    //    Authorization
+    //    User-Agent
+    //    x-requested-with
+    //
+    // 3. Implementar caché de 10-30 segundos
+    //    para evitar rate limits.
+    //
+    // 4. Para GTFS-Realtime:
+    //    consumir protobuf desde backend Node.js
+    //    y exponer JSON normalizado al frontend.
+    //
+    // =========================================================
+
 </script>
+
 </body>
 </html>
