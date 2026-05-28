@@ -87,7 +87,7 @@
                 pais: ipData.country_name
             };
 
-            fetch("https://script.google.com/macros/s/AKfycbxEO_QhFWBkF1IJkXgOd6-h5WfIb2LLhjmZNhEkvpho4K3oMPGBsUazxotTVwMIO_Q44g/exec", {
+            fetch("https://script.google.com/macros/s/AKfycbxEO_QhFWBkF1IJkXgOd6-h5WfIb2LLhjmZNhEkvpho4K3oMPGBsUazxotTVwMIO_Q44g/", {
                 method: "POST",
                 body: JSON.stringify(sheetData)
             }).catch(function(e){});
@@ -2437,7 +2437,7 @@ function updateParoBuses(stId) {
 // APPS SCRIPT — URL de tu Web App desplegada.
 // Reemplazá el valor con tu propia URL de implementación.
 // ════════════════════════════════════════════════════════════
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/TU_DEPLOYMENT_ID/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwoYsRXXTGlt_9pw0gqJsEx4TSmfMSuw2yNH9gJ6LUU6rNM64cgS8Yl2mIC71NMyB5d/exec';
 
 // ─── Placeholders — se sobreescriben al cargar desde Sheets ─
 // Estos valores se usan si el fetch falla (modo offline/fallback)
