@@ -1,187 +1,756 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" class="scroll-smooth">
 <head>
-  <meta charset="UTF-8">
-  <title>HG Digital - Desarrollador Web</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Desarrollador Web y Sistemas de Gestión | Automatización para Empresas</title>
+
+  <meta name="description" content="Desarrollador web y administrador. Creo sistemas de gestión, automatización de procesos, presupuestos online y plataformas web para empresas, PyMEs y cooperativas.">
+  <meta name="keywords" content="desarrollador web, sistemas de gestión, automatización, presupuestos online, panel administrativo, google sheets, apps script, programador argentina">
+  <meta name="author" content="Hernán Garbarino">
+  <meta name="theme-color" content="#0A2846">
+
+  <meta property="og:title" content="Sistemas Web y Automatización para Empresas">
+  <meta property="og:description" content="Desarrollo web + gestión administrativa en una sola solución.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://hgsys.vercel.app">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="alternate icon" type="image/png" href="favicon.png">
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,500..800&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            midnight: '#0A2846',
+            limeTech: '#C1FF72',
+            cyanTech: '#00E5FF',
+            ink: '#041524'
+          },
+          fontFamily: {
+            display: ['Bricolage Grotesque', 'Inter', 'system-ui', 'sans-serif'],
+            body: ['Inter', 'system-ui', 'sans-serif']
+          },
+          boxShadow: {
+            tactile: '0 28px 80px rgba(0, 229, 255, .14), 0 14px 36px rgba(0, 0, 0, .28)',
+            lime: '0 18px 48px rgba(193, 255, 114, .22)'
+          }
+        }
+      }
+    }
+  </script>
+
   <style>
-    body { 
-      font-family: Arial, sans-serif; 
-      margin: 0; 
-      background: #0f0f0f; 
-      color: #eee; 
+    :root{
+      --bg:#0A2846;
+      --card:rgba(255,255,255,.08);
+      --primary:#C1FF72;
+      --secondary:#00E5FF;
+      --text:#F4FBFF;
+      --muted:#B9CFE0;
+      --line:rgba(255,255,255,.16);
+      --deep:#041524;
+      --radius:28px;
     }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:Inter,system-ui,sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(circle at 12% 8%, rgba(0,229,255,.24), transparent 30rem),
+        radial-gradient(circle at 92% 12%, rgba(193,255,114,.18), transparent 28rem),
+        radial-gradient(circle at 50% 100%, rgba(0,229,255,.12), transparent 38rem),
+        var(--bg);
+      line-height:1.6;
+      overflow-x:hidden;
+    }
+    body::before{
+      content:"";
+      position:fixed;
+      inset:0;
+      pointer-events:none;
+      opacity:.16;
+      background-image:linear-gradient(rgba(255,255,255,.08) 1px, transparent 1px),linear-gradient(90deg, rgba(255,255,255,.08) 1px, transparent 1px);
+      background-size:72px 72px;
+      mask-image:linear-gradient(to bottom, black, transparent 82%);
+      z-index:-2;
+    }
+    body.light{
+      --bg:#EAF6FF;
+      --card:rgba(255,255,255,.7);
+      --text:#041524;
+      --muted:#35566E;
+      --line:rgba(10,40,70,.16);
+      background:
+        radial-gradient(circle at 12% 8%, rgba(0,229,255,.24), transparent 30rem),
+        radial-gradient(circle at 92% 12%, rgba(193,255,114,.26), transparent 28rem),
+        #EAF6FF;
+    }
+    a{color:inherit;text-decoration:none}
+    .font-display{font-family:'Bricolage Grotesque',Inter,system-ui,sans-serif}
+    .container-shell{width:min(1180px, calc(100% - 32px)); margin-inline:auto}
+    .glass{
+      background:linear-gradient(145deg, rgba(255,255,255,.13), rgba(255,255,255,.05));
+      border:1px solid var(--line);
+      box-shadow:0 24px 70px rgba(0,0,0,.24);
+      backdrop-filter:blur(22px);
+      -webkit-backdrop-filter:blur(22px);
+    }
+    .nav-link{color:var(--muted); transition:color .2s ease, transform .2s ease}
+    .nav-link:hover{color:var(--secondary); transform:translateY(-1px)}
+    .btn{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:.55rem;
+      min-height:48px;
+      padding:13px 22px;
+      border-radius:999px;
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.07);
+      color:var(--text);
+      font-weight:800;
+      cursor:pointer;
+      transition:transform .24s ease, box-shadow .24s ease, border-color .24s ease, background .24s ease;
+      text-align:center;
+    }
+    .btn.primary{
+      border-color:transparent;
+      background:linear-gradient(135deg, var(--primary), var(--secondary));
+      color:#041524;
+      box-shadow:0 16px 42px rgba(193,255,114,.2);
+    }
+    .btn:hover{transform:translateY(-3px); box-shadow:0 18px 42px rgba(0,229,255,.18); border-color:rgba(0,229,255,.45)}
+    .btn.primary:hover{box-shadow:0 22px 54px rgba(193,255,114,.28)}
+    .section-kicker{letter-spacing:.22em; text-transform:uppercase; color:var(--secondary); font-weight:800; font-size:.78rem}
+    .balanced{text-wrap:pretty}
 
-    header { 
-      text-align: center; 
-      padding: 40px 20px; 
-      background: linear-gradient(135deg,#1f1f1f,#2c2c2c); 
+    .hero-immersive{
+      position:relative;
+      overflow:hidden;
+      isolation:isolate;
+      background-color:#0A2846;
+      background-image:linear-gradient(135deg, rgba(10,40,70,.85), rgba(10,40,70,.70)), url('https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&q=80&w=2070');
+      background-attachment:fixed;
+      background-size:cover;
+      background-position:center;
     }
-
-    section { 
-      padding: 40px 20px; 
-      max-width: 1100px; 
-      margin: auto; 
+    .hero-immersive::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      z-index:-1;
+      backdrop-filter:blur(4px);
+      -webkit-backdrop-filter:blur(4px);
+      background:linear-gradient(180deg, rgba(10,40,70,.18), rgba(10,40,70,.36));
     }
-
-    .grid { 
-      display: grid; 
-      grid-template-columns: repeat(auto-fit,minmax(250px,1fr)); 
-      gap: 20px; 
+    .hero-bg-image{
+      position:absolute;
+      inset:0;
+      z-index:-2;
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      object-position:center;
+      opacity:.01;
+      pointer-events:none;
     }
-
-    .card { 
-      background: #1a1a1a; 
-      padding: 20px; 
-      border-radius: 16px; 
-      box-shadow: 0 0 15px #000; 
+    .hero-title{
+      font-family:'Bricolage Grotesque',Inter,system-ui,sans-serif;
+      font-variation-settings:'wdth' 92;
+      letter-spacing:-.025em;
+      line-height:1.03;
+      text-wrap:pretty;
     }
-
-    .chat-btn { 
-      position: fixed; 
-      bottom: 20px; 
-      right: 20px; 
-      background: #00ffc3; 
-      border: none; 
-      padding: 16px 20px; 
-      border-radius: 50px; 
-      font-weight: bold; 
-      cursor: pointer; 
-      z-index: 9999;
+    .hero-title .lift{display:inline-block; transform:translateY(-.03em); color:var(--primary); text-shadow:0 0 34px rgba(193,255,114,.34)}
+    .hero-title .tech{color:var(--secondary); text-shadow:0 0 34px rgba(0,229,255,.34)}
+    .service-card{
+      position:relative;
+      overflow:hidden;
+      border-radius:34px 22px 38px 22px;
+      min-height:260px;
+      transition:transform .28s ease, box-shadow .28s ease, border-color .28s ease;
     }
-
-    .chat { 
-      position: fixed; 
-      inset: 0; 
-      background: #0b0b0b; 
-      display: none; 
-      flex-direction: column; 
-      z-index: 9998;
+    .service-card::after{
+      content:"";
+      position:absolute;
+      inset:auto -30% -45% 20%;
+      height:160px;
+      background:radial-gradient(circle, rgba(0,229,255,.22), transparent 68%);
+      transition:opacity .28s ease, transform .28s ease;
+      opacity:.6;
     }
-
-    .chat-header { 
-      background: #111; 
-      padding: 12px; 
-      text-align: center; 
-      font-weight: bold;
+    .service-card:hover{transform:translateY(-10px) scale(1.01); box-shadow:0 34px 90px rgba(0,0,0,.34), 0 22px 46px rgba(0,229,255,.16); border-color:rgba(193,255,114,.4)}
+    .service-card:hover::after{opacity:1; transform:translateY(-18px)}
+    .fade-in{opacity:0; transform:translateY(22px); transition:opacity .7s ease, transform .7s ease}
+    .fade-in.is-visible{opacity:1; transform:translateY(0)}
+    .splash{
+      position:fixed;
+      width:12px;
+      height:12px;
+      border-radius:999px;
+      pointer-events:none;
+      z-index:999999;
+      border:1px solid rgba(193,255,114,.8);
+      background:radial-gradient(circle, rgba(193,255,114,.85), rgba(0,229,255,.35), transparent 68%);
+      animation:splash .62s ease-out forwards;
     }
-
-    .chat-body { 
-      flex: 1; 
-      overflow-y: auto; 
-      padding: 20px; 
-    }
-
-    .chat-input { 
-      display: flex; 
-      border-top: 1px solid #222;
-    }
-
-    .chat-input input { 
-      flex: 1; 
-      padding: 14px; 
-      border: none; 
-      outline: none; 
-      background: #111; 
-      color: #fff;
-    }
-
-    .chat-input button { 
-      padding: 14px 20px; 
-      background: #00ffc3; 
-      border: none; 
-      cursor: pointer; 
-      font-weight: bold;
-    }
+    @keyframes splash{to{transform:scale(12); opacity:0}}
+    .tool-window,#module-container{background:#041524;border-radius:24px;padding:12px;border:1px solid var(--line)}
+    #module-container{position:fixed;top:84px;left:50%;transform:translateX(-50%) translateY(-10px);max-width:1120px;width:calc(100% - 24px);z-index:80;box-shadow:0 30px 80px rgba(0,0,0,.6);display:none;opacity:0;transition:.35s ease}
+    #module-container.active{display:block;opacity:1;transform:translateX(-50%) translateY(0)}
+    .overlay{position:fixed;inset:0;z-index:70;background:rgba(4,21,36,.66);backdrop-filter:blur(10px);display:none}
+    .overlay.active{display:block}
+    input,select{font:inherit}
+    input{width:100%;padding:12px 14px;border-radius:16px;border:1px solid var(--line);background:rgba(4,21,36,.72);color:var(--text)}
+    .lang-select{background:rgba(255,255,255,.07);color:var(--text);border-radius:999px;padding:10px 12px;border:1px solid var(--line);font-weight:800;cursor:pointer}
+    .chatbox{position:fixed;bottom:20px;right:20px;width:min(340px,calc(100vw - 32px));background:rgba(4,21,36,.95);border-radius:24px;border:1px solid var(--line);overflow:hidden;display:none;flex-direction:column;z-index:90;box-shadow:0 24px 70px rgba(0,0,0,.35)}
+    .chat-header{padding:14px 16px;font-weight:800;background:linear-gradient(135deg,var(--primary),var(--secondary));color:#041524}
+    .chat-messages{padding:14px;flex:1;overflow-y:auto;font-size:.9rem;color:var(--muted);max-height:260px}
+    .chat-input{padding:12px;border-top:1px solid var(--line)}
+    .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,var(--primary),var(--secondary));color:#041524;padding:12px 22px;border-radius:999px;font-weight:800;display:none;z-index:95}
+    .hg-chat-btn{position:fixed;right:18px;bottom:18px;z-index:99999;background:linear-gradient(135deg,var(--primary),var(--secondary));border:none;border-radius:50%;width:64px;height:64px;box-shadow:0 18px 44px rgba(0,229,255,.28);cursor:pointer;color:#041524;font-weight:900}
+    .hg-chat-window{position:fixed;right:18px;bottom:96px;width:min(360px,calc(100vw - 32px));height:520px;background:rgba(4,21,36,.96);border:1px solid var(--line);border-radius:24px;box-shadow:0 24px 70px rgba(0,0,0,.5);z-index:99999;display:none;flex-direction:column;overflow:hidden;backdrop-filter:blur(18px)}
+    .hg-chat-header{padding:12px;background:linear-gradient(135deg,var(--primary),var(--secondary));color:#041524;font-weight:900;display:flex;align-items:center;justify-content:space-between}
+    .hg-chat-body{padding:12px;flex:1;overflow:auto;background:linear-gradient(180deg,rgba(255,255,255,.03),transparent)}
+    .hg-chat-input{display:flex;padding:12px;border-top:1px solid var(--line);background:transparent;gap:8px}
+    .hg-fullscreen{position:fixed;inset:0;background:var(--bg);z-index:100000;display:none;flex-direction:column}
+    .hg-fullscreen .inner{width:min(1100px,calc(100% - 32px));margin:40px auto;background:rgba(4,21,36,.95);border:1px solid var(--line);border-radius:24px;overflow:hidden;display:flex;flex-direction:column;height:80vh}
+    .hg-mini{font-size:13px;color:#35566E}
+    @media (prefers-reduced-motion:reduce){*,::before,::after{animation-duration:.01ms!important;scroll-behavior:auto!important;transition-duration:.01ms!important}.fade-in{opacity:1;transform:none}}
+    @media (max-width:760px){.hero-title{letter-spacing:-.015em;line-height:1.06}.hide-mobile{display:none!important}#module-container{top:72px}.hg-fullscreen .inner{margin:16px auto;height:calc(100vh - 32px)}}
   </style>
 </head>
 
 <body>
-
-<header>
-  <h1>HG Digital</h1>
-  <p>Administrador Sr. & Desarrollador Web</p>
+<header class="sticky top-0 z-50 border-b border-white/10 bg-[#0A2846]/75 backdrop-blur-2xl">
+  <div class="container-shell flex min-h-[76px] items-center justify-between gap-4 py-3">
+    <a href="/index.html" class="font-display text-xl font-black tracking-tight" aria-label="HG Soluciones inicio">HG<span class="text-limeTech">Soluciones</span></a>
+    <nav class="nav-links hide-mobile flex items-center gap-6 text-sm font-bold">
+      <a class="nav-link" href="#servicios" data-i18n="nav.services">Servicios</a>
+      <a class="nav-link" href="#soluciones" data-i18n="nav.solutions">Soluciones</a>
+      <a class="nav-link" href="#confianza" data-i18n="nav.trust">Confianza</a>
+      <a class="nav-link" href="#contacto" data-i18n="nav.contact">Contacto</a>
+      <a class="nav-link" href="#" onclick="loadModule('CV.html'); return false;" data-i18n="nav.cv">CV</a>
+    </nav>
+    <div class="flex items-center gap-2">
+      <select id="langSelector" class="lang-select" aria-label="Selector de idioma" onchange="setLanguage(this.value)">
+        <option value="es">ES</option>
+        <option value="en">EN</option>
+      </select>
+      <button class="btn !min-h-0 !px-4 !py-2" id="themeToggle" onclick="toggleTheme()" aria-label="Cambiar tema">🌗</button>
+    </div>
+  </div>
 </header>
 
-<section>
-  <h2>Servicios</h2>
-  <div class="grid">
-    <div class="card">Armado de Sitio Web</div>
-    <div class="card">Automatizaciones</div>
-    <div class="card">Sistemas de Gestión</div>
-    <div class="card">Asesoramiento Administrativo</div>
+<div class="overlay" id="overlay" onclick="closeModule()"></div>
+<div id="module-container" class="tool-window" aria-live="polite"></div>
+
+<main>
+  <section class="hero-immersive min-h-[calc(100vh-76px)]">
+    <img class="hero-bg-image" src="https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&q=80&w=2070" alt="" loading="lazy" decoding="async" aria-hidden="true">
+    <div class="container-shell relative z-10 grid min-h-[calc(100vh-76px)] items-center gap-8 py-12 md:grid-cols-[1.16fr_.84fr] md:py-20">
+      <div class="fade-in">
+      <p class="section-kicker mb-5" data-i18n="hero.kicker">Luxury Tech para empresas que quieren escalar</p>
+      <h1 class="hero-title text-[clamp(2.75rem,8vw,6.25rem)] font-black">
+        <span data-i18n="hero.title.prefix">Desarrollo Web + Sistemas de Gestión</span>
+        <span class="lift" data-i18n="hero.title.lift">para Empresas</span>
+      </h1>
+      <p class="balanced mt-7 max-w-2xl text-lg text-[color:var(--muted)] md:text-xl" data-i18n="hero.subtitle">Soy desarrollador web y administrador con más de 18 años de experiencia en gestión, finanzas y procesos. Creo sitios, sistemas y automatizaciones que funcionan en la práctica, no solo en diseño.</p>
+      <div class="mt-8 flex flex-wrap gap-3">
+        <a class="btn primary" href="https://wa.me/1134796562" data-i18n="cta.quote">Automatizar mi negocio ahora</a>
+        <button class="btn" onclick="loadModule('https://hgsolucionesweb.com.ar/presupuesto.html')" data-i18n="cta.seeMagic">Ver la magia en acción</button>
+        <button class="btn" onclick="loadModule('https://hgsolucionesweb.com.ar/HGSys.html')" data-i18n="cta.openSystem">Abrir sistema HG</button>
+        <button class="btn" onclick="loadModule('https://hgsolucionesweb.com.ar/reader.html')" data-i18n="cta.openReader">Probar lector QR</button>
+        <button class="btn" onclick="loadModule('CV.html')" data-i18n="cta.openCV">Ver credenciales</button>
+        <button class="btn" onclick="toggleChat()" data-i18n="cta.openChat">Hablar con HG</button>
+      </div>
+    </div>
+
+    <aside class="fade-in glass relative overflow-hidden rounded-[36px] p-5 md:p-7" aria-label="Panel de automatización HG">
+      <div class="absolute -right-24 -top-24 h-56 w-56 rounded-full bg-cyanTech/20 blur-3xl"></div>
+      <div class="absolute -bottom-24 -left-20 h-56 w-56 rounded-full bg-limeTech/20 blur-3xl"></div>
+      <div class="relative grid gap-4">
+        <div class="rounded-[28px] border border-white/10 bg-white/10 p-5">
+          <div class="flex items-center justify-between gap-4">
+            <span class="section-kicker !text-limeTech" data-i18n="hero.panel.tag">Sistema vivo</span>
+            <span class="rounded-full bg-limeTech px-3 py-1 text-xs font-black text-ink">ONLINE</span>
+          </div>
+          <h2 class="font-display mt-4 text-3xl font-black leading-none" data-i18n="hero.panel.title">Automatizaciones + Integraciones sin fricción.</h2>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="rounded-[26px] border border-white/10 bg-[#041524]/60 p-5">
+            <p class="text-4xl font-black text-cyanTech">18+</p>
+            <p class="text-sm text-[color:var(--muted)]" data-i18n="hero.panel.exp">años entre gestión, finanzas y procesos</p>
+          </div>
+          <div class="rounded-[26px] border border-white/10 bg-[#041524]/60 p-5">
+            <p class="text-4xl font-black text-limeTech">0</p>
+            <p class="text-sm text-[color:var(--muted)]" data-i18n="hero.panel.friction">fricción para operar tus herramientas</p>
+          </div>
+        </div>
+        <div class="rounded-[28px] border border-cyanTech/30 bg-cyanTech/10 p-5">
+          <p class="text-sm font-bold text-cyanTech" data-i18n="hero.panel.flow">Flujo recomendado</p>
+          <ol class="mt-3 space-y-2 text-sm text-[color:var(--muted)]">
+            <li data-i18n="hero.panel.step1">01 · Captura leads y consultas</li>
+            <li data-i18n="hero.panel.step2">02 · Genera presupuestos y reportes</li>
+            <li data-i18n="hero.panel.step3">03 · Sincroniza WhatsApp, Gmail, Sheets, Drive y APIs</li>
+          </ol>
+        </div>
+      </div>
+      </aside>
+    </div>
+  </section>
+
+  <section id="servicios" class="container-shell py-16 md:py-24">
+    <div class="fade-in mb-10 max-w-3xl">
+      <p class="section-kicker" data-i18n="srv.kicker">Servicios premium</p>
+      <h2 class="font-display balanced mt-3 text-4xl font-black leading-tight md:text-6xl" data-i18n="srv.heading">Cards 2.0 para convertir visitas en decisiones.</h2>
+    </div>
+    <div class="grid gap-5 md:grid-cols-3">
+      <article class="fade-in service-card glass p-7">
+        <div class="mb-6 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-cyanTech text-2xl text-ink">⌁</div>
+        <h3 class="font-display text-2xl font-black" data-i18n="srv.webTitle">Desarrollo Web Profesional</h3>
+        <p class="mt-4 text-[color:var(--muted)]" data-i18n="srv.webDesc">Landing pages, sitios institucionales, catálogos online, portfolios y sistemas web optimizados para velocidad, seguridad y conversión.</p>
+      </article>
+      <article class="fade-in service-card glass p-7">
+        <div class="mb-6 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-limeTech text-2xl text-ink">✦</div>
+        <h3 class="font-display text-2xl font-black" data-i18n="srv.autoTitle">Automatización Administrativa</h3>
+        <p class="mt-4 text-[color:var(--muted)]" data-i18n="srv.autoDesc">Formularios inteligentes, envío automático de presupuestos, reportes, control de datos, flujos de trabajo y reducción de tareas manuales.</p>
+      </article>
+      <article class="fade-in service-card glass p-7">
+        <div class="mb-6 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-cyanTech text-2xl text-ink">◈</div>
+        <h3 class="font-display text-2xl font-black" data-i18n="srv.sysTitle">Sistemas de Gestión</h3>
+        <p class="mt-4 text-[color:var(--muted)]" data-i18n="srv.sysDesc">Paneles administrativos, control de clientes, presupuestos, stock, métricas, reportes y visualización de datos en tiempo real.</p>
+      </article>
+    </div>
+  </section>
+
+  <section id="hg" class="container-shell py-10 md:py-16">
+    <div class="fade-in glass rounded-[40px] p-8 text-center md:p-14">
+      <p class="section-kicker" data-i18n="hg.kicker">Estrategia + código + operación</p>
+      <h2 class="font-display mt-3 text-4xl font-black md:text-6xl" data-i18n="hg.title">HG — Soluciones Digitales</h2>
+      <p class="balanced mx-auto mt-5 max-w-4xl text-lg text-[color:var(--muted)]" data-i18n="hg.desc">HG representa la unión entre desarrollo web, automatización y gestión administrativa. No solo programo sistemas: los pienso desde la lógica real de una empresa. Mi formación en administración, finanzas y procesos me permite crear herramientas útiles, rentables y fáciles de operar.</p>
+    </div>
+  </section>
+
+  <section id="soluciones" class="container-shell py-16 md:py-24">
+    <div class="fade-in mx-auto mb-10 max-w-3xl text-center">
+      <p class="section-kicker" data-i18n="sol.kicker">Soluciones HG</p>
+      <h2 class="font-display balanced mt-3 text-4xl font-black leading-tight md:text-6xl" data-i18n="sol.title">Soluciones HG</h2>
+    </div>
+    <div class="grid gap-5 md:grid-cols-3">
+      <article class="fade-in service-card glass p-7">
+        <h3 class="font-display text-2xl font-black text-limeTech" data-i18n="sol.websTitle">Sitios Web que Venden</h3>
+        <p class="mt-4 text-[color:var(--muted)]" data-i18n="sol.websDesc">Webs institucionales, landing pages de servicios, embudos de contacto, portfolios y sitios optimizados para captar clientes.</p>
+      </article>
+      <article class="fade-in service-card glass p-7">
+        <h3 class="font-display text-2xl font-black text-cyanTech" data-i18n="sol.adminTitle">Sistemas Administrativos</h3>
+        <p class="mt-4 text-[color:var(--muted)]" data-i18n="sol.adminDesc">Presupuestos automáticos, control de clientes, seguimiento de pedidos, métricas de ventas y reportes gerenciales.</p>
+      </article>
+      <article class="fade-in service-card glass p-7">
+        <h3 class="font-display text-2xl font-black text-limeTech" data-i18n="sol.intTitle">Integraciones Profesionales</h3>
+        <p class="mt-4 text-[color:var(--muted)]" data-i18n="sol.intDesc">WhatsApp, Gmail, Google Sheets, Drive, APIs externas, notificaciones automáticas, bots y flujos inteligentes.</p>
+      </article>
+    </div>
+  </section>
+
+  <section id="confianza" class="container-shell py-16 md:py-24">
+    <div class="fade-in grid gap-6 md:grid-cols-[.9fr_1.1fr] md:items-center">
+      <div>
+        <p class="section-kicker" data-i18n="trust.kicker">Prueba social</p>
+        <h2 class="font-display balanced mt-3 text-4xl font-black leading-tight md:text-6xl" data-i18n="trust.title">Señales de confianza para comprar sin dudas.</h2>
+        <p class="mt-5 text-[color:var(--muted)]" data-i18n="trust.desc">Integraciones conocidas, enfoque Zero Trust y procesos pensados para baja fricción operativa.</p>
+      </div>
+      <div class="grid gap-4 sm:grid-cols-2">
+        <figure class="glass rounded-[30px] p-6">
+          <blockquote class="text-lg font-semibold" data-i18n="trust.quote1">“HG tradujo procesos administrativos complejos en un sistema simple de usar.”</blockquote>
+          <figcaption class="mt-4 text-sm text-[color:var(--muted)]" data-i18n="trust.author1">PyME de servicios · Automatización comercial</figcaption>
+        </figure>
+        <figure class="glass rounded-[30px] p-6">
+          <blockquote class="text-lg font-semibold" data-i18n="trust.quote2">“La web carga rápido, se entiende al instante y nos ayuda a responder mejor.”</blockquote>
+          <figcaption class="mt-4 text-sm text-[color:var(--muted)]" data-i18n="trust.author2">Profesionales independientes · Landing de conversión</figcaption>
+        </figure>
+      </div>
+    </div>
+    <div class="fade-in mt-8 grid grid-cols-2 gap-3 md:grid-cols-5">
+      <div class="glass rounded-3xl px-4 py-5 text-center font-black text-cyanTech">WhatsApp</div>
+      <div class="glass rounded-3xl px-4 py-5 text-center font-black text-limeTech">Gmail</div>
+      <div class="glass rounded-3xl px-4 py-5 text-center font-black text-cyanTech">Sheets</div>
+      <div class="glass rounded-3xl px-4 py-5 text-center font-black text-limeTech">Drive</div>
+      <div class="glass rounded-3xl px-4 py-5 text-center font-black text-cyanTech">APIs</div>
+    </div>
+  </section>
+
+  <section id="contacto" class="container-shell py-16 md:py-24">
+    <div class="fade-in relative overflow-hidden rounded-[44px] border border-limeTech/40 bg-limeTech p-8 text-ink shadow-lime md:p-14">
+      <div class="absolute right-0 top-0 h-full w-1/2 bg-[radial-gradient(circle,rgba(0,229,255,.55),transparent_62%)]"></div>
+      <div class="relative max-w-3xl">
+        <h2 class="font-display balanced text-4xl font-black leading-tight md:text-6xl" data-i18n="contact.title">¿Querés mejorar la gestión de tu empresa con un sistema real?</h2>
+        <p class="mt-5 text-lg font-semibold text-ink/75" data-i18n="contact.desc">Diseño herramientas a medida para negocios, cooperativas, profesionales y PyMEs.</p>
+        <div class="mt-8 flex flex-wrap gap-3">
+          <a href="https://wa.me/1134796562" class="btn !border-ink/15 !bg-ink !text-white" data-i18n="contact.cta">Automatizar mi negocio ahora</a>
+          <button class="btn !border-ink/15 !bg-white/40 !text-ink" onclick="loadModule('https://hgsolucionesweb.com.ar/presupuesto.html')" data-i18n="contact.quote">Ver la magia en acción</button>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="border-t border-white/10 py-10 text-center text-sm text-[color:var(--muted)]">
+  <div class="container-shell" data-i18n="footer">© 2025 - HG Soluciones Digitales · Desarrollo Web y Sistemas de Gestión</div>
+</footer>
+
+<div class="chatbox" id="chatbox">
+  <div class="chat-header" data-i18n="chat.header">Asistente Web</div>
+  <div class="chat-messages" id="messages" data-i18n="chat.greeting">Hola 👋 ¿En qué te ayudo?</div>
+  <div class="chat-input"><input id="msg" placeholder="Escribí acá..." data-placeholder-es="Escribí acá..." data-placeholder-en="Write here..." onkeydown="if(event.key==='Enter') enviar()"></div>
+</div>
+
+<div class="toast" id="toast" data-i18n="toast.sending" style="display:none">Enviando…</div>
+
+<button id="hgBtn" class="hg-chat-btn" aria-label="Abrir chat HG">HG</button>
+<div id="hgWindow" class="hg-chat-window" role="dialog" aria-modal="false" aria-label="HG Digital chat">
+  <div class="hg-chat-header">
+    <div>HG Digital</div>
+    <div class="flex gap-2">
+      <button id="expandBtn" class="btn !min-h-0 !px-3 !py-2">↗</button>
+      <button id="closeBtn" class="btn !min-h-0 !px-3 !py-2">✕</button>
+    </div>
   </div>
-</section>
+  <div id="hgBody" class="hg-chat-body"></div>
+  <div class="hg-chat-input">
+    <input id="hgInput" placeholder="Escribí tu pregunta..." />
+    <button id="sendBtn" class="btn primary !min-h-0 !px-4">Enviar</button>
+  </div>
+</div>
 
-<!-- BOTÓN HG -->
-<button class="chat-btn" onclick="openChat()">HG</button>
-
-<!-- VENTANA DE CHAT -->
-<div class="chat" id="chat">
-  <div class="chat-header">HG Digital IA</div>
-  <div class="chat-body" id="chatBody"></div>
-  <div class="chat-input">
-    <input id="chatInput" placeholder="Escribí tu mensaje...">
-    <button onclick="sendMessage()">Enviar</button>
+<div id="hgFull" class="hg-fullscreen" aria-hidden="true">
+  <div class="inner">
+    <div class="flex flex-wrap items-center justify-between gap-3 bg-gradient-to-r from-limeTech to-cyanTech p-4 text-ink">
+      <div><b>HG Digital — Conversación</b><div class="hg-mini">Presupuestos, consultas técnicas y más. También podés pedir contacto humano.</div></div>
+      <div class="flex flex-wrap gap-2">
+        <button id="sendPdfBtn" class="btn !min-h-0 !border-ink/20 !bg-white/35 !px-3 !py-2 !text-ink">Generar PDF & Enviar</button>
+        <button id="contactHuman" class="btn !min-h-0 !border-ink/20 !bg-white/35 !px-3 !py-2 !text-ink">Contactar Humano</button>
+        <button id="minimizeFull" class="btn !min-h-0 !border-ink/20 !bg-white/35 !px-3 !py-2 !text-ink">_</button>
+      </div>
+    </div>
+    <div id="hgFullBody" class="flex-1 overflow-auto p-5"></div>
+    <div class="flex gap-2 border-t border-white/10 p-3">
+      <input id="hgFullInput" class="flex-1" placeholder="Continuá la conversación..." />
+      <button id="hgFullSend" class="btn primary !min-h-0 !px-4">Enviar</button>
+    </div>
   </div>
 </div>
 
 <script>
-// ============================
-// CONFIG
-// ============================
-const ENDPOINT_URL = "https://script.google.com/macros/s/AKfycbwY0qftFQZd2sey9D4uc3-pzspx-_1-4M7C_PvNfJbb0SkWUp5SZqKIaASp1-0wOSJI/exec";
+const i18n = {
+  es: {
+    'nav.services': 'Servicios',
+    'nav.solutions': 'Soluciones',
+    'nav.trust': 'Confianza',
+    'nav.contact': 'Contacto',
+    'nav.cv': 'CV',
+    'hero.kicker': 'Luxury Tech para empresas que quieren escalar',
+    'hero.title.prefix': 'Desarrollo Web + Sistemas de Gestión',
+    'hero.title.lift': 'para Empresas',
+    'hero.subtitle': 'Soy desarrollador web y administrador con más de 18 años de experiencia en gestión, finanzas y procesos. Creo sitios, sistemas y automatizaciones que funcionan en la práctica, no solo en diseño.',
+    'hero.panel.tag': 'Sistema vivo',
+    'hero.panel.title': 'Automatizaciones + Integraciones sin fricción.',
+    'hero.panel.exp': 'años entre gestión, finanzas y procesos',
+    'hero.panel.friction': 'fricción para operar tus herramientas',
+    'hero.panel.flow': 'Flujo recomendado',
+    'hero.panel.step1': '01 · Captura leads y consultas',
+    'hero.panel.step2': '02 · Genera presupuestos y reportes',
+    'hero.panel.step3': '03 · Sincroniza WhatsApp, Gmail, Sheets, Drive y APIs',
+    'cta.quote': 'Automatizar mi negocio ahora',
+    'cta.seeMagic': 'Ver la magia en acción',
+    'cta.openSystem': 'Abrir sistema HG',
+    'cta.openReader': 'Probar lector QR',
+    'cta.openCV': 'Ver credenciales',
+    'cta.openChat': 'Hablar con HG',
+    'srv.kicker': 'Servicios premium',
+    'srv.heading': 'Cards 2.0 para convertir visitas en decisiones.',
+    'srv.webTitle': 'Desarrollo Web Profesional',
+    'srv.webDesc': 'Landing pages, sitios institucionales, catálogos online, portfolios y sistemas web optimizados para velocidad, seguridad y conversión.',
+    'srv.autoTitle': 'Automatización Administrativa',
+    'srv.autoDesc': 'Formularios inteligentes, envío automático de presupuestos, reportes, control de datos, flujos de trabajo y reducción de tareas manuales.',
+    'srv.sysTitle': 'Sistemas de Gestión',
+    'srv.sysDesc': 'Paneles administrativos, control de clientes, presupuestos, stock, métricas, reportes y visualización de datos en tiempo real.',
+    'hg.kicker': 'Estrategia + código + operación',
+    'hg.title': 'HG — Soluciones Digitales',
+    'hg.desc': 'HG representa la unión entre desarrollo web, automatización y gestión administrativa. No solo programo sistemas: los pienso desde la lógica real de una empresa. Mi formación en administración, finanzas y procesos me permite crear herramientas útiles, rentables y fáciles de operar.',
+    'sol.kicker': 'Soluciones HG',
+    'sol.title': 'Soluciones HG',
+    'sol.websTitle': 'Sitios Web que Venden',
+    'sol.websDesc': 'Webs institucionales, landing pages de servicios, embudos de contacto, portfolios y sitios optimizados para captar clientes.',
+    'sol.adminTitle': 'Sistemas Administrativos',
+    'sol.adminDesc': 'Presupuestos automáticos, control de clientes, seguimiento de pedidos, métricas de ventas y reportes gerenciales.',
+    'sol.intTitle': 'Integraciones Profesionales',
+    'sol.intDesc': 'WhatsApp, Gmail, Google Sheets, Drive, APIs externas, notificaciones automáticas, bots y flujos inteligentes.',
+    'trust.kicker': 'Prueba social',
+    'trust.title': 'Señales de confianza para comprar sin dudas.',
+    'trust.desc': 'Integraciones conocidas, enfoque Zero Trust y procesos pensados para baja fricción operativa.',
+    'trust.quote1': '“HG tradujo procesos administrativos complejos en un sistema simple de usar.”',
+    'trust.author1': 'PyME de servicios · Automatización comercial',
+    'trust.quote2': '“La web carga rápido, se entiende al instante y nos ayuda a responder mejor.”',
+    'trust.author2': 'Profesionales independientes · Landing de conversión',
+    'contact.title': '¿Querés mejorar la gestión de tu empresa con un sistema real?',
+    'contact.desc': 'Diseño herramientas a medida para negocios, cooperativas, profesionales y PyMEs.',
+    'contact.cta': 'Automatizar mi negocio ahora',
+    'contact.quote': 'Ver la magia en acción',
+    'footer': '© 2025 - HG Soluciones Digitales · Desarrollo Web y Sistemas de Gestión',
+    'chat.header': 'Asistente Web',
+    'chat.greeting': 'Hola 👋 ¿En qué te ayudo?',
+    'toast.sending': 'Enviando…',
+    'bot.continue': 'Si querés avanzar con un proyecto real, podés escribirme a hernan.garbarino@gmail.com o por WhatsApp al 1134796562.'
+  },
+  en: {
+    'nav.services': 'Services',
+    'nav.solutions': 'Solutions',
+    'nav.trust': 'Trust',
+    'nav.contact': 'Contact',
+    'nav.cv': 'CV',
+    'hero.kicker': 'Luxury Tech for companies ready to scale',
+    'hero.title.prefix': 'Web Development + Management Systems',
+    'hero.title.lift': 'for Real Businesses',
+    'hero.subtitle': 'I am a web developer and administrator with over 18 years of experience in management, finance and processes. I build websites, systems and automations that work in practice, not just design.',
+    'hero.panel.tag': 'Live system',
+    'hero.panel.title': 'Automations + Integrations without friction.',
+    'hero.panel.exp': 'years across management, finance and processes',
+    'hero.panel.friction': 'friction to operate your tools',
+    'hero.panel.flow': 'Recommended flow',
+    'hero.panel.step1': '01 · Capture leads and inquiries',
+    'hero.panel.step2': '02 · Generate quotes and reports',
+    'hero.panel.step3': '03 · Sync WhatsApp, Gmail, Sheets, Drive and APIs',
+    'cta.quote': 'Automate my business now',
+    'cta.seeMagic': 'See the magic in action',
+    'cta.openSystem': 'Open HG system',
+    'cta.openReader': 'Try QR reader',
+    'cta.openCV': 'View credentials',
+    'cta.openChat': 'Talk to HG',
+    'srv.kicker': 'Premium services',
+    'srv.heading': 'Cards 2.0 to turn visits into decisions.',
+    'srv.webTitle': 'Professional Web Development',
+    'srv.webDesc': 'Landing pages, institutional sites, online catalogs, portfolios and web systems optimized for speed, security and conversion.',
+    'srv.autoTitle': 'Administrative Automation',
+    'srv.autoDesc': 'Smart forms, automatic quote sending, reports, data control, workflows and reduction of manual tasks.',
+    'srv.sysTitle': 'Management Systems',
+    'srv.sysDesc': 'Admin panels, client control, quotes, stock, metrics, reports and real-time data visualization.',
+    'hg.kicker': 'Strategy + code + operations',
+    'hg.title': 'HG — Digital Solutions',
+    'hg.desc': 'HG represents the union between web development, automation and administrative management. I don\'t just program systems: I design them from the real logic of a business. My background in administration, finance and processes allows me to create useful, profitable and easy-to-operate tools.',
+    'sol.kicker': 'HG Solutions',
+    'sol.title': 'HG Solutions',
+    'sol.websTitle': 'Websites That Sell',
+    'sol.websDesc': 'Institutional websites, service landing pages, contact funnels, portfolios and sites optimized to attract clients.',
+    'sol.adminTitle': 'Administrative Systems',
+    'sol.adminDesc': 'Automatic quotes, client control, order tracking, sales metrics and managerial reports.',
+    'sol.intTitle': 'Professional Integrations',
+    'sol.intDesc': 'WhatsApp, Gmail, Google Sheets, Drive, external APIs, automatic notifications, bots and smart flows.',
+    'trust.kicker': 'Social proof',
+    'trust.title': 'Trust signals that remove buying friction.',
+    'trust.desc': 'Recognized integrations, a Zero Trust mindset and workflows designed for low operational friction.',
+    'trust.quote1': '“HG translated complex administrative processes into a system that is simple to use.”',
+    'trust.author1': 'Service SME · Commercial automation',
+    'trust.quote2': '“The website loads fast, is instantly clear and helps us respond better.”',
+    'trust.author2': 'Independent professionals · Conversion landing',
+    'contact.title': 'Want to improve your company management with a real system?',
+    'contact.desc': 'I design custom tools for businesses, cooperatives, professionals and SMEs.',
+    'contact.cta': 'Automate my business now',
+    'contact.quote': 'See the magic in action',
+    'footer': '© 2025 - HG Digital Solutions · Web Development & Management Systems',
+    'chat.header': 'Web Assistant',
+    'chat.greeting': 'Hi 👋 How can I help?',
+    'toast.sending': 'Sending…',
+    'bot.continue': 'If you want to move forward with a real project, you can write to me at hernan.garbarino@gmail.com or WhatsApp at 1134796562.'
+  }
+};
 
-// ============================
-// ABRIR CHAT
-// ============================
-function openChat() {
-  document.getElementById("chat").style.display = "flex";
-}
-
-// ============================
-// ENVIAR MENSAJE (JSONP)
-// ============================
-function sendMessage() {
-  const input = document.getElementById("chatInput");
-  const msg = input.value.trim();
-  if (!msg) return;
-
-  addMsg("Vos", msg);
-  input.value = "";
-
-  const callbackName = "cb" + Math.floor(Math.random() * 999999);
-
-  window[callbackName] = function(data) {
-    addMsg("HG", data.reply);
-    delete window[callbackName];
-  };
-
-  const s = document.createElement("script");
-  s.src = `${ENDPOINT_URL}?message=${encodeURIComponent(msg)}&callback=${callbackName}`;
-  document.body.appendChild(s);
-}
-
-// ============================
-// AGREGAR MENSAJE
-// ============================
-function addMsg(user, text) {
-  const box = document.getElementById("chatBody");
-  const div = document.createElement("div");
-  div.innerHTML = `<b>${user}:</b> ${text}`;
-  box.appendChild(div);
-  box.scrollTop = box.scrollHeight;
-}
-
-// ============================
-// ENTER PARA ENVIAR
-// ============================
-document.addEventListener("DOMContentLoaded", () => {
-  document.getElementById("chatInput").addEventListener("keydown", e => {
-    if (e.key === "Enter") sendMessage();
+function safeSetText(el, text){ el.textContent = String(text ?? ''); }
+function applyTranslations(lang) {
+  document.documentElement.lang = (lang === 'es') ? 'es' : 'en';
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if (i18n[lang] && i18n[lang][key]) safeSetText(el, i18n[lang][key]);
   });
+  const input = document.getElementById('msg');
+  if (input) input.placeholder = lang === 'es' ? (input.getAttribute('data-placeholder-es') || 'Escribí acá...') : (input.getAttribute('data-placeholder-en') || 'Write here...');
+  const sel = document.getElementById('langSelector');
+  if (sel) sel.value = lang;
+  try{ localStorage.setItem('siteLang', lang); }catch(e){}
+}
+function detectAndApplyLanguage() {
+  let saved = null;
+  try{ saved = localStorage.getItem('siteLang'); }catch(e){}
+  const nav = (navigator.language || navigator.userLanguage || 'es').toLowerCase();
+  const lang = saved || (nav.startsWith('es') ? 'es' : 'en');
+  applyTranslations(lang);
+  return lang;
+}
+function setLanguage(lang) { applyTranslations(['es','en'].includes(lang) ? lang : 'es'); }
+function toggleTheme(){
+  document.body.classList.toggle('light');
+  try{ localStorage.setItem('theme', document.body.classList.contains('light') ? 'light' : 'dark'); }catch(e){}
+}
+function loadStoredTheme(){
+  try{ if(localStorage.getItem('theme') === 'light') document.body.classList.add('light'); }catch(e){}
+}
+function showSplash(event){
+  const dot = document.createElement('span');
+  dot.className = 'splash';
+  dot.style.left = `${event.clientX - 6}px`;
+  dot.style.top = `${event.clientY - 6}px`;
+  document.body.appendChild(dot);
+  setTimeout(() => dot.remove(), 650);
+}
+function initFadeIn(){
+  const items = document.querySelectorAll('.fade-in');
+  if (!('IntersectionObserver' in window)) { items.forEach(el => el.classList.add('is-visible')); return; }
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if(entry.isIntersecting){ entry.target.classList.add('is-visible'); observer.unobserve(entry.target); }
+    });
+  }, { threshold: .14 });
+  items.forEach(el => observer.observe(el));
+}
+async function loadModule(url) {
+  const cont = document.getElementById('module-container');
+  if (!cont) return;
+  cont.textContent = 'Cargando módulo...';
+  cont.classList.add('active');
+  const iframe = document.createElement('iframe');
+  iframe.src = url;
+  iframe.loading = 'lazy';
+  iframe.title = 'Módulo HG';
+  iframe.style.cssText = 'width:100%;height:80vh;border:0;border-radius:18px;background:#041524';
+  cont.replaceChildren(iframe);
+  document.getElementById('overlay')?.classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+function closeModule(){
+  document.body.style.overflow = '';
+  document.getElementById('module-container')?.classList.remove('active');
+  document.getElementById('overlay')?.classList.remove('active');
+}
+function toggleChat(){
+  const chatboxEl = document.getElementById('chatbox');
+  if(!chatboxEl) return;
+  chatboxEl.style.display = (chatboxEl.style.display === 'flex') ? 'none' : 'flex';
+}
+function appendChatLine(container, label, text){
+  const p = document.createElement('p');
+  p.className = 'mb-2';
+  const b = document.createElement('b');
+  b.textContent = label + ': ';
+  p.appendChild(b);
+  p.appendChild(document.createTextNode(String(text ?? '')));
+  container.appendChild(p);
+}
+function enviar(){
+  const messagesEl = document.getElementById('messages');
+  const inputEl = document.getElementById('msg');
+  if(!messagesEl || !inputEl || !inputEl.value.trim()) return;
+  const lang = document.documentElement.lang === 'en' ? 'en' : 'es';
+  appendChatLine(messagesEl, lang === 'en' ? 'You' : 'Vos', inputEl.value.trim());
+  appendChatLine(messagesEl, 'Bot', i18n[lang]['bot.continue'] || i18n.es['bot.continue']);
+  inputEl.value = '';
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+function initHgChat(){
+  const hgBtn = document.getElementById('hgBtn');
+  const hgWindow = document.getElementById('hgWindow');
+  const closeBtn = document.getElementById('closeBtn');
+  const expandBtn = document.getElementById('expandBtn');
+  const hgFull = document.getElementById('hgFull');
+  const minimizeFull = document.getElementById('minimizeFull');
+  const contactHuman = document.getElementById('contactHuman');
+  const sendPdfBtn = document.getElementById('sendPdfBtn');
+  const send = (inputId, bodyId) => {
+    const input = document.getElementById(inputId);
+    const body = document.getElementById(bodyId);
+    if(!input || !body || !input.value.trim()) return;
+    appendChatLine(body, 'Vos', input.value.trim());
+    appendChatLine(body, 'HG', 'Recibido. Para avanzar rápido, pedime un presupuesto o escribime por WhatsApp al 1134796562.');
+    input.value = '';
+    body.scrollTop = body.scrollHeight;
+  };
+  hgBtn?.addEventListener('click', () => { hgWindow.style.display = hgWindow.style.display === 'flex' ? 'none' : 'flex'; });
+  closeBtn?.addEventListener('click', () => { hgWindow.style.display = 'none'; });
+  expandBtn?.addEventListener('click', () => { hgFull.style.display = 'flex'; hgFull.setAttribute('aria-hidden','false'); });
+  minimizeFull?.addEventListener('click', () => { hgFull.style.display = 'none'; hgFull.setAttribute('aria-hidden','true'); });
+  document.getElementById('sendBtn')?.addEventListener('click', () => send('hgInput','hgBody'));
+  document.getElementById('hgFullSend')?.addEventListener('click', () => send('hgFullInput','hgFullBody'));
+  document.getElementById('hgInput')?.addEventListener('keydown', e => { if(e.key === 'Enter') send('hgInput','hgBody'); });
+  document.getElementById('hgFullInput')?.addEventListener('keydown', e => { if(e.key === 'Enter') send('hgFullInput','hgFullBody'); });
+  contactHuman?.addEventListener('click', () => { window.location.href = 'https://wa.me/1134796562'; });
+  sendPdfBtn?.addEventListener('click', () => { loadModule('https://hgsolucionesweb.com.ar/presupuesto.html'); });
+}
+document.addEventListener('click', showSplash, { passive:true });
+document.addEventListener('DOMContentLoaded', () => {
+  loadStoredTheme();
+  detectAndApplyLanguage();
+  initFadeIn();
+  initHgChat();
 });
 </script>
 
+<script>
+!function(){
+  var o=function(e){
+    var urlParams = new URLSearchParams(window.location.search);
+    var utmSource = urlParams.get('utm_source');
+    var utmMedium = urlParams.get('utm_medium');
+    var utmCampaign = urlParams.get('utm_campaign');
+    if (utmSource) {
+      var utmText = utmSource;
+      if (utmMedium) utmText += ' - ' + utmMedium;
+      if (utmCampaign) utmText += ' - ' + utmCampaign;
+      return 'UTM: ' + utmText;
+    }
+    if(!e) return 'Acceso Directo';
+    if(e.includes('web.whatsapp.com')) return 'WhatsApp Web';
+    if(e.includes('instagram.com/stories/')) return 'Instagram Story';
+    if(e.includes('instagram.com')) return 'Instagram';
+    if(e.includes('facebook.com')) return 'Facebook';
+    if(e.includes('twitter.com')) return 'Twitter';
+    if(e.includes('linkedin.com')) return 'LinkedIn';
+    if(e.includes('tiktok.com')) return 'TikTok';
+    if(e.includes('google.com')) return 'Google';
+    if(e.includes('youtube.com')) return 'YouTube';
+    if(e.includes('github.com')) return 'GitHub';
+    try{return 'Web: '+new URL(e).hostname;}catch(t){return 'Enlace Externo';}
+  };
+  fetch('https://ipapi.co/json/')
+    .then(function(e){return e.json();})
+    .then(function(ipData){
+      var a=new Date(), c=o(document.referrer);
+      var sheetData = {
+        pagina: window.location.pathname,
+        url: window.location.href,
+        origen: c,
+        userAgent: navigator.userAgent,
+        plataforma: navigator.platform,
+        idioma: navigator.language,
+        pantalla: window.screen.width + 'x' + window.screen.height,
+        ip: ipData.ip,
+        ciudad: ipData.city,
+        region: ipData.region,
+        pais: ipData.country_name,
+        fecha: a.toLocaleDateString('es-AR'),
+        hora: a.toLocaleTimeString('es-AR')
+      };
+      fetch('https://script.google.com/macros/s/AKfycbxEO_QhFWBkF1IJkXgOd6-h5WfIb2LLhjmZNhEkvpho4K3oMPGBsUazxotTVwMIO_Q44g/exec', {
+        method: 'POST',
+        body: JSON.stringify(sheetData)
+      }).catch(function(e){});
+    })
+    .catch(function(e){});
+}();
+</script>
 </body>
 </html>
