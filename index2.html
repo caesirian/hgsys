@@ -129,45 +129,14 @@
     .btn.primary:hover{box-shadow:0 22px 54px rgba(193,255,114,.28)}
     .section-kicker{letter-spacing:.22em; text-transform:uppercase; color:var(--secondary); font-weight:800; font-size:.78rem}
     .balanced{text-wrap:pretty}
-
-    .hero-immersive{
-      position:relative;
-      overflow:hidden;
-      isolation:isolate;
-      background-color:#0A2846;
-      background-image:linear-gradient(135deg, rgba(10,40,70,.85), rgba(10,40,70,.70)), url('https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&q=80&w=2070');
-      background-attachment:fixed;
-      background-size:cover;
-      background-position:center;
-    }
-    .hero-immersive::before{
-      content:"";
-      position:absolute;
-      inset:0;
-      z-index:-1;
-      backdrop-filter:blur(4px);
-      -webkit-backdrop-filter:blur(4px);
-      background:linear-gradient(180deg, rgba(10,40,70,.18), rgba(10,40,70,.36));
-    }
-    .hero-bg-image{
-      position:absolute;
-      inset:0;
-      z-index:-2;
-      width:100%;
-      height:100%;
-      object-fit:cover;
-      object-position:center;
-      opacity:.01;
-      pointer-events:none;
-    }
     .hero-title{
       font-family:'Bricolage Grotesque',Inter,system-ui,sans-serif;
       font-variation-settings:'wdth' 92;
-      letter-spacing:-.025em;
-      line-height:1.03;
+      letter-spacing:-.07em;
+      line-height:.92;
       text-wrap:pretty;
     }
-    .hero-title .lift{display:inline-block; transform:translateY(-.03em); color:var(--primary); text-shadow:0 0 34px rgba(193,255,114,.34)}
+    .hero-title .lift{display:inline-block; transform:translateY(-.08em); color:var(--primary); text-shadow:0 0 34px rgba(193,255,114,.34)}
     .hero-title .tech{color:var(--secondary); text-shadow:0 0 34px rgba(0,229,255,.34)}
     .service-card{
       position:relative;
@@ -223,7 +192,7 @@
     .hg-fullscreen .inner{width:min(1100px,calc(100% - 32px));margin:40px auto;background:rgba(4,21,36,.95);border:1px solid var(--line);border-radius:24px;overflow:hidden;display:flex;flex-direction:column;height:80vh}
     .hg-mini{font-size:13px;color:#35566E}
     @media (prefers-reduced-motion:reduce){*,::before,::after{animation-duration:.01ms!important;scroll-behavior:auto!important;transition-duration:.01ms!important}.fade-in{opacity:1;transform:none}}
-    @media (max-width:760px){.hero-title{letter-spacing:-.015em;line-height:1.06}.hide-mobile{display:none!important}#module-container{top:72px}.hg-fullscreen .inner{margin:16px auto;height:calc(100vh - 32px)}}
+    @media (max-width:760px){.hero-title{letter-spacing:-.045em}.hide-mobile{display:none!important}#module-container{top:72px}.hg-fullscreen .inner{margin:16px auto;height:calc(100vh - 32px)}}
   </style>
 </head>
 
@@ -252,20 +221,17 @@
 <div id="module-container" class="tool-window" aria-live="polite"></div>
 
 <main>
-  <section class="hero-immersive min-h-[calc(100vh-76px)]">
-    <img class="hero-bg-image" src="https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&q=80&w=2070" alt="" loading="lazy" decoding="async" aria-hidden="true">
-    <div class="container-shell relative z-10 grid min-h-[calc(100vh-76px)] items-center gap-8 py-12 md:grid-cols-[1.16fr_.84fr] md:py-20">
-      <div class="fade-in">
+  <section class="container-shell grid min-h-[calc(100vh-76px)] items-center gap-8 py-12 md:grid-cols-[1.16fr_.84fr] md:py-20">
+    <div class="fade-in">
       <p class="section-kicker mb-5" data-i18n="hero.kicker">Luxury Tech para empresas que quieren escalar</p>
-      <h1 class="hero-title text-[clamp(2.75rem,8vw,6.25rem)] font-black">
+      <h1 class="hero-title text-[clamp(3.2rem,9vw,6.9rem)] font-black">
         <span data-i18n="hero.title.prefix">Desarrollo Web + Sistemas de Gestión</span>
         <span class="lift" data-i18n="hero.title.lift">para Empresas</span>
       </h1>
       <p class="balanced mt-7 max-w-2xl text-lg text-[color:var(--muted)] md:text-xl" data-i18n="hero.subtitle">Soy desarrollador web y administrador con más de 18 años de experiencia en gestión, finanzas y procesos. Creo sitios, sistemas y automatizaciones que funcionan en la práctica, no solo en diseño.</p>
       <div class="mt-8 flex flex-wrap gap-3">
-        <a class="btn primary" href="https://wa.me/1134796562" data-i18n="cta.quote">Automatizar mi negocio ahora</a>
-        <button class="btn" onclick="loadModule('https://hgsolucionesweb.com.ar/presupuesto.html')" data-i18n="cta.seeMagic">Ver la magia en acción</button>
-        <button class="btn" onclick="loadModule('https://hgsolucionesweb.com.ar/HGSys.html')" data-i18n="cta.openSystem">Abrir sistema HG</button>
+        <button class="btn primary" onclick="loadModule('https://hgsolucionesweb.com.ar/presupuesto.html')" data-i18n="cta.quote">Automatizar mi negocio ahora</button>
+        <button class="btn" onclick="loadModule('https://hgsolucionesweb.com.ar/HGSys.html')" data-i18n="cta.openSystem">Ver la magia en acción</button>
         <button class="btn" onclick="loadModule('https://hgsolucionesweb.com.ar/reader.html')" data-i18n="cta.openReader">Probar lector QR</button>
         <button class="btn" onclick="loadModule('CV.html')" data-i18n="cta.openCV">Ver credenciales</button>
         <button class="btn" onclick="toggleChat()" data-i18n="cta.openChat">Hablar con HG</button>
@@ -302,8 +268,7 @@
           </ol>
         </div>
       </div>
-      </aside>
-    </div>
+    </aside>
   </section>
 
   <section id="servicios" class="container-shell py-16 md:py-24">
@@ -468,8 +433,7 @@ const i18n = {
     'hero.panel.step2': '02 · Genera presupuestos y reportes',
     'hero.panel.step3': '03 · Sincroniza WhatsApp, Gmail, Sheets, Drive y APIs',
     'cta.quote': 'Automatizar mi negocio ahora',
-    'cta.seeMagic': 'Ver la magia en acción',
-    'cta.openSystem': 'Abrir sistema HG',
+    'cta.openSystem': 'Ver la magia en acción',
     'cta.openReader': 'Probar lector QR',
     'cta.openCV': 'Ver credenciales',
     'cta.openChat': 'Hablar con HG',
@@ -528,8 +492,7 @@ const i18n = {
     'hero.panel.step2': '02 · Generate quotes and reports',
     'hero.panel.step3': '03 · Sync WhatsApp, Gmail, Sheets, Drive and APIs',
     'cta.quote': 'Automate my business now',
-    'cta.seeMagic': 'See the magic in action',
-    'cta.openSystem': 'Open HG system',
+    'cta.openSystem': 'See the magic in action',
     'cta.openReader': 'Try QR reader',
     'cta.openCV': 'View credentials',
     'cta.openChat': 'Talk to HG',
