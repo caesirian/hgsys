@@ -106,17 +106,17 @@
       display: inline-block;
       margin-bottom: 32px;
     }
-
+    
     .profile-frame.round {
       border-radius: 50%;
       padding: 6px;
       background: linear-gradient(135deg, var(--primary), var(--secondary));
       box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-
+      
     }
-
+    
     .profile-frame.round img {
-
+     
       width: 160px;
       height: 160px;
       border-radius: 50%;
@@ -124,7 +124,7 @@
       border: 2px solid rgba(255, 255, 255, 0.1);
       display: block;
 object-position: center -20px;
-
+      
     }
 
     @media(max-width:900px){
@@ -167,7 +167,7 @@ object-position: center -20px;
 
     <!-- Marco redondo para foto de perfil -->
     <div class="profile-frame round">
-    <!--  <img src="perfil.jpg"
+    <!--  <img src="perfil.jpg" 
            alt="Hernán Garbarino - Desarrollador Web y Administrador"
            id="profile-photo">-->
     </div>
@@ -382,7 +382,7 @@ function setLanguage(lang) {
 }
 
 /* ====== Carga de tema (mantener comportamiento previo) ====== */
-function toggleTheme(){
+function toggleTheme(){ 
   document.body.classList.toggle('light');
   // store theme preference
   try{ localStorage.setItem('theme', document.body.classList.contains('light') ? 'light' : 'dark') }catch(e){}
@@ -635,6 +635,6 @@ document.getElementById("closeBtn").onclick = function() {
 
 
 
-
+  
 </body>
 </html>
