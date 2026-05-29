@@ -574,7 +574,7 @@ const ultimosTrenesRef= doc(db,"ultimosTrenes","actual");
 
 // URL del Apps Script que expone la hoja de cálculo
 // Reemplazá con tu URL de implementación
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwoYsRXXTGlt_9pw0gqJsEx4TSmfMSuw2yNH9gJ6LUU6rNM64cgS8Yl2mIC71NMyB5d/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/TU_DEPLOYMENT_ID/exec';
 let currentUser = null;
 const sanitize  = v => v.replace(/<[^>]*>?/gm,"").trim();
 
@@ -1120,26 +1120,75 @@ window.utSetSource = function(src) {
 
 // ── Parsear lista de horarios HH:MM desde filas de Sheets ────
 // Formato esperado en la hoja: columna A = 'once'|'moreno', columna B = 'HH:MM'
+// ── Parser adaptado a la estructura real de la hoja ──────────
+// La hoja tiene filas como:
+//   col B: "Último tren Once → Moreno:"   col C: "23:50"
+//   col B: "Último tren Moreno → Once:"   col C: "22:30"
+//   col B: "Primer tren Once → Moreno:"   col C: "04:02"
+//   col B: "Primer tren Moreno → Once:"   col C: "03:10"
+// También tiene filas de franjas con col C=hora inicio, col D=hora fin.
+// Para últimos trenes usamos directamente las filas "Último" y calculamos
+// el anteúltimo buscando la segunda franja más tardía.
 function utParseHorarios(rows) {
-  const once = [], moreno = [];
-  rows.slice(1).forEach(row => {
-    const tipo = (row[0]||'').toLowerCase().trim();
-    const hora = (row[1]||'').trim();
-    if (!/^\d{1,2}:\d{2}$/.test(hora)) return;
-    const [h, m] = hora.split(':').map(Number);
-    if (tipo === 'once')   once.push([h, m]);
-    if (tipo === 'moreno') moreno.push([h, m]);
-  });
-  return { once, moreno };
-}
+  const isTime = v => /^\d{1,2}:\d{2}$/.test((v||'').trim());
+  const toMin  = v => { const [h,m] = v.trim().split(':').map(Number); return h*60+m; };
+  const fmtMin = n => `${String(Math.floor(n/60)).padStart(2,'0')}:${String(n%60).padStart(2,'0')}`;
 
-function utUltimos(arr) {
-  if (!arr || arr.length < 2) return { ultimo: '--:--', anteultimo: '--:--' };
-  const sorted = [...arr].sort((a, b) => (a[0]*60+a[1]) - (b[0]*60+b[1]));
-  const fmt = ([h, m]) => `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+  // Buscar filas especiales "Último tren X → Y:" y "Primer tren X → Y:"
+  let omUltimo = null, omPrimero = null;
+  let moUltimo = null, moPrimero = null;
+
+  // Recoger franjas Once→Moreno y Moreno→Once para calcular anteúltimo
+  // Cada franja tiene hora_inicio (col C) y hora_fin (col D)
+  let seccion = null; // 'om' | 'mo'
+  const franjasOM = [], franjasMO = [];
+
+  rows.forEach(row => {
+    // col B = índice 1, col C = índice 2, col D = índice 3
+    const b = (row[1]||'').trim();
+    const c = (row[2]||'').trim();
+    const d = (row[3]||'').trim();
+
+    // Detectar sección activa por títulos
+    if (b.includes('TRENES A MORENO') || b.includes('Once → Moreno')) seccion = 'om';
+    if (b.includes('TRENES A ONCE')   || b.includes('Moreno → Once')) seccion = 'mo';
+
+    // Filas de último / primer tren
+    if (b.includes('Último tren Once')   && isTime(c)) omUltimo  = c;
+    if (b.includes('Primer tren Once')   && isTime(c)) omPrimero = c;
+    if (b.includes('Último tren Moreno') && isTime(c)) moUltimo  = c;
+    if (b.includes('Primer tren Moreno') && isTime(c)) moPrimero = c;
+
+    // Filas de franja (col B empieza con "Franja", col C y D son horas)
+    if (b.startsWith('Franja') && isTime(c) && isTime(d)) {
+      if (seccion === 'om') franjasOM.push({ ini: toMin(c), fin: toMin(d) });
+      if (seccion === 'mo') franjasMO.push({ ini: toMin(c), fin: toMin(d) });
+    }
+  });
+
+  // Calcular anteúltimo: es la hora_fin de la penúltima franja,
+  // o la hora_inicio de la última franja si solo hay 2 franjas.
+  function calcAnteultimo(franjas, ultimo) {
+    if (!franjas.length || !ultimo) return '--:--';
+    const ultMin = toMin(ultimo);
+    // Ordenar franjas por fin desc
+    const sorted = [...franjas].sort((a,b) => b.fin - a.fin);
+    // El último tren coincide con la fin de la última franja.
+    // El anteúltimo = fin de la penúltima franja.
+    if (sorted.length >= 2) return fmtMin(sorted[1].fin);
+    // Solo una franja: anteúltimo = ini de esa franja
+    return fmtMin(sorted[0].ini);
+  }
+
   return {
-    ultimo:      fmt(sorted[sorted.length - 1]),
-    anteultimo:  fmt(sorted[sorted.length - 2])
+    onceMoreno: {
+      ultimo:     omUltimo || '--:--',
+      anteultimo: calcAnteultimo(franjasOM, omUltimo)
+    },
+    morenoOnce: {
+      ultimo:     moUltimo || '--:--',
+      anteultimo: calcAnteultimo(franjasMO, moUltimo)
+    }
   };
 }
 
@@ -1168,13 +1217,10 @@ window.utFetchFromSheets = async function() {
     const json = await res.json();
     if (json.error) throw new Error(json.error);
 
-    const { once, moreno } = utParseHorarios(json.rows || []);
-    if (once.length < 2 || moreno.length < 2) {
-      throw new Error(`Datos insuficientes en la hoja "${hoja}" (filas once: ${once.length}, moreno: ${moreno.length})`);
+    const { onceMoreno: om, morenoOnce: mo } = utParseHorarios(json.rows || []);
+    if (om.ultimo === '--:--' || mo.ultimo === '--:--') {
+      throw new Error(`No se encontraron los horarios "Último tren" en la hoja "${hoja}". Verificá que la hoja tenga las filas "Último tren Once → Moreno" y "Último tren Moreno → Once".`);
     }
-
-    const om = utUltimos(once);
-    const mo = utUltimos(moreno);
 
     // Mostrar en la preview de hoja
     document.getElementById('sh-om-ult').textContent  = om.ultimo;
