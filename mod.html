@@ -536,9 +536,17 @@
 </div>
 
 <script type="module">
+// ── Capturar errores globales del módulo ───────────────────────
+window.addEventListener("error", e => {
+  console.error("JS Error:", e.message, e.filename, e.lineno);
+});
+window.addEventListener("unhandledrejection", e => {
+  console.error("Promise Error:", e.reason);
+});
+
 import { initializeApp }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
+import { getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import {
   getFirestore, collection, doc, addDoc, setDoc, updateDoc, deleteDoc,
@@ -557,41 +565,58 @@ const admins    = ["hernan.garbarino@gmail.com","trensarmientoenlinea@gmail.com"
 const CL_CLOUD  = "dc4jzoeku";
 const CL_PRESET = "trenes";
 
-const app      = initializeApp(firebaseConfig);
-const auth     = getAuth(app);
-const db       = getFirestore(app);
-const provider = new GoogleAuthProvider();
+let app, auth, db, provider;
+try {
+  app      = initializeApp(firebaseConfig);
+  auth     = getAuth(app);
+  db       = getFirestore(app);
+  provider = new GoogleAuthProvider();
+} catch(e) {
+  alert("Error iniciando Firebase: " + e.message);
+}
+
 const estadoRef       = doc(db,"estadoServicio","actual");
 const puntosSubeRef   = collection(db,"puntoSube");
 const noticiasRef     = collection(db,"noticias");
 const ultimosTrenesRef= doc(db,"ultimosTrenes","actual");
 const reportesRef     = collection(db,"usuarioReporta");
 
-// URL del Apps Script que expone la hoja de cálculo
-// Reemplazá TU_DEPLOYMENT_ID con tu URL de implementación de Apps Script
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/TU_DEPLOYMENT_ID/exec';
 let currentUser = null;
 const sanitize  = v => v.replace(/<[^>]*>?/gm,"").trim();
 
-// ── Auth ───────────────────────────────────────────────────────
-document.getElementById("loginBtn").addEventListener("click", async () => {
-  try { await signInWithPopup(auth,provider); } catch(e){ alert("Error iniciando sesión"); }
-});
-document.getElementById("logoutBtn").addEventListener("click", () => signOut(auth));
+// ── Auth — registrado inmediatamente, aislado del resto ────────
+try {
+  // Procesar el resultado del redirect al volver de Google
+  getRedirectResult(auth).then(result => {
+    // Si hay resultado, onAuthStateChanged lo maneja solo
+  }).catch(e => {
+    if (e.code !== "auth/no-current-user") {
+      alert("Error al iniciar sesión: " + e.message);
+    }
+  });
 
-onAuthStateChanged(auth, user => {
-  currentUser = user;
-  const lBtn  = document.getElementById("loginBtn");
-  const oBtn  = document.getElementById("logoutBtn");
-  const panel = document.getElementById("adminPanel");
-  if (user) {
-    lBtn.style.display="none"; oBtn.style.display="block";
-    if (admins.includes(user.email)) { panel.style.display="block"; mostrarSeccion("Estado"); }
-    else { panel.style.display="none"; alert("Usuario sin permisos"); }
-  } else {
-    panel.style.display="none"; lBtn.style.display="block"; oBtn.style.display="none";
-  }
-});
+  document.getElementById("loginBtn").addEventListener("click", () => {
+    signInWithRedirect(auth, provider);
+  });
+  document.getElementById("logoutBtn").addEventListener("click", () => signOut(auth));
+
+  onAuthStateChanged(auth, user => {
+    currentUser = user;
+    const lBtn  = document.getElementById("loginBtn");
+    const oBtn  = document.getElementById("logoutBtn");
+    const panel = document.getElementById("adminPanel");
+    if (user) {
+      lBtn.style.display="none"; oBtn.style.display="block";
+      if (admins.includes(user.email)) { panel.style.display="block"; mostrarSeccion("Estado"); }
+      else { panel.style.display="none"; alert("Usuario sin permisos de administración."); }
+    } else {
+      panel.style.display="none"; lBtn.style.display="block"; oBtn.style.display="none";
+    }
+  });
+} catch(e) {
+  alert("Error configurando autenticación: " + e.message);
+}
 
 // ── Navegación ─────────────────────────────────────────────────
 const SECS = ["Estado","PuntosSube","Noticias","Cronograma","UltimosTrenes","Reportes"];
@@ -1051,6 +1076,8 @@ function initLst(){
     lst.innerHTML=snap.docs.map(d=>buildItem(d.id,d.data())).join("");
     if(was&&document.getElementById("ni-"+was)){document.getElementById("ni-"+was).classList.add("editing");document.getElementById("eb-"+was)?.classList.add("on");}
   },err=>{lst.innerHTML=`<div class='lst-empty'>❌ Error cargando noticias.<br><small>${err.message}</small></div>`;});
+}
+
 // ══════════════════════════════════════════════════════════════
 // REPORTES DE USUARIOS
 // ══════════════════════════════════════════════════════════════
