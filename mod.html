@@ -167,6 +167,77 @@
     .bdg.pub{background:rgba(0,230,118,.15);color:var(--green);border:1px solid rgba(0,230,118,.3);}
     .bdg.bor{background:rgba(255,214,0,.12);color:var(--yellow);border:1px solid rgba(255,214,0,.3);}
     .lst-empty{text-align:center;padding:28px 14px;color:var(--muted);font-size:13px;background:rgba(255,255,255,.02);border:1px dashed rgba(255,255,255,.07);border-radius:14px;}
+
+    /* ── Últimos Trenes ── */
+    .ut-source-toggle{display:flex;gap:8px;margin-bottom:18px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:6px;}
+    .ut-src-btn{flex:1;padding:9px 10px;border-radius:10px;border:none;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;background:transparent;color:var(--muted);transition:all .18s;}
+    .ut-src-btn.active{background:rgba(0,168,255,.18);color:var(--blue);border:1px solid rgba(0,168,255,.35);}
+    .ut-preview-box{background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:16px;margin-bottom:16px;}
+    .ut-preview-title{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;}
+    .ut-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+    .ut-dir{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:12px;}
+    .ut-dir-label{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px;}
+    .ut-dir-label.ida{color:#60a5fa;} .ut-dir-label.vuelta{color:#34d399;}
+    .ut-train{display:flex;align-items:center;gap:8px;padding:7px 9px;border-radius:9px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.05);margin-bottom:6px;}
+    .ut-train:last-child{margin-bottom:0;}
+    .ut-train-num{font-size:9px;font-weight:700;text-transform:uppercase;color:var(--muted);width:52px;flex-shrink:0;}
+    .ut-train-time{font-size:20px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:.02em;}
+    .ut-train-time.ida{color:#60a5fa;} .ut-train-time.vuelta{color:#34d399;}
+    .ut-train-src{margin-left:auto;font-size:9px;color:var(--muted);background:rgba(255,255,255,.06);border-radius:6px;padding:2px 7px;white-space:nowrap;}
+    .ut-manual-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+    .ut-field-group{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.05);border-radius:12px;padding:12px;}
+    .ut-field-group .ut-dir-label{margin-bottom:8px;}
+    .ut-field-group label{font-size:12px;color:var(--muted);margin-bottom:4px;margin-top:8px;}
+    .ut-field-group label:first-of-type{margin-top:0;}
+    .ut-time-input{font-size:22px;font-weight:800;text-align:center;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:8px;letter-spacing:.04em;}
+    .ut-time-input.ida{color:#60a5fa;} .ut-time-input.vuelta{color:#34d399;}
+    .ut-status-badge{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:7px 13px;border-radius:20px;margin-top:12px;}
+    .ut-status-badge.ok{background:rgba(0,230,118,.1);color:var(--green);border:1px solid rgba(0,230,118,.25);}
+    .ut-status-badge.err{background:rgba(255,23,68,.1);color:var(--red);border:1px solid rgba(255,23,68,.25);}
+    .ut-status-badge.info{background:rgba(0,168,255,.1);color:var(--blue);border:1px solid rgba(0,168,255,.25);}
+    .ut-last-saved{font-size:11px;color:var(--muted);margin-top:8px;text-align:center;}
+    @media(max-width:480px){.ut-row,.ut-manual-grid{grid-template-columns:1fr;}}
+
+    /* ── Reportes de usuarios ── */
+    .btn-reportes-wrap{position:relative;display:inline-flex;width:100%;}
+    .badge-nuevos{
+      position:absolute;top:-7px;right:-7px;
+      background:var(--red);color:#fff;
+      font-size:10px;font-weight:800;min-width:20px;height:20px;
+      border-radius:10px;display:flex;align-items:center;justify-content:center;
+      padding:0 5px;border:2px solid var(--bg);z-index:2;
+      animation:pulse 1.8s infinite;
+    }
+    @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(255,23,68,.5);}50%{box-shadow:0 0 0 6px rgba(255,23,68,0);}}
+    .rep-table-wrap{overflow-x:auto;margin-top:4px;}
+    .rep-table{width:100%;border-collapse:collapse;font-size:13px;}
+    .rep-table th{
+      text-align:left;padding:9px 10px;font-size:10px;font-weight:700;
+      letter-spacing:.08em;text-transform:uppercase;color:var(--muted);
+      border-bottom:1px solid rgba(255,255,255,.08);white-space:nowrap;
+    }
+    .rep-table td{padding:10px 10px;border-bottom:1px solid rgba(255,255,255,.05);vertical-align:middle;}
+    .rep-row-nuevo td{font-weight:700;color:#fff;}
+    .rep-row-visto td{font-style:italic;color:var(--muted);font-weight:400;}
+    .rep-table tr:last-child td{border-bottom:none;}
+    .rep-thumb{width:48px;height:36px;border-radius:7px;object-fit:cover;background:rgba(255,255,255,.05);display:block;}
+    .rep-nopic{width:48px;height:36px;border-radius:7px;background:rgba(255,255,255,.05);border:1px dashed rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--muted);}
+    .rep-badge-nuevo{display:inline-block;background:rgba(255,23,68,.15);color:var(--red);border:1px solid rgba(255,23,68,.3);font-size:9px;font-weight:800;padding:2px 7px;border-radius:20px;letter-spacing:.5px;white-space:nowrap;}
+    .rep-badge-visto{display:inline-block;background:rgba(255,255,255,.05);color:var(--muted);border:1px solid rgba(255,255,255,.08);font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px;white-space:nowrap;}
+    .btn-marcar{
+      background:rgba(0,168,255,.12);border:1px solid rgba(0,168,255,.25);
+      color:var(--blue);border-radius:8px;padding:5px 11px;font-size:12px;
+      font-weight:700;font-family:inherit;cursor:pointer;transition:all .18s;width:auto;
+    }
+    .btn-marcar:hover{background:rgba(0,168,255,.25);}
+    .rep-titulo{max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;}
+    .rep-expandido{display:none;background:rgba(0,0,0,.2);padding:12px 14px;}
+    .rep-expandido.open{display:table-row;}
+    .rep-expand-inner{padding:12px 14px;background:rgba(0,168,255,.04);border-radius:10px;font-size:13px;line-height:1.7;color:#c8d8f0;}
+    .rep-empty{text-align:center;padding:28px;color:var(--muted);font-size:13px;}
+    .rep-filters{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
+    .rep-filter-btn{padding:6px 14px;border-radius:20px;border:1px solid rgba(255,255,255,.1);background:transparent;color:var(--muted);font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;transition:all .18s;width:auto;}
+    .rep-filter-btn.active{background:rgba(0,168,255,.15);border-color:var(--blue);color:var(--blue);}
   </style>
 </head>
 <body>
@@ -196,6 +267,11 @@
       <button class="primary-btn" id="btnPuntosSube">Puntos SUBE</button>
       <button class="primary-btn" id="btnNoticias">Noticias</button>
       <button class="primary-btn" id="btnCronograma">Cronograma</button>
+      <button class="primary-btn" id="btnUltimosTrenes">Últimos Trenes</button>
+      <div class="btn-reportes-wrap">
+        <button class="primary-btn" id="btnReportes" style="background:linear-gradient(135deg,#ff1744,#c0002a);">📢 Reportes</button>
+        <span class="badge-nuevos" id="badgeNuevos" style="display:none">0</span>
+      </div>
     </div>
 
     <!-- Estado -->
@@ -322,6 +398,138 @@
       <div class="section-title">Cronograma Especial</div>
       <div class="section-description">Sección preparada para futura carga de cronogramas especiales.</div>
     </div>
+
+    <!-- Últimos Trenes -->
+    <div id="seccionUltimosTrenes" class="section-card hidden">
+      <div class="section-title">🕙 Últimos Trenes</div>
+      <div class="section-description">
+        Configurá los últimos y anteúltimos trenes que se muestran en el widget del sitio.<br/>
+        Podés usar los horarios detectados automáticamente desde la hoja de cálculo, o ingresarlos manualmente.
+      </div>
+
+      <!-- Toggle fuente -->
+      <div class="ut-source-toggle">
+        <button class="ut-src-btn active" id="utSrcSheets" onclick="utSetSource('sheets')">📊 Desde hoja de cálculo</button>
+        <button class="ut-src-btn" id="utSrcManual" onclick="utSetSource('manual')">✏️ Ingreso manual</button>
+      </div>
+
+      <!-- Vista previa actual en Firestore -->
+      <div class="ut-preview-box">
+        <div class="ut-preview-title">📡 Datos actuales en Firestore</div>
+        <div class="ut-row">
+          <div class="ut-dir">
+            <div class="ut-dir-label ida">🔵 Once → Moreno</div>
+            <div class="ut-train">
+              <span class="ut-train-num">Último</span>
+              <span class="ut-train-time ida" id="fs-om-ult">--:--</span>
+              <span class="ut-train-src" id="fs-om-ult-src">—</span>
+            </div>
+            <div class="ut-train">
+              <span class="ut-train-num">Anteúltimo</span>
+              <span class="ut-train-time ida" id="fs-om-ante">--:--</span>
+              <span class="ut-train-src" id="fs-om-ante-src">—</span>
+            </div>
+          </div>
+          <div class="ut-dir">
+            <div class="ut-dir-label vuelta">🟢 Moreno → Once</div>
+            <div class="ut-train">
+              <span class="ut-train-num">Último</span>
+              <span class="ut-train-time vuelta" id="fs-mo-ult">--:--</span>
+              <span class="ut-train-src" id="fs-mo-ult-src">—</span>
+            </div>
+            <div class="ut-train">
+              <span class="ut-train-num">Anteúltimo</span>
+              <span class="ut-train-time vuelta" id="fs-mo-ante">--:--</span>
+              <span class="ut-train-src" id="fs-mo-ante-src">—</span>
+            </div>
+          </div>
+        </div>
+        <div class="ut-last-saved" id="utLastSaved">—</div>
+      </div>
+
+      <!-- Panel: desde hoja de cálculo -->
+      <div id="utPanelSheets">
+        <div class="ut-preview-box" style="margin-bottom:12px;">
+          <div class="ut-preview-title">📊 Detectado desde la hoja de cálculo</div>
+          <div class="ut-row">
+            <div class="ut-dir">
+              <div class="ut-dir-label ida">🔵 Once → Moreno</div>
+              <div class="ut-train"><span class="ut-train-num">Último</span><span class="ut-train-time ida" id="sh-om-ult">--:--</span></div>
+              <div class="ut-train"><span class="ut-train-num">Anteúltimo</span><span class="ut-train-time ida" id="sh-om-ante">--:--</span></div>
+            </div>
+            <div class="ut-dir">
+              <div class="ut-dir-label vuelta">🟢 Moreno → Once</div>
+              <div class="ut-train"><span class="ut-train-num">Último</span><span class="ut-train-time vuelta" id="sh-mo-ult">--:--</span></div>
+              <div class="ut-train"><span class="ut-train-num">Anteúltimo</span><span class="ut-train-time vuelta" id="sh-mo-ante">--:--</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Día de referencia para calcular últimos trenes</label>
+          <select id="utDiaRef">
+            <option value="lv">Lunes a Viernes</option>
+            <option value="sab">Sábados</option>
+            <option value="dom">Domingos y Feriados</option>
+          </select>
+        </div>
+        <button class="primary-btn" id="utSheetsFetchBtn" onclick="utFetchFromSheets()">🔄 Detectar desde hoja de cálculo</button>
+        <button class="primary-btn" style="margin-top:10px;background:linear-gradient(135deg,#00e676,#00a843);" id="utSheetsGuardarBtn" onclick="utGuardar('sheets')" disabled>💾 Guardar en Firestore</button>
+      </div>
+
+      <!-- Panel: ingreso manual -->
+      <div id="utPanelManual" style="display:none;">
+        <div class="ut-manual-grid">
+          <div class="ut-field-group">
+            <div class="ut-dir-label ida">🔵 Once → Moreno</div>
+            <label>Último tren</label>
+            <input type="time" class="ut-time-input ida" id="man-om-ult" value="23:55"/>
+            <label>Anteúltimo tren</label>
+            <input type="time" class="ut-time-input ida" id="man-om-ante" value="23:25"/>
+          </div>
+          <div class="ut-field-group">
+            <div class="ut-dir-label vuelta">🟢 Moreno → Once</div>
+            <label>Último tren</label>
+            <input type="time" class="ut-time-input vuelta" id="man-mo-ult" value="22:30"/>
+            <label>Anteúltimo tren</label>
+            <input type="time" class="ut-time-input vuelta" id="man-mo-ante" value="22:12"/>
+          </div>
+        </div>
+        <button class="primary-btn" style="background:linear-gradient(135deg,#00e676,#00a843);" id="utManualGuardarBtn" onclick="utGuardar('manual')">💾 Guardar en Firestore</button>
+      </div>
+
+      <div id="utStatusMsg"></div>
+    </div>
+
+    <!-- Reportes de usuarios -->
+    <div id="seccionReportes" class="section-card hidden">
+      <div class="section-title">📢 Reportes de usuarios</div>
+      <div class="section-description">Enviados por visitantes desde el sitio. Los nuevos aparecen en negrita. Marcalos como vistos una vez revisados.</div>
+
+      <div class="rep-filters">
+        <button class="rep-filter-btn active" id="rfTodos"   onclick="repFiltrar('todos')">Todos</button>
+        <button class="rep-filter-btn"        id="rfNuevos"  onclick="repFiltrar('nuevos')">Solo nuevos</button>
+        <button class="rep-filter-btn"        id="rfVistos"  onclick="repFiltrar('vistos')">Solo vistos</button>
+      </div>
+
+      <div class="rep-table-wrap">
+        <table class="rep-table">
+          <thead>
+            <tr>
+              <th>Foto</th>
+              <th>Fecha</th>
+              <th>Usuario</th>
+              <th>Título</th>
+              <th>Contacto</th>
+              <th>Estado</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="repTbody">
+            <tr><td colspan="7" class="rep-empty">Cargando…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
   </div>
 
   <div class="footer">Firebase Auth + Firestore · Cloudinary</div>
@@ -353,9 +561,15 @@ const app      = initializeApp(firebaseConfig);
 const auth     = getAuth(app);
 const db       = getFirestore(app);
 const provider = new GoogleAuthProvider();
-const estadoRef     = doc(db,"estadoServicio","actual");
-const puntosSubeRef = collection(db,"puntoSube");
-const noticiasRef   = collection(db,"noticias");
+const estadoRef       = doc(db,"estadoServicio","actual");
+const puntosSubeRef   = collection(db,"puntoSube");
+const noticiasRef     = collection(db,"noticias");
+const ultimosTrenesRef= doc(db,"ultimosTrenes","actual");
+const reportesRef     = collection(db,"usuarioReporta");
+
+// URL del Apps Script que expone la hoja de cálculo
+// Reemplazá TU_DEPLOYMENT_ID con tu URL de implementación de Apps Script
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/TU_DEPLOYMENT_ID/exec';
 let currentUser = null;
 const sanitize  = v => v.replace(/<[^>]*>?/gm,"").trim();
 
@@ -380,16 +594,20 @@ onAuthStateChanged(auth, user => {
 });
 
 // ── Navegación ─────────────────────────────────────────────────
-const SECS = ["Estado","PuntosSube","Noticias","Cronograma"];
+const SECS = ["Estado","PuntosSube","Noticias","Cronograma","UltimosTrenes","Reportes"];
 function mostrarSeccion(n) {
   SECS.forEach(s => document.getElementById("seccion"+s).classList.add("hidden"));
   document.getElementById("seccion"+n).classList.remove("hidden");
-  if (n==="Noticias" && !_lstIniciado) initLst();
+  if (n==="Noticias"      && !_lstIniciado)  initLst();
+  if (n==="UltimosTrenes")                   utInitListener();
+  if (n==="Reportes"      && !_repIniciado)  repInitListener();
 }
-document.getElementById("btnEstado").addEventListener("click",     () => mostrarSeccion("Estado"));
-document.getElementById("btnPuntosSube").addEventListener("click", () => mostrarSeccion("PuntosSube"));
-document.getElementById("btnNoticias").addEventListener("click",   () => mostrarSeccion("Noticias"));
-document.getElementById("btnCronograma").addEventListener("click", () => mostrarSeccion("Cronograma"));
+document.getElementById("btnEstado").addEventListener("click",         () => mostrarSeccion("Estado"));
+document.getElementById("btnPuntosSube").addEventListener("click",     () => mostrarSeccion("PuntosSube"));
+document.getElementById("btnNoticias").addEventListener("click",       () => mostrarSeccion("Noticias"));
+document.getElementById("btnCronograma").addEventListener("click",     () => mostrarSeccion("Cronograma"));
+document.getElementById("btnUltimosTrenes").addEventListener("click",  () => mostrarSeccion("UltimosTrenes"));
+document.getElementById("btnReportes").addEventListener("click",       () => mostrarSeccion("Reportes"));
 
 // ── Semáforo ───────────────────────────────────────────────────
 onSnapshot(estadoRef, snap => {
@@ -833,6 +1051,261 @@ function initLst(){
     lst.innerHTML=snap.docs.map(d=>buildItem(d.id,d.data())).join("");
     if(was&&document.getElementById("ni-"+was)){document.getElementById("ni-"+was).classList.add("editing");document.getElementById("eb-"+was)?.classList.add("on");}
   },err=>{lst.innerHTML=`<div class='lst-empty'>❌ Error cargando noticias.<br><small>${err.message}</small></div>`;});
+// ══════════════════════════════════════════════════════════════
+// REPORTES DE USUARIOS
+// ══════════════════════════════════════════════════════════════
+let _repIniciado = false;
+let _repCache    = [];   // array de {id, ...data}
+let _repFiltro   = 'todos';
+let _repExpandId = null;
+
+function repInitListener() {
+  _repIniciado = true;
+  // Escuchar colección completa, orden por fecha desc
+  onSnapshot(
+    query(reportesRef, orderBy("creadoEn","desc")),
+    snap => {
+      _repCache = snap.docs.map(d => ({id:d.id,...d.data()}));
+      // Actualizar badge contador de nuevos
+      const nuevos = _repCache.filter(r => r.visto !== true).length;
+      const badge  = document.getElementById("badgeNuevos");
+      badge.textContent  = nuevos;
+      badge.style.display = nuevos > 0 ? "flex" : "none";
+      // Re-render tabla
+      repRender();
+    },
+    err => {
+      document.getElementById("repTbody").innerHTML =
+        `<tr><td colspan="7" class="rep-empty">❌ Error al cargar: ${err.message}</td></tr>`;
+    }
+  );
+}
+
+function repFiltrar(f) {
+  _repFiltro = f;
+  ["rfTodos","rfNuevos","rfVistos"].forEach(id => document.getElementById(id).classList.remove("active"));
+  document.getElementById(f==="todos"?"rfTodos":f==="nuevos"?"rfNuevos":"rfVistos").classList.add("active");
+  repRender();
+}
+window.repFiltrar = repFiltrar;
+
+function repFmtFecha(val) {
+  if (!val) return "—";
+  try {
+    const d = val.toDate ? val.toDate() : new Date(val);
+    const p = n => String(n).padStart(2,"0");
+    return `${p(d.getDate())}/${p(d.getMonth()+1)}/${d.getFullYear()}<br><small>${p(d.getHours())}:${p(d.getMinutes())}</small>`;
+  } catch { return "—"; }
+}
+
+function repRender() {
+  const tbody = document.getElementById("repTbody");
+  let lista = _repCache;
+  if (_repFiltro === "nuevos") lista = lista.filter(r => r.visto !== true);
+  if (_repFiltro === "vistos") lista = lista.filter(r => r.visto === true);
+
+  if (!lista.length) {
+    tbody.innerHTML = `<tr><td colspan="7" class="rep-empty">📭 ${_repFiltro==="nuevos"?"No hay reportes nuevos.":_repFiltro==="vistos"?"No hay reportes vistos.":"No hay reportes todavía."}</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = lista.map(r => {
+    const visto   = r.visto === true;
+    const rowCls  = visto ? "rep-row-visto" : "rep-row-nuevo";
+    const badgeEl = visto
+      ? `<span class="rep-badge-visto">✓ Visto</span>`
+      : `<span class="rep-badge-nuevo">● NUEVO</span>`;
+    const thumb = r.foto
+      ? `<img class="rep-thumb" src="${escR(r.foto)}" alt="" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+      : "";
+    const nopic = `<div class="rep-nopic" ${r.foto?'style="display:none"':""}>📷</div>`;
+    const accion = visto
+      ? `<button class="btn-marcar" onclick="repMarcar('${r.id}',false)" style="background:rgba(255,255,255,.05);color:var(--muted);border-color:rgba(255,255,255,.1);">↩ No visto</button>`
+      : `<button class="btn-marcar" onclick="repMarcar('${r.id}',true)">✓ Marcar visto</button>`;
+    const isExp = _repExpandId === r.id;
+    return `
+    <tr class="${rowCls}" onclick="repToggleExpand('${r.id}')" style="cursor:pointer">
+      <td>${thumb}${nopic}</td>
+      <td style="font-size:11px;white-space:nowrap">${repFmtFecha(r.creadoEn)}</td>
+      <td style="font-size:12px;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escR(r.usuarioEmail||"")}">
+        ${escR(r.usuarioNombre||r.usuarioEmail||"—")}
+      </td>
+      <td><span class="rep-titulo" title="${escR(r.titulo||"")}">${escR(r.titulo||"(sin título)")}</span></td>
+      <td style="font-size:12px;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escR(r.contacto||"—")}</td>
+      <td>${badgeEl}</td>
+      <td onclick="event.stopPropagation()">${accion}</td>
+    </tr>
+    <tr id="exp-${r.id}" class="rep-expandido ${isExp?"open":""}">
+      <td colspan="7">
+        <div class="rep-expand-inner">
+          <strong>Desarrollo:</strong><br/>${escR(r.contenido||"(sin contenido)")}
+          ${r.usuarioEmail?`<br/><br/><strong>Email:</strong> ${escR(r.usuarioEmail)}`:""}
+          ${r.contacto?`<br/><strong>Contacto:</strong> ${escR(r.contacto)}`:""}
+          ${r.foto?`<br/><br/><a href="${escR(r.foto)}" target="_blank" style="color:var(--blue)">🖼️ Ver imagen completa</a>`:""}
+        </div>
+      </td>
+    </tr>`;
+  }).join("");
+}
+
+window.repToggleExpand = function(id) {
+  _repExpandId = _repExpandId === id ? null : id;
+  repRender();
+};
+
+window.repMarcar = async function(id, visto) {
+  if (!isAdmin()) return;
+  try {
+    await updateDoc(doc(db,"usuarioReporta",id), {
+      visto,
+      vistoEn:   visto ? serverTimestamp() : null,
+      vistoPor:  visto ? currentUser.email : null
+    });
+    // El onSnapshot actualiza automáticamente
+  } catch(e) { alert("Error al actualizar: "+e.message); }
+};
+
+function escR(s) {
+  return String(s||"").replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+}
+
+// ══════════════════════════════════════════════════════════════
+// ÚLTIMOS TRENES
+// ══════════════════════════════════════════════════════════════
+let _utSource     = 'sheets';
+let _utSheetsData = null;
+let _utListening  = false;
+
+function utInitListener() {
+  if (_utListening) return;
+  _utListening = true;
+  onSnapshot(ultimosTrenesRef, snap => {
+    if (!snap.exists()) return;
+    const d = snap.data();
+    const setSrc = (id, v) => { const el=document.getElementById(id); if(el) el.textContent=v; };
+    const setTxt = (id, v) => { const el=document.getElementById(id); if(el) el.textContent=v||'--:--'; };
+    setTxt('fs-om-ult',  d.onceMoreno?.ultimo);
+    setTxt('fs-om-ante', d.onceMoreno?.anteultimo);
+    setTxt('fs-mo-ult',  d.morenoOnce?.ultimo);
+    setTxt('fs-mo-ante', d.morenoOnce?.anteultimo);
+    const srcLabel = d.fuente === 'manual' ? '✏️ manual' : '📊 hoja';
+    ['fs-om-ult-src','fs-om-ante-src','fs-mo-ult-src','fs-mo-ante-src'].forEach(id => setSrc(id, srcLabel));
+    const ts = d.actualizadoEn?.toDate ? d.actualizadoEn.toDate() : (d.actualizadoEn ? new Date(d.actualizadoEn) : null);
+    document.getElementById('utLastSaved').textContent = ts
+      ? `Última actualización: ${ts.toLocaleDateString('es-AR')} ${ts.toLocaleTimeString('es-AR')} · por ${d.actualizadoPor||'—'}`
+      : '—';
+  });
+}
+
+window.utSetSource = function(src) {
+  _utSource = src;
+  document.getElementById('utSrcSheets').classList.toggle('active', src === 'sheets');
+  document.getElementById('utSrcManual').classList.toggle('active', src === 'manual');
+  document.getElementById('utPanelSheets').style.display = src === 'sheets' ? '' : 'none';
+  document.getElementById('utPanelManual').style.display = src === 'manual' ? '' : 'none';
+  utClearStatus();
+};
+
+function utParseHorarios(rows) {
+  const once = [], moreno = [];
+  rows.slice(1).forEach(row => {
+    const tipo = (row[0]||'').toLowerCase().trim();
+    const hora = (row[1]||'').trim();
+    if (!/^\d{1,2}:\d{2}$/.test(hora)) return;
+    const [h, m] = hora.split(':').map(Number);
+    if (tipo === 'once')   once.push([h, m]);
+    if (tipo === 'moreno') moreno.push([h, m]);
+  });
+  return { once, moreno };
+}
+
+function utUltimos(arr) {
+  if (!arr || arr.length < 2) return { ultimo: '--:--', anteultimo: '--:--' };
+  const sorted = [...arr].sort((a,b) => (a[0]*60+a[1]) - (b[0]*60+b[1]));
+  const fmt = ([h,m]) => `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+  return { ultimo: fmt(sorted[sorted.length-1]), anteultimo: fmt(sorted[sorted.length-2]) };
+}
+
+window.utFetchFromSheets = async function() {
+  if (!isAdmin()) return;
+  const dia = document.getElementById('utDiaRef').value;
+  const hojaMap = { lv:'Once-Moreno LV', sab:'Once-Moreno SAB', dom:'Once-Moreno DOM' };
+  const hoja = hojaMap[dia] || 'Once-Moreno LV';
+  const btn = document.getElementById('utSheetsFetchBtn');
+  btn.disabled = true; btn.textContent = '⏳ Consultando hoja…';
+  utClearStatus();
+  utSetStatus('info','🔄 Conectando con la hoja de cálculo…');
+  if (APPS_SCRIPT_URL.includes('TU_DEPLOYMENT_ID')) {
+    utSetStatus('err','⚠️ Configurá primero la URL del Apps Script (APPS_SCRIPT_URL en el código).');
+    btn.disabled=false; btn.textContent='🔄 Detectar desde hoja de cálculo'; return;
+  }
+  try {
+    const res  = await fetch(`${APPS_SCRIPT_URL}?hoja=${encodeURIComponent(hoja)}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const json = await res.json();
+    if (json.error) throw new Error(json.error);
+    const { once, moreno } = utParseHorarios(json.rows || []);
+    if (once.length < 2 || moreno.length < 2)
+      throw new Error(`Datos insuficientes en "${hoja}" (once: ${once.length}, moreno: ${moreno.length})`);
+    const om = utUltimos(once), mo = utUltimos(moreno);
+    document.getElementById('sh-om-ult').textContent  = om.ultimo;
+    document.getElementById('sh-om-ante').textContent = om.anteultimo;
+    document.getElementById('sh-mo-ult').textContent  = mo.ultimo;
+    document.getElementById('sh-mo-ante').textContent = mo.anteultimo;
+    _utSheetsData = { onceMoreno: om, morenoOnce: mo, dia };
+    document.getElementById('utSheetsGuardarBtn').disabled = false;
+    utSetStatus('ok', `✅ Datos detectados para <strong>${{lv:'Lunes a Viernes',sab:'Sábados',dom:'Domingos/Feriados'}[dia]}</strong>. Revisá y guardá.`);
+  } catch(e) {
+    utSetStatus('err','❌ Error al leer la hoja: ' + e.message);
+    document.getElementById('utSheetsGuardarBtn').disabled = true;
+  }
+  btn.disabled=false; btn.textContent='🔄 Detectar desde hoja de cálculo';
+};
+
+window.utGuardar = async function(fuente) {
+  if (!isAdmin()) return;
+  utClearStatus();
+  let onceMoreno, morenoOnce;
+  if (fuente === 'sheets') {
+    if (!_utSheetsData) { utSetStatus('err','⚠️ Primero detectá los datos desde la hoja.'); return; }
+    onceMoreno = _utSheetsData.onceMoreno;
+    morenoOnce = _utSheetsData.morenoOnce;
+  } else {
+    const omU=document.getElementById('man-om-ult').value.trim();
+    const omA=document.getElementById('man-om-ante').value.trim();
+    const moU=document.getElementById('man-mo-ult').value.trim();
+    const moA=document.getElementById('man-mo-ante').value.trim();
+    if (!omU||!omA||!moU||!moA) { utSetStatus('err','⚠️ Completá los cuatro horarios antes de guardar.'); return; }
+    onceMoreno = { ultimo:omU, anteultimo:omA };
+    morenoOnce = { ultimo:moU, anteultimo:moA };
+  }
+  const btnId = fuente==='sheets' ? 'utSheetsGuardarBtn' : 'utManualGuardarBtn';
+  const btn   = document.getElementById(btnId);
+  btn.disabled=true; btn.textContent='⏳ Guardando…';
+  try {
+    await setDoc(ultimosTrenesRef, {
+      onceMoreno, morenoOnce, fuente,
+      dia: fuente==='sheets' ? (document.getElementById('utDiaRef').value||'lv') : 'manual',
+      actualizadoPor: currentUser.email,
+      actualizadoEn:  serverTimestamp()
+    });
+    utSetStatus('ok','✅ Últimos trenes guardados correctamente en Firestore.');
+    if (fuente==='sheets') { _utSheetsData=null; btn.disabled=true; }
+  } catch(e) {
+    utSetStatus('err','❌ Error al guardar: ' + e.message);
+    btn.disabled=false;
+  }
+  if (fuente!=='sheets') btn.disabled=false;
+  btn.textContent='💾 Guardar en Firestore';
+};
+
+function utSetStatus(type, html) {
+  const el=document.getElementById('utStatusMsg');
+  if(el) el.innerHTML=`<div class="ut-status-badge ${type}">${html}</div>`;
+}
+function utClearStatus() {
+  const el=document.getElementById('utStatusMsg');
+  if(el) el.innerHTML='';
 }
 </script>
 </body>
