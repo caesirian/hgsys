@@ -1,0 +1,1 @@
+import{makeCrudService}from'../../../services/crud.service.js';import{validateVencimiento}from'../../../validators/vencimiento.validator.js';export const vencimientoService=makeCrudService('vencimientos','vencimientos',validateVencimiento);

@@ -1,0 +1,1 @@
+import{localDb}from'../../../services/local-db.service.js';import{hasPermission}from'../../../config/permissions.config.js';import{currentUser}from'../../../config/app.config.js';export const eventoService={list(){if(!hasPermission(currentUser,'eventos','read'))throw new Error('Permiso insuficiente');return localDb.list('eventos')}};

@@ -1,0 +1,1 @@
+import{makeCrudService}from'../../../services/crud.service.js';import{validateUsuario}from'../../../validators/usuario.validator.js';export const usuarioService=makeCrudService('usuarios','usuarios',validateUsuario,{create:'alta_usuario',update:'modificacion_usuario'});

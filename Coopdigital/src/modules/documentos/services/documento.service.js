@@ -1,0 +1,1 @@
+import{makeCrudService}from'../../../services/crud.service.js';import{validateDocumento}from'../../../validators/documento.validator.js';export const documentoService=makeCrudService('documentos','documentos',validateDocumento,{create:'carga_documento',delete:'eliminacion_documento'});
