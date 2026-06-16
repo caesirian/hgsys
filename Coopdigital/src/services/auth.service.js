@@ -1,0 +1,2 @@
+import{currentUser}from'../config/app.config.js';import{localDb}from'./local-db.service.js';
+export const authService={login(email){const user=localDb.list('usuarios').find(u=>u.email.toLowerCase()===email.toLowerCase()&&u.activo);if(!user)throw new Error('Usuario inexistente o inactivo');sessionStorage.setItem('coopdigital.user',JSON.stringify(user));return user},logout(){sessionStorage.removeItem('coopdigital.user')},getUser(){return JSON.parse(sessionStorage.getItem('coopdigital.user')||'null')||currentUser}};

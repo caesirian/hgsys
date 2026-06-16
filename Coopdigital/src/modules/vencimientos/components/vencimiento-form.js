@@ -1,0 +1,1 @@
+export const vencimientoFields=[['descripcion','Descripción'],['organismoId','Organismo'],['fechaVencimiento','Fecha vencimiento','date'],['estado','Estado','select',['pendiente','cumplido','vencido']],['observaciones','Observaciones','textarea']].map(([name,label,type,options])=>({name,label,type,options,full:name==='observaciones'}));
