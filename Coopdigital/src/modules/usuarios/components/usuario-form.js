@@ -1,0 +1,1 @@
+export const usuarioFields=[['uid','UID'],['nombre','Nombre'],['apellido','Apellido'],['email','Email','email'],['telefono','Teléfono'],['rol','Rol','select',['admin','consejero','sindico','operador','consulta']],['activo','Activo','select',['true','false']],['fechaAlta','Fecha alta','date']].map(([name,label,type,options])=>({name,label,type,options}));

@@ -1,0 +1,1 @@
+import{makeCrudService}from'../../../services/crud.service.js';import{validateAsociado}from'../../../validators/asociado.validator.js';export const asociadoService=makeCrudService('asociados','asociados',validateAsociado,{create:'alta_asociado',update:'modificacion_asociado',delete:'baja_asociado'});

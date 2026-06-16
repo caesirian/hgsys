@@ -1,0 +1,13 @@
+const nav = [
+  ['/dashboard', '⌘', 'Dashboard'],
+  ['/usuarios', '👥', 'Usuarios'],
+  ['/asociados', '🤝', 'Asociados'],
+  ['/libro-asociados', '📘', 'Libro de Asociados'],
+  ['/documentos', '📄', 'Documentos'],
+  ['/vencimientos', '⏱', 'Vencimientos'],
+  ['/eventos', '🧾', 'Eventos']
+];
+
+export function layout(user, path, content) {
+  return `<div class="app"><aside class="sidebar" id="sidebar"><div class="brand"><span class="logo">CD</span><div class="hide-collapsed"><b>CoopDigital</b><div class="muted">${user.rol}</div></div></div><nav class="nav">${nav.map(([href, icon, label]) => `<a href="#${href}" class="${path === href ? 'active' : ''}"><span>${icon}</span><span class="hide-collapsed">${label}</span></a>`).join('')}</nav></aside><section class="main"><header class="topbar"><div><button class="btn ghost mobile-menu" id="openSidebar">☰</button><button class="btn ghost" id="collapseSidebar">⇤</button></div><div><b>${user.nombre} ${user.apellido}</b> <span class="muted">${user.email}</span> <button class="btn ghost" id="logout">Salir</button></div></header><main class="content">${content}</main></section></div>`;
+}

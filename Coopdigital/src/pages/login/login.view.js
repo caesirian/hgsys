@@ -1,0 +1,3 @@
+export function loginView(error = '') {
+  return `<main class="auth"><form class="auth-card" id="loginForm"><div class="logo">CD</div><h1>Ingresar a CoopDigital</h1><p class="muted">Acceso con Firebase Authentication y perfil activo en Firestore.</p>${error ? `<div class="alert error">${error}</div>` : ''}<div class="field"><label>Email</label><input name="email" type="email" autocomplete="email" required></div><div class="field"><label>Contraseña</label><input name="password" type="password" autocomplete="current-password" required></div><button class="btn primary" style="width:100%">Ingresar</button></form></main>`;
+}
