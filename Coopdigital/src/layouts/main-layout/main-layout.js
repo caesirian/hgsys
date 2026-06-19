@@ -1,2 +1,66 @@
-const nav=[['/dashboard','⌘','Dashboard'],['/usuarios','👥','Usuarios'],['/asociados','🤝','Asociados'],['/libro-asociados','📘','Libro de Asociados'],['/documentos','📄','Documentos'],['/vencimientos','⏱','Vencimientos'],['/eventos','🧾','Eventos']];
-export function layout(user,path,content){return `<div class="app"><aside class="sidebar" id="sidebar"><div class="brand"><span class="logo">CD</span><div class="hide-collapsed"><b>CoopDigital</b><div class="muted">${user.rol}</div></div></div><nav class="nav">${nav.map(([href,ico,label])=>`<a href="#${href}" class="${path===href?'active':''}"><span>${ico}</span><span class="hide-collapsed">${label}</span></a>`).join('')}</nav></aside><section class="main"><header class="topbar"><div><button class="btn ghost mobile-menu" id="openSidebar">☰</button><button class="btn ghost" id="collapseSidebar">⇤</button></div><div><b>${user.nombre} ${user.apellido}</b> <span class="muted">${user.email}</span> <button class="btn ghost" id="logout">Salir</button></div></header><main class="content">${content}</main></section></div>`}
+const nav = [
+  { section: 'Principal' },
+  { href: '/dashboard',       ico: '⌘',  label: 'Dashboard' },
+  { section: 'Institución' },
+  { href: '/usuarios',        ico: '👥', label: 'Usuarios' },
+  { href: '/asociados',       ico: '🤝', label: 'Asociados' },
+  { href: '/libro-asociados', ico: '📘', label: 'Libro de Asociados' },
+  { section: 'Gestión' },
+  { href: '/documentos',      ico: '📄', label: 'Documentos' },
+  { href: '/vencimientos',    ico: '⏱',  label: 'Vencimientos' },
+  { section: 'Gobernanza' },
+  { href: '/eventos',         ico: '🧾', label: 'Eventos / Auditoría' },
+];
+
+function initials(user) {
+  return ((user.nombre?.[0] ?? '') + (user.apellido?.[0] ?? '')).toUpperCase();
+}
+
+function renderNav(path) {
+  return nav.map(item => {
+    if (item.section) {
+      return `<div class="nav-section">${item.section}</div>`;
+    }
+    const active = path === item.href ? 'active' : '';
+    return `<a href="#${item.href}" class="${active}">
+      <span class="ico">${item.ico}</span>
+      <span class="nav-label">${item.label}</span>
+    </a>`;
+  }).join('');
+}
+
+export function layout(user, path, content) {
+  return `
+  <div class="app">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <span class="logo">CD</span>
+        <div class="brand-text">
+          <b>CoopDigital</b>
+          <span>${user.rol}</span>
+        </div>
+      </div>
+      <nav class="nav">${renderNav(path)}</nav>
+    </aside>
+
+    <section class="main">
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="btn-icon mobile-menu" id="openSidebar" title="Menú">☰</button>
+          <button class="btn-icon" id="collapseSidebar" title="Colapsar sidebar">⇤</button>
+        </div>
+        <div class="topbar-right">
+          <div class="user-chip">
+            <div class="user-avatar">${initials(user)}</div>
+            <div class="user-info">
+              <b>${user.nombre} ${user.apellido}</b>
+              <span>${user.email}</span>
+            </div>
+          </div>
+          <button class="btn ghost" id="logout">Salir</button>
+        </div>
+      </header>
+      <main class="content">${content}</main>
+    </section>
+  </div>`;
+}
