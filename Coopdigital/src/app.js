@@ -1,13 +1,13 @@
 import { authService } from './services/auth.service.js';
 import { layout } from './layouts/main-layout/main-layout.js';
 import { loginView } from './pages/login/login.view.js';
-import { dashboardView } from './pages/dashboard/dashboard.view.js';
+import { dashboardView, bindDashboard } from './pages/dashboard/dashboard.view.js';
 import { usuariosView, bindUsuarios } from './modules/usuarios/views/usuarios.view.js';
 import { asociadosView, bindAsociados } from './modules/asociados/views/asociados.view.js';
 import { libroAsociadosView, bindLibro } from './modules/libro-asociados/views/libro-asociados.view.js';
 import { documentosView, bindDocumentos } from './modules/documentos/views/documentos.view.js';
 import { vencimientosView, bindVencimientos } from './modules/vencimientos/views/vencimientos.view.js';
-import { eventosView } from './modules/eventos/views/eventos.view.js';
+import { eventosView, bindEventos } from './modules/eventos/views/eventos.view.js';
 
 const app = document.querySelector('#app');
 let user = null;
@@ -22,9 +22,13 @@ function renderLoading() {
 function renderLogin(errorMessage) {
   app.innerHTML = loginView();
   if (errorMessage) {
-    document.querySelector('#loginError').innerHTML =
-      `<div class="alert error"></div>`;
-    document.querySelector('#loginError .error').textContent = errorMessage;
+    const errEl = document.querySelector('#loginError');
+    if (errEl) {
+      const div = document.createElement('div');
+      div.className = 'alert error';
+      div.textContent = errorMessage;
+      errEl.appendChild(div);
+    }
   }
   const form = document.querySelector('#loginForm');
   const submitBtn = document.querySelector('#loginSubmit');
@@ -51,12 +55,22 @@ function mapAuthError(err) {
     return 'Email o contraseña incorrectos.';
   }
   if (code.includes('too-many-requests')) {
-    return 'Demasiados intentos. Esperá un momento y volvé a probar.';
+    return 'Demasiados intentos. Esperá un momento.';
   }
   return err?.message || 'No se pudo iniciar sesión.';
 }
 
-function render() {
+function bindLayout() {
+  document.querySelector('#logout').onclick = async () => {
+    await authService.logout();
+  };
+  document.querySelector('#collapseSidebar').onclick = () =>
+    document.querySelector('#sidebar').classList.toggle('collapsed');
+  document.querySelector('#openSidebar')?.addEventListener('click', () =>
+    document.querySelector('#sidebar').classList.toggle('open'));
+}
+
+async function render() {
   const path = route();
 
   if (!user) {
@@ -70,42 +84,36 @@ function render() {
     return;
   }
 
+  // Determinar vista y bind
   let view = '';
-  let bind = () => {};
+  let bind = null;
 
   if (path === '/usuarios') {
     view = usuariosView();
-    bind = () => bindUsuarios(render);
+    bind = () => bindUsuarios();
   } else if (path === '/asociados') {
     view = asociadosView();
-    bind = () => bindAsociados(render);
+    bind = () => bindAsociados();
   } else if (path === '/libro-asociados') {
     view = libroAsociadosView();
-    bind = bindLibro;
+    bind = () => bindLibro();
   } else if (path === '/documentos') {
     view = documentosView();
-    bind = () => bindDocumentos(render);
+    bind = () => bindDocumentos();
   } else if (path === '/vencimientos') {
     view = vencimientosView();
-    bind = () => bindVencimientos(render);
+    bind = () => bindVencimientos();
   } else if (path === '/eventos') {
     view = eventosView();
+    bind = () => bindEventos();
   } else {
     view = dashboardView();
+    bind = () => bindDashboard(user);
   }
 
   app.innerHTML = layout(user, path, view);
-
-  document.querySelector('#logout').onclick = async () => {
-    await authService.logout();
-  };
-  document.querySelector('#collapseSidebar').onclick = () =>
-    document.querySelector('#sidebar').classList.toggle('collapsed');
-  document.querySelector('#openSidebar')?.addEventListener('click', () =>
-    document.querySelector('#sidebar').classList.toggle('open')
-  );
-
-  bind();
+  bindLayout();
+  if (bind) await bind();
 }
 
 renderLoading();
@@ -113,8 +121,6 @@ addEventListener('hashchange', render);
 
 authService.onChange((sessionUser) => {
   user = sessionUser;
-  if (!authReady) {
-    authReady = true;
-  }
+  if (!authReady) authReady = true;
   render();
 });

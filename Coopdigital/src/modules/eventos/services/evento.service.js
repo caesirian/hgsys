@@ -1,1 +1,10 @@
-import{localDb}from'../../../services/local-db.service.js';import{hasPermission}from'../../../config/permissions.config.js';import{authStore}from'../../../stores/auth.store.js';export const eventoService={list(){if(!hasPermission(authStore.get(),'eventos','read'))throw new Error('Permiso insuficiente');return localDb.list('eventos')}};
+import { firestoreDb } from '../../../services/firestore-db.service.js';
+import { hasPermission } from '../../../config/permissions.config.js';
+import { authStore } from '../../../stores/auth.store.js';
+
+export const eventoService = {
+  async list() {
+    if (!hasPermission(authStore.get(), 'eventos', 'read')) throw new Error('Permiso insuficiente');
+    return firestoreDb.list('eventos');
+  }
+};

@@ -1,2 +1,22 @@
-import{asociadoService}from'../services/asociado.service.js';import{asociadoFields}from'../components/asociado-form.js';import{crudView,bindCrud}from'../../../utils/render-crud.js';
-const badge=e=>`<span class="badge ${e==='activo'?'ok':e==='suspendido'?'warn':'bad'}">${e}</span>`;export function asociadosView(){return crudView({title:'Asociados',subtitle:'CRUD completo de asociados usando el modelo oficial.',service:asociadoService,fields:asociadoFields,newLabel:'Nuevo asociado',columns:[{key:'numeroAsociado',label:'N°'},{key:'apellido',label:'Asociado',render:r=>`${r.apellido}, ${r.nombre}`},{key:'dni',label:'DNI'},{key:'cuit',label:'CUIT'},{key:'email',label:'Email'},{key:'estado',label:'Estado',render:r=>badge(r.estado)},{key:'fechaIngreso',label:'Ingreso'}]})}export function bindAsociados(r){bindCrud({service:asociadoService,fields:asociadoFields,rerender:r})}
+import { asociadoService } from '../services/asociado.service.js';
+import { asociadoFields } from '../components/asociado-form.js';
+import { crudView, bindCrud } from '../../../utils/render-crud.js';
+
+const badge = e => `<span class="badge ${e === 'activo' ? 'ok' : e === 'suspendido' ? 'warn' : 'bad'}">${e}</span>`;
+
+const columns = [
+  { key: 'numeroAsociado', label: 'N°' },
+  { key: 'apellido', label: 'Asociado', render: r => `${r.apellido}, ${r.nombre}` },
+  { key: 'dni',      label: 'DNI' },
+  { key: 'cuit',     label: 'CUIT' },
+  { key: 'email',    label: 'Email' },
+  { key: 'estado',   label: 'Estado', render: r => badge(r.estado) },
+  { key: 'fechaIngreso', label: 'Ingreso' }
+];
+
+export function asociadosView() {
+  return crudView({ title: 'Asociados', subtitle: 'CRUD completo de asociados.', newLabel: 'Nuevo asociado' });
+}
+export function bindAsociados() {
+  return bindCrud({ service: asociadoService, fields: asociadoFields, columns });
+}

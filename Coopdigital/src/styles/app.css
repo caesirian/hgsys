@@ -18,3 +18,24 @@
 .user-info span{font-size:11px;color:var(--muted)}
 .btn-icon{background:none;border:none;padding:7px;cursor:pointer;border-radius:8px;font-size:17px;color:var(--muted);transition:background .15s}
 .btn-icon:hover{background:var(--bg)}
+
+/* ── DASHBOARD ── */
+.dashboard .page-header{margin-bottom:22px}
+.dashboard .page-header h1{font-size:22px;font-weight:800}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:22px}
+.kpi{display:flex;flex-direction:column;gap:4px}
+.kpi .num{font-size:30px;font-weight:900}
+.kpi-loading{color:var(--muted);font-size:22px}
+.dash-grid{display:grid;grid-template-columns:2fr 1fr;gap:14px}
+.dash-row{padding:10px 0;border-bottom:1px solid var(--line)}
+.dash-row:last-child{border-bottom:none}
+.dash-row b{display:block;font-size:13px}
+.dash-row span{font-size:12px}
+@media(max-width:900px){.kpis{grid-template-columns:1fr 1fr}.dash-grid{grid-template-columns:1fr}}
+@media(max-width:500px){.kpis{grid-template-columns:1fr}}
+
+/* ── ESTADOS ── */
+.loading{color:var(--muted);padding:20px;text-align:center;font-size:13px}
+.empty{padding:20px;text-align:center;font-size:13px}
+.error{color:var(--danger);padding:16px;font-size:13px}
+.alert.error{background:#fee4e2;color:var(--danger);border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:13px}

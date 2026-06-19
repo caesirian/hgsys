@@ -1,2 +1,20 @@
-import{usuarioService}from'../services/usuario.service.js';import{usuarioFields}from'../components/usuario-form.js';import{crudView,bindCrud}from'../../../utils/render-crud.js';
-export function usuariosView(){return crudView({title:'Usuarios',subtitle:'Alta, baja y modificación de usuarios con roles oficiales.',service:usuarioService,fields:usuarioFields,newLabel:'Nuevo usuario',columns:[{key:'nombre',label:'Nombre',render:r=>`${r.nombre} ${r.apellido}`},{key:'email',label:'Email'},{key:'rol',label:'Rol',render:r=>`<span class="badge">${r.rol}</span>`},{key:'activo',label:'Activo',render:r=>r.activo?'<span class="badge ok">activo</span>':'<span class="badge bad">inactivo</span>'},{key:'fechaAlta',label:'Alta'}]})}export function bindUsuarios(r){bindCrud({service:usuarioService,fields:usuarioFields,rerender:r})}
+import { usuarioService } from '../services/usuario.service.js';
+import { usuarioFields } from '../components/usuario-form.js';
+import { crudView, bindCrud } from '../../../utils/render-crud.js';
+
+const columns = [
+  { key: 'nombre',   label: 'Nombre',  render: r => `${r.nombre} ${r.apellido}` },
+  { key: 'email',    label: 'Email' },
+  { key: 'rol',      label: 'Rol',    render: r => `<span class="badge">${r.rol}</span>` },
+  { key: 'activo',   label: 'Activo', render: r => r.activo === true || r.activo === 'true'
+      ? '<span class="badge ok">activo</span>'
+      : '<span class="badge bad">inactivo</span>' },
+  { key: 'fechaAlta', label: 'Alta' }
+];
+
+export function usuariosView() {
+  return crudView({ title: 'Usuarios', subtitle: 'Alta, baja y modificación de usuarios con roles oficiales.', newLabel: 'Nuevo usuario' });
+}
+export function bindUsuarios() {
+  return bindCrud({ service: usuarioService, fields: usuarioFields, columns });
+}
