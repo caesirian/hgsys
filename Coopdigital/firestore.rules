@@ -1,20 +1,13 @@
 rules_version = '2';
 
 // =====================================================================
-// NOTA DE GOBERNANZA (ver SYSTEM_ARCHITECTURE.md / FIRESTORE_SECURITY_RULES.md)
+// Reglas basadas en Custom Claims (request.auth.token.*), asignados por
+// el Cloud Function syncUserClaims (ver functions/index.js) cada vez que
+// se escribe cooperativas/{coopId}/usuarios/{uid}.
 //
-// FIRESTORE_SECURITY_RULES.md define las funciones base (isActive, isAdmin,
-// sameCooperativa, etc.) sobre Custom Claims (request.auth.token.*). Esos
-// claims sólo pueden asignarse desde un Cloud Function (Admin SDK), que
-// todavía no está implementado en este proyecto.
-//
-// Mientras tanto, estas reglas resuelven rol/activo/cooperativa leyendo
-// directamente el documento de perfil del usuario con get(), en vez de
-// leer el token. El efecto de seguridad es equivalente, pero:
-//   - cada chequeo de rol cuenta como una lectura extra de Firestore.
-//   - esto debe reemplazarse por la versión basada en Custom Claims en
-//     cuanto exista el Cloud Function correspondiente (ver roadmap,
-//     ítem "Crítico: Custom Claims").
+// Esto es lo que garantiza el aislamiento multi-tenant real: un usuario
+// solo puede operar dentro de la cooperativa que figura en su propio
+// token, sin lecturas extra a Firestore por cada chequeo de permiso.
 // =====================================================================
 
 service cloud.firestore {
@@ -24,67 +17,82 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    function perfil(cooperativaId) {
-      return get(/databases/$(database)/documents/cooperativas/$(cooperativaId)/usuarios/$(request.auth.uid)).data;
+    function claims() {
+      return request.auth.token;
     }
 
-    function isActive(cooperativaId) {
-      return isAuthenticated() && perfil(cooperativaId).activo == true;
+    function isActive() {
+      return isAuthenticated() && claims().active == true;
     }
 
-    function role(cooperativaId) {
-      return perfil(cooperativaId).rol;
+    function sameCooperativa(cooperativaId) {
+      return claims().cooperativaId == cooperativaId;
+    }
+
+    function role() {
+      return claims().role;
     }
 
     function isAdmin(cooperativaId) {
-      return role(cooperativaId) == 'admin';
+      return isActive() && sameCooperativa(cooperativaId) && role() == 'admin';
     }
 
     function puedeEscribirGeneral(cooperativaId) {
-      return role(cooperativaId) in ['admin', 'consejero', 'operador'];
+      return isActive() && sameCooperativa(cooperativaId) && role() in ['admin', 'consejero', 'operador'];
+    }
+
+    function puedeLeer(cooperativaId) {
+      return isActive() && sameCooperativa(cooperativaId);
     }
 
     function puedeLeerUsuarios(cooperativaId) {
-      return role(cooperativaId) in ['admin', 'consejero', 'sindico'];
+      return isActive() && sameCooperativa(cooperativaId) && role() in ['admin', 'consejero', 'sindico'];
     }
 
     match /cooperativas/{cooperativaId} {
-      allow read: if isAuthenticated() && isActive(cooperativaId);
-      allow write: if isAuthenticated() && isActive(cooperativaId) && isAdmin(cooperativaId);
+      allow read: if puedeLeer(cooperativaId);
+      allow write: if isAdmin(cooperativaId);
 
-      // Usuarios: lectura admin/consejero/sindico, escritura solo admin.
-      // Excepción: cada usuario puede leer su propio documento (necesario
-      // para resolver el perfil al iniciar sesión).
+      // Usuarios: cada quien puede leer su propio documento (necesario para
+      // resolver el perfil en el primer login, antes de tener claims).
+      // Lectura completa: admin/consejero/sindico. Escritura: solo admin.
       match /usuarios/{usuarioId} {
         allow get: if isAuthenticated() && request.auth.uid == usuarioId;
-        allow read: if isAuthenticated() && isActive(cooperativaId) && puedeLeerUsuarios(cooperativaId);
-        allow write: if isAuthenticated() && isActive(cooperativaId) && isAdmin(cooperativaId);
+        allow read: if puedeLeerUsuarios(cooperativaId);
+        allow write: if isAdmin(cooperativaId);
       }
 
-      // Asociados: lectura todos los roles activos, escritura admin/consejero/operador, baja solo admin.
       match /asociados/{asociadoId} {
-        allow read: if isAuthenticated() && isActive(cooperativaId);
-        allow create, update: if isAuthenticated() && isActive(cooperativaId) && puedeEscribirGeneral(cooperativaId);
-        allow delete: if isAuthenticated() && isActive(cooperativaId) && isAdmin(cooperativaId);
+        allow read: if puedeLeer(cooperativaId);
+        allow create, update: if puedeEscribirGeneral(cooperativaId);
+        allow delete: if isAdmin(cooperativaId);
       }
 
-      // Documentos: lectura todos, carga admin/consejero/operador, baja solo admin.
       match /documentos/{documentoId} {
-        allow read: if isAuthenticated() && isActive(cooperativaId);
-        allow create, update: if isAuthenticated() && isActive(cooperativaId) && puedeEscribirGeneral(cooperativaId);
-        allow delete: if isAuthenticated() && isActive(cooperativaId) && isAdmin(cooperativaId);
+        allow read: if puedeLeer(cooperativaId);
+        allow create, update: if puedeEscribirGeneral(cooperativaId);
+        allow delete: if isAdmin(cooperativaId);
       }
 
-      // Vencimientos: lectura todos, alta/modificación admin/consejero/operador.
       match /vencimientos/{vencimientoId} {
-        allow read: if isAuthenticated() && isActive(cooperativaId);
-        allow create, update: if isAuthenticated() && isActive(cooperativaId) && puedeEscribirGeneral(cooperativaId);
+        allow read: if puedeLeer(cooperativaId);
+        allow create, update: if puedeEscribirGeneral(cooperativaId);
       }
 
-      // Eventos: solo lectura desde frontend (admin/consejero/sindico). Nunca
-      // se crean desde el cliente.
+      // Contabilidad: movimientos (ingresos/egresos) bajo categorías INAES
+      // predefinidas en el frontend (registro simplificado, no partida
+      // doble). Lectura: todos los roles activos. Escritura: admin/
+      // consejero/operador. Baja: solo admin (trazabilidad contable).
+      match /movimientosContables/{movimientoId} {
+        allow read: if puedeLeer(cooperativaId);
+        allow create, update: if puedeEscribirGeneral(cooperativaId);
+        allow delete: if isAdmin(cooperativaId);
+      }
+
+      // Eventos: solo lectura desde frontend (admin/consejero/sindico).
+      // Nunca se crean ni modifican desde el cliente.
       match /eventos/{eventoId} {
-        allow read: if isAuthenticated() && isActive(cooperativaId) && puedeLeerUsuarios(cooperativaId);
+        allow read: if puedeLeerUsuarios(cooperativaId);
         allow write: if false;
       }
     }

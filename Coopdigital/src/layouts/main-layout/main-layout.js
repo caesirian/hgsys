@@ -8,6 +8,9 @@ const nav = [
   { section: 'Gestión' },
   { href: '/documentos',      ico: '📄', label: 'Documentos' },
   { href: '/vencimientos',    ico: '⏱',  label: 'Vencimientos' },
+  { section: 'Contabilidad' },
+  { href: '/contabilidad',        ico: '💰', label: 'Movimientos' },
+  { href: '/reportes-contables',  ico: '📊', label: 'Estado de Recursos y Gastos' },
   { section: 'Gobernanza' },
   { href: '/eventos',         ico: '🧾', label: 'Eventos / Auditoría' },
 ];

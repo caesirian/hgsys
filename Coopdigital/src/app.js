@@ -7,6 +7,8 @@ import { asociadosView, bindAsociados } from './modules/asociados/views/asociado
 import { libroAsociadosView, bindLibro } from './modules/libro-asociados/views/libro-asociados.view.js';
 import { documentosView, bindDocumentos } from './modules/documentos/views/documentos.view.js';
 import { vencimientosView, bindVencimientos } from './modules/vencimientos/views/vencimientos.view.js';
+import { contabilidadView, bindContabilidad } from './modules/contabilidad/views/contabilidad.view.js';
+import { reportesContablesView, bindReportesContables } from './modules/contabilidad/views/reportes-contables.view.js';
 import { eventosView, bindEventos } from './modules/eventos/views/eventos.view.js';
 
 const app = document.querySelector('#app');
@@ -103,6 +105,12 @@ async function render() {
   } else if (path === '/vencimientos') {
     view = vencimientosView();
     bind = () => bindVencimientos();
+  } else if (path === '/contabilidad') {
+    view = contabilidadView();
+    bind = () => bindContabilidad();
+  } else if (path === '/reportes-contables') {
+    view = reportesContablesView();
+    bind = () => bindReportesContables();
   } else if (path === '/eventos') {
     view = eventosView();
     bind = () => bindEventos();

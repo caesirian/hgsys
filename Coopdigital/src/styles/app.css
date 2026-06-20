@@ -39,3 +39,16 @@
 .empty{padding:20px;text-align:center;font-size:13px}
 .error{color:var(--danger);padding:16px;font-size:13px}
 .alert.error{background:#fee4e2;color:var(--danger);border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:13px}
+
+/* ── CONTABILIDAD ── */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.field-inline{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.field-inline label{font-size:12px;color:var(--muted);font-weight:700}
+.field-inline input[type="date"]{border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:13px}
+tfoot td{border-top:2px solid var(--line);font-size:14px;padding-top:12px}
+.resultado-card{margin-top:14px;display:flex;flex-direction:column;gap:4px;align-items:flex-start}
+.resultado-valor{font-size:28px;font-weight:900}
+.resultado-valor.positivo{color:#067647}
+.resultado-valor.negativo{color:var(--danger)}
+@media(max-width:900px){.grid-2{grid-template-columns:1fr}}
+.kpis{grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}

@@ -2,8 +2,14 @@ import { asociadoService } from '../../modules/asociados/services/asociado.servi
 import { usuarioService } from '../../modules/usuarios/services/usuario.service.js';
 import { documentoService } from '../../modules/documentos/services/documento.service.js';
 import { vencimientoService } from '../../modules/vencimientos/services/vencimiento.service.js';
+import { movimientoService } from '../../modules/contabilidad/services/movimiento.service.js';
 import { eventoService } from '../../modules/eventos/services/evento.service.js';
+import { cooperativaService } from '../../services/cooperativa.service.js';
 import { fmt, daysUntil } from '../../utils/date.js';
+
+const money = n => Number(n ?? 0).toLocaleString('es-AR', { style: 'currency', currency: 'ARS' });
+
+const kpiLabels = ['Asociados activos', 'Usuarios activos', 'Documentos', 'Vencimientos pendientes', 'Resultado del mes'];
 
 // Devuelve el skeleton del dashboard (sin datos).
 // Los datos se cargan en bindDashboard() de forma asíncrona.
@@ -14,7 +20,7 @@ export function dashboardView() {
       <p class="muted" id="dashCoopInfo">Cargando…</p>
     </div>
     <div class="kpis" id="dashKpis">
-      ${['Asociados activos','Usuarios activos','Documentos','Vencimientos pendientes'].map(l =>
+      ${kpiLabels.map(l =>
         `<div class="card kpi"><span class="muted">${l}</span><div class="num kpi-loading">—</div></div>`
       ).join('')}
     </div>
@@ -26,18 +32,24 @@ export function dashboardView() {
 }
 
 export async function bindDashboard(user) {
-  // Carga en paralelo
-  const [asociados, usuarios, documentos, vencimientos, eventos] = await Promise.all([
+  const [cooperativa, asociados, usuarios, documentos, vencimientos, movimientos, eventos] = await Promise.all([
+    cooperativaService.getCurrent().catch(() => null),
     asociadoService.list().catch(() => []),
     usuarioService.list().catch(() => []),
     documentoService.list().catch(() => []),
     vencimientoService.list().catch(() => []),
+    movimientoService.list().catch(() => []),
     eventoService.list().catch(() => [])
   ]);
 
   // Info cooperativa
   const info = document.querySelector('#dashCoopInfo');
-  if (info) info.textContent = `Cooperativa · ${user.cooperativaId}`;
+  if (info) info.textContent = cooperativa?.nombre ? `Cooperativa · ${cooperativa.nombre}` : `Cooperativa · ${user.cooperativaId}`;
+
+  // Resultado contable del mes en curso
+  const inicioMes = new Date().toISOString().slice(0, 7) + '-01';
+  const delMes = movimientos.filter(m => m.fecha >= inicioMes);
+  const resultadoMes = delMes.reduce((acc, m) => acc + (m.tipo === 'ingreso' ? Number(m.monto) : -Number(m.monto)), 0);
 
   // KPIs
   const kpiEl = document.querySelectorAll('.kpi .num');
@@ -45,7 +57,8 @@ export async function bindDashboard(user) {
     asociados.filter(a => a.estado === 'activo').length,
     usuarios.filter(u => u.activo === true || u.activo === 'true').length,
     documentos.filter(d => d.visible === true || d.visible === 'true').length,
-    vencimientos.filter(v => v.estado === 'pendiente').length
+    vencimientos.filter(v => v.estado === 'pendiente').length,
+    money(resultadoMes)
   ];
   kpiEl.forEach((el, i) => {
     el.textContent = kpiData[i];

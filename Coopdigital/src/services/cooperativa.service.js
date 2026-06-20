@@ -1,1 +1,7 @@
-import{localDb}from'./local-db.service.js';export const cooperativaService={getCurrent(){return localDb.getCooperativa()}};
+import { firestoreDb } from './firestore-db.service.js';
+
+export const cooperativaService = {
+  getCurrent() {
+    return firestoreDb.getCooperativa();
+  }
+};
