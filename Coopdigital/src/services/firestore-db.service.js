@@ -5,8 +5,8 @@ import {
 import { db } from '../firebase/firebase.config.js';
 import { authStore } from '../stores/auth.store.js';
 
-// El cooperativaId NUNCA es una constante fija: viene del Custom Claim del
-// usuario autenticado, asignado por el Cloud Function syncUserClaims. Esto
+// El cooperativaId NUNCA es una constante fija: viene del perfil del
+// usuario en sesión (resuelto vía usuariosIndex en auth.service.js). Esto
 // es lo que aísla los datos de cada cooperativa entre sí (multi-tenant).
 function cooperativaId() {
   const id = authStore.get()?.cooperativaId;

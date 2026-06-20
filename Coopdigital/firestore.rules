@@ -1,13 +1,22 @@
 rules_version = '2';
 
 // =====================================================================
-// Reglas basadas en Custom Claims (request.auth.token.*), asignados por
-// el Cloud Function syncUserClaims (ver functions/index.js) cada vez que
-// se escribe cooperativas/{coopId}/usuarios/{uid}.
+// MULTI-TENANT SIN CLOUD FUNCTIONS (plan Spark / gratuito).
 //
-// Esto es lo que garantiza el aislamiento multi-tenant real: un usuario
-// solo puede operar dentro de la cooperativa que figura en su propio
-// token, sin lecturas extra a Firestore por cada chequeo de permiso.
+// La asignación de cooperativaId por usuario se resuelve enteramente con
+// reglas + dos lecturas de Firestore (sin Custom Claims, que requieren
+// un Cloud Function en plan Blaze pago).
+//
+// Flujo:
+//  1. usuariosIndex/{uid} (colección global, un doc por usuario) guarda
+//     únicamente { cooperativaId }. Solo el propio usuario puede leer su
+//     entrada. Solo se escribe vía Admin SDK (script de alta), nunca
+//     desde el cliente.
+//  2. Con ese cooperativaId, el cliente lee
+//     cooperativas/{cooperativaId}/usuarios/{uid} para conocer rol y
+//     estado activo (perfil completo).
+//  3. El resto de las reglas usa perfil(cooperativaId) con get() para
+//     verificar rol/activo en cada operación, igual que antes.
 // =====================================================================
 
 service cloud.firestore {
@@ -17,36 +26,39 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    function claims() {
-      return request.auth.token;
+    function perfil(cooperativaId) {
+      return get(/databases/$(database)/documents/cooperativas/$(cooperativaId)/usuarios/$(request.auth.uid)).data;
     }
 
-    function isActive() {
-      return isAuthenticated() && claims().active == true;
+    function isActive(cooperativaId) {
+      return isAuthenticated() && perfil(cooperativaId).activo == true;
     }
 
-    function sameCooperativa(cooperativaId) {
-      return claims().cooperativaId == cooperativaId;
-    }
-
-    function role() {
-      return claims().role;
+    function role(cooperativaId) {
+      return perfil(cooperativaId).rol;
     }
 
     function isAdmin(cooperativaId) {
-      return isActive() && sameCooperativa(cooperativaId) && role() == 'admin';
+      return isActive(cooperativaId) && role(cooperativaId) == 'admin';
     }
 
     function puedeEscribirGeneral(cooperativaId) {
-      return isActive() && sameCooperativa(cooperativaId) && role() in ['admin', 'consejero', 'operador'];
+      return isActive(cooperativaId) && role(cooperativaId) in ['admin', 'consejero', 'operador'];
     }
 
     function puedeLeer(cooperativaId) {
-      return isActive() && sameCooperativa(cooperativaId);
+      return isActive(cooperativaId);
     }
 
     function puedeLeerUsuarios(cooperativaId) {
-      return isActive() && sameCooperativa(cooperativaId) && role() in ['admin', 'consejero', 'sindico'];
+      return isActive(cooperativaId) && role(cooperativaId) in ['admin', 'consejero', 'sindico'];
+    }
+
+    // Índice global: uid -> cooperativaId. Solo lectura del propio usuario,
+    // jamás de otros. Solo se escribe vía Admin SDK (bypassa estas reglas).
+    match /usuariosIndex/{uid} {
+      allow get: if isAuthenticated() && request.auth.uid == uid;
+      allow list, write: if false;
     }
 
     match /cooperativas/{cooperativaId} {
@@ -54,8 +66,8 @@ service cloud.firestore {
       allow write: if isAdmin(cooperativaId);
 
       // Usuarios: cada quien puede leer su propio documento (necesario para
-      // resolver el perfil en el primer login, antes de tener claims).
-      // Lectura completa: admin/consejero/sindico. Escritura: solo admin.
+      // resolver el perfil en el primer login). Lectura completa:
+      // admin/consejero/sindico. Escritura: solo admin.
       match /usuarios/{usuarioId} {
         allow get: if isAuthenticated() && request.auth.uid == usuarioId;
         allow read: if puedeLeerUsuarios(cooperativaId);
