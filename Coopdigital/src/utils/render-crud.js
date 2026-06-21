@@ -1,13 +1,14 @@
 import { table } from '../components/table/data-table.js';
 import { openModal } from '../components/modal/modal.js';
+import { escapeHtml } from './security.js';
 
 // Devuelve el HTML estático de la página (sin datos aún).
 // Los datos se cargan en bindCrud de forma asíncrona.
 export function crudView({ title, subtitle, newLabel }) {
   return `<section>
     <div class="toolbar">
-      <div><h1>${title}</h1><p class="muted">${subtitle}</p></div>
-      <button class="btn primary" data-create>${newLabel}</button>
+      <div><h1>${escapeHtml(title)}</h1><p class="muted">${escapeHtml(subtitle)}</p></div>
+      <button class="btn primary" data-create>${escapeHtml(newLabel)}</button>
     </div>
     <div id="crudTable"><div class="loading">Cargando datos…</div></div>
   </section>`;
@@ -33,7 +34,7 @@ export async function bindCrud({ service, fields, columns, rerender }) {
       }
       bindRowActions();
     } catch (err) {
-      tableEl.innerHTML = `<p class="error">${err.message}</p>`;
+      tableEl.innerHTML = `<p class="error">${escapeHtml(err.message)}</p>`;
     }
   }
 

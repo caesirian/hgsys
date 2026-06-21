@@ -1,10 +1,11 @@
 import { eventoService } from '../services/evento.service.js';
 import { table } from '../../../components/table/data-table.js';
 import { fmt } from '../../../utils/date.js';
+import { escapeHtml } from '../../../utils/security.js';
 
 const columns = [
   { key: 'fecha',       label: 'Fecha',       render: r => fmt(r.fecha?.toDate ? r.fecha.toDate() : r.fecha) },
-  { key: 'tipo',        label: 'Tipo',         render: r => `<span class="badge">${r.tipo ?? '—'}</span>` },
+  { key: 'tipo',        label: 'Tipo',         render: r => `<span class="badge">${escapeHtml(r.tipo ?? '—')}</span>` },
   { key: 'descripcion', label: 'Descripción' },
   { key: 'usuarioId',   label: 'Usuario' }
 ];
@@ -27,6 +28,6 @@ export async function bindEventos() {
       ? table(columns, rows, () => '')
       : '<p class="muted empty">Sin eventos registrados.</p>';
   } catch (err) {
-    el.innerHTML = `<p class="error">${err.message}</p>`;
+    el.innerHTML = `<p class="error">${escapeHtml(err.message)}</p>`;
   }
 }

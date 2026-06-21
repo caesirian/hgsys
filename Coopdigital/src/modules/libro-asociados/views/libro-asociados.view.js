@@ -1,6 +1,7 @@
 import { asociadoService } from '../../asociados/services/asociado.service.js';
 import { table } from '../../../components/table/data-table.js';
 import { downloadCsv, printReport } from '../../../utils/export.js';
+import { escapeHtml } from '../../../utils/security.js';
 
 const columns = [
   { key: 'numeroAsociado', label: 'N°' },
@@ -38,7 +39,7 @@ export async function bindLibro() {
       ? table(columns, rows, () => '<span class="muted">Automático</span>')
       : '<p class="muted empty">Sin asociados registrados.</p>';
   } catch (err) {
-    el.innerHTML = `<p class="error">${err.message}</p>`;
+    el.innerHTML = `<p class="error">${escapeHtml(err.message)}</p>`;
   }
   document.querySelector('[data-export]')?.addEventListener('click', () => downloadCsv('libro-asociados.csv', rows));
   document.querySelector('[data-print]')?.addEventListener('click', printReport);

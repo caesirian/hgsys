@@ -1,5 +1,6 @@
 import { movimientoService } from '../services/movimiento.service.js';
 import { downloadCsv, printReport } from '../../../utils/export.js';
+import { escapeHtml } from '../../../utils/security.js';
 
 const money = n => Number(n ?? 0).toLocaleString('es-AR', { style: 'currency', currency: 'ARS' });
 
@@ -11,13 +12,13 @@ function agruparPorCategoria(rows, tipo) {
 }
 
 function renderTabla(titulo, entradas, total) {
-  if (!entradas.length) return `<h3>${titulo}</h3><p class="muted empty">Sin movimientos en el período.</p>`;
-  return `<h3>${titulo}</h3>
+  if (!entradas.length) return `<h3>${escapeHtml(titulo)}</h3><p class="muted empty">Sin movimientos en el período.</p>`;
+  return `<h3>${escapeHtml(titulo)}</h3>
     <div class="table-wrap">
       <table>
         <thead><tr><th>Categoría</th><th>Monto</th></tr></thead>
         <tbody>
-          ${entradas.map(([cat, monto]) => `<tr><td>${cat}</td><td>${money(monto)}</td></tr>`).join('')}
+          ${entradas.map(([cat, monto]) => `<tr><td>${escapeHtml(cat)}</td><td>${money(monto)}</td></tr>`).join('')}
         </tbody>
         <tfoot><tr><td><b>Total</b></td><td><b>${money(total)}</b></td></tr></tfoot>
       </table>
@@ -59,7 +60,7 @@ export async function bindReportesContables() {
       movimientos = await movimientoService.list();
       renderReporte();
     } catch (err) {
-      content.innerHTML = `<p class="error">${err.message}</p>`;
+      content.innerHTML = `<p class="error">${escapeHtml(err.message)}</p>`;
     }
   }
 

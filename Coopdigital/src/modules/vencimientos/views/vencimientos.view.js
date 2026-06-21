@@ -2,8 +2,9 @@ import { vencimientoService } from '../services/vencimiento.service.js';
 import { vencimientoFields } from '../components/vencimiento-form.js';
 import { crudView, bindCrud } from '../../../utils/render-crud.js';
 import { daysUntil } from '../../../utils/date.js';
+import { escapeHtml } from '../../../utils/security.js';
 
-const badge = e => `<span class="badge ${e === 'cumplido' ? 'ok' : e === 'vencido' ? 'bad' : 'warn'}">${e}</span>`;
+const badge = e => `<span class="badge ${e === 'cumplido' ? 'ok' : e === 'vencido' ? 'bad' : 'warn'}">${escapeHtml(e)}</span>`;
 
 const columns = [
   { key: 'descripcion',     label: 'Descripción' },

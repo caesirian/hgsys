@@ -1,12 +1,13 @@
 import { asociadoService } from '../services/asociado.service.js';
 import { asociadoFields } from '../components/asociado-form.js';
 import { crudView, bindCrud } from '../../../utils/render-crud.js';
+import { escapeHtml } from '../../../utils/security.js';
 
-const badge = e => `<span class="badge ${e === 'activo' ? 'ok' : e === 'suspendido' ? 'warn' : 'bad'}">${e}</span>`;
+const badge = e => `<span class="badge ${e === 'activo' ? 'ok' : e === 'suspendido' ? 'warn' : 'bad'}">${escapeHtml(e)}</span>`;
 
 const columns = [
   { key: 'numeroAsociado', label: 'N°' },
-  { key: 'apellido', label: 'Asociado', render: r => `${r.apellido}, ${r.nombre}` },
+  { key: 'apellido', label: 'Asociado', render: r => `${escapeHtml(r.apellido)}, ${escapeHtml(r.nombre)}` },
   { key: 'dni',      label: 'DNI' },
   { key: 'cuit',     label: 'CUIT' },
   { key: 'email',    label: 'Email' },

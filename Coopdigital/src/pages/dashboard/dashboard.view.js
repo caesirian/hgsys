@@ -6,6 +6,7 @@ import { movimientoService } from '../../modules/contabilidad/services/movimient
 import { eventoService } from '../../modules/eventos/services/evento.service.js';
 import { cooperativaService } from '../../services/cooperativa.service.js';
 import { fmt, daysUntil } from '../../utils/date.js';
+import { escapeHtml } from '../../utils/security.js';
 
 const money = n => Number(n ?? 0).toLocaleString('es-AR', { style: 'currency', currency: 'ARS' });
 
@@ -73,8 +74,8 @@ export async function bindDashboard(user) {
     .slice(0, 5);
   venEl.innerHTML = `<h3>Próximos vencimientos</h3>` + (proximos.length
     ? proximos.map(v => `<div class="dash-row">
-        <b>${v.descripcion}</b>
-        <span class="muted">${v.organismoId ?? '—'} · ${fmt(v.fechaVencimiento)} · ${daysUntil(v.fechaVencimiento)} días</span>
+        <b>${escapeHtml(v.descripcion)}</b>
+        <span class="muted">${escapeHtml(v.organismoId ?? '—')} · ${fmt(v.fechaVencimiento)} · ${daysUntil(v.fechaVencimiento)} días</span>
       </div>`).join('')
     : '<p class="muted empty">Sin vencimientos pendientes.</p>');
 
@@ -82,8 +83,8 @@ export async function bindDashboard(user) {
   const evEl = document.querySelector('#dashEventos');
   evEl.innerHTML = `<h3>Actividad reciente</h3>` + (eventos.length
     ? eventos.slice(0, 6).map(e => `<div class="dash-row">
-        <b>${e.tipo ?? e.descripcion ?? '—'}</b>
-        <span class="muted">${fmt(e.fecha)} · ${e.descripcion ?? ''}</span>
+        <b>${escapeHtml(e.tipo ?? e.descripcion ?? '—')}</b>
+        <span class="muted">${fmt(e.fecha)} · ${escapeHtml(e.descripcion ?? '')}</span>
       </div>`).join('')
     : '<p class="muted empty">Sin actividad registrada.</p>');
 }
