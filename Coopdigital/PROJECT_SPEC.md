@@ -230,11 +230,12 @@ Gestión de síndicos titulares y suplentes.
 Campos:
 
 - tipo
-- fecha
-- convocatoria
+- fechaAsamblea
+- fechaConvocatoria
 - ordenDelDia
-- asistentes
-- acta
+- estado
+- actaId
+- observaciones
 
 ## Actas
 
@@ -244,6 +245,27 @@ Tipos:
 - Asamblea Ordinaria
 - Asamblea Extraordinaria
 - Comisión Interna
+
+## Padrón Electoral
+
+Generado a partir de Asociados activos a una fecha de corte, vinculado a una Asamblea.
+
+Campos:
+
+- asambleaId
+- fechaCorte
+- estado
+- totalHabilitados
+
+Subcolección de electores (copia histórica de datos del asociado al momento del corte):
+
+- asociadoId
+- numeroAsociado
+- apellido
+- nombre
+- habilitado
+- motivoInhabilitacion
+- voto
 
 ## Documentos
 
