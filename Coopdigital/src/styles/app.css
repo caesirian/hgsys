@@ -52,3 +52,10 @@ tfoot td{border-top:2px solid var(--line);font-size:14px;padding-top:12px}
 .resultado-valor.negativo{color:var(--danger)}
 @media(max-width:900px){.grid-2{grid-template-columns:1fr}}
 .kpis{grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
+
+/* ── CAMPO DE ARCHIVO (Documentos / Cloudinary) ── */
+.file-field{display:flex;flex-direction:column;gap:6px}
+.file-field input[type="file"]{border:1px dashed var(--line);border-radius:10px;padding:10px;font-size:12px;background:#fafafa}
+.file-status{font-size:12px}
+.file-status.ok-text{color:#067647;font-weight:700}
+.file-status.error-text{color:var(--danger);font-weight:700}
