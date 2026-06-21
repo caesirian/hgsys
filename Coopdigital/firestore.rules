@@ -46,6 +46,14 @@ service cloud.firestore {
       return isActive(cooperativaId) && role(cooperativaId) in ['admin', 'consejero', 'operador'];
     }
 
+    // Más estricto que puedeEscribirGeneral: usado en entidades de
+    // gobernanza institucional (consejo, sindicatura, asambleas, actas)
+    // donde la carga operativa diaria (operador) no debe poder dar de
+    // alta o modificar cargos/actas, solo admin y consejero.
+    function puedeEscribirGobernanza(cooperativaId) {
+      return isActive(cooperativaId) && role(cooperativaId) in ['admin', 'consejero'];
+    }
+
     function puedeLeer(cooperativaId) {
       return isActive(cooperativaId);
     }
@@ -89,6 +97,16 @@ service cloud.firestore {
       match /vencimientos/{vencimientoId} {
         allow read: if puedeLeer(cooperativaId);
         allow create, update: if puedeEscribirGeneral(cooperativaId);
+      }
+
+      // Consejo de Administración: gobernanza institucional. Lectura para
+      // todos los roles activos (incluye síndico, que necesita verlo para
+      // su función de fiscalización). Alta/baja/modificación restringida a
+      // admin/consejero (ver puedeEscribirGobernanza).
+      match /consejoAdministracion/{cargoId} {
+        allow read: if puedeLeer(cooperativaId);
+        allow create, update: if puedeEscribirGobernanza(cooperativaId);
+        allow delete: if isAdmin(cooperativaId);
       }
 
       // Contabilidad: movimientos (ingresos/egresos) bajo categorías INAES

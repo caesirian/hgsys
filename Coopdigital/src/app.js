@@ -10,6 +10,7 @@ import { vencimientosView, bindVencimientos } from './modules/vencimientos/views
 import { contabilidadView, bindContabilidad } from './modules/contabilidad/views/contabilidad.view.js';
 import { reportesContablesView, bindReportesContables } from './modules/contabilidad/views/reportes-contables.view.js';
 import { eventosView, bindEventos } from './modules/eventos/views/eventos.view.js';
+import { consejoView, bindConsejo } from './modules/consejo/views/consejo.view.js';
 
 const app = document.querySelector('#app');
 let user = null;
@@ -114,6 +115,9 @@ async function render() {
   } else if (path === '/eventos') {
     view = eventosView();
     bind = () => bindEventos();
+  } else if (path === '/consejo') {
+    view = consejoView();
+    bind = () => bindConsejo();
   } else {
     view = dashboardView();
     bind = () => bindDashboard(user);

@@ -15,8 +15,15 @@ export function crudView({ title, subtitle, newLabel }) {
 }
 
 // Carga los datos, renderiza la tabla y enlaza todos los eventos.
+// `fields` puede ser un array estático (la mayoría de los módulos) o una
+// función async que devuelve el array de fields (cuando algún campo es un
+// select con opciones dinámicas, ej. lista de asociados activos).
 export async function bindCrud({ service, fields, columns, rerender }) {
   const tableEl = document.querySelector('#crudTable');
+
+  async function resolveFields() {
+    return typeof fields === 'function' ? await fields() : fields;
+  }
 
   async function loadTable() {
     tableEl.innerHTML = '<div class="loading">Cargando datos…</div>';
@@ -42,7 +49,7 @@ export async function bindCrud({ service, fields, columns, rerender }) {
     document.querySelectorAll('[data-edit]').forEach(b => {
       b.onclick = async () => {
         const row = await service.list().then(rows => rows.find(x => x.id === b.dataset.edit));
-        openModal('Editar registro', fields, row, async data => {
+        openModal('Editar registro', await resolveFields(), row, async data => {
           await service.update(row.id, data);
           await loadTable();
         });
@@ -57,8 +64,8 @@ export async function bindCrud({ service, fields, columns, rerender }) {
     });
   }
 
-  document.querySelector('[data-create]')?.addEventListener('click', () => {
-    openModal('Nuevo registro', fields, {}, async data => {
+  document.querySelector('[data-create]')?.addEventListener('click', async () => {
+    openModal('Nuevo registro', await resolveFields(), {}, async data => {
       await service.create(data);
       await loadTable();
     });

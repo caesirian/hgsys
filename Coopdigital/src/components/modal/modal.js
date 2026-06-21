@@ -8,7 +8,8 @@ export function openModal(title, fields, row, onSave) {
       ? `<select name="${f.name}">${f.options.map(o => {
           const v = typeof o === 'object' ? o.value : o;
           const l = typeof o === 'object' ? o.label : o;
-          return `<option value="${escapeHtml(v)}" ${row?.[f.name] == v ? 'selected' : ''}>${escapeHtml(l)}</option>`;
+          const isSelected = String(row?.[f.name] ?? '') === String(v);
+          return `<option value="${escapeHtml(v)}" ${isSelected ? 'selected' : ''}>${escapeHtml(l)}</option>`;
         }).join('')}</select>`
       : f.type === 'textarea'
       ? `<textarea name="${f.name}" rows="3">${escapeHtml(row?.[f.name] ?? '')}</textarea>`
@@ -16,9 +17,23 @@ export function openModal(title, fields, row, onSave) {
   }</div>`).join('')}</div><div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px"><button class="btn ghost" type="button" data-close>Cancelar</button><button class="btn primary">Guardar</button></div></form>`;
   document.body.append(modal);
   modal.querySelector('[data-close]').onclick = () => modal.remove();
-  modal.querySelector('form').onsubmit = e => {
+  modal.querySelector('form').onsubmit = async e => {
     e.preventDefault();
-    onSave(Object.fromEntries(new FormData(e.currentTarget)));
-    modal.remove();
+    const form = e.currentTarget;
+    const submitBtn = form.querySelector('button.primary');
+    submitBtn.disabled = true;
+    try {
+      await onSave(Object.fromEntries(new FormData(form)));
+      modal.remove();
+    } catch (err) {
+      submitBtn.disabled = false;
+      let alertEl = form.querySelector('.alert.error');
+      if (!alertEl) {
+        alertEl = document.createElement('div');
+        alertEl.className = 'alert error';
+        form.insertBefore(alertEl, form.firstElementChild.nextSibling);
+      }
+      alertEl.textContent = err?.message || 'No se pudo guardar el registro.';
+    }
   };
 }
