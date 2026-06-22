@@ -195,10 +195,37 @@ Reglamento
 ---
 
 ############################################################
+# USUARIOS INDEX
+############################################################
+
+usuariosIndex/{uid}
+
+{
+  cooperativaId: string
+}
+
+Colección global, un documento por usuario de Auth. Reemplaza a
+Custom Claims (no disponibles sin Cloud Functions / plan Spark).
+
+Lectura: únicamente el propio usuario (uid == auth.uid).
+Escritura: bloqueada por completo desde el cliente. Solo Admin SDK,
+vía Coopdigital/scripts/onboarding-cooperativa.js.
+
+Ver SYSTEM_ARCHITECTURE.md y FIRESTORE_SECURITY_RULES.md para el
+detalle de por qué este índice sustituye a Custom Claims.
+
+---
+
+############################################################
 # COOPERATIVAS
 ############################################################
 
 cooperativas/{cooperativaId}
+
+Nota: este documento, junto con usuariosIndex/{uid} (ver sección
+USUARIOS INDEX más arriba), se crea exclusivamente vía
+Coopdigital/scripts/onboarding-cooperativa.js (Admin SDK). Nunca desde
+el cliente. Ver PROJECT_SPEC.md → Alta de Cooperativas.
 
 {
   nombre: string,

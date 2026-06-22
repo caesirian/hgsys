@@ -74,14 +74,24 @@ Una vez migrado a Custom Claims, todo usuario autenticado debe poseer:
 
 # Arquitectura de Seguridad — Implementación Actual (plan Spark)
 
-Mientras el proyecto opera en plan Spark (sin Cloud Functions), no existen
-Custom Claims. El cooperativaId y el rol se resuelven con dos lecturas de
-Firestore en cada operación, usando get() dentro de las propias reglas.
-Ver DATA_MODEL.md (sección USUARIOS INDEX) y SYSTEM_ARCHITECTURE.md
-(sección Resolución de cooperativaId) para el flujo completo.
+Custom Claims requiere Cloud Functions, no disponible en plan Spark
+(gratuito). La implementación real sustituye esto con una colección
+global usuariosIndex/{uid} -> { cooperativaId }, consultada con get()
+desde las propias reglas en vez de leer request.auth.token.
 
-Funciones reales usadas en firestore.rules (equivalentes a las funciones
-del modelo objetivo, pero sin depender de claims):
+usuariosIndex se escribe exclusivamente vía Admin SDK, nunca desde el
+cliente (allow list, write: if false). La única vía de escritura es
+Coopdigital/scripts/onboarding-cooperativa.js. Ver DATA_MODEL.md,
+sección USUARIOS INDEX, y SYSTEM_ARCHITECTURE.md, sección Resolución
+de cooperativaId.
+
+El resto de esta sección y la siguiente ("Funciones Base") describen
+el modelo de Custom Claims como referencia de diseño; en el código
+real, role y active se leen del documento
+cooperativas/{cooperativaId}/usuarios/{uid} vía get(), no del token.
+
+Funciones reales usadas en firestore.rules (equivalentes a las
+funciones del modelo objetivo, pero sin depender de claims):
 
 function perfil(cooperativaId)
 

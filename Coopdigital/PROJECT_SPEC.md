@@ -95,6 +95,19 @@ federaciones/{federacionId}
 
 Una federación podrá administrar múltiples cooperativas.
 
+## Alta de Cooperativas
+
+El alta de una cooperativa nueva (cliente) no se hace desde la app web:
+requiere crear `usuariosIndex/{uid}`, que las Firestore Rules bloquean
+por completo desde el cliente (ver FIRESTORE_SECURITY_RULES.md).
+
+Se realiza con un script de Admin SDK: `Coopdigital/scripts/onboarding-cooperativa.js`.
+
+Recibe: nombre, matrícula, CUIT, email del admin.
+
+Crea: usuario en Firebase Auth (password temporal), `cooperativas/{id}`,
+`cooperativas/{id}/usuarios/{uid}` (rol admin), `usuariosIndex/{uid}`.
+
 ## Cooperativas
 
 Campos:

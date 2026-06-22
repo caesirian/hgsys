@@ -46,10 +46,9 @@ service cloud.firestore {
       return isActive(cooperativaId) && role(cooperativaId) in ['admin', 'consejero', 'operador'];
     }
 
-    // Más estricto que puedeEscribirGeneral: usado en entidades de
-    // gobernanza institucional (consejo, sindicatura, asambleas, actas)
-    // donde la carga operativa diaria (operador) no debe poder dar de
-    // alta o modificar cargos/actas, solo admin y consejero.
+    // Gobernanza institucional (Consejo, Sindicatura, Asambleas, Actas): solo
+    // admin/consejero pueden escribir, NUNCA operador. Son actos de gobierno
+    // cooperativo, distintos de las "operaciones diarias" del rol operador.
     function puedeEscribirGobernanza(cooperativaId) {
       return isActive(cooperativaId) && role(cooperativaId) in ['admin', 'consejero'];
     }
@@ -99,16 +98,6 @@ service cloud.firestore {
         allow create, update: if puedeEscribirGeneral(cooperativaId);
       }
 
-      // Consejo de Administración: gobernanza institucional. Lectura para
-      // todos los roles activos (incluye síndico, que necesita verlo para
-      // su función de fiscalización). Alta/baja/modificación restringida a
-      // admin/consejero (ver puedeEscribirGobernanza).
-      match /consejoAdministracion/{cargoId} {
-        allow read: if puedeLeer(cooperativaId);
-        allow create, update: if puedeEscribirGobernanza(cooperativaId);
-        allow delete: if isAdmin(cooperativaId);
-      }
-
       // Contabilidad: movimientos (ingresos/egresos) bajo categorías INAES
       // predefinidas en el frontend (registro simplificado, no partida
       // doble). Lectura: todos los roles activos. Escritura: admin/
@@ -124,6 +113,33 @@ service cloud.firestore {
       match /eventos/{eventoId} {
         allow read: if puedeLeerUsuarios(cooperativaId);
         allow write: if false;
+      }
+
+      // Gobernanza institucional: Consejo de Administración, Sindicatura,
+      // Asambleas y Actas. Lectura para todos los roles activos, escritura
+      // solo admin/consejero, baja solo admin.
+      match /consejoAdministracion/{cargoId} {
+        allow read: if puedeLeer(cooperativaId);
+        allow create, update: if puedeEscribirGobernanza(cooperativaId);
+        allow delete: if isAdmin(cooperativaId);
+      }
+
+      match /sindicatura/{sindicoId} {
+        allow read: if puedeLeer(cooperativaId);
+        allow create, update: if puedeEscribirGobernanza(cooperativaId);
+        allow delete: if isAdmin(cooperativaId);
+      }
+
+      match /asambleas/{asambleaId} {
+        allow read: if puedeLeer(cooperativaId);
+        allow create, update: if puedeEscribirGobernanza(cooperativaId);
+        allow delete: if isAdmin(cooperativaId);
+      }
+
+      match /actas/{actaId} {
+        allow read: if puedeLeer(cooperativaId);
+        allow create, update: if puedeEscribirGobernanza(cooperativaId);
+        allow delete: if isAdmin(cooperativaId);
       }
     }
 

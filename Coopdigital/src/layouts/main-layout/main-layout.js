@@ -12,7 +12,10 @@ const nav = [
   { href: '/contabilidad',        ico: '💰', label: 'Movimientos' },
   { href: '/reportes-contables',  ico: '📊', label: 'Estado de Recursos y Gastos' },
   { section: 'Gobernanza' },
-  { href: '/consejo',         ico: '🏛',  label: 'Consejo de Administración' },
+  { href: '/consejo',         ico: '🏛️', label: 'Consejo de Administración' },
+  { href: '/sindicatura',     ico: '🔍', label: 'Sindicatura' },
+  { href: '/asambleas',       ico: '🗳️', label: 'Asambleas' },
+  { href: '/actas',           ico: '📜', label: 'Actas' },
   { href: '/eventos',         ico: '🧾', label: 'Eventos / Auditoría' },
 ];
 

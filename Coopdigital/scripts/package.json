@@ -1,0 +1,12 @@
+{
+  "name": "coopdigital-scripts",
+  "private": true,
+  "type": "module",
+  "description": "Scripts de administración para CoopDigital que requieren Firebase Admin SDK (acciones que las Firestore Rules bloquean desde el cliente, como usuariosIndex).",
+  "scripts": {
+    "onboarding": "node onboarding-cooperativa.js"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.0.0"
+  }
+}

@@ -11,6 +11,9 @@ import { contabilidadView, bindContabilidad } from './modules/contabilidad/views
 import { reportesContablesView, bindReportesContables } from './modules/contabilidad/views/reportes-contables.view.js';
 import { eventosView, bindEventos } from './modules/eventos/views/eventos.view.js';
 import { consejoView, bindConsejo } from './modules/consejo/views/consejo.view.js';
+import { sindicaturaView, bindSindicatura } from './modules/sindicatura/views/sindicatura.view.js';
+import { asambleasView, bindAsambleas } from './modules/asambleas/views/asambleas.view.js';
+import { actasView, bindActas } from './modules/actas/views/actas.view.js';
 
 const app = document.querySelector('#app');
 let user = null;
@@ -118,6 +121,15 @@ async function render() {
   } else if (path === '/consejo') {
     view = consejoView();
     bind = () => bindConsejo();
+  } else if (path === '/sindicatura') {
+    view = sindicaturaView();
+    bind = () => bindSindicatura();
+  } else if (path === '/asambleas') {
+    view = asambleasView();
+    bind = () => bindAsambleas();
+  } else if (path === '/actas') {
+    view = actasView();
+    bind = () => bindActas();
   } else {
     view = dashboardView();
     bind = () => bindDashboard(user);

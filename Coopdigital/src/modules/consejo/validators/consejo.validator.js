@@ -1,1 +1,1 @@
-export{validateConsejo}from'../../../validators/consejo.validator.js';
+export { validateConsejo } from '../../../validators/consejo.validator.js';
