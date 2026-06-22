@@ -118,6 +118,24 @@ src/
 
 ---
 
+# Scripts
+
+scripts/ (fuera de src/, package.json propio)
+
+Scripts de administración con Firebase Admin SDK, para operaciones que
+las Firestore Rules bloquean desde el cliente (ej: usuariosIndex).
+
+No corren en el navegador. No forman parte del bundle de la app.
+Requieren credenciales de service account, nunca el SDK modular del
+cliente.
+
+scripts/
+
+├── package.json (única dependencia: firebase-admin)
+└── onboarding-cooperativa.js
+
+---
+
 # Assets
 
 Recursos estáticos.

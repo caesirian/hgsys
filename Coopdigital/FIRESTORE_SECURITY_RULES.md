@@ -68,6 +68,25 @@ Todo usuario autenticado debe poseer:
 
 ---
 
+# Nota de Implementación: Custom Claims vs usuariosIndex
+
+Custom Claims requiere Cloud Functions, no disponible en plan Spark
+(gratuito). La implementación real sustituye esto con una colección
+global usuariosIndex/{uid} -> { cooperativaId }, consultada con get()
+desde las propias reglas en vez de leer request.auth.token.
+
+usuariosIndex se escribe exclusivamente vía Admin SDK, nunca desde el
+cliente (`allow list, write: if false`). La única vía de escritura es
+Coopdigital/scripts/onboarding-cooperativa.js. Ver DATA_MODEL.md,
+sección USUARIOS INDEX.
+
+El resto de esta sección describe el modelo de Custom Claims como
+referencia de diseño; en el código real, `role` y `active` se leen del
+documento cooperativas/{cooperativaId}/usuarios/{uid} vía get(), no del
+token.
+
+---
+
 # Roles Oficiales
 
 admin
