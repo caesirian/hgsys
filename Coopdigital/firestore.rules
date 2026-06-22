@@ -141,6 +141,14 @@ service cloud.firestore {
         allow create, update: if puedeEscribirGobernanza(cooperativaId);
         allow delete: if isAdmin(cooperativaId);
       }
+
+      // Certificados: solo se crean, nunca se modifican (trazabilidad).
+      match /certificados/{certificadoId} {
+        allow read: if puedeLeer(cooperativaId);
+        allow create: if puedeEscribirGeneral(cooperativaId);
+        allow delete: if isAdmin(cooperativaId);
+        allow update: if false;
+      }
     }
 
     // Todo lo no contemplado explícitamente queda denegado por defecto.

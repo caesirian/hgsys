@@ -163,3 +163,9 @@ tfoot td{border-top:2px solid var(--line);font-size:14px;padding-top:12px}
   #toast-container{bottom:12px;right:12px;left:12px}
   .toast{max-width:100%}
 }
+
+/* ── DROPDOWN CERTIFICADOS ── */
+.cert-menu{position:relative;display:inline-block}
+.cert-dropdown{position:absolute;right:0;top:110%;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 24px #10182820;z-index:10;min-width:190px;overflow:hidden}
+.cert-dropdown button{display:block;width:100%;text-align:left;padding:10px 14px;border:0;background:none;font-size:13px;font-weight:600;cursor:pointer;color:#172033}
+.cert-dropdown button:hover{background:#f2f4ff;color:#3730a3}
