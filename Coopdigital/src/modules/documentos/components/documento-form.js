@@ -1,1 +1,12 @@
-export const documentoFields=[['nombre','Nombre'],['categoria','Categoría','select',['INAES','ARCA','AFIP','Municipal','Legal','Contable','Contratos','Convenios','Actas']],['descripcion','Descripción','textarea'],['storagePath','Storage path'],['url','URL'],['fechaCarga','Fecha carga','date'],['visible','Visible','select',['true','false']]].map(([name,label,type,options])=>({name,label,type,options,full:['descripcion','storagePath','url'].includes(name)}));
+export const documentoFields = [
+  ['nombre', 'Nombre'],
+  ['categoria', 'Categoría', 'select', ['INAES', 'ARCA', 'AFIP', 'Municipal', 'Legal', 'Contable', 'Contratos', 'Convenios', 'Actas']],
+  ['descripcion', 'Descripción', 'textarea'],
+  ['archivo', 'Archivo (PDF, JPG, PNG, DOC, DOCX — máx. 10 MB)', 'file'],
+  ['fechaCarga', 'Fecha carga', 'date'],
+  ['visible', 'Visible', 'select', ['true', 'false']]
+].map(([name, label, type, options]) => ({
+  name, label, type, options,
+  accept: name === 'archivo' ? '.pdf,.jpg,.jpeg,.png,.doc,.docx' : undefined,
+  full: ['descripcion', 'archivo'].includes(name)
+}));
