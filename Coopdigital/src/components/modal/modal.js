@@ -13,7 +13,10 @@ function renderField(f, row) {
     return `<select name="${f.name}">${f.options.map(o => {
       const v = typeof o === 'object' ? o.value : o;
       const l = typeof o === 'object' ? o.label : o;
-      return `<option value="${escapeHtml(v)}" ${row?.[f.name] == v ? 'selected' : ''}>${escapeHtml(l)}</option>`;
+      // String(v) === String(valorActual) en vez de == para evitar coerciones
+      // raras de JS con booleanos (false == "false" da false con ==).
+      const seleccionado = String(v) === String(row?.[f.name]);
+      return `<option value="${escapeHtml(v)}" ${seleccionado ? 'selected' : ''}>${escapeHtml(l)}</option>`;
     }).join('')}</select>`;
   }
   if (f.type === 'textarea') {
@@ -76,9 +79,17 @@ export function openModal(title, fields, row, onSave) {
     };
   });
 
-  modal.querySelector('form').onsubmit = e => {
+  modal.querySelector('form').onsubmit = async e => {
     e.preventDefault();
-    onSave(Object.fromEntries(new FormData(e.currentTarget)));
-    modal.remove();
+    const submitBtn = modal.querySelector('[data-submit]');
+    submitBtn.disabled = true;
+    try {
+      await onSave(Object.fromEntries(new FormData(e.currentTarget)));
+      modal.remove();
+    } catch {
+      // El error ya se reporta vía toast.err dentro de onSave (bindCrud).
+      // Acá solo evitamos cerrar el modal para que el usuario pueda corregir.
+      submitBtn.disabled = false;
+    }
   };
 }
