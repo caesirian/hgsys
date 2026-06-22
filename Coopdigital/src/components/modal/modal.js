@@ -17,14 +17,18 @@ function renderField(f, row) {
     }).join('')}</select>`;
   }
   if (f.type === 'textarea') {
-    return `<textarea name="${f.name}" rows="3">${escapeHtml(row?.[f.name] ?? '')}</textarea>`;
+    const raw = row?.[f.name];
+    const texto = Array.isArray(raw) ? raw.join('\n') : (raw ?? '');
+    return `<textarea name="${f.name}" rows="3">${escapeHtml(texto)}</textarea>`;
   }
   if (f.type === 'file') {
-    const urlActual = row?.url ?? '';
-    return `<div class="file-field" data-file-field>
+    const urlField = f.urlField ?? 'url';
+    const pathField = f.pathField; // opcional: si no se define, no hay campo de storagePath
+    const urlActual = row?.[urlField] ?? '';
+    return `<div class="file-field" data-file-field data-url-field="${escapeHtml(urlField)}" ${pathField ? `data-path-field="${escapeHtml(pathField)}"` : ''}>
       <input type="file" data-file-input accept="${escapeHtml(f.accept ?? '')}">
-      <input type="hidden" name="url" value="${escapeHtml(urlActual)}">
-      <input type="hidden" name="storagePath" value="${escapeHtml(row?.storagePath ?? '')}">
+      <input type="hidden" name="${urlField}" value="${escapeHtml(urlActual)}">
+      ${pathField ? `<input type="hidden" name="${pathField}" value="${escapeHtml(row?.[pathField] ?? '')}">` : ''}
       <span class="file-status muted" data-file-status>${urlActual ? 'Archivo cargado ✓' : 'Sin archivo todavía'}</span>
     </div>`;
   }
@@ -42,8 +46,10 @@ export function openModal(title, fields, row, onSave) {
   // Cablear la subida para cada campo tipo 'file' presente en el formulario.
   modal.querySelectorAll('[data-file-field]').forEach(wrapper => {
     const fileInput = wrapper.querySelector('[data-file-input]');
-    const urlHidden = wrapper.querySelector('input[name="url"]');
-    const pathHidden = wrapper.querySelector('input[name="storagePath"]');
+    const urlField = wrapper.dataset.urlField;
+    const pathField = wrapper.dataset.pathField;
+    const urlHidden = wrapper.querySelector(`input[name="${urlField}"]`);
+    const pathHidden = pathField ? wrapper.querySelector(`input[name="${pathField}"]`) : null;
     const status = wrapper.querySelector('[data-file-status]');
     const submitBtn = modal.querySelector('[data-submit]');
 
@@ -57,7 +63,7 @@ export function openModal(title, fields, row, onSave) {
       try {
         const { url, storagePath } = await cloudinaryService.upload(file);
         urlHidden.value = url;
-        pathHidden.value = storagePath;
+        if (pathHidden) pathHidden.value = storagePath;
         status.textContent = `Archivo cargado ✓ (${file.name})`;
         status.className = 'file-status ok-text';
       } catch (err) {

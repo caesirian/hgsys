@@ -8,5 +8,6 @@ export const documentoFields = [
 ].map(([name, label, type, options]) => ({
   name, label, type, options,
   accept: name === 'archivo' ? '.pdf,.jpg,.jpeg,.png,.doc,.docx' : undefined,
+  pathField: name === 'archivo' ? 'storagePath' : undefined,
   full: ['descripcion', 'archivo'].includes(name)
 }));

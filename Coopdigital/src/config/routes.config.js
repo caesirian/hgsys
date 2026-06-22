@@ -1,1 +1,1 @@
-export const routes=['/dashboard','/usuarios','/asociados','/libro-asociados','/documentos','/vencimientos','/contabilidad','/reportes-contables','/eventos'];
+export const routes=['/dashboard','/usuarios','/asociados','/libro-asociados','/documentos','/vencimientos','/contabilidad','/reportes-contables','/consejo','/sindicatura','/asambleas','/actas','/eventos'];
