@@ -30,7 +30,9 @@ function filterRows(rows, q) {
 
 // Carga los datos, renderiza la tabla, enlaza búsqueda y eventos CRUD.
 // `fields` puede ser un array fijo o una función async.
-export async function bindCrud({ service, fields, columns }) {
+// `extraActions` es una función opcional (r) => string de HTML adicional
+// que se agrega a cada fila junto con Editar y Eliminar.
+export async function bindCrud({ service, fields, columns, extraActions }) {
   const tableEl = document.querySelector('#crudTable');
   let allRows = [];
 
@@ -47,9 +49,11 @@ export async function bindCrud({ service, fields, columns }) {
       columns,
       rows,
       r => `<button class="btn ghost" data-edit="${r.id}">Editar</button>
-            <button class="btn danger" data-del="${r.id}">Eliminar</button>`
+            <button class="btn danger" data-del="${r.id}">Eliminar</button>
+            ${extraActions ? extraActions.render(r) : ''}`
     );
     bindRowActions();
+    if (extraActions) bindExtraActions();
   }
 
   async function loadTable() {
@@ -92,7 +96,14 @@ export async function bindCrud({ service, fields, columns }) {
     });
   }
 
-  // Búsqueda en tiempo real (filtra sobre los datos ya cargados, sin ir a Firestore)
+  // Si extraActions tiene un método bind(), se llama después de renderizar.
+  // Eso permite que cada módulo maneje sus propios listeners sin acoplar
+  // lógica de dominio (certificados, etc.) en el motor genérico.
+  function bindExtraActions() {
+    if (typeof extraActions?.bind === 'function') {
+      extraActions.bind(allRows);
+    }
+  }
   document.querySelector('#tableSearch')?.addEventListener('input', e => {
     renderTable(filterRows(allRows, e.target.value));
   });

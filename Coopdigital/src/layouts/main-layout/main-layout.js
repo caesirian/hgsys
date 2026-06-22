@@ -5,6 +5,7 @@ const nav = [
   { href: '/usuarios',        ico: '👥', label: 'Usuarios' },
   { href: '/asociados',       ico: '🤝', label: 'Asociados' },
   { href: '/libro-asociados', ico: '📘', label: 'Libro de Asociados' },
+  { href: '/certificados',    ico: '🏅', label: 'Certificados' },
   { section: 'Gestión' },
   { href: '/documentos',      ico: '📄', label: 'Documentos' },
   { href: '/vencimientos',    ico: '⏱',  label: 'Vencimientos' },
