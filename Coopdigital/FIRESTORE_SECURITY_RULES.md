@@ -34,7 +34,11 @@ DENY
 
 ---
 
-# Arquitectura de Seguridad
+# Arquitectura de Seguridad — Modelo Objetivo (plan Blaze / Enterprise)
+
+El esquema siguiente (Custom Claims) es el modelo objetivo para cuando el
+proyecto migre a plan Blaze con Cloud Functions. Sirve como especificación
+de esa migración futura.
 
 Firebase Authentication
 
@@ -52,9 +56,9 @@ Storage Rules
 
 ---
 
-# Claims Obligatorios
+# Claims Obligatorios — Modelo Objetivo
 
-Todo usuario autenticado debe poseer:
+Una vez migrado a Custom Claims, todo usuario autenticado debe poseer:
 
 {
   uid: string,
@@ -68,7 +72,7 @@ Todo usuario autenticado debe poseer:
 
 ---
 
-# Nota de Implementación: Custom Claims vs usuariosIndex
+# Arquitectura de Seguridad — Implementación Actual (plan Spark)
 
 Custom Claims requiere Cloud Functions, no disponible en plan Spark
 (gratuito). La implementación real sustituye esto con una colección
@@ -76,14 +80,58 @@ global usuariosIndex/{uid} -> { cooperativaId }, consultada con get()
 desde las propias reglas en vez de leer request.auth.token.
 
 usuariosIndex se escribe exclusivamente vía Admin SDK, nunca desde el
-cliente (`allow list, write: if false`). La única vía de escritura es
+cliente (allow list, write: if false). La única vía de escritura es
 Coopdigital/scripts/onboarding-cooperativa.js. Ver DATA_MODEL.md,
-sección USUARIOS INDEX.
+sección USUARIOS INDEX, y SYSTEM_ARCHITECTURE.md, sección Resolución
+de cooperativaId.
 
-El resto de esta sección describe el modelo de Custom Claims como
-referencia de diseño; en el código real, `role` y `active` se leen del
-documento cooperativas/{cooperativaId}/usuarios/{uid} vía get(), no del
-token.
+El resto de esta sección y la siguiente ("Funciones Base") describen
+el modelo de Custom Claims como referencia de diseño; en el código
+real, role y active se leen del documento
+cooperativas/{cooperativaId}/usuarios/{uid} vía get(), no del token.
+
+Funciones reales usadas en firestore.rules (equivalentes a las
+funciones del modelo objetivo, pero sin depender de claims):
+
+function perfil(cooperativaId)
+
+Lee cooperativas/{cooperativaId}/usuarios/{uid} con get(). Reemplaza la
+lectura de request.auth.token.
+
+function isActive(cooperativaId)
+
+Equivalente a isActive() del modelo objetivo, pero lee perfil(cooperativaId).activo
+en vez de request.auth.token.active.
+
+function role(cooperativaId)
+
+Equivalente a leer request.auth.token.role; lee perfil(cooperativaId).rol.
+
+function isAdmin(cooperativaId)
+
+Equivalente a isAdmin() del modelo objetivo.
+
+function puedeLeer(cooperativaId)
+
+Cualquier rol activo. Usada como lectura general en la mayoría de las
+entidades dentro de una cooperativa.
+
+function puedeLeerUsuarios(cooperativaId)
+
+Admin, consejero o síndico. Usada para lectura completa de la colección
+usuarios y de eventos/auditoría.
+
+function puedeEscribirGeneral(cooperativaId)
+
+Admin, consejero u operador. Usada en entidades operativas (asociados,
+documentos, vencimientos, movimientos contables).
+
+function puedeEscribirGobernanza(cooperativaId)
+
+Admin o consejero únicamente. Más estricta que puedeEscribirGeneral; usada
+en entidades de gobernanza institucional (consejo, sindicatura, asambleas,
+actas, padrones electorales), donde la carga operativa diaria no debe
+poder dar de alta o modificar cargos, actas ni padrones.
 
 ---
 
@@ -123,7 +171,13 @@ consulta
 
 ---
 
-# Funciones Base
+# Funciones Base — Modelo Objetivo (plan Blaze / Custom Claims)
+
+Las funciones de esta sección y la siguiente ("Roles") están escritas en
+términos de request.auth.token.*, es decir, asumen Custom Claims. Son la
+especificación del modelo objetivo (ver arriba). La implementación real
+en plan Spark usa perfil(cooperativaId) con get(), documentada en la
+sección "Arquitectura de Seguridad — Implementación Actual".
 
 function isAuthenticated()
 
@@ -343,6 +397,39 @@ consejero
 Eliminación:
 
 admin
+
+---
+
+# Padrones Electorales
+
+Ruta:
+
+padronesElectorales
+
+Lectura:
+
+todos
+
+Generación (creación del padrón y su subcolección electores):
+
+admin
+consejero
+
+Actualización (solo campos habilitado/voto de un elector):
+
+admin
+consejero
+operador
+
+Eliminación:
+
+admin
+
+Subcolección electores:
+
+Hereda lectura y escritura del padrón contenedor. No se permite creación o
+eliminación individual de electores desde el frontend fuera de la
+generación en bloque del padrón.
 
 ---
 

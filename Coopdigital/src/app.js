@@ -14,6 +14,7 @@ import { consejoView, bindConsejo } from './modules/consejo/views/consejo.view.j
 import { sindicaturaView, bindSindicatura } from './modules/sindicatura/views/sindicatura.view.js';
 import { asambleasView, bindAsambleas } from './modules/asambleas/views/asambleas.view.js';
 import { actasView, bindActas } from './modules/actas/views/actas.view.js';
+import { certificadosView, bindCertificados } from './modules/certificados/views/certificados.view.js';
 
 const app = document.querySelector('#app');
 let user = null;
@@ -130,6 +131,9 @@ async function render() {
   } else if (path === '/actas') {
     view = actasView();
     bind = () => bindActas();
+  } else if (path === '/certificados') {
+    view = certificadosView();
+    bind = () => bindCertificados();
   } else {
     view = dashboardView();
     bind = () => bindDashboard(user);

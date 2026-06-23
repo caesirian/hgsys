@@ -99,6 +99,25 @@ Ninguna consulta podrá devolver datos de otra cooperativa.
 
 ---
 
+# Resolución de cooperativaId (plan Spark / gratuito)
+
+El proyecto opera en plan Spark (sin Cloud Functions ni Firebase Storage,
+ambos de pago desde feb/2026). Por lo tanto el cooperativaId de cada
+usuario NO se resuelve con Custom Claims (que requieren una Cloud Function
+para asignarse tras el alta), sino con dos lecturas de Firestore:
+
+1. usuariosIndex/{uid} (colección global) → { cooperativaId }
+
+2. cooperativas/{cooperativaId}/usuarios/{uid} → perfil completo (rol, activo)
+
+Ver DATA_MODEL.md (sección USUARIOS INDEX) para el detalle del modelo y
+FIRESTORE_SECURITY_RULES.md para las reglas de acceso.
+
+Si el proyecto migra a plan Blaze, este mecanismo puede reemplazarse por
+Custom Claims sin afectar la estructura de cooperativas/usuarios/datos.
+
+---
+
 # Estructura de Carpetas
 
 src/
@@ -474,6 +493,8 @@ Rutas:
 /plantillas
 
 /notificaciones
+
+/padron-electoral
 
 /configuracion
 

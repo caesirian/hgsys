@@ -18,9 +18,17 @@ Todas las entidades:
 - son compatibles con exportación
 - son compatibles con API futura
 
+Excepción única: usuariosIndex/{uid} (ver sección dedicada). Es una colección
+global de infraestructura, no una entidad de negocio: existe para que el
+cliente pueda resolver a qué cooperativa pertenece un usuario sin Custom
+Claims ni Cloud Functions (plan Spark/gratuito). No posee auditoría porque
+nunca se escribe desde el cliente.
+
 ---
 
 # Estructura General Firestore
+
+usuariosIndex/
 
 federaciones/
 
@@ -29,6 +37,49 @@ organismos/
 normativa/
 
 cooperativas/
+
+---
+
+############################################################
+# USUARIOS INDEX
+############################################################
+
+usuariosIndex/{uid}
+
+{
+  cooperativaId: string
+}
+
+Colección global de infraestructura, no de negocio. Permite resolver a qué
+cooperativa pertenece un usuario autenticado sin Custom Claims ni Cloud
+Functions (incompatibles con plan Spark/gratuito).
+
+Flujo de uso (ver src/services/auth.service.js y firestore.rules):
+
+1. El usuario se autentica con Firebase Authentication (uid).
+
+2. El cliente lee usuariosIndex/{uid} para obtener su cooperativaId.
+
+3. Con ese cooperativaId, el cliente lee
+   cooperativas/{cooperativaId}/usuarios/{uid} para conocer su perfil
+   completo (rol, activo, nombre, apellido).
+
+Reglas de acceso:
+
+- Lectura (get): únicamente el propio usuario autenticado sobre su propia
+  entrada (uid del token == uid del documento). Nunca list.
+
+- Escritura: prohibida desde el cliente en cualquier circunstancia. La
+  entrada se crea exclusivamente mediante un script con Admin SDK al dar
+  de alta un usuario, que bypassa las reglas de Firestore.
+
+No posee campos de auditoría (creadoPor, fechaCreacion, etc.): no es una
+entidad de negocio, no se edita desde el frontend en ningún caso, y un
+único campo no justifica el set completo.
+
+Si en el futuro se migra a un plan Blaze con Cloud Functions, esta
+colección puede reemplazarse por Custom Claims sin afectar al resto del
+modelo de datos.
 
 ---
 
@@ -365,8 +416,28 @@ cooperativas/{cooperativaId}/consejoAdministracion/{cargoId}
 
   finMandato: timestamp,
 
-  vigente: boolean
+  vigente: boolean,
+
+  creadoPor: string,
+
+  fechaCreacion: timestamp,
+
+  modificadoPor: string,
+
+  fechaModificacion: timestamp
 }
+
+Cargos:
+
+presidente
+
+secretario
+
+tesorero
+
+vocalTitular
+
+vocalSuplente
 
 ---
 
@@ -385,7 +456,15 @@ cooperativas/{cooperativaId}/sindicatura/{sindicoId}
 
   finMandato: timestamp,
 
-  vigente: boolean
+  vigente: boolean,
+
+  creadoPor: string,
+
+  fechaCreacion: timestamp,
+
+  modificadoPor: string,
+
+  fechaModificacion: timestamp
 }
 
 Tipos:
@@ -415,7 +494,15 @@ cooperativas/{cooperativaId}/asambleas/{asambleaId}
 
   actaId: string|null,
 
-  observaciones: string
+  observaciones: string,
+
+  creadoPor: string,
+
+  fechaCreacion: timestamp,
+
+  modificadoPor: string,
+
+  fechaModificacion: timestamp
 }
 
 Tipos:
@@ -455,8 +542,86 @@ cooperativas/{cooperativaId}/actas/{actaId}
 
   archivoPdfUrl: string,
 
-  firmada: boolean
+  firmada: boolean,
+
+  creadoPor: string,
+
+  fechaCreacion: timestamp,
+
+  modificadoPor: string,
+
+  fechaModificacion: timestamp
 }
+
+Tipos:
+
+consejo
+
+asambleaOrdinaria
+
+asambleaExtraordinaria
+
+comisionInterna
+
+---
+
+############################################################
+# PADRONES ELECTORALES
+############################################################
+
+cooperativas/{cooperativaId}/padronesElectorales/{padronId}
+
+{
+  asambleaId: string,
+
+  fechaCorte: timestamp,
+
+  fechaGeneracion: timestamp,
+
+  generadoPor: string,
+
+  estado: string,
+
+  totalHabilitados: number,
+
+  creadoPor: string,
+
+  fechaCreacion: timestamp,
+
+  modificadoPor: string,
+
+  fechaModificacion: timestamp
+}
+
+Estados:
+
+borrador
+
+cerrado
+
+Subcolección (generada en bloque, no editable campo a campo desde el frontend salvo habilitado/voto):
+
+cooperativas/{cooperativaId}/padronesElectorales/{padronId}/electores/{asociadoId}
+
+{
+  asociadoId: string,
+
+  numeroAsociado: string,
+
+  apellido: string,
+
+  nombre: string,
+
+  habilitado: boolean,
+
+  motivoInhabilitacion: string|null,
+
+  voto: boolean
+}
+
+Un elector se genera a partir de una copia histórica de los datos del asociado al momento del corte
+(numeroAsociado, apellido, nombre): el padrón no debe cambiar si el asociado modifica sus datos
+después de generado, ni debe romperse si el asociado es eliminado más adelante.
 
 ---
 
