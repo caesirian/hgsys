@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Hernán Garbarino | Desarrollo y diseño web para gestión</title>
+  <meta name="description" content="Desarrollo y diseño de páginas web, sistemas de gestión y automatizaciones para organizaciones que necesitan presencia digital clara y herramientas operativas." />
+  <meta name="author" content="Hernán Garbarino" />
+  <meta name="theme-color" content="#0f3d46" />
+  <meta property="og:title" content="Hernán Garbarino | Desarrollo y diseño web para gestión" />
+  <meta property="og:description" content="Páginas web, sistemas de gestión y automatización con criterio administrativo, operativo y tecnológico." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://hgsys.vercel.app/index_web.html" />
+  <link rel="canonical" href="https://hgsys.vercel.app/index_web.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            oil: '#0f3d46',
+            oilDeep: '#08272d',
+            graphite: '#2d3436',
+            paper: '#fbfcfb',
+            sage: '#c8dccd',
+            sageDark: '#7fa18b'
+          },
+          fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
+          boxShadow: { soft: '0 22px 70px rgba(8, 39, 45, .12)' }
+        }
+      }
+    };
+  </script>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, system-ui, sans-serif;
+      color: #2d3436;
+      background: #fbfcfb;
+    }
+    a, button, input, textarea { font: inherit; }
+    a { color: inherit; text-decoration: none; }
+    a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px solid #c8dccd; outline-offset: 4px; }
+    .wrap { width: min(1180px, calc(100% - 32px)); margin-inline: auto; }
+    .section { padding: 76px 0; }
+    .label { color: #0f3d46; font-size: .76rem; font-weight: 900; letter-spacing: .18em; text-transform: uppercase; }
+    .panel { border: 1px solid rgba(15, 61, 70, .13); background: rgba(255,255,255,.9); box-shadow: 0 18px 55px rgba(8, 39, 45, .08); }
+    .line-bg { background-image: linear-gradient(90deg, rgba(15,61,70,.08) 1px, transparent 1px), linear-gradient(rgba(15,61,70,.08) 1px, transparent 1px); background-size: 48px 48px; }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; } }
+  </style>
+</head>
+<body>
+  <a class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-white focus:px-4 focus:py-3 focus:font-bold focus:text-oil" href="#contenido">Saltar al contenido</a>
+
+  <header class="sticky top-0 z-50 border-b border-oil/10 bg-paper/90 backdrop-blur-xl">
+    <div class="wrap flex min-h-20 items-center justify-between gap-4 py-3">
+      <a href="#inicio" class="text-base font-black tracking-tight text-oil md:text-lg" aria-label="Inicio de Hernán Garbarino">HG · Web y gestión</a>
+      <nav aria-label="Navegación principal" class="hidden items-center gap-5 text-sm font-bold text-graphite/75 lg:flex">
+        <a class="hover:text-oil" href="#sobre-mi">Sobre mí</a>
+        <a class="hover:text-oil" href="#servicios">Servicios</a>
+        <a class="hover:text-oil" href="#experiencia">Experiencia</a>
+        <a class="hover:text-oil" href="#proyectos">Proyectos</a>
+        <a class="hover:text-oil" href="#publicaciones">Publicaciones</a>
+        <a class="rounded-full bg-oil px-4 py-2 text-white hover:bg-oilDeep" href="#contacto">Contacto</a>
+      </nav>
+      <a class="rounded-full bg-oil px-4 py-2 text-sm font-extrabold text-white lg:hidden" href="#contacto">Contacto</a>
+    </div>
+  </header>
+
+  <main id="contenido">
+    <section id="inicio" class="relative overflow-hidden bg-gradient-to-br from-paper via-white to-sage/40 py-20 md:py-28">
+      <div class="absolute inset-0 line-bg opacity-60" aria-hidden="true"></div>
+      <div class="wrap relative grid items-center gap-10 lg:grid-cols-[1.1fr_.9fr]">
+        <div>
+          <p class="label">Desarrollo web · Diseño claro · Sistemas de gestión</p>
+          <h1 class="mt-5 max-w-4xl text-4xl font-black leading-[1.05] tracking-tight text-oilDeep md:text-6xl">Páginas web y sistemas que ordenan la gestión.</h1>
+          <p class="mt-6 max-w-2xl text-lg leading-8 text-graphite/78">Desarrollo y diseño páginas web, paneles de gestión y automatizaciones para organizaciones que necesitan comunicar mejor, ordenar información y reducir tareas manuales.</p>
+          <div class="mt-8 flex flex-col gap-3 sm:flex-row">
+            <a class="inline-flex min-h-12 items-center justify-center rounded-full bg-oil px-6 py-3 font-extrabold text-white hover:-translate-y-0.5 hover:bg-oilDeep" href="#servicios">Ver soluciones web</a>
+            <a class="inline-flex min-h-12 items-center justify-center rounded-full border border-oil/20 bg-white px-6 py-3 font-extrabold text-oil hover:-translate-y-0.5 hover:border-oil/40" href="#metodo">Conocer proceso</a>
+          </div>
+        </div>
+        <aside class="panel rounded-[2rem] p-6 md:p-8" aria-label="Resumen del enfoque profesional">
+          <p class="label">Perfil elevado · Soluciones digitales</p>
+          <ul class="mt-6 space-y-4">
+            <li class="rounded-2xl bg-sage/35 p-4"><strong class="block text-oil">Diseñar con criterio de gestión</strong><span class="mt-1 block text-sm leading-6 text-graphite/75">La estructura del sitio y del sistema nace de procesos, usuarios, datos y decisiones reales.</span></li>
+            <li class="rounded-2xl bg-sage/35 p-4"><strong class="block text-oil">Construir presencia profesional</strong><span class="mt-1 block text-sm leading-6 text-graphite/75">Sitios claros, rápidos y sobrios para explicar servicios, generar confianza y facilitar consultas.</span></li>
+            <li class="rounded-2xl bg-sage/35 p-4"><strong class="block text-oil">Integrar herramientas de trabajo</strong><span class="mt-1 block text-sm leading-6 text-graphite/75">Formularios, tableros, automatizaciones y módulos web conectados con la operación diaria.</span></li>
+          </ul>
+        </aside>
+      </div>
+    </section>
+
+    <section id="sobre-mi" class="section">
+      <div class="wrap grid gap-8 lg:grid-cols-[.75fr_1.25fr]">
+        <div>
+          <p class="label">Sobre mí</p>
+          <h2 class="mt-3 text-3xl font-black tracking-tight text-oilDeep md:text-4xl">Desarrollo web con lectura administrativa y operativa.</h2>
+        </div>
+        <div class="space-y-5 text-lg leading-8 text-graphite/78">
+          <p>Esta versión presenta a Hernán desde un perfil más elevado de soluciones digitales: diseño de páginas web, desarrollo de sistemas simples, automatizaciones y herramientas para gestionar información.</p>
+          <p>El diferencial está en unir criterio de gestión con ejecución técnica: no se diseña una pantalla aislada, se construye una herramienta que debe ser clara, útil y mantenible.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="servicios" class="section bg-oilDeep text-white">
+      <div class="wrap">
+        <div class="max-w-3xl">
+          <p class="label text-sage">Servicios</p>
+          <h2 class="mt-3 text-3xl font-black tracking-tight md:text-4xl">Soluciones digitales para comunicar mejor y trabajar con más orden.</h2>
+        </div>
+        <div class="mt-10 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+          <article class="rounded-3xl border border-white/12 bg-white/8 p-6"><h3 class="text-xl font-bold">Páginas web</h3><p class="mt-3 text-white/72">Sitios profesionales, claros y responsive para presentar servicios, proyectos y canales de contacto.</p></article>
+          <article class="rounded-3xl border border-white/12 bg-white/8 p-6"><h3 class="text-xl font-bold">Diseño funcional</h3><p class="mt-3 text-white/72">Arquitectura visual sobria, contenido ordenado y navegación pensada para visitantes reales.</p></article>
+          <article class="rounded-3xl border border-white/12 bg-white/8 p-6"><h3 class="text-xl font-bold">Sistemas de gestión</h3><p class="mt-3 text-white/72">Paneles y módulos para ordenar registros, consultas, documentación y seguimiento interno.</p></article>
+          <article class="rounded-3xl border border-white/12 bg-white/8 p-6"><h3 class="text-xl font-bold">Automatización</h3><p class="mt-3 text-white/72">Formularios, flujos de datos, reportes y asistentes para reducir tareas repetitivas.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section id="metodo" class="section bg-sage/25">
+      <div class="wrap">
+        <p class="label">Método de trabajo</p>
+        <h2 class="mt-3 max-w-3xl text-3xl font-black tracking-tight text-oilDeep md:text-4xl">Primero entender la necesidad. Después diseñar. Finalmente implementar.</h2>
+        <div class="mt-10 grid gap-5 md:grid-cols-3">
+          <div class="panel rounded-3xl p-6"><span class="text-sm font-black text-sageDark">01</span><h3 class="mt-3 text-xl font-bold text-oil">Relevamiento</h3><p class="mt-3 text-graphite/75">Objetivos del sitio, público, contenidos, procesos internos y acciones esperadas.</p></div>
+          <div class="panel rounded-3xl p-6"><span class="text-sm font-black text-sageDark">02</span><h3 class="mt-3 text-xl font-bold text-oil">Criterio de mejora</h3><p class="mt-3 text-graphite/75">Estructura de navegación, tono, componentes, datos y recorrido principal del usuario.</p></div>
+          <div class="panel rounded-3xl p-6"><span class="text-sm font-black text-sageDark">03</span><h3 class="mt-3 text-xl font-bold text-oil">Implementación</h3><p class="mt-3 text-graphite/75">Sitio, formulario, panel o automatización listo para probar, ajustar y mantener.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="experiencia" class="section">
+      <div class="wrap grid gap-8 lg:grid-cols-[.9fr_1.1fr]">
+        <div>
+          <p class="label">Experiencia</p>
+          <h2 class="mt-3 text-3xl font-black tracking-tight text-oilDeep md:text-4xl">Capacidades que conectan diseño, gestión y tecnología.</h2>
+        </div>
+        <div class="grid gap-4 sm:grid-cols-2">
+          <div class="panel rounded-3xl p-5"><h3 class="font-bold text-oil">Arquitectura de contenidos</h3><p class="mt-2 text-sm leading-6 text-graphite/75">Orden de secciones, mensajes, llamados a la acción y jerarquía visual.</p></div>
+          <div class="panel rounded-3xl p-5"><h3 class="font-bold text-oil">Interfaces de gestión</h3><p class="mt-2 text-sm leading-6 text-graphite/75">Pantallas simples para cargar, consultar y seguir información operativa.</p></div>
+          <div class="panel rounded-3xl p-5"><h3 class="font-bold text-oil">Automatizaciones</h3><p class="mt-2 text-sm leading-6 text-graphite/75">Flujos que conectan formularios, registros, reportes y notificaciones.</p></div>
+          <div class="panel rounded-3xl p-5"><h3 class="font-bold text-oil">Criterio operativo</h3><p class="mt-2 text-sm leading-6 text-graphite/75">La solución se evalúa por su utilidad diaria, no por su complejidad técnica.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="proyectos" class="section bg-paper">
+      <div class="wrap">
+        <p class="label">Proyectos</p>
+        <h2 class="mt-3 max-w-3xl text-3xl font-black tracking-tight text-oilDeep md:text-4xl">Tipos de entregables digitales.</h2>
+        <div class="mt-10 grid gap-5 lg:grid-cols-3">
+          <article class="panel rounded-3xl p-6"><p class="text-sm font-black uppercase tracking-[.14em] text-sageDark">Cooperativas</p><h3 class="mt-4 text-xl font-bold text-oil">Sitio profesional institucional</h3><p class="mt-3 text-graphite/75">Página clara para explicar servicios, trayectoria, proyectos y canales de contacto.</p></article>
+          <article class="panel rounded-3xl p-6"><p class="text-sm font-black uppercase tracking-[.14em] text-sageDark">Información pública</p><h3 class="mt-4 text-xl font-bold text-oil">Panel operativo</h3><p class="mt-3 text-graphite/75">Herramienta privada para centralizar consultas, registros, estados y reportes.</p></article>
+          <article class="panel rounded-3xl p-6"><p class="text-sm font-black uppercase tracking-[.14em] text-sageDark">Procesos internos</p><h3 class="mt-4 text-xl font-bold text-oil">Flujo automatizado</h3><p class="mt-3 text-graphite/75">Captura de datos, validaciones, respuestas y reportes con menor intervención manual.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section id="publicaciones" class="section">
+      <div class="wrap grid gap-8 lg:grid-cols-[.85fr_1.15fr]">
+        <div>
+          <p class="label">Publicaciones</p>
+          <h2 class="mt-3 text-3xl font-black tracking-tight text-oilDeep md:text-4xl">Publicaciones sobre web, gestión y automatización.</h2>
+        </div>
+        <div class="space-y-4">
+          <article class="panel rounded-3xl p-6"><h3 class="font-bold text-oil">Una página web también es un proceso</h3><p class="mt-2 text-graphite/75">Contenido, consulta, respuesta y seguimiento deben pensarse como un circuito completo.</p></article>
+          <article class="panel rounded-3xl p-6"><h3 class="font-bold text-oil">Diseñar para que se entienda rápido</h3><p class="mt-2 text-graphite/75">La estética acompaña cuando ayuda a leer, confiar y actuar sin esfuerzo.</p></article>
+          <article class="panel rounded-3xl p-6"><h3 class="font-bold text-oil">Automatizar sin perder control</h3><p class="mt-2 text-graphite/75">Los flujos automáticos deben ser claros, auditables y fáciles de corregir.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section id="contacto" class="section bg-oil text-white">
+      <div class="wrap grid items-start gap-8 lg:grid-cols-[1fr_.9fr]">
+        <div>
+          <p class="label text-sage">Contacto</p>
+          <h2 class="mt-3 text-3xl font-black tracking-tight md:text-4xl">Si necesitás una web o herramienta de gestión, empecemos por el objetivo.</h2>
+          <p class="mt-4 max-w-2xl text-white/75">Contá qué querés comunicar, qué información necesitás recibir o gestionar y qué tarea debería simplificar la solución.</p>
+        </div>
+        <form class="rounded-3xl border border-white/12 bg-white/10 p-6" action="mailto:contacto@hgsys.com.ar" method="post" enctype="text/plain">
+          <label class="block text-sm font-bold" for="nombre">Nombre</label>
+          <input class="mt-2 w-full rounded-2xl border border-white/20 bg-white px-4 py-3 text-graphite" id="nombre" name="nombre" autocomplete="name" required />
+          <label class="mt-4 block text-sm font-bold" for="email">Email</label>
+          <input class="mt-2 w-full rounded-2xl border border-white/20 bg-white px-4 py-3 text-graphite" id="email" name="email" type="email" autocomplete="email" required />
+          <label class="mt-4 block text-sm font-bold" for="mensaje">Mensaje</label>
+          <textarea class="mt-2 min-h-32 w-full rounded-2xl border border-white/20 bg-white px-4 py-3 text-graphite" id="mensaje" name="mensaje" required></textarea>
+          <button class="mt-5 w-full rounded-full bg-sage px-6 py-3 font-black text-oilDeep hover:bg-white" type="submit">Enviar consulta</button>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <footer class="border-t border-oil/10 bg-paper py-8">
+    <div class="wrap flex flex-col gap-3 text-sm text-graphite/70 md:flex-row md:items-center md:justify-between">
+      <p>© 2026 Hernán Garbarino.</p>
+      <p>Desarrollo web, diseño funcional y sistemas de gestión.</p>
+    </div>
+  </footer>
+</body>
+</html>
