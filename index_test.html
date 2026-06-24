@@ -1,174 +1,825 @@
 <!DOCTYPE html>
-<html lang="es" class="scroll-smooth">
+<html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Hernán Garbarino | Gestión, procesos y transformación digital</title>
-  <meta name="description" content="Hernán Garbarino acompaña a organizaciones en administración, procesos, cooperativismo y transformación digital con soluciones prácticas y criterio de gestión." />
-  <meta name="author" content="Hernán Garbarino" />
-  <meta name="theme-color" content="#123f46" />
-  <meta property="og:title" content="Hernán Garbarino | Gestión, procesos y transformación digital" />
-  <meta property="og:description" content="Experiencia administrativa, operativa y tecnológica para ordenar procesos y resolver problemas concretos en organizaciones." />
-  <meta property="og:type" content="website" />
-  <meta property="og:url" content="https://hgsys.vercel.app/" />
-  <link rel="canonical" href="https://hgsys.vercel.app/" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            petrol: '#123f46',
-            petrolDark: '#0b2b31',
-            graphite: '#263238',
-            softGreen: '#b9d8c2',
-            mist: '#f5f8f7'
-          },
-          fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
-          boxShadow: { calm: '0 24px 70px rgba(11, 43, 49, .14)' }
-        }
-      }
-    }
-  </script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HG Soluciones Web — Sistemas y automatización para empresas</title>
+  <meta name="description" content="Automatización de procesos, sistemas de gestión e integraciones para PyMEs y cooperativas. 18 años de experiencia en administración y finanzas.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
   <style>
-    :root { color-scheme: light; }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: Inter, system-ui, sans-serif;
-      color: #263238;
-      background:
-        radial-gradient(circle at 18% 0%, rgba(185, 216, 194, .55), transparent 28rem),
-        linear-gradient(180deg, #f5f8f7 0%, #ffffff 48%, #eef5f1 100%);
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:         #f8f9fb;
+      --bg2:        #ffffff;
+      --bg3:        #f0f2f6;
+      --surface:    #e8ecf4;
+      --border:     #dde1ea;
+      --navy:       #1e3a5f;
+      --navy2:      #162d4a;
+      --navy-light: #2a4f7c;
+      --navy-dim:   #1e3a5f15;
+      --accent:     #2563eb;
+      --text:       #1a2232;
+      --text-muted: #5a6478;
+      --text-dim:   #9aa0b0;
+      --white:      #ffffff;
     }
-    a, button { transition: color .2s ease, background-color .2s ease, border-color .2s ease, transform .2s ease; }
-    a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px solid #b9d8c2; outline-offset: 3px; }
-    .container { width: min(1120px, calc(100% - 32px)); margin-inline: auto; }
-    .section { padding: 72px 0; }
-    .eyebrow { letter-spacing: .16em; text-transform: uppercase; font-size: .75rem; font-weight: 800; color: #123f46; }
-    .card { border: 1px solid rgba(18, 63, 70, .12); background: rgba(255,255,255,.82); box-shadow: 0 18px 55px rgba(11,43,49,.08); }
-    .grid-pattern { background-image: linear-gradient(rgba(18,63,70,.08) 1px, transparent 1px), linear-gradient(90deg, rgba(18,63,70,.08) 1px, transparent 1px); background-size: 34px 34px; }
-    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; } }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.65;
+      font-size: 16px;
+      overflow-x: hidden;
+    }
+
+    /* ─── NAV ─── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      background: rgba(248,249,251,0.92);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 1rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .nav-logo {
+      font-family: 'Inter', sans-serif;
+      font-weight: 700;
+      font-size: 1rem;
+      color: var(--navy);
+      text-decoration: none;
+      letter-spacing: -0.01em;
+    }
+    .nav-logo span {
+      display: inline-block;
+      width: 6px; height: 6px;
+      background: var(--accent);
+      border-radius: 50%;
+      margin-left: 2px;
+      vertical-align: middle;
+      position: relative;
+      top: -2px;
+    }
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 2rem;
+      list-style: none;
+    }
+    .nav-links a {
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+    .nav-links a:hover { color: var(--navy); }
+    .nav-cta {
+      background: var(--navy);
+      color: var(--white) !important;
+      padding: 0.5rem 1.25rem;
+      border-radius: 6px;
+      font-size: 0.875rem !important;
+      transition: background 0.15s !important;
+    }
+    .nav-cta:hover { background: var(--navy2) !important; color: var(--white) !important; }
+
+    @media (max-width: 680px) {
+      .nav-links { display: none; }
+    }
+
+    /* ─── HERO ─── */
+    .hero {
+      padding: 9rem 1.5rem 5rem;
+      max-width: 1100px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4rem;
+      align-items: center;
+    }
+    @media (max-width: 768px) {
+      .hero { grid-template-columns: 1fr; gap: 2.5rem; padding: 7rem 1.25rem 3rem; }
+      .hero-visual { display: none; }
+    }
+    .hero-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 1.5rem;
+    }
+    .hero h1 {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: clamp(2rem, 4.5vw, 3.2rem);
+      font-weight: 700;
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+      color: var(--navy);
+      margin-bottom: 1.25rem;
+    }
+    .hero-sub {
+      font-size: 1.05rem;
+      color: var(--text-muted);
+      margin-bottom: 2rem;
+      font-weight: 400;
+      line-height: 1.7;
+    }
+    .hero-actions {
+      display: flex;
+      gap: 0.875rem;
+      flex-wrap: wrap;
+    }
+    .btn-primary {
+      background: var(--navy);
+      color: var(--white);
+      font-weight: 600;
+      font-size: 0.9rem;
+      padding: 0.8rem 1.75rem;
+      border-radius: 6px;
+      text-decoration: none;
+      transition: background 0.15s;
+    }
+    .btn-primary:hover { background: var(--navy2); }
+    .btn-ghost {
+      background: transparent;
+      color: var(--navy);
+      font-weight: 500;
+      font-size: 0.9rem;
+      padding: 0.8rem 1.75rem;
+      border-radius: 6px;
+      text-decoration: none;
+      border: 1px solid var(--border);
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .btn-ghost:hover { border-color: var(--navy); background: var(--navy-dim); }
+    .hero-trust {
+      margin-top: 2rem;
+      display: flex;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+    }
+    .trust-item {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+    .trust-item::before {
+      content: '✓';
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    /* Visual lado derecho hero */
+    .hero-visual {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.5rem;
+      box-shadow: 0 4px 24px rgba(30,58,95,0.06);
+    }
+    .vis-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 1rem;
+    }
+    .vis-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+    }
+    .vis-title {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-left: 0.25rem;
+    }
+    .vis-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.6rem 0;
+      border-bottom: 1px solid var(--bg3);
+      font-size: 0.8rem;
+    }
+    .vis-row:last-child { border-bottom: none; }
+    .vis-row-label { color: var(--text-muted); }
+    .vis-row-value { font-weight: 600; color: var(--navy); }
+    .vis-badge {
+      font-size: 0.65rem;
+      font-weight: 600;
+      padding: 0.15rem 0.5rem;
+      border-radius: 100px;
+    }
+    .badge-green { background: #dcfce7; color: #166534; }
+    .badge-blue  { background: #dbeafe; color: #1d4ed8; }
+    .badge-amber { background: #fef9c3; color: #854d0e; }
+    .vis-footer {
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.75rem;
+      color: var(--text-dim);
+      text-align: center;
+    }
+
+    /* ─── SECCIÓN BASE ─── */
+    .section-wrap {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 5rem 1.5rem;
+    }
+    .section-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 0.75rem;
+    }
+    .section-title {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: clamp(1.7rem, 3vw, 2.4rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--navy);
+      line-height: 1.2;
+      margin-bottom: 1rem;
+    }
+    .section-sub {
+      font-size: 1rem;
+      color: var(--text-muted);
+      max-width: 560px;
+      line-height: 1.7;
+    }
+    .section-bg {
+      background: var(--bg3);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+
+    /* ─── DIFERENCIADOR ─── */
+    .diferenciador {
+      background: var(--navy);
+      color: var(--white);
+    }
+    .diferenciador-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 4.5rem 1.5rem;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4rem;
+      align-items: center;
+    }
+    @media (max-width: 768px) {
+      .diferenciador-inner { grid-template-columns: 1fr; gap: 2rem; }
+    }
+    .dif-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #93c5fd;
+      margin-bottom: 1rem;
+    }
+    .dif-title {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: clamp(1.6rem, 3vw, 2.2rem);
+      font-weight: 700;
+      line-height: 1.2;
+      color: var(--white);
+      margin-bottom: 1.25rem;
+    }
+    .dif-text {
+      font-size: 1rem;
+      color: #93c5fd;
+      line-height: 1.75;
+    }
+    .dif-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+    }
+    .dif-stat {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 10px;
+      padding: 1.25rem;
+    }
+    .dif-stat-num {
+      font-family: 'Playfair Display', serif;
+      font-size: 2.2rem;
+      font-weight: 700;
+      color: var(--white);
+      line-height: 1;
+      margin-bottom: 0.35rem;
+    }
+    .dif-stat-label {
+      font-size: 0.8rem;
+      color: #93c5fd;
+    }
+
+    /* ─── SERVICIOS ─── */
+    .servicios-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1.25rem;
+      margin-top: 3rem;
+    }
+    .servicio-card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.75rem;
+      transition: box-shadow 0.2s, transform 0.2s;
+    }
+    .servicio-card:hover {
+      box-shadow: 0 8px 28px rgba(30,58,95,0.08);
+      transform: translateY(-2px);
+    }
+    .servicio-icon {
+      width: 40px; height: 40px;
+      background: var(--navy-dim);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      margin-bottom: 1.1rem;
+    }
+    .servicio-card h3 {
+      font-size: 0.975rem;
+      font-weight: 600;
+      color: var(--navy);
+      margin-bottom: 0.5rem;
+    }
+    .servicio-card p {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      line-height: 1.65;
+    }
+
+    /* ─── CASOS ─── */
+    .casos-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.25rem;
+      margin-top: 3rem;
+    }
+    .caso-card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.75rem 2rem;
+      border-left: 3px solid var(--navy);
+    }
+    .caso-tag {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 0.6rem;
+    }
+    .caso-card h3 {
+      font-weight: 600;
+      color: var(--navy);
+      font-size: 1rem;
+      margin-bottom: 0.5rem;
+    }
+    .caso-card p {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      line-height: 1.65;
+      margin-bottom: 1rem;
+    }
+    .caso-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+    .chip {
+      font-size: 0.7rem;
+      font-weight: 500;
+      padding: 0.2rem 0.6rem;
+      border-radius: 4px;
+      background: var(--bg3);
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+    }
+
+    /* ─── STACK ─── */
+    .stack-wrap {
+      margin-top: 3rem;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 0.875rem;
+    }
+    .stack-item {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .stack-item span:first-child {
+      font-size: 1.3rem;
+    }
+    .stack-item span:last-child {
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+
+    /* ─── TESTIMONIOS ─── */
+    .testimonios-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.25rem;
+      margin-top: 3rem;
+    }
+    .testimonio {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.75rem;
+    }
+    .testimonio-stars {
+      color: #f59e0b;
+      font-size: 0.875rem;
+      margin-bottom: 1rem;
+      letter-spacing: 0.05em;
+    }
+    .testimonio-text {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      line-height: 1.7;
+      margin-bottom: 1.25rem;
+      font-style: italic;
+    }
+    .testimonio-author {
+      font-size: 0.8rem;
+      color: var(--text-dim);
+      font-weight: 500;
+    }
+
+    /* ─── CTA FINAL ─── */
+    .cta-final {
+      background: var(--navy);
+      color: var(--white);
+      text-align: center;
+      padding: 5rem 1.5rem;
+    }
+    .cta-final-inner {
+      max-width: 640px;
+      margin: 0 auto;
+    }
+    .cta-final h2 {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: clamp(1.8rem, 3.5vw, 2.6rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--white);
+      margin-bottom: 1rem;
+    }
+    .cta-final p {
+      font-size: 1rem;
+      color: #93c5fd;
+      margin-bottom: 2rem;
+      line-height: 1.7;
+    }
+    .cta-final-actions {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .btn-white {
+      background: var(--white);
+      color: var(--navy);
+      font-weight: 700;
+      font-size: 0.9rem;
+      padding: 0.85rem 2rem;
+      border-radius: 6px;
+      text-decoration: none;
+      transition: opacity 0.15s;
+    }
+    .btn-white:hover { opacity: 0.9; }
+    .btn-outline-white {
+      background: transparent;
+      color: var(--white);
+      font-weight: 500;
+      font-size: 0.9rem;
+      padding: 0.85rem 2rem;
+      border-radius: 6px;
+      text-decoration: none;
+      border: 1px solid rgba(255,255,255,0.25);
+      transition: border-color 0.15s;
+    }
+    .btn-outline-white:hover { border-color: rgba(255,255,255,0.6); }
+
+    /* ─── FOOTER ─── */
+    footer {
+      background: var(--navy2);
+      border-top: 1px solid rgba(255,255,255,0.08);
+      padding: 2rem 1.5rem;
+    }
+    .footer-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+      text-align: center;
+    }
+    footer p {
+      font-size: 0.8rem;
+      color: #64748b;
+    }
+    footer a {
+      color: #93c5fd;
+      text-decoration: none;
+    }
+    footer a:hover { text-decoration: underline; }
+
+    /* ─── UTILS ─── */
+    .divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { transition: none !important; }
+    }
   </style>
 </head>
 <body>
-  <a class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-white focus:px-4 focus:py-3 focus:font-bold focus:text-petrol" href="#contenido">Saltar al contenido principal</a>
 
-  <header class="sticky top-0 z-40 border-b border-petrol/10 bg-white/85 backdrop-blur-xl">
-    <div class="container flex min-h-20 items-center justify-between gap-4 py-3">
-      <a href="#inicio" class="font-extrabold tracking-tight text-petrol" aria-label="Inicio Hernán Garbarino">Hernán Garbarino</a>
-      <nav class="hidden items-center gap-5 text-sm font-semibold text-graphite/80 md:flex" aria-label="Navegación principal">
-        <a href="#sobre-mi" class="hover:text-petrol">Sobre mí</a>
-        <a href="#servicios" class="hover:text-petrol">Servicios</a>
-        <a href="#experiencia" class="hover:text-petrol">Experiencia</a>
-        <a href="#proyectos" class="hover:text-petrol">Proyectos</a>
-        <a href="#publicaciones" class="hover:text-petrol">Publicaciones</a>
-        <a href="#contacto" class="rounded-full bg-petrol px-4 py-2 text-white hover:bg-petrolDark">Contacto</a>
-      </nav>
-      <a href="#contacto" class="rounded-full border border-petrol/20 px-4 py-2 text-sm font-bold text-petrol md:hidden">Contacto</a>
+  <!-- NAV -->
+  <nav>
+    <div class="nav-inner">
+      <a href="#" class="nav-logo">HG Soluciones Web<span></span></a>
+      <ul class="nav-links">
+        <li><a href="#servicios">Servicios</a></li>
+        <li><a href="#casos">Proyectos</a></li>
+        <li><a href="#stack">Stack</a></li>
+        <li><a href="https://wa.me/5491100000000" class="nav-cta">Contacto</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <header>
+    <div class="hero">
+      <div class="hero-content">
+        <p class="hero-eyebrow">Administración · Finanzas · Desarrollo</p>
+        <h1>Sistemas que entienden cómo funciona tu empresa</h1>
+        <p class="hero-sub">Soy desarrollador con 18 años de experiencia en administración y finanzas. Antes de escribir una línea de código, entiendo el proceso. Eso cambia el resultado.</p>
+        <div class="hero-actions">
+          <a href="https://wa.me/5491100000000" class="btn-primary">Hablemos de tu operación →</a>
+          <a href="#casos" class="btn-ghost">Ver proyectos reales</a>
+        </div>
+        <div class="hero-trust">
+          <span class="trust-item">18 años en administración</span>
+          <span class="trust-item">Sistemas en producción</span>
+          <span class="trust-item">PyMEs y cooperativas</span>
+        </div>
+      </div>
+      <div class="hero-visual">
+        <div class="vis-header">
+          <div class="vis-dot" style="background:#22c55e;"></div>
+          <div class="vis-dot" style="background:#f59e0b;"></div>
+          <div class="vis-dot" style="background:#ef4444;"></div>
+          <span class="vis-title">Sistema de gestión · En línea</span>
+        </div>
+        <div class="vis-row">
+          <span class="vis-row-label">Estado del sistema</span>
+          <span class="vis-badge badge-green">Activo</span>
+        </div>
+        <div class="vis-row">
+          <span class="vis-row-label">Módulos operativos</span>
+          <span class="vis-row-value">12</span>
+        </div>
+        <div class="vis-row">
+          <span class="vis-row-label">Usuarios registrados</span>
+          <span class="vis-row-value">—</span>
+        </div>
+        <div class="vis-row">
+          <span class="vis-row-label">Última actualización</span>
+          <span class="vis-badge badge-blue">Hoy</span>
+        </div>
+        <div class="vis-row">
+          <span class="vis-row-label">Backups automáticos</span>
+          <span class="vis-badge badge-green">OK</span>
+        </div>
+        <div class="vis-row">
+          <span class="vis-row-label">Integraciones activas</span>
+          <span class="vis-badge badge-blue">Firebase · Sheets · WA</span>
+        </div>
+        <div class="vis-footer">Dashboard en tiempo real · Firestore</div>
+      </div>
     </div>
   </header>
 
-  <main id="contenido">
-    <section id="inicio" class="relative overflow-hidden py-20 md:py-28">
-      <div class="absolute inset-0 -z-10 grid-pattern opacity-60" aria-hidden="true"></div>
-      <div class="container grid items-center gap-10 lg:grid-cols-[1.05fr_.95fr]">
-        <div>
-          <p class="eyebrow mb-5">Gestión · Procesos · Tecnología aplicada</p>
-          <h1 class="max-w-4xl text-4xl font-extrabold leading-tight tracking-tight text-petrolDark md:text-6xl">Ordenar la gestión para resolver problemas reales.</h1>
-          <p class="mt-6 max-w-2xl text-lg leading-8 text-graphite/80">Acompaño a organizaciones que necesitan mejorar su administración, revisar procesos, ordenar información y usar herramientas digitales con sentido práctico.</p>
-          <div class="mt-8 flex flex-col gap-3 sm:flex-row">
-            <a href="#servicios" class="inline-flex min-h-12 items-center justify-center rounded-full bg-petrol px-6 py-3 font-bold text-white hover:-translate-y-0.5 hover:bg-petrolDark">Ver servicios</a>
-            <a href="#proyectos" class="inline-flex min-h-12 items-center justify-center rounded-full border border-petrol/20 bg-white px-6 py-3 font-bold text-petrol hover:-translate-y-0.5 hover:border-petrol/40">Conocer trabajos</a>
-          </div>
-        </div>
-        <aside class="card rounded-[2rem] p-6 md:p-8" aria-label="Síntesis profesional">
-          <p class="text-sm font-bold uppercase tracking-[.16em] text-petrol">Enfoque</p>
-          <p class="mt-4 text-2xl font-bold leading-snug text-graphite">Experiencia administrativa, operativa y tecnológica aplicada a decisiones concretas.</p>
-          <dl class="mt-8 grid gap-4 sm:grid-cols-2">
-            <div class="rounded-2xl bg-mist p-4"><dt class="font-bold text-petrol">Administración</dt><dd class="mt-1 text-sm text-graphite/75">Circuitos, controles, documentación y seguimiento.</dd></div>
-            <div class="rounded-2xl bg-mist p-4"><dt class="font-bold text-petrol">Operaciones</dt><dd class="mt-1 text-sm text-graphite/75">Procesos claros para tareas cotidianas.</dd></div>
-            <div class="rounded-2xl bg-mist p-4"><dt class="font-bold text-petrol">Cooperativas</dt><dd class="mt-1 text-sm text-graphite/75">Gestión institucional y organización interna.</dd></div>
-            <div class="rounded-2xl bg-mist p-4"><dt class="font-bold text-petrol">Digitalización</dt><dd class="mt-1 text-sm text-graphite/75">Herramientas simples para reducir fricción.</dd></div>
-          </dl>
-        </aside>
+  <!-- DIFERENCIADOR -->
+  <div class="diferenciador">
+    <div class="diferenciador-inner">
+      <div>
+        <p class="dif-label">Por qué es diferente</p>
+        <h2 class="dif-title">No soy solo programador. Fui parte del problema antes de resolverlo.</h2>
+        <p class="dif-text">Trabajé en administración y finanzas durante 18 años, incluyendo ARSAT S.A. Sé lo que significa un cierre de mes, un proceso de compras con múltiples aprobaciones, o un reporte que nadie lee porque está mal diseñado. Cuando desarrollo un sistema para tu empresa, no te pregunto qué botón querés: te ayudo a rediseñar el flujo.</p>
       </div>
-    </section>
-
-    <section id="sobre-mi" class="section">
-      <div class="container grid gap-8 lg:grid-cols-[.8fr_1.2fr]">
-        <div><p class="eyebrow">Sobre mí</p><h2 class="mt-3 text-3xl font-extrabold text-petrolDark md:text-4xl">La gestión es el punto de partida.</h2></div>
-        <div class="space-y-5 text-lg leading-8 text-graphite/80">
-          <p>Hernán Garbarino trabaja sobre administración, finanzas, tesorería, operaciones, recursos humanos, cooperativismo y transformación digital. Su aporte está en comprender cómo funciona una organización y traducir esa lectura en mejoras posibles.</p>
-          <p>No se trata de sumar tecnología por moda. Se trata de ordenar procesos, definir responsabilidades, mejorar la información disponible y construir soluciones web o automatizaciones cuando realmente ayudan al trabajo diario.</p>
+      <div class="dif-stats">
+        <div class="dif-stat">
+          <div class="dif-stat-num">18</div>
+          <div class="dif-stat-label">años en administración y finanzas</div>
+        </div>
+        <div class="dif-stat">
+          <div class="dif-stat-num">12</div>
+          <div class="dif-stat-label">módulos desarrollados en CoopDigital</div>
+        </div>
+        <div class="dif-stat">
+          <div class="dif-stat-num">100%</div>
+          <div class="dif-stat-label">proyectos entregados en producción</div>
+        </div>
+        <div class="dif-stat">
+          <div class="dif-stat-num">$0</div>
+          <div class="dif-stat-label">infraestructura para proyectos optimizados</div>
         </div>
       </div>
-    </section>
+    </div>
+  </div>
 
-    <section id="servicios" class="section bg-petrolDark text-white">
-      <div class="container">
-        <div class="max-w-3xl"><p class="eyebrow text-softGreen">Servicios</p><h2 class="mt-3 text-3xl font-extrabold md:text-4xl">Acompañamiento para organizaciones que necesitan claridad operativa.</h2></div>
-        <div class="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-          <article class="rounded-3xl border border-white/12 bg-white/8 p-6"><h3 class="text-xl font-bold">Diagnóstico de procesos</h3><p class="mt-3 text-white/75">Relevamiento de circuitos administrativos, puntos de demora, duplicaciones y controles faltantes.</p></article>
-          <article class="rounded-3xl border border-white/12 bg-white/8 p-6"><h3 class="text-xl font-bold">Administración y finanzas</h3><p class="mt-3 text-white/75">Ordenamiento de información, tesorería, reportes de gestión y criterios de seguimiento.</p></article>
-          <article class="rounded-3xl border border-white/12 bg-white/8 p-6"><h3 class="text-xl font-bold">Gestión cooperativa</h3><p class="mt-3 text-white/75">Herramientas para asociados, documentación, asambleas, sindicatura y administración interna.</p></article>
-          <article class="rounded-3xl border border-white/12 bg-white/8 p-6"><h3 class="text-xl font-bold">Automatización práctica</h3><p class="mt-3 text-white/75">Automatizaciones de tareas repetitivas, formularios, tableros y flujos de información.</p></article>
-          <article class="rounded-3xl border border-white/12 bg-white/8 p-6"><h3 class="text-xl font-bold">Soluciones web de gestión</h3><p class="mt-3 text-white/75">Aplicaciones y paneles orientados a operaciones, con foco en uso real y mantenimiento simple.</p></article>
-          <article class="rounded-3xl border border-white/12 bg-white/8 p-6"><h3 class="text-xl font-bold">IA aplicada</h3><p class="mt-3 text-white/75">Uso responsable de inteligencia artificial para documentar, consultar información y asistir procesos.</p></article>
+  <!-- SERVICIOS -->
+  <div class="section-wrap" id="servicios">
+    <p class="section-label">Servicios</p>
+    <h2 class="section-title">Lo que podés delegar</h2>
+    <p class="section-sub">Procesos que hoy hacen a mano, reportes que tardan horas, sistemas que no hablan entre sí. Eso es lo que resuelvo.</p>
+    <div class="servicios-grid">
+      <div class="servicio-card">
+        <div class="servicio-icon">⚙️</div>
+        <h3>Automatización de procesos</h3>
+        <p>Eliminá tareas manuales repetitivas: carga de datos, generación de reportes, envío de notificaciones, actualizaciones en tiempo real.</p>
+      </div>
+      <div class="servicio-card">
+        <div class="servicio-icon">📊</div>
+        <h3>Sistemas de gestión a medida</h3>
+        <p>Paneles de control, seguimiento de clientes, stock, presupuestos, órdenes de compra. Todo conectado, todo visible en tiempo real.</p>
+      </div>
+      <div class="servicio-card">
+        <div class="servicio-icon">🔗</div>
+        <h3>Integraciones de APIs</h3>
+        <p>WhatsApp Business, Gmail, Google Sheets, Google Drive, Firebase, sistemas externos. Tu operación conectada sin fricciones.</p>
+      </div>
+      <div class="servicio-card">
+        <div class="servicio-icon">🏢</div>
+        <h3>Plataformas SaaS / Multi-tenant</h3>
+        <p>Sistemas para múltiples organizaciones desde una sola base de código. Ideal para cooperativas, cámaras, asociaciones o consultoras.</p>
+      </div>
+      <div class="servicio-card">
+        <div class="servicio-icon">📋</div>
+        <h3>Digitalización de registros</h3>
+        <p>Libros físicos, planillas en papel, actas, expedientes. Los digitalizamos, indexamos y hacemos buscables desde cualquier dispositivo.</p>
+      </div>
+      <div class="servicio-card">
+        <div class="servicio-icon">🧮</div>
+        <h3>Modelos en Excel / Google Sheets</h3>
+        <p>Dashboards financieros, modelos de proyección, reportes automáticos. Para equipos que ya trabajan en planillas y quieren potenciarlas.</p>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- CASOS -->
+  <div class="section-wrap" id="casos">
+    <p class="section-label">Proyectos reales</p>
+    <h2 class="section-title">Casos en producción</h2>
+    <p class="section-sub">No demos. Sistemas que están funcionando hoy con usuarios reales.</p>
+    <div class="casos-grid">
+      <div class="caso-card">
+        <p class="caso-tag">SaaS · Cooperativas · Activo</p>
+        <h3>CoopDigital</h3>
+        <p>Plataforma multi-tenant para gestión de cooperativas argentinas. 12 módulos operativos: socios, asambleas, libros digitales, tesorería, actas y más. Digitalización de libros físicos con OCR integrado.</p>
+        <div class="caso-chips">
+          <span class="chip">Vanilla JS</span>
+          <span class="chip">Firebase</span>
+          <span class="chip">Firestore</span>
+          <span class="chip">Tesseract.js</span>
+          <span class="chip">Multi-tenant</span>
         </div>
       </div>
-    </section>
-
-    <section id="experiencia" class="section">
-      <div class="container">
-        <p class="eyebrow">Experiencia</p><h2 class="mt-3 text-3xl font-extrabold text-petrolDark md:text-4xl">Áreas de trabajo conectadas por una misma lógica: ordenar para gestionar mejor.</h2>
-        <div class="mt-10 grid gap-5 md:grid-cols-3">
-          <div class="card rounded-3xl p-6"><h3 class="font-bold text-petrol">Gestión interna</h3><p class="mt-3 text-graphite/75">Administración, recursos humanos, tesorería, documentación y controles.</p></div>
-          <div class="card rounded-3xl p-6"><h3 class="font-bold text-petrol">Procesos y operaciones</h3><p class="mt-3 text-graphite/75">Lectura de tareas reales, simplificación de circuitos y mejora de seguimiento.</p></div>
-          <div class="card rounded-3xl p-6"><h3 class="font-bold text-petrol">Tecnología útil</h3><p class="mt-3 text-graphite/75">Web, automatización e inteligencia artificial como soporte de gestión.</p></div>
+      <div class="caso-card">
+        <p class="caso-tag">Portal público · Información en tiempo real</p>
+        <h3>Trensarmientoenlinea.com.ar</h3>
+        <p>Portal de horarios y novedades del ramal Sarmiento. Panel de administración propio, gestión de noticias con imágenes, widget de últimos trenes sincronizado en tiempo real con Firestore.</p>
+        <div class="caso-chips">
+          <span class="chip">Firebase Auth</span>
+          <span class="chip">Firestore</span>
+          <span class="chip">Cloudinary</span>
+          <span class="chip">Google Apps Script</span>
         </div>
       </div>
-    </section>
-
-    <section id="proyectos" class="section bg-mist">
-      <div class="container">
-        <p class="eyebrow">Proyectos</p><h2 class="mt-3 text-3xl font-extrabold text-petrolDark md:text-4xl">Ejemplos de soluciones orientadas al trabajo diario.</h2>
-        <div class="mt-10 grid gap-5 lg:grid-cols-3">
-          <article class="card rounded-3xl p-6"><p class="text-sm font-bold text-petrol">Cooperativismo</p><h3 class="mt-3 text-xl font-bold">Sistema de gestión cooperativa</h3><p class="mt-3 text-graphite/75">Módulos para asociados, asambleas, contabilidad y sindicatura con información organizada por áreas.</p></article>
-          <article class="card rounded-3xl p-6"><p class="text-sm font-bold text-petrol">Operaciones</p><h3 class="mt-3 text-xl font-bold">Herramientas para transporte</h3><p class="mt-3 text-graphite/75">Consultas, estados y contenidos útiles para mejorar el acceso a información de servicio.</p></article>
-          <article class="card rounded-3xl p-6"><p class="text-sm font-bold text-petrol">Automatización</p><h3 class="mt-3 text-xl font-bold">Flujos administrativos</h3><p class="mt-3 text-graphite/75">Formularios, registros y reportes para reducir carga manual y mejorar trazabilidad.</p></article>
+      <div class="caso-card">
+        <p class="caso-tag">Demo ERP · Sector salud</p>
+        <h3>Sistema de gestión clínica</h3>
+        <p>Simulación de ERP para clínica de neurorehabilitación. Dashboards, órdenes de compra, stock de insumos, seguimiento de pacientes y entorno de escritorio virtualizado.</p>
+        <div class="caso-chips">
+          <span class="chip">Vanilla JS</span>
+          <span class="chip">Dashboard</span>
+          <span class="chip">Workflow OC</span>
+          <span class="chip">Stock</span>
         </div>
       </div>
-    </section>
+    </div>
+  </div>
 
-    <section id="publicaciones" class="section">
-      <div class="container grid gap-8 lg:grid-cols-[.8fr_1.2fr]">
-        <div><p class="eyebrow">Publicaciones</p><h2 class="mt-3 text-3xl font-extrabold text-petrolDark md:text-4xl">Ideas y notas de trabajo.</h2></div>
-        <div class="grid gap-4">
-          <article class="card rounded-3xl p-6"><h3 class="font-bold text-petrol">Cómo ordenar un proceso antes de digitalizarlo</h3><p class="mt-2 text-graphite/75">Una guía breve para revisar tareas, responsables, datos y controles antes de elegir una herramienta.</p></article>
-          <article class="card rounded-3xl p-6"><h3 class="font-bold text-petrol">Tecnología en cooperativas: empezar por lo necesario</h3><p class="mt-2 text-graphite/75">Criterios para priorizar soluciones que acompañen la administración y la participación institucional.</p></article>
-        </div>
+  <hr class="divider">
+
+  <!-- STACK -->
+  <div class="section-wrap" id="stack">
+    <p class="section-label">Tecnología</p>
+    <h2 class="section-title">Con qué trabajo</h2>
+    <p class="section-sub">Stack moderno, costos controlados. Priorizo herramientas que escalan sin facturas que sorprenden.</p>
+    <div class="stack-wrap">
+      <div class="stack-item"><span>🔥</span><span>Firebase / Firestore</span></div>
+      <div class="stack-item"><span>📜</span><span>Vanilla JS ES Modules</span></div>
+      <div class="stack-item"><span>📊</span><span>Google Apps Script</span></div>
+      <div class="stack-item"><span>🐍</span><span>Python</span></div>
+      <div class="stack-item"><span>📋</span><span>Excel / VBA</span></div>
+      <div class="stack-item"><span>🔗</span><span>APIs REST</span></div>
+      <div class="stack-item"><span>☁️</span><span>GitHub Pages</span></div>
+      <div class="stack-item"><span>🖼️</span><span>Cloudinary</span></div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- TESTIMONIOS -->
+  <div class="section-wrap" id="testimonios">
+    <p class="section-label">Clientes</p>
+    <h2 class="section-title">Lo que dicen quienes ya trabajaron conmigo</h2>
+    <div class="testimonios-grid">
+      <div class="testimonio">
+        <p class="testimonio-stars">★★★★★</p>
+        <p class="testimonio-text">"HG tradujo procesos administrativos complejos en un sistema simple de usar. No tuvimos que explicarle dos veces cómo funcionaba nuestro negocio. Eso no es habitual en un desarrollador."</p>
+        <p class="testimonio-author">— Responsable de administración, PyME sector servicios · Buenos Aires</p>
       </div>
-    </section>
-
-    <section id="contacto" class="section bg-petrol text-white">
-      <div class="container grid items-center gap-8 lg:grid-cols-[1fr_.9fr]">
-        <div><p class="eyebrow text-softGreen">Contacto</p><h2 class="mt-3 text-3xl font-extrabold md:text-4xl">Conversemos sobre el problema que necesitás ordenar.</h2><p class="mt-4 max-w-2xl text-white/75">El primer paso es entender el contexto: cómo se trabaja hoy, qué información falta y qué resultado sería útil para la organización.</p></div>
-        <form class="rounded-3xl border border-white/12 bg-white/10 p-6" action="mailto:contacto@hgsys.com.ar" method="post" enctype="text/plain">
-          <label class="block text-sm font-bold" for="nombre">Nombre</label><input class="mt-2 w-full rounded-2xl border border-white/20 bg-white px-4 py-3 text-graphite" id="nombre" name="nombre" autocomplete="name" required />
-          <label class="mt-4 block text-sm font-bold" for="email">Email</label><input class="mt-2 w-full rounded-2xl border border-white/20 bg-white px-4 py-3 text-graphite" id="email" name="email" type="email" autocomplete="email" required />
-          <label class="mt-4 block text-sm font-bold" for="mensaje">Mensaje</label><textarea class="mt-2 min-h-32 w-full rounded-2xl border border-white/20 bg-white px-4 py-3 text-graphite" id="mensaje" name="mensaje" required></textarea>
-          <button class="mt-5 w-full rounded-full bg-softGreen px-6 py-3 font-extrabold text-petrolDark hover:bg-white" type="submit">Enviar consulta</button>
-        </form>
+      <div class="testimonio">
+        <p class="testimonio-stars">★★★★★</p>
+        <p class="testimonio-text">"Conoce tanto la parte técnica como la lógica de negocio. El resultado fue un sistema que realmente usamos todos los días, no uno que quedó en una carpeta."</p>
+        <p class="testimonio-author">— Gerente operativo, empresa de logística · GBA</p>
       </div>
-    </section>
-  </main>
+    </div>
+  </div>
 
-  <footer class="border-t border-petrol/10 bg-white py-8">
-    <div class="container flex flex-col gap-3 text-sm text-graphite/70 md:flex-row md:items-center md:justify-between"><p>© 2026 Hernán Garbarino. Gestión, procesos y tecnología aplicada.</p><p>Orden dentro de la complejidad.</p></div>
+  <!-- CTA FINAL -->
+  <div class="cta-final">
+    <div class="cta-final-inner">
+      <h2>¿Tenés un proceso que querés automatizar?</h2>
+      <p>Contame cómo funciona hoy. En una primera charla puedo decirte si tiene solución, cuánto llevaría y qué stack es el más adecuado. Sin compromiso.</p>
+      <div class="cta-final-actions">
+        <a href="https://wa.me/5491100000000" class="btn-white">Hablemos por WhatsApp →</a>
+        <a href="mailto:hg@hgsolucionesweb.com.ar" class="btn-outline-white">Escribir un mail</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-inner">
+      <p><strong style="color:#e2e8f0;">HG Soluciones Web</strong> · Hernán Garbarino · Buenos Aires, Argentina</p>
+      <p><a href="https://hgsolucionesweb.com.ar">hgsolucionesweb.com.ar</a> · <a href="mailto:hg@hgsolucionesweb.com.ar">hg@hgsolucionesweb.com.ar</a></p>
+      <p style="margin-top:0.25rem;">¿Buscás una web para tu negocio? <a href="index_prueba.html">Ver servicios web →</a></p>
+    </div>
   </footer>
+
 </body>
 </html>
