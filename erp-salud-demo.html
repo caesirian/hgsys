@@ -1,0 +1,1010 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ClinicaSys — Demo ERP Salud</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:    #1e3a5f;
+      --navy2:   #152d4a;
+      --accent:  #2563eb;
+      --accent2: #1d4ed8;
+      --bg:      #f1f5f9;
+      --bg2:     #ffffff;
+      --border:  #e2e8f0;
+      --border2: #cbd5e1;
+      --text:    #0f172a;
+      --muted:   #64748b;
+      --dim:     #94a3b8;
+      --green:   #16a34a;
+      --red:     #dc2626;
+      --amber:   #d97706;
+      --sidebar: 220px;
+    }
+
+    html, body { height: 100%; overflow: hidden; }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 14px;
+      display: flex; flex-direction: column;
+    }
+
+    /* ── TOPBAR ── */
+    .topbar {
+      height: 48px; flex-shrink: 0;
+      background: var(--navy);
+      display: flex; align-items: center;
+      justify-content: space-between;
+      padding: 0 1.25rem;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .topbar-brand {
+      display: flex; align-items: center; gap: 0.6rem;
+      font-weight: 700; font-size: 0.9rem; color: #fff;
+    }
+    .brand-icon {
+      width: 26px; height: 26px;
+      background: var(--accent);
+      border-radius: 5px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .brand-icon svg { color: #fff; }
+    .topbar-right {
+      display: flex; align-items: center; gap: 1rem;
+    }
+    .topbar-badge {
+      font-size: 0.7rem; font-weight: 600;
+      background: rgba(255,255,255,0.1);
+      color: rgba(255,255,255,0.6);
+      padding: 0.2rem 0.6rem; border-radius: 3px;
+      letter-spacing: 0.05em;
+    }
+    .topbar-user {
+      display: flex; align-items: center; gap: 0.5rem;
+      font-size: 0.78rem; color: rgba(255,255,255,0.7);
+    }
+    .avatar {
+      width: 26px; height: 26px; border-radius: 50%;
+      background: rgba(255,255,255,0.15);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.65rem; font-weight: 700; color: #fff;
+    }
+
+    /* ── LAYOUT ── */
+    .app {
+      flex: 1; display: flex; overflow: hidden;
+    }
+
+    /* ── SIDEBAR ── */
+    .sidebar {
+      width: var(--sidebar); flex-shrink: 0;
+      background: var(--navy2);
+      display: flex; flex-direction: column;
+      overflow-y: auto;
+      border-right: 1px solid rgba(255,255,255,0.06);
+    }
+    .sidebar-section {
+      padding: 1.25rem 0.75rem 0.5rem;
+    }
+    .sidebar-section-label {
+      font-size: 0.62rem; font-weight: 700;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: rgba(255,255,255,0.25);
+      padding: 0 0.5rem; margin-bottom: 0.4rem;
+    }
+    .nav-item {
+      display: flex; align-items: center; gap: 0.65rem;
+      padding: 0.55rem 0.75rem;
+      border-radius: 5px; cursor: pointer;
+      color: rgba(255,255,255,0.55);
+      font-size: 0.82rem; font-weight: 500;
+      transition: background 0.12s, color 0.12s;
+      user-select: none;
+    }
+    .nav-item:hover { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.85); }
+    .nav-item.active { background: var(--accent); color: #fff; }
+    .nav-item svg { flex-shrink: 0; opacity: 0.8; }
+    .nav-item.active svg { opacity: 1; }
+    .nav-badge {
+      margin-left: auto;
+      font-size: 0.65rem; font-weight: 700;
+      background: rgba(255,255,255,0.15);
+      color: rgba(255,255,255,0.7);
+      padding: 0.1rem 0.45rem; border-radius: 10px;
+    }
+    .nav-item.active .nav-badge { background: rgba(255,255,255,0.25); color: #fff; }
+    .sidebar-footer {
+      margin-top: auto;
+      padding: 1rem 0.75rem;
+      border-top: 1px solid rgba(255,255,255,0.06);
+    }
+
+    /* ── MAIN ── */
+    .main {
+      flex: 1; overflow-y: auto;
+      padding: 1.5rem;
+    }
+
+    /* ── PAGE HEADER ── */
+    .page-header {
+      display: flex; align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.5rem;
+    }
+    .page-title {
+      font-size: 1.15rem; font-weight: 700;
+      color: var(--text);
+    }
+    .page-sub { font-size: 0.78rem; color: var(--muted); margin-top: 0.1rem; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      font-size: 0.8rem; font-weight: 600;
+      padding: 0.5rem 1rem; border-radius: 4px;
+      border: none; cursor: pointer; transition: all 0.12s;
+    }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover { background: var(--accent2); }
+    .btn-outline { background: #fff; color: var(--text); border: 1px solid var(--border2); }
+    .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-sm { padding: 0.35rem 0.7rem; font-size: 0.75rem; }
+
+    /* ── CARDS MÉTRICAS ── */
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem; margin-bottom: 1.5rem;
+    }
+    @media (max-width: 900px) { .metrics { grid-template-columns: repeat(2,1fr); } }
+    .metric-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 7px; padding: 1.1rem 1.25rem;
+    }
+    .metric-label { font-size: 0.72rem; color: var(--muted); font-weight: 500; margin-bottom: 0.4rem; }
+    .metric-val {
+      font-size: 1.6rem; font-weight: 700;
+      color: var(--text); line-height: 1;
+      margin-bottom: 0.3rem;
+    }
+    .metric-delta {
+      font-size: 0.72rem; font-weight: 500;
+      display: flex; align-items: center; gap: 0.3rem;
+    }
+    .delta-up { color: var(--green); }
+    .delta-down { color: var(--red); }
+
+    /* ── TABLE ── */
+    .card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 7px; overflow: hidden;
+    }
+    .card-head {
+      display: flex; align-items: center;
+      justify-content: space-between;
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .card-title { font-size: 0.875rem; font-weight: 600; color: var(--text); }
+    .search-box {
+      display: flex; align-items: center; gap: 0.5rem;
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: 4px; padding: 0.35rem 0.75rem;
+      font-size: 0.78rem; color: var(--muted);
+    }
+    .search-box input {
+      border: none; background: transparent;
+      font-size: 0.78rem; color: var(--text);
+      outline: none; width: 160px;
+    }
+    table { width: 100%; border-collapse: collapse; }
+    th {
+      font-size: 0.7rem; font-weight: 600;
+      letter-spacing: 0.06em; text-transform: uppercase;
+      color: var(--muted); text-align: left;
+      padding: 0.65rem 1.25rem;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+    }
+    td {
+      padding: 0.75rem 1.25rem;
+      font-size: 0.82rem; color: var(--text);
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #f8fafc; }
+    .td-muted { color: var(--muted); }
+    .td-name { font-weight: 600; }
+    .td-actions { display: flex; gap: 0.4rem; }
+
+    /* BADGES */
+    .badge {
+      display: inline-flex; align-items: center;
+      font-size: 0.68rem; font-weight: 600;
+      padding: 0.18rem 0.55rem; border-radius: 3px;
+      letter-spacing: 0.03em;
+    }
+    .badge-green  { background: #dcfce7; color: #15803d; }
+    .badge-blue   { background: #dbeafe; color: #1d4ed8; }
+    .badge-amber  { background: #fef9c3; color: #a16207; }
+    .badge-red    { background: #fee2e2; color: #b91c1c; }
+    .badge-gray   { background: #f1f5f9; color: #64748b; }
+
+    /* ── AVATAR PACIENTE ── */
+    .patient-cell { display: flex; align-items: center; gap: 0.65rem; }
+    .p-avatar {
+      width: 30px; height: 30px; border-radius: 50%;
+      background: var(--accent);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.65rem; font-weight: 700; color: #fff;
+      flex-shrink: 0;
+    }
+
+    /* ── PANEL FICHA (slide-in) ── */
+    .ficha-overlay {
+      display: none;
+      position: fixed; inset: 0; z-index: 300;
+      background: rgba(15,23,42,0.35);
+      backdrop-filter: blur(2px);
+    }
+    .ficha-overlay.open { display: flex; justify-content: flex-end; }
+    .ficha-panel {
+      width: 380px; height: 100%;
+      background: var(--bg2);
+      border-left: 1px solid var(--border);
+      overflow-y: auto;
+      animation: slideIn 0.2s ease;
+    }
+    @keyframes slideIn { from { transform: translateX(40px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    .ficha-header {
+      padding: 1.25rem;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .ficha-header h3 { font-size: 0.9rem; font-weight: 700; }
+    .close-btn {
+      width: 28px; height: 28px; border-radius: 4px;
+      background: var(--bg); border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; color: var(--muted);
+      transition: all 0.12s;
+    }
+    .close-btn:hover { border-color: var(--red); color: var(--red); }
+    .ficha-body { padding: 1.25rem; }
+    .ficha-top {
+      display: flex; align-items: center; gap: 1rem;
+      margin-bottom: 1.25rem;
+    }
+    .ficha-avatar {
+      width: 52px; height: 52px; border-radius: 50%;
+      background: var(--accent);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem; font-weight: 700; color: #fff;
+      flex-shrink: 0;
+    }
+    .ficha-name { font-size: 1rem; font-weight: 700; color: var(--text); }
+    .ficha-id { font-size: 0.72rem; color: var(--muted); }
+    .ficha-section { margin-bottom: 1.25rem; }
+    .ficha-section-title {
+      font-size: 0.68rem; font-weight: 700;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--muted); margin-bottom: 0.6rem;
+      padding-bottom: 0.4rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .ficha-row {
+      display: flex; justify-content: space-between;
+      padding: 0.4rem 0;
+      font-size: 0.8rem;
+    }
+    .ficha-row-label { color: var(--muted); }
+    .ficha-row-val { font-weight: 500; color: var(--text); text-align: right; }
+    .historial-item {
+      padding: 0.75rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      margin-bottom: 0.6rem;
+    }
+    .historial-date { font-size: 0.7rem; color: var(--muted); margin-bottom: 0.3rem; }
+    .historial-texto { font-size: 0.8rem; color: var(--text); line-height: 1.55; }
+
+    /* ── AGENDA ── */
+    .agenda-layout {
+      display: grid; grid-template-columns: 1fr 300px;
+      gap: 1.25rem;
+    }
+    @media (max-width: 900px) { .agenda-layout { grid-template-columns: 1fr; } }
+    .calendario {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: 7px; overflow: hidden;
+    }
+    .cal-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .cal-nav { display: flex; gap: 0.5rem; }
+    .cal-nav-btn {
+      width: 28px; height: 28px;
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: 4px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--muted); transition: all 0.12s;
+    }
+    .cal-nav-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .cal-month { font-size: 0.875rem; font-weight: 700; }
+    .cal-grid { padding: 1rem; }
+    .cal-days-header {
+      display: grid; grid-template-columns: repeat(7,1fr);
+      text-align: center; margin-bottom: 0.5rem;
+    }
+    .cal-day-name {
+      font-size: 0.65rem; font-weight: 700;
+      color: var(--muted); text-transform: uppercase;
+      letter-spacing: 0.05em; padding: 0.25rem 0;
+    }
+    .cal-days { display: grid; grid-template-columns: repeat(7,1fr); gap: 2px; }
+    .cal-day {
+      aspect-ratio: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      border-radius: 5px; cursor: pointer;
+      font-size: 0.78rem; font-weight: 500;
+      color: var(--text); transition: all 0.12s;
+      position: relative;
+    }
+    .cal-day:hover { background: var(--bg); }
+    .cal-day.empty { color: var(--dim); cursor: default; }
+    .cal-day.today { background: var(--accent); color: #fff; font-weight: 700; }
+    .cal-day.has-turnos::after {
+      content: '';
+      position: absolute; bottom: 3px;
+      width: 4px; height: 4px;
+      border-radius: 50%; background: var(--accent);
+    }
+    .cal-day.today.has-turnos::after { background: rgba(255,255,255,0.7); }
+    .cal-day.selected { background: #dbeafe; color: var(--accent); }
+
+    /* turnos del día */
+    .turnos-dia {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: 7px; overflow: hidden;
+    }
+    .turnos-dia-header {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .turno-item {
+      display: flex; align-items: flex-start; gap: 0.75rem;
+      padding: 0.875rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      transition: background 0.12s; cursor: pointer;
+    }
+    .turno-item:last-child { border-bottom: none; }
+    .turno-item:hover { background: var(--bg); }
+    .turno-hora {
+      font-size: 0.75rem; font-weight: 700;
+      color: var(--accent); width: 44px; flex-shrink: 0;
+      padding-top: 1px;
+    }
+    .turno-info { flex: 1; }
+    .turno-paciente { font-size: 0.82rem; font-weight: 600; color: var(--text); }
+    .turno-tipo { font-size: 0.74rem; color: var(--muted); }
+
+    /* ── STOCK ── */
+    .stock-layout { display: flex; flex-direction: column; gap: 1.25rem; }
+    .stock-alerts {
+      display: grid; grid-template-columns: repeat(3,1fr); gap: 1rem;
+    }
+    @media (max-width: 900px) { .stock-alerts { grid-template-columns: 1fr; } }
+    .alert-card {
+      padding: 1rem 1.25rem;
+      border-radius: 7px; border: 1px solid;
+      display: flex; align-items: flex-start; gap: 0.75rem;
+    }
+    .alert-card.red { background: #fff5f5; border-color: #fecaca; }
+    .alert-card.amber { background: #fffbeb; border-color: #fde68a; }
+    .alert-card.green { background: #f0fdf4; border-color: #bbf7d0; }
+    .alert-icon { margin-top: 1px; flex-shrink: 0; }
+    .alert-title { font-size: 0.8rem; font-weight: 700; margin-bottom: 0.2rem; }
+    .alert-card.red .alert-title { color: var(--red); }
+    .alert-card.amber .alert-title { color: var(--amber); }
+    .alert-card.green .alert-title { color: var(--green); }
+    .alert-desc { font-size: 0.76rem; color: var(--muted); }
+
+    /* progress bar stock */
+    .stock-bar-wrap { display: flex; align-items: center; gap: 0.75rem; }
+    .stock-bar {
+      flex: 1; height: 5px;
+      background: var(--border);
+      border-radius: 10px; overflow: hidden;
+    }
+    .stock-bar-fill { height: 100%; border-radius: 10px; }
+
+    /* ── MÓDULO OCULTO ── */
+    .module { display: none; }
+    .module.active { display: block; }
+
+    /* scrollbar */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 10px; }
+  </style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-brand">
+    <div class="brand-icon">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+    </div>
+    ClinicaSys
+  </div>
+  <div class="topbar-right">
+    <span class="topbar-badge">DEMO</span>
+    <div class="topbar-user">
+      <div class="avatar">DM</div>
+      Dra. Martínez
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Principal</div>
+      <div class="nav-item" onclick="goto('dashboard')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Dashboard
+      </div>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Módulos</div>
+      <div class="nav-item active" id="nav-pacientes" onclick="goto('pacientes')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Pacientes
+        <span class="nav-badge">142</span>
+      </div>
+      <div class="nav-item" id="nav-agenda" onclick="goto('agenda')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Agenda
+        <span class="nav-badge">8</span>
+      </div>
+      <div class="nav-item" id="nav-stock" onclick="goto('stock')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+        Stock
+        <span class="nav-badge" style="background:#fee2e2;color:#b91c1c;">3</span>
+      </div>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Administración</div>
+      <div class="nav-item" onclick="void(0)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        Facturación
+      </div>
+      <div class="nav-item" onclick="void(0)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Órdenes de compra
+      </div>
+      <div class="nav-item" onclick="void(0)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Personal
+      </div>
+    </div>
+    <div class="sidebar-footer">
+      <div class="nav-item" onclick="void(0)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
+        Configuración
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- ══ MÓDULO PACIENTES ══ -->
+    <div class="module active" id="mod-pacientes">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Pacientes</div>
+          <div class="page-sub">142 pacientes registrados · Actualizados hoy</div>
+        </div>
+        <div style="display:flex;gap:0.5rem;">
+          <div class="search-box">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" placeholder="Buscar paciente..." oninput="filtrarPacientes(this.value)">
+          </div>
+          <button class="btn btn-primary">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Nuevo paciente
+          </button>
+        </div>
+      </div>
+
+      <div class="metrics">
+        <div class="metric-card">
+          <div class="metric-label">Total pacientes</div>
+          <div class="metric-val">142</div>
+          <div class="metric-delta delta-up">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>
+            +8 este mes
+          </div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Activos</div>
+          <div class="metric-val">118</div>
+          <div class="metric-delta delta-up">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>
+            83% del total
+          </div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Turnos hoy</div>
+          <div class="metric-val">8</div>
+          <div class="metric-delta" style="color:var(--muted);">3 mañana · 5 tarde</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Sin turno +60 días</div>
+          <div class="metric-val" style="color:var(--amber);">24</div>
+          <div class="metric-delta delta-down">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+            Requieren seguimiento
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <span class="card-title">Listado de pacientes</span>
+          <button class="btn btn-outline btn-sm">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Exportar
+          </button>
+        </div>
+        <table id="tabla-pacientes">
+          <thead>
+            <tr>
+              <th>Paciente</th>
+              <th>DNI</th>
+              <th>Obra social</th>
+              <th>Último turno</th>
+              <th>Estado</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="tbody-pacientes"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ══ MÓDULO AGENDA ══ -->
+    <div class="module" id="mod-agenda">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Agenda</div>
+          <div class="page-sub">8 turnos programados para hoy</div>
+        </div>
+        <button class="btn btn-primary">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Nuevo turno
+        </button>
+      </div>
+      <div class="agenda-layout">
+        <div class="calendario">
+          <div class="cal-header">
+            <div class="cal-nav">
+              <div class="cal-nav-btn" onclick="cambiarMes(-1)">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+              </div>
+              <div class="cal-nav-btn" onclick="cambiarMes(1)">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+              </div>
+            </div>
+            <span class="cal-month" id="cal-month-label"></span>
+            <button class="btn btn-outline btn-sm" onclick="irHoy()">Hoy</button>
+          </div>
+          <div class="cal-grid">
+            <div class="cal-days-header">
+              <div class="cal-day-name">Dom</div>
+              <div class="cal-day-name">Lun</div>
+              <div class="cal-day-name">Mar</div>
+              <div class="cal-day-name">Mié</div>
+              <div class="cal-day-name">Jue</div>
+              <div class="cal-day-name">Vie</div>
+              <div class="cal-day-name">Sáb</div>
+            </div>
+            <div class="cal-days" id="cal-days"></div>
+          </div>
+        </div>
+        <div class="turnos-dia">
+          <div class="turnos-dia-header">
+            <div class="card-title" id="turnos-dia-title">Turnos de hoy</div>
+          </div>
+          <div id="turnos-lista"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ MÓDULO STOCK ══ -->
+    <div class="module" id="mod-stock">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Stock de insumos</div>
+          <div class="page-sub">3 ítems con alerta · Actualizado hace 2 hs</div>
+        </div>
+        <div style="display:flex;gap:0.5rem;">
+          <button class="btn btn-outline">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            OC automática
+          </button>
+          <button class="btn btn-primary">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Ingreso de stock
+          </button>
+        </div>
+      </div>
+
+      <div class="stock-alerts">
+        <div class="alert-card red">
+          <div class="alert-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          </div>
+          <div>
+            <div class="alert-title">Stock crítico</div>
+            <div class="alert-desc">2 insumos por debajo del mínimo. Requieren orden de compra inmediata.</div>
+          </div>
+        </div>
+        <div class="alert-card amber">
+          <div class="alert-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          </div>
+          <div>
+            <div class="alert-title">Stock bajo</div>
+            <div class="alert-desc">1 insumo próximo al mínimo. Programar reposición esta semana.</div>
+          </div>
+        </div>
+        <div class="alert-card green">
+          <div class="alert-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <div>
+            <div class="alert-title">Mayoría en orden</div>
+            <div class="alert-desc">12 de 15 insumos con stock en niveles normales o altos.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <span class="card-title">Inventario de insumos</span>
+          <button class="btn btn-outline btn-sm">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Exportar
+          </button>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Insumo</th>
+              <th>Categoría</th>
+              <th>Stock actual</th>
+              <th>Nivel</th>
+              <th>Vencimiento</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-stock"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- FICHA PACIENTE -->
+<div class="ficha-overlay" id="ficha-overlay" onclick="cerrarFicha(event)">
+  <div class="ficha-panel" id="ficha-panel">
+    <div class="ficha-header">
+      <h3>Ficha del paciente</h3>
+      <div class="close-btn" onclick="cerrarFichaDirecto()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </div>
+    </div>
+    <div class="ficha-body" id="ficha-body"></div>
+  </div>
+</div>
+
+<script>
+// ── DATOS ──
+const pacientes = [
+  { id:'P-001', nombre:'Ana García',       dni:'28.341.092', os:'OSDE 310',      ultimo:'12/06/2026', estado:'activo',    edad:42, tel:'11 4523-7890', diag:'Hipertensión arterial',    medico:'Dr. Rodríguez' },
+  { id:'P-002', nombre:'Carlos Méndez',    dni:'31.204.567', os:'Swiss Medical', ultimo:'18/06/2026', estado:'activo',    edad:55, tel:'11 3312-4521', diag:'Diabetes tipo 2',           medico:'Dra. Martínez' },
+  { id:'P-003', nombre:'Laura Vidal',      dni:'35.009.112', os:'Galeno',        ultimo:'03/05/2026', estado:'seguimiento',edad:29,tel:'11 6678-2341', diag:'Control ginecológico',      medico:'Dra. Romero' },
+  { id:'P-004', nombre:'Roberto Suárez',   dni:'22.887.430', os:'Medicus',       ultimo:'20/06/2026', estado:'activo',    edad:63, tel:'11 4411-8823', diag:'Artrosis rodilla derecha',  medico:'Dr. Fernández' },
+  { id:'P-005', nombre:'María Torres',     dni:'40.112.883', os:'IOMA',          ultimo:'10/04/2026', estado:'inactivo',  edad:38, tel:'11 5534-9900', diag:'Lumbalgia crónica',         medico:'Dr. Rodríguez' },
+  { id:'P-006', nombre:'Diego Herrera',    dni:'37.445.221', os:'OSDE 210',      ultimo:'19/06/2026', estado:'activo',    edad:47, tel:'11 2278-4456', diag:'Hipotiroidismo',            medico:'Dra. Martínez' },
+  { id:'P-007', nombre:'Sofía Martín',     dni:'42.008.774', os:'Galeno',        ultimo:'15/06/2026', estado:'activo',    edad:24, tel:'11 7723-1190', diag:'Consulta clínica general',  medico:'Dr. Fernández' },
+  { id:'P-008', nombre:'Jorge Fernández',  dni:'25.663.008', os:'Swiss Medical', ultimo:'02/03/2026', estado:'seguimiento',edad:71,tel:'11 4890-3345', diag:'Insuficiencia cardíaca',    medico:'Dr. Rodríguez' },
+  { id:'P-009', nombre:'Valentina Ríos',   dni:'44.231.667', os:'PAMI',          ultimo:'21/06/2026', estado:'activo',    edad:67, tel:'11 3341-8872', diag:'Osteoporosis',              medico:'Dra. Martínez' },
+  { id:'P-010', nombre:'Martín Álvarez',   dni:'33.770.129', os:'Medicus',       ultimo:'08/06/2026', estado:'activo',    edad:51, tel:'11 6612-0034', diag:'Control metabólico',        medico:'Dra. Romero' },
+];
+
+const historial = {
+  'P-001': [
+    { fecha:'12/06/2026', texto:'Control de presión. TA: 135/85. Se ajusta dosis de enalapril a 10mg.' },
+    { fecha:'14/04/2026', texto:'Laboratorio de rutina. Colesterol LDL levemente elevado. Se indica dieta hiposódica.' },
+    { fecha:'20/01/2026', texto:'Consulta por cefalea. Se descarta causa secundaria. Analgesia y reposo.' },
+  ],
+  'P-002': [
+    { fecha:'18/06/2026', texto:'HbA1c: 7.2%. Glucemia en ayunas: 138. Se mantiene metformina. Próximo control en 3 meses.' },
+    { fecha:'10/03/2026', texto:'Ajuste de medicación. Se agrega glibenclamida 5mg. Control en 6 semanas.' },
+  ],
+  'P-006': [
+    { fecha:'19/06/2026', texto:'TSH: 3.8 mUI/L dentro de rango. Se mantiene levotiroxina 75mcg. Buen estado general.' },
+    { fecha:'22/02/2026', texto:'Control de rutina. Ajuste de dosis a 75mcg por leve sobresupresión.' },
+  ],
+};
+
+const turnos = [
+  { hora:'08:30', paciente:'Ana García',       tipo:'Control hipertensión',    estado:'confirmado' },
+  { hora:'09:00', paciente:'Carlos Méndez',    tipo:'Control diabetes',        estado:'confirmado' },
+  { hora:'09:30', paciente:'Diego Herrera',    tipo:'Control tiroides',        estado:'confirmado' },
+  { hora:'10:00', paciente:'Valentina Ríos',   tipo:'Control osteoporosis',    estado:'confirmado' },
+  { hora:'10:30', paciente:'Sofía Martín',     tipo:'Consulta clínica',        estado:'en sala' },
+  { hora:'11:00', paciente:'Martín Álvarez',   tipo:'Control metabólico',      estado:'pendiente' },
+  { hora:'15:00', paciente:'Roberto Suárez',   tipo:'Control artrosis',        estado:'pendiente' },
+  { hora:'16:30', paciente:'Laura Vidal',      tipo:'Control ginecológico',    estado:'pendiente' },
+];
+
+const stock = [
+  { nombre:'Guantes de nitrilo (caja 100)',  cat:'Descartables',   actual:8,  max:50, minimo:10, vto:'12/2026', estado:'critico' },
+  { nombre:'Jeringas 5ml (caja 100)',        cat:'Descartables',   actual:5,  max:40, minimo:10, vto:'08/2026', estado:'critico' },
+  { nombre:'Alcohol en gel 500ml',           cat:'Higiene',        actual:12, max:30, minimo:15, vto:'03/2027', estado:'bajo' },
+  { nombre:'Gasas estériles (caja 50)',      cat:'Curación',       actual:22, max:40, minimo:10, vto:'06/2027', estado:'normal' },
+  { nombre:'Vendas elásticas 10cm',          cat:'Curación',       actual:18, max:30, minimo:8,  vto:'Sin vto', estado:'normal' },
+  { nombre:'Termómetros digitales',          cat:'Equipamiento',   actual:6,  max:10, minimo:3,  vto:'Sin vto', estado:'normal' },
+  { nombre:'Barbijos quirúrgicos (caja 50)', cat:'Descartables',   actual:35, max:60, minimo:15, vto:'09/2026', estado:'normal' },
+  { nombre:'Solución fisiológica 500ml',     cat:'Soluciones',     actual:20, max:40, minimo:10, vto:'11/2026', estado:'normal' },
+  { nombre:'Tiras reactivas glucemia (50u)', cat:'Diagnóstico',    actual:4,  max:20, minimo:5,  vto:'07/2026', estado:'bajo' },
+  { nombre:'Tensiómetro digital',            cat:'Equipamiento',   actual:3,  max:5,  minimo:2,  vto:'Sin vto', estado:'normal' },
+  { nombre:'Campos estériles (bolsa 10)',    cat:'Curación',       actual:14, max:25, minimo:8,  vto:'01/2027', estado:'normal' },
+  { nombre:'Cinta adhesiva médica',          cat:'Curación',       actual:9,  max:20, minimo:5,  vto:'Sin vto', estado:'normal' },
+  { nombre:'Oxímetros de pulso',             cat:'Diagnóstico',    actual:4,  max:8,  minimo:3,  vto:'Sin vto', estado:'normal' },
+  { nombre:'Papel para camilla (rollo)',     cat:'Consumibles',    actual:15, max:30, minimo:8,  vto:'Sin vto', estado:'normal' },
+  { nombre:'Descartadores (litro)',          cat:'Descartables',   actual:7,  max:20, minimo:5,  vto:'Sin vto', estado:'normal' },
+];
+
+// ── INICIALIZACIÓN ──
+function init() {
+  renderPacientes(pacientes);
+  renderStock();
+  initCalendario();
+}
+
+// ── NAVEGACIÓN ──
+function goto(mod) {
+  document.querySelectorAll('.module').forEach(m => m.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  if (mod === 'dashboard') mod = 'pacientes';
+  document.getElementById('mod-' + mod).classList.add('active');
+  document.getElementById('nav-' + mod).classList.add('active');
+}
+
+// ── PACIENTES ──
+function renderPacientes(lista) {
+  const tbody = document.getElementById('tbody-pacientes');
+  const colors = ['#2563eb','#7c3aed','#db2777','#059669','#d97706','#dc2626'];
+  tbody.innerHTML = lista.map((p, i) => {
+    const ini = p.nombre.split(' ').map(w => w[0]).slice(0,2).join('');
+    const color = colors[i % colors.length];
+    const estadoBadge = {
+      activo: '<span class="badge badge-green">Activo</span>',
+      inactivo: '<span class="badge badge-gray">Inactivo</span>',
+      seguimiento: '<span class="badge badge-amber">Seguimiento</span>',
+    }[p.estado];
+    return `<tr>
+      <td>
+        <div class="patient-cell">
+          <div class="p-avatar" style="background:${color}">${ini}</div>
+          <div>
+            <div class="td-name">${p.nombre}</div>
+            <div class="td-muted" style="font-size:0.72rem">${p.id} · ${p.edad} años</div>
+          </div>
+        </div>
+      </td>
+      <td class="td-muted">${p.dni}</td>
+      <td>${p.os}</td>
+      <td class="td-muted">${p.ultimo}</td>
+      <td>${estadoBadge}</td>
+      <td>
+        <div class="td-actions">
+          <button class="btn btn-outline btn-sm" onclick="abrirFicha('${p.id}')">Ver ficha</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function filtrarPacientes(q) {
+  const lower = q.toLowerCase();
+  const filtrados = pacientes.filter(p =>
+    p.nombre.toLowerCase().includes(lower) ||
+    p.dni.includes(lower) ||
+    p.os.toLowerCase().includes(lower)
+  );
+  renderPacientes(filtrados);
+}
+
+function abrirFicha(id) {
+  const p = pacientes.find(x => x.id === id);
+  if (!p) return;
+  const hist = historial[id] || [];
+  const ini = p.nombre.split(' ').map(w => w[0]).slice(0,2).join('');
+  const colors = {'P-001':'#2563eb','P-002':'#7c3aed','P-003':'#db2777','P-004':'#059669','P-005':'#d97706','P-006':'#dc2626','P-007':'#0891b2','P-008':'#7c3aed','P-009':'#059669','P-010':'#d97706'};
+  const color = colors[id] || '#2563eb';
+  const estadoBadge = {
+    activo: '<span class="badge badge-green">Activo</span>',
+    inactivo: '<span class="badge badge-gray">Inactivo</span>',
+    seguimiento: '<span class="badge badge-amber">Seguimiento</span>',
+  }[p.estado];
+
+  document.getElementById('ficha-body').innerHTML = `
+    <div class="ficha-top">
+      <div class="ficha-avatar" style="background:${color}">${ini}</div>
+      <div>
+        <div class="ficha-name">${p.nombre}</div>
+        <div class="ficha-id">${p.id} · ${estadoBadge}</div>
+      </div>
+    </div>
+    <div class="ficha-section">
+      <div class="ficha-section-title">Datos personales</div>
+      <div class="ficha-row"><span class="ficha-row-label">DNI</span><span class="ficha-row-val">${p.dni}</span></div>
+      <div class="ficha-row"><span class="ficha-row-label">Edad</span><span class="ficha-row-val">${p.edad} años</span></div>
+      <div class="ficha-row"><span class="ficha-row-label">Teléfono</span><span class="ficha-row-val">${p.tel}</span></div>
+      <div class="ficha-row"><span class="ficha-row-label">Obra social</span><span class="ficha-row-val">${p.os}</span></div>
+    </div>
+    <div class="ficha-section">
+      <div class="ficha-section-title">Datos clínicos</div>
+      <div class="ficha-row"><span class="ficha-row-label">Diagnóstico principal</span><span class="ficha-row-val">${p.diag}</span></div>
+      <div class="ficha-row"><span class="ficha-row-label">Médico tratante</span><span class="ficha-row-val">${p.medico}</span></div>
+      <div class="ficha-row"><span class="ficha-row-label">Último turno</span><span class="ficha-row-val">${p.ultimo}</span></div>
+    </div>
+    <div class="ficha-section">
+      <div class="ficha-section-title">Historial de consultas</div>
+      ${hist.length ? hist.map(h => `
+        <div class="historial-item">
+          <div class="historial-date">${h.fecha}</div>
+          <div class="historial-texto">${h.texto}</div>
+        </div>
+      `).join('') : '<div style="font-size:0.8rem;color:var(--dim);padding:0.5rem 0;">Sin historial registrado.</div>'}
+    </div>
+    <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:0.5rem">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      Asignar turno
+    </button>
+  `;
+  document.getElementById('ficha-overlay').classList.add('open');
+}
+
+function cerrarFicha(e) {
+  if (e.target === document.getElementById('ficha-overlay')) cerrarFichaDirecto();
+}
+function cerrarFichaDirecto() {
+  document.getElementById('ficha-overlay').classList.remove('open');
+}
+
+// ── CALENDARIO ──
+let currentDate = new Date();
+const turnosDias = [3, 5, 8, 10, 12, 15, 17, 19, 22, 24];
+
+function initCalendario() {
+  renderCalendario();
+  renderTurnosHoy();
+}
+
+function renderCalendario() {
+  const y = currentDate.getFullYear();
+  const m = currentDate.getMonth();
+  const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  document.getElementById('cal-month-label').textContent = `${meses[m]} ${y}`;
+  const primerDia = new Date(y, m, 1).getDay();
+  const diasMes = new Date(y, m + 1, 0).getDate();
+  const hoy = new Date();
+  const esHoy = (d) => d === hoy.getDate() && m === hoy.getMonth() && y === hoy.getFullYear();
+  let html = '';
+  for (let i = 0; i < primerDia; i++) html += `<div class="cal-day empty"></div>`;
+  for (let d = 1; d <= diasMes; d++) {
+    const classes = ['cal-day'];
+    if (esHoy(d)) classes.push('today');
+    if (turnosDias.includes(d)) classes.push('has-turnos');
+    html += `<div class="${classes.join(' ')}" onclick="selDia(${d})">${d}</div>`;
+  }
+  document.getElementById('cal-days').innerHTML = html;
+}
+
+function selDia(d) {
+  document.querySelectorAll('.cal-day').forEach(el => el.classList.remove('selected'));
+  const hoy = new Date();
+  if (d === hoy.getDate()) return;
+  event.target.classList.add('selected');
+  const meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  document.getElementById('turnos-dia-title').textContent = `${d} de ${meses[currentDate.getMonth()]}`;
+  if (turnosDias.includes(d)) {
+    renderTurnosHoy();
+  } else {
+    document.getElementById('turnos-lista').innerHTML = `<div style="padding:2rem 1.25rem;text-align:center;color:var(--dim);font-size:0.82rem;">Sin turnos programados para este día.</div>`;
+  }
+}
+
+function renderTurnosHoy() {
+  const estadoBadge = (e) => ({
+    'confirmado': '<span class="badge badge-blue">Confirmado</span>',
+    'en sala':    '<span class="badge badge-green">En sala</span>',
+    'pendiente':  '<span class="badge badge-gray">Pendiente</span>',
+  }[e] || '');
+  document.getElementById('turnos-lista').innerHTML = turnos.map(t => `
+    <div class="turno-item">
+      <span class="turno-hora">${t.hora}</span>
+      <div class="turno-info">
+        <div class="turno-paciente">${t.paciente}</div>
+        <div class="turno-tipo">${t.tipo}</div>
+      </div>
+      ${estadoBadge(t.estado)}
+    </div>
+  `).join('');
+  document.getElementById('turnos-dia-title').textContent = 'Turnos de hoy';
+}
+
+function cambiarMes(delta) {
+  currentDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + delta, 1);
+  renderCalendario();
+}
+function irHoy() {
+  currentDate = new Date();
+  renderCalendario();
+  renderTurnosHoy();
+}
+
+// ── STOCK ──
+function renderStock() {
+  const colores = { critico: '#dc2626', bajo: '#d97706', normal: '#16a34a' };
+  const badge = { critico: 'badge-red', bajo: 'badge-amber', normal: 'badge-green' };
+  const label = { critico: 'Crítico', bajo: 'Bajo', normal: 'Normal' };
+  document.getElementById('tbody-stock').innerHTML = stock.map(s => {
+    const pct = Math.round((s.actual / s.max) * 100);
+    const color = colores[s.estado];
+    return `<tr>
+      <td><span style="font-weight:500">${s.nombre}</span></td>
+      <td class="td-muted">${s.cat}</td>
+      <td>
+        <div style="font-weight:600;margin-bottom:4px">${s.actual} / ${s.max}</div>
+        <div class="stock-bar-wrap">
+          <div class="stock-bar">
+            <div class="stock-bar-fill" style="width:${pct}%;background:${color}"></div>
+          </div>
+          <span style="font-size:0.7rem;color:var(--muted);width:32px;text-align:right">${pct}%</span>
+        </div>
+      </td>
+      <td>Mín. ${s.minimo}</td>
+      <td class="td-muted">${s.vto}</td>
+      <td><span class="badge ${badge[s.estado]}">${label[s.estado]}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+init();
+</script>
+</body>
+</html>
