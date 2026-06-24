@@ -3,28 +3,29 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>HG Soluciones Web — Sistemas y automatización para empresas</title>
-  <meta name="description" content="Automatización de procesos, sistemas de gestión e integraciones para PyMEs y cooperativas. 18 años de experiencia en administración y finanzas.">
+  <title>HG Soluciones Web — Sistemas y automatización para PyMEs y cooperativas</title>
+  <meta name="description" content="Automatización de procesos, sistemas de gestión e integraciones para PyMEs y cooperativas argentinas. 18 años en administración y finanzas.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg:         #f8f9fb;
-      --bg2:        #ffffff;
-      --bg3:        #f0f2f6;
-      --surface:    #e8ecf4;
-      --border:     #dde1ea;
-      --navy:       #1e3a5f;
-      --navy2:      #162d4a;
-      --navy-light: #2a4f7c;
-      --navy-dim:   #1e3a5f15;
-      --accent:     #2563eb;
-      --text:       #1a2232;
-      --text-muted: #5a6478;
-      --text-dim:   #9aa0b0;
-      --white:      #ffffff;
+      --bg:       #f7f8fc;
+      --bg2:      #ffffff;
+      --bg3:      #eef0f7;
+      --border:   #dce0ee;
+      --border2:  #c8cedf;
+      --navy:     #1e3a5f;
+      --navy2:    #152d4a;
+      --navy3:    #0e1f33;
+      --navy-lo:  rgba(30,58,95,0.06);
+      --navy-md:  rgba(30,58,95,0.12);
+      --accent:   #1d60d4;
+      --text:     #18202e;
+      --muted:    #5c6578;
+      --dim:      #9aa3b5;
+      --white:    #ffffff;
     }
 
     html { scroll-behavior: smooth; }
@@ -34,792 +35,815 @@
       background: var(--bg);
       color: var(--text);
       line-height: 1.65;
-      font-size: 16px;
       overflow-x: hidden;
     }
 
-    /* ─── NAV ─── */
+    /* ── NAV ── */
     nav {
-      position: fixed;
-      top: 0; left: 0; right: 0;
-      z-index: 100;
-      background: rgba(248,249,251,0.92);
-      backdrop-filter: blur(10px);
+      position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+      height: 58px;
+      background: rgba(247,248,252,0.92);
+      backdrop-filter: blur(14px);
       border-bottom: 1px solid var(--border);
     }
     .nav-inner {
-      max-width: 1100px;
-      margin: 0 auto;
-      padding: 1rem 2rem;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
+      max-width: 1080px; margin: 0 auto;
+      height: 100%;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 2rem;
     }
     .nav-logo {
       font-family: 'Inter', sans-serif;
-      font-weight: 700;
-      font-size: 1rem;
-      color: var(--navy);
-      text-decoration: none;
+      font-weight: 700; font-size: 0.95rem;
+      color: var(--navy); text-decoration: none;
       letter-spacing: -0.01em;
     }
-    .nav-logo span {
-      display: inline-block;
-      width: 6px; height: 6px;
-      background: var(--accent);
-      border-radius: 50%;
-      margin-left: 2px;
-      vertical-align: middle;
-      position: relative;
-      top: -2px;
-    }
+    .nav-logo b { color: var(--accent); }
     .nav-links {
-      display: flex;
-      align-items: center;
-      gap: 2rem;
-      list-style: none;
+      display: flex; align-items: center; gap: 1.75rem; list-style: none;
     }
     .nav-links a {
-      font-size: 0.875rem;
-      font-weight: 500;
-      color: var(--text-muted);
-      text-decoration: none;
+      font-size: 0.82rem; font-weight: 500;
+      color: var(--muted); text-decoration: none;
       transition: color 0.15s;
     }
     .nav-links a:hover { color: var(--navy); }
     .nav-cta {
       background: var(--navy);
       color: var(--white) !important;
-      padding: 0.5rem 1.25rem;
-      border-radius: 6px;
-      font-size: 0.875rem !important;
+      padding: 0.42rem 1.1rem; border-radius: 4px;
+      font-size: 0.82rem !important; font-weight: 600 !important;
       transition: background 0.15s !important;
     }
-    .nav-cta:hover { background: var(--navy2) !important; color: var(--white) !important; }
+    .nav-cta:hover { background: var(--navy2) !important; }
+    @media (max-width: 640px) { .nav-links { display: none; } nav { padding: 0; } }
 
-    @media (max-width: 680px) {
-      .nav-links { display: none; }
-    }
-
-    /* ─── HERO ─── */
+    /* ── HERO ── */
     .hero {
-      padding: 9rem 1.5rem 5rem;
-      max-width: 1100px;
-      margin: 0 auto;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 4rem;
-      align-items: center;
+      padding: 8rem 2rem 5rem;
+      position: relative; overflow: hidden;
+      border-bottom: 1px solid var(--border);
     }
-    @media (max-width: 768px) {
-      .hero { grid-template-columns: 1fr; gap: 2.5rem; padding: 7rem 1.25rem 3rem; }
-      .hero-visual { display: none; }
+    /* foto de fondo sutil */
+    .hero-bg {
+      position: absolute; inset: 0; z-index: 0;
     }
-    .hero-eyebrow {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      font-size: 0.75rem;
-      font-weight: 600;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: var(--accent);
-      margin-bottom: 1.5rem;
+    .hero-bg img {
+      width: 100%; height: 100%;
+      object-fit: cover; object-position: center 30%;
+      opacity: 0.04; filter: saturate(0);
     }
+    .hero-bg::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(110deg, #f7f8fc 55%, rgba(247,248,252,0.6) 100%);
+    }
+    .hero-inner {
+      position: relative; z-index: 2;
+      max-width: 1080px; margin: 0 auto;
+      display: grid; grid-template-columns: 1.1fr 0.9fr;
+      gap: 5rem; align-items: center;
+    }
+    @media (max-width: 800px) {
+      .hero-inner { grid-template-columns: 1fr; gap: 3rem; }
+      .hero-widget { display: none; }
+    }
+
+    .hero-kicker {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      font-size: 0.72rem; font-weight: 700;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--accent); margin-bottom: 1.5rem;
+    }
+    .kicker-line {
+      width: 24px; height: 1px; background: var(--accent);
+    }
+
     .hero h1 {
-      font-family: 'Playfair Display', Georgia, serif;
-      font-size: clamp(2rem, 4.5vw, 3.2rem);
-      font-weight: 700;
-      line-height: 1.15;
+      font-family: 'Instrument Serif', Georgia, serif;
+      font-size: clamp(2.2rem, 4.5vw, 3.6rem);
+      font-weight: 400;
+      line-height: 1.12;
       letter-spacing: -0.02em;
       color: var(--navy);
       margin-bottom: 1.25rem;
     }
-    .hero-sub {
-      font-size: 1.05rem;
-      color: var(--text-muted);
-      margin-bottom: 2rem;
-      font-weight: 400;
-      line-height: 1.7;
-    }
-    .hero-actions {
-      display: flex;
-      gap: 0.875rem;
-      flex-wrap: wrap;
-    }
-    .btn-primary {
-      background: var(--navy);
-      color: var(--white);
-      font-weight: 600;
-      font-size: 0.9rem;
-      padding: 0.8rem 1.75rem;
-      border-radius: 6px;
-      text-decoration: none;
-      transition: background 0.15s;
-    }
-    .btn-primary:hover { background: var(--navy2); }
-    .btn-ghost {
-      background: transparent;
-      color: var(--navy);
-      font-weight: 500;
-      font-size: 0.9rem;
-      padding: 0.8rem 1.75rem;
-      border-radius: 6px;
-      text-decoration: none;
-      border: 1px solid var(--border);
-      transition: border-color 0.15s, background 0.15s;
-    }
-    .btn-ghost:hover { border-color: var(--navy); background: var(--navy-dim); }
-    .hero-trust {
-      margin-top: 2rem;
-      display: flex;
-      gap: 1.5rem;
-      flex-wrap: wrap;
-    }
-    .trust-item {
-      display: flex;
-      align-items: center;
-      gap: 0.4rem;
-      font-size: 0.8rem;
-      color: var(--text-muted);
-    }
-    .trust-item::before {
-      content: '✓';
+    .hero h1 em {
+      font-style: italic;
       color: var(--accent);
-      font-weight: 700;
     }
 
-    /* Visual lado derecho hero */
-    .hero-visual {
-      background: var(--white);
+    .hero-sub {
+      font-size: 1rem; font-weight: 400;
+      color: var(--muted); line-height: 1.8;
+      max-width: 480px; margin-bottom: 2rem;
+    }
+
+    .hero-ctas { display: flex; gap: 0.875rem; flex-wrap: wrap; align-items: center; }
+
+    .btn-primary {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      background: var(--navy); color: var(--white);
+      font-weight: 600; font-size: 0.9rem;
+      padding: 0.82rem 1.75rem; border-radius: 4px;
+      text-decoration: none; transition: background 0.15s, transform 0.15s;
+    }
+    .btn-primary:hover { background: var(--navy2); transform: translateY(-1px); }
+
+    .btn-outline {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      background: transparent; color: var(--navy);
+      font-weight: 500; font-size: 0.9rem;
+      padding: 0.82rem 1.5rem; border-radius: 4px;
+      border: 1px solid var(--border2); text-decoration: none;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .btn-outline:hover { border-color: var(--navy); background: var(--navy-lo); }
+
+    .hero-signals {
+      margin-top: 2.5rem;
+      display: flex; gap: 0; flex-wrap: wrap;
+      border: 1px solid var(--border); border-radius: 5px;
+      overflow: hidden; max-width: 520px;
+      background: var(--bg2);
+    }
+    .signal {
+      flex: 1; min-width: 120px;
+      padding: 0.9rem 1.1rem;
+      border-right: 1px solid var(--border);
+    }
+    .signal:last-child { border-right: none; }
+    .signal-val {
+      font-family: 'Instrument Serif', serif;
+      font-size: 1.5rem; font-weight: 400;
+      color: var(--navy); line-height: 1;
+      margin-bottom: 0.2rem;
+    }
+    .signal-val b { color: var(--accent); font-weight: 400; }
+    .signal-label { font-size: 0.7rem; color: var(--dim); line-height: 1.4; }
+
+    /* Widget lado derecho — mock de panel */
+    .hero-widget {
+      background: var(--bg2);
       border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 1.5rem;
-      box-shadow: 0 4px 24px rgba(30,58,95,0.06);
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 4px 32px rgba(30,58,95,0.08);
     }
-    .vis-header {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding-bottom: 1rem;
-      border-bottom: 1px solid var(--border);
-      margin-bottom: 1rem;
+    .widget-bar {
+      padding: 0.75rem 1rem;
+      background: var(--navy);
+      display: flex; align-items: center; gap: 0.5rem;
     }
-    .vis-dot {
-      width: 8px; height: 8px;
-      border-radius: 50%;
+    .widget-bar-dot {
+      width: 7px; height: 7px; border-radius: 50%;
     }
-    .vis-title {
-      font-size: 0.75rem;
-      font-weight: 600;
-      color: var(--text-muted);
-      margin-left: 0.25rem;
+    .widget-bar-title {
+      font-size: 0.72rem; font-weight: 600;
+      color: rgba(255,255,255,0.6);
+      margin-left: 0.5rem; letter-spacing: 0.04em;
     }
-    .vis-row {
-      display: flex;
-      align-items: center;
+    .widget-body { padding: 1.1rem; }
+    .widget-row {
+      display: flex; align-items: center;
       justify-content: space-between;
-      padding: 0.6rem 0;
-      border-bottom: 1px solid var(--bg3);
-      font-size: 0.8rem;
+      padding: 0.6rem 0.75rem;
+      border-radius: 5px;
+      margin-bottom: 0.4rem;
+      background: var(--bg3);
+      font-size: 0.78rem;
     }
-    .vis-row:last-child { border-bottom: none; }
-    .vis-row-label { color: var(--text-muted); }
-    .vis-row-value { font-weight: 600; color: var(--navy); }
-    .vis-badge {
-      font-size: 0.65rem;
-      font-weight: 600;
-      padding: 0.15rem 0.5rem;
-      border-radius: 100px;
+    .widget-row:last-child { margin-bottom: 0; }
+    .wr-label { color: var(--muted); }
+    .wr-val { font-weight: 600; color: var(--navy); }
+    .badge {
+      font-size: 0.65rem; font-weight: 700;
+      padding: 0.15rem 0.55rem; border-radius: 3px;
+      letter-spacing: 0.04em;
     }
-    .badge-green { background: #dcfce7; color: #166534; }
-    .badge-blue  { background: #dbeafe; color: #1d4ed8; }
-    .badge-amber { background: #fef9c3; color: #854d0e; }
-    .vis-footer {
-      margin-top: 1rem;
-      padding-top: 1rem;
+    .badge-green  { background: #dcfce7; color: #15803d; }
+    .badge-blue   { background: #dbeafe; color: #1d4ed8; }
+    .badge-amber  { background: #fef9c3; color: #a16207; }
+    .widget-footer {
+      padding: 0.75rem 1rem;
       border-top: 1px solid var(--border);
-      font-size: 0.75rem;
-      color: var(--text-dim);
+      font-size: 0.7rem; color: var(--dim);
       text-align: center;
     }
 
-    /* ─── SECCIÓN BASE ─── */
-    .section-wrap {
-      max-width: 1100px;
-      margin: 0 auto;
-      padding: 5rem 1.5rem;
-    }
-    .section-label {
-      font-size: 0.7rem;
-      font-weight: 700;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--accent);
-      margin-bottom: 0.75rem;
-    }
-    .section-title {
-      font-family: 'Playfair Display', Georgia, serif;
-      font-size: clamp(1.7rem, 3vw, 2.4rem);
-      font-weight: 700;
-      letter-spacing: -0.02em;
-      color: var(--navy);
-      line-height: 1.2;
-      margin-bottom: 1rem;
-    }
-    .section-sub {
-      font-size: 1rem;
-      color: var(--text-muted);
-      max-width: 560px;
-      line-height: 1.7;
+    /* ── SECCIONES BASE ── */
+    .section {
+      max-width: 1080px; margin: 0 auto;
+      padding: 5rem 2rem;
     }
     .section-bg {
       background: var(--bg3);
       border-top: 1px solid var(--border);
       border-bottom: 1px solid var(--border);
     }
-
-    /* ─── DIFERENCIADOR ─── */
-    .diferenciador {
+    .section-navy {
       background: var(--navy);
-      color: var(--white);
     }
-    .diferenciador-inner {
-      max-width: 1100px;
-      margin: 0 auto;
-      padding: 4.5rem 1.5rem;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 4rem;
-      align-items: center;
+    .eyebrow {
+      font-size: 0.68rem; font-weight: 700;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--accent); margin-bottom: 0.75rem;
     }
-    @media (max-width: 768px) {
-      .diferenciador-inner { grid-template-columns: 1fr; gap: 2rem; }
+    .eyebrow-light { color: #93c5fd; }
+    .s-title {
+      font-family: 'Instrument Serif', Georgia, serif;
+      font-size: clamp(1.7rem, 3.2vw, 2.5rem);
+      font-weight: 400; letter-spacing: -0.02em;
+      color: var(--navy); line-height: 1.18;
+      margin-bottom: 0.875rem;
     }
-    .dif-label {
-      font-size: 0.7rem;
-      font-weight: 700;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: #93c5fd;
-      margin-bottom: 1rem;
+    .s-title-light { color: var(--white); }
+    .s-sub {
+      font-size: 1rem; color: var(--muted);
+      line-height: 1.78; font-weight: 400;
+      max-width: 540px;
     }
-    .dif-title {
-      font-family: 'Playfair Display', Georgia, serif;
-      font-size: clamp(1.6rem, 3vw, 2.2rem);
-      font-weight: 700;
-      line-height: 1.2;
-      color: var(--white);
-      margin-bottom: 1.25rem;
-    }
-    .dif-text {
-      font-size: 1rem;
-      color: #93c5fd;
-      line-height: 1.75;
-    }
-    .dif-stats {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 1.25rem;
-    }
-    .dif-stat {
-      background: rgba(255,255,255,0.06);
-      border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 10px;
-      padding: 1.25rem;
-    }
-    .dif-stat-num {
-      font-family: 'Playfair Display', serif;
-      font-size: 2.2rem;
-      font-weight: 700;
-      color: var(--white);
-      line-height: 1;
-      margin-bottom: 0.35rem;
-    }
-    .dif-stat-label {
-      font-size: 0.8rem;
-      color: #93c5fd;
-    }
+    .s-sub-light { color: #93c5fd; }
+    .rule { border: none; border-top: 1px solid var(--border); max-width: 1080px; margin: 0 auto; }
 
-    /* ─── SERVICIOS ─── */
-    .servicios-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      gap: 1.25rem;
+    /* ── PROBLEMA / DIAGNÓSTICO ── */
+    .diag-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 4rem; align-items: start;
       margin-top: 3rem;
     }
-    .servicio-card {
-      background: var(--white);
+    @media (max-width: 768px) { .diag-grid { grid-template-columns: 1fr; gap: 2rem; } }
+    .diag-intro p {
+      font-size: 1rem; color: var(--muted);
+      line-height: 1.8; margin-bottom: 1rem;
+    }
+    .diag-intro p strong { color: var(--text); font-weight: 600; }
+    .diag-lista { display: flex; flex-direction: column; gap: 0.75rem; }
+    .diag-item {
+      display: flex; align-items: flex-start; gap: 0.875rem;
+      padding: 1rem 1.1rem;
+      background: var(--bg2);
       border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 1.75rem;
-      transition: box-shadow 0.2s, transform 0.2s;
+      border-left: 3px solid var(--border2);
+      border-radius: 5px;
     }
-    .servicio-card:hover {
-      box-shadow: 0 8px 28px rgba(30,58,95,0.08);
-      transform: translateY(-2px);
-    }
-    .servicio-icon {
-      width: 40px; height: 40px;
-      background: var(--navy-dim);
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.2rem;
-      margin-bottom: 1.1rem;
-    }
-    .servicio-card h3 {
-      font-size: 0.975rem;
-      font-weight: 600;
-      color: var(--navy);
-      margin-bottom: 0.5rem;
-    }
-    .servicio-card p {
-      font-size: 0.875rem;
-      color: var(--text-muted);
-      line-height: 1.65;
-    }
+    .diag-item.hi { border-left-color: var(--accent); }
+    .diag-icon { flex-shrink: 0; margin-top: 1px; color: var(--dim); }
+    .diag-item.hi .diag-icon { color: var(--accent); }
+    .diag-item p { font-size: 0.875rem; color: var(--muted); line-height: 1.6; }
+    .diag-item p strong { color: var(--text); font-weight: 600; }
 
-    /* ─── CASOS ─── */
+    /* ── DIFERENCIADOR NAVY ── */
+    .dif-section { padding: 5rem 2rem; }
+    .dif-inner {
+      max-width: 1080px; margin: 0 auto;
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 5rem; align-items: center;
+    }
+    @media (max-width: 768px) { .dif-inner { grid-template-columns: 1fr; gap: 2.5rem; } }
+    .dif-text p {
+      font-size: 1rem; color: #93c5fd;
+      line-height: 1.8; margin-bottom: 1rem;
+    }
+    .dif-text p:last-child { margin-bottom: 0; }
+    .dif-stats {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;
+    }
+    .dif-stat {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 6px; padding: 1.25rem;
+    }
+    .dif-stat-num {
+      font-family: 'Instrument Serif', serif;
+      font-size: 2.4rem; font-weight: 400;
+      color: var(--white); line-height: 1;
+      margin-bottom: 0.3rem;
+    }
+    .dif-stat-label { font-size: 0.78rem; color: #93c5fd; line-height: 1.45; }
+
+    /* ── SERVICIOS ── */
+    .svc-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1px; background: var(--border);
+      border: 1px solid var(--border); border-radius: 8px;
+      overflow: hidden; margin-top: 3rem;
+    }
+    .svc {
+      background: var(--bg2); padding: 2rem;
+      transition: background 0.2s;
+    }
+    .svc:hover { background: var(--bg3); }
+    .svc-icon {
+      width: 36px; height: 36px;
+      color: var(--navy); margin-bottom: 1.1rem;
+      opacity: 0.7;
+    }
+    .svc h3 {
+      font-size: 0.95rem; font-weight: 600;
+      color: var(--navy); margin-bottom: 0.5rem;
+    }
+    .svc p { font-size: 0.86rem; color: var(--muted); line-height: 1.7; }
+
+    /* ── CASOS ── */
     .casos-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 1.25rem;
-      margin-top: 3rem;
+      gap: 1.25rem; margin-top: 3rem;
     }
-    .caso-card {
-      background: var(--white);
+    .caso {
+      background: var(--bg2);
       border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 1.75rem 2rem;
-      border-left: 3px solid var(--navy);
+      border-top: 3px solid var(--navy);
+      border-radius: 6px; padding: 1.75rem;
+      display: flex; flex-direction: column; gap: 1rem;
     }
     .caso-tag {
-      font-size: 0.7rem;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
+      font-size: 0.67rem; font-weight: 700;
+      letter-spacing: 0.09em; text-transform: uppercase;
       color: var(--accent);
-      margin-bottom: 0.6rem;
     }
-    .caso-card h3 {
-      font-weight: 600;
+    .caso h3 {
+      font-size: 1rem; font-weight: 600;
       color: var(--navy);
-      font-size: 1rem;
-      margin-bottom: 0.5rem;
     }
-    .caso-card p {
-      font-size: 0.875rem;
-      color: var(--text-muted);
-      line-height: 1.65;
-      margin-bottom: 1rem;
-    }
-    .caso-chips {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.4rem;
-    }
+    .caso p { font-size: 0.875rem; color: var(--muted); line-height: 1.7; flex: 1; }
+    .caso-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; }
     .chip {
-      font-size: 0.7rem;
-      font-weight: 500;
-      padding: 0.2rem 0.6rem;
-      border-radius: 4px;
-      background: var(--bg3);
-      color: var(--text-muted);
+      font-size: 0.68rem; font-weight: 500;
+      padding: 0.2rem 0.6rem; border-radius: 3px;
+      background: var(--bg3); color: var(--muted);
       border: 1px solid var(--border);
     }
+    .caso-result {
+      display: flex; align-items: center; gap: 0.5rem;
+      font-size: 0.78rem; color: var(--accent); font-weight: 500;
+      padding-top: 0.75rem; border-top: 1px solid var(--border);
+    }
 
-    /* ─── STACK ─── */
-    .stack-wrap {
-      margin-top: 3rem;
+    /* ── STACK ── */
+    .stack-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-      gap: 0.875rem;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 0.875rem; margin-top: 3rem;
     }
     .stack-item {
-      background: var(--white);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 1rem 1.25rem;
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
+      background: var(--bg2);
+      border: 1px solid var(--border); border-radius: 5px;
+      padding: 0.875rem 1.1rem;
+      display: flex; align-items: center; gap: 0.75rem;
     }
-    .stack-item span:first-child {
-      font-size: 1.3rem;
-    }
-    .stack-item span:last-child {
-      font-size: 0.85rem;
-      font-weight: 500;
-      color: var(--text-muted);
+    .stack-icon { color: var(--navy); opacity: 0.6; flex-shrink: 0; }
+    .stack-item span {
+      font-size: 0.84rem; font-weight: 500; color: var(--muted);
     }
 
-    /* ─── TESTIMONIOS ─── */
-    .testimonios-grid {
+    /* ── TESTIMONIOS ── */
+    .testi-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 1.25rem;
-      margin-top: 3rem;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.25rem; margin-top: 3rem;
     }
-    .testimonio {
-      background: var(--white);
-      border: 1px solid var(--border);
-      border-radius: 10px;
+    .testi {
+      background: var(--bg2);
+      border: 1px solid var(--border); border-radius: 6px;
       padding: 1.75rem;
     }
-    .testimonio-stars {
-      color: #f59e0b;
-      font-size: 0.875rem;
-      margin-bottom: 1rem;
-      letter-spacing: 0.05em;
-    }
-    .testimonio-text {
-      font-size: 0.95rem;
-      color: var(--text-muted);
-      line-height: 1.7;
+    .testi-q { color: var(--navy); opacity: 0.2; margin-bottom: 1rem; }
+    .testi p {
+      font-size: 0.93rem; color: var(--text);
+      line-height: 1.8; font-style: italic;
       margin-bottom: 1.25rem;
-      font-style: italic;
     }
-    .testimonio-author {
-      font-size: 0.8rem;
-      color: var(--text-dim);
-      font-weight: 500;
-    }
+    .testi-name { font-size: 0.82rem; font-weight: 600; color: var(--navy); }
+    .testi-role { font-size: 0.76rem; color: var(--dim); }
 
-    /* ─── CTA FINAL ─── */
-    .cta-final {
-      background: var(--navy);
-      color: var(--white);
-      text-align: center;
-      padding: 5rem 1.5rem;
-    }
-    .cta-final-inner {
-      max-width: 640px;
-      margin: 0 auto;
-    }
+    /* ── CTA FINAL ── */
+    .cta-final { padding: 5.5rem 2rem; text-align: center; }
+    .cta-final-inner { max-width: 580px; margin: 0 auto; }
     .cta-final h2 {
-      font-family: 'Playfair Display', Georgia, serif;
+      font-family: 'Instrument Serif', serif;
       font-size: clamp(1.8rem, 3.5vw, 2.6rem);
-      font-weight: 700;
-      letter-spacing: -0.02em;
-      color: var(--white);
-      margin-bottom: 1rem;
+      font-weight: 400; letter-spacing: -0.02em;
+      color: var(--white); margin-bottom: 0.875rem;
     }
     .cta-final p {
-      font-size: 1rem;
-      color: #93c5fd;
-      margin-bottom: 2rem;
-      line-height: 1.7;
+      font-size: 0.975rem; color: #93c5fd;
+      line-height: 1.78; margin-bottom: 2rem;
     }
-    .cta-final-actions {
-      display: flex;
-      gap: 1rem;
-      flex-wrap: wrap;
-      justify-content: center;
-    }
+    .cta-actions { display: flex; gap: 0.875rem; justify-content: center; flex-wrap: wrap; }
     .btn-white {
-      background: var(--white);
-      color: var(--navy);
-      font-weight: 700;
-      font-size: 0.9rem;
-      padding: 0.85rem 2rem;
-      border-radius: 6px;
-      text-decoration: none;
-      transition: opacity 0.15s;
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      background: var(--white); color: var(--navy);
+      font-weight: 700; font-size: 0.9rem;
+      padding: 0.82rem 1.75rem; border-radius: 4px;
+      text-decoration: none; transition: opacity 0.15s;
     }
-    .btn-white:hover { opacity: 0.9; }
+    .btn-white:hover { opacity: 0.88; }
     .btn-outline-white {
-      background: transparent;
-      color: var(--white);
-      font-weight: 500;
-      font-size: 0.9rem;
-      padding: 0.85rem 2rem;
-      border-radius: 6px;
-      text-decoration: none;
-      border: 1px solid rgba(255,255,255,0.25);
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      background: transparent; color: var(--white);
+      font-weight: 500; font-size: 0.9rem;
+      padding: 0.82rem 1.5rem; border-radius: 4px;
+      border: 1px solid rgba(255,255,255,0.22); text-decoration: none;
       transition: border-color 0.15s;
     }
-    .btn-outline-white:hover { border-color: rgba(255,255,255,0.6); }
+    .btn-outline-white:hover { border-color: rgba(255,255,255,0.55); }
 
-    /* ─── FOOTER ─── */
+    /* ── FOOTER ── */
     footer {
-      background: var(--navy2);
-      border-top: 1px solid rgba(255,255,255,0.08);
-      padding: 2rem 1.5rem;
+      background: var(--navy3);
+      border-top: 1px solid rgba(255,255,255,0.07);
+      padding: 1.75rem 2rem;
     }
     .footer-inner {
-      max-width: 1100px;
-      margin: 0 auto;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 0.5rem;
-      text-align: center;
+      max-width: 1080px; margin: 0 auto;
+      display: flex; align-items: center;
+      justify-content: space-between; flex-wrap: wrap; gap: 1rem;
     }
-    footer p {
-      font-size: 0.8rem;
-      color: #64748b;
+    .footer-logo {
+      font-weight: 700; font-size: 0.9rem;
+      color: rgba(255,255,255,0.4); text-decoration: none;
     }
-    footer a {
-      color: #93c5fd;
-      text-decoration: none;
-    }
-    footer a:hover { text-decoration: underline; }
-
-    /* ─── UTILS ─── */
-    .divider {
-      border: none;
-      border-top: 1px solid var(--border);
-      max-width: 1100px;
-      margin: 0 auto;
-    }
+    .footer-logo b { color: #93c5fd; }
+    footer p { font-size: 0.78rem; color: rgba(255,255,255,0.25); }
+    footer a { color: rgba(255,255,255,0.4); text-decoration: none; }
+    footer a:hover { color: #93c5fd; }
 
     @media (prefers-reduced-motion: reduce) {
-      *, *::before, *::after { transition: none !important; }
+      * { transition: none !important; }
     }
   </style>
 </head>
 <body>
 
-  <!-- NAV -->
-  <nav>
-    <div class="nav-inner">
-      <a href="#" class="nav-logo">HG Soluciones Web<span></span></a>
-      <ul class="nav-links">
-        <li><a href="#servicios">Servicios</a></li>
-        <li><a href="#casos">Proyectos</a></li>
-        <li><a href="#stack">Stack</a></li>
-        <li><a href="https://wa.me/5491100000000" class="nav-cta">Contacto</a></li>
-      </ul>
-    </div>
-  </nav>
+<!-- NAV -->
+<nav>
+  <div class="nav-inner">
+    <a href="#" class="nav-logo">HG Soluciones Web<b>.</b></a>
+    <ul class="nav-links">
+      <li><a href="#servicios">Servicios</a></li>
+      <li><a href="#casos">Proyectos</a></li>
+      <li><a href="#stack">Tecnología</a></li>
+      <li><a href="https://wa.me/5491100000000" class="nav-cta">Contacto</a></li>
+    </ul>
+  </div>
+</nav>
 
-  <!-- HERO -->
-  <header>
-    <div class="hero">
-      <div class="hero-content">
-        <p class="hero-eyebrow">Administración · Finanzas · Desarrollo</p>
-        <h1>Sistemas que entienden cómo funciona tu empresa</h1>
-        <p class="hero-sub">Soy desarrollador con 18 años de experiencia en administración y finanzas. Antes de escribir una línea de código, entiendo el proceso. Eso cambia el resultado.</p>
-        <div class="hero-actions">
-          <a href="https://wa.me/5491100000000" class="btn-primary">Hablemos de tu operación →</a>
-          <a href="#casos" class="btn-ghost">Ver proyectos reales</a>
+<!-- HERO -->
+<header class="hero">
+  <div class="hero-bg">
+    <img
+      src="https://images.unsplash.com/photo-1556761175-4b46a572b786?w=1600&q=80&auto=format&fit=crop"
+      alt=""
+    >
+  </div>
+  <div class="hero-inner">
+    <div class="hero-content">
+      <p class="hero-kicker">
+        <span class="kicker-line"></span>
+        Administración · Finanzas · Desarrollo
+      </p>
+      <h1>
+        Sistemas que entienden<br>
+        <em>cómo opera tu empresa</em>
+      </h1>
+      <p class="hero-sub">
+        Soy desarrollador con 18 años de experiencia en administración y finanzas.
+        Antes de escribir una línea de código, entiendo el proceso.
+        Eso cambia el resultado.
+      </p>
+      <div class="hero-ctas">
+        <a href="https://wa.me/5491100000000" class="btn-primary">
+          Hablemos de tu operación
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </a>
+        <a href="#casos" class="btn-outline">Ver proyectos reales</a>
+      </div>
+      <div class="hero-signals">
+        <div class="signal">
+          <div class="signal-val">18<b>a</b></div>
+          <div class="signal-label">en administración<br>y finanzas</div>
         </div>
-        <div class="hero-trust">
-          <span class="trust-item">18 años en administración</span>
-          <span class="trust-item">Sistemas en producción</span>
-          <span class="trust-item">PyMEs y cooperativas</span>
+        <div class="signal">
+          <div class="signal-val">12<b>+</b></div>
+          <div class="signal-label">módulos en<br>producción</div>
+        </div>
+        <div class="signal">
+          <div class="signal-val">3<b>+</b></div>
+          <div class="signal-label">sistemas activos<br>hoy</div>
         </div>
       </div>
-      <div class="hero-visual">
-        <div class="vis-header">
-          <div class="vis-dot" style="background:#22c55e;"></div>
-          <div class="vis-dot" style="background:#f59e0b;"></div>
-          <div class="vis-dot" style="background:#ef4444;"></div>
-          <span class="vis-title">Sistema de gestión · En línea</span>
+    </div>
+    <div class="hero-widget">
+      <div class="widget-bar">
+        <div class="widget-bar-dot" style="background:#22c55e;"></div>
+        <div class="widget-bar-dot" style="background:#f59e0b;"></div>
+        <div class="widget-bar-dot" style="background:#ef4444;"></div>
+        <span class="widget-bar-title">Panel de gestión · En línea</span>
+      </div>
+      <div class="widget-body">
+        <div class="widget-row">
+          <span class="wr-label">Estado del sistema</span>
+          <span class="badge badge-green">Activo</span>
         </div>
-        <div class="vis-row">
-          <span class="vis-row-label">Estado del sistema</span>
-          <span class="vis-badge badge-green">Activo</span>
+        <div class="widget-row">
+          <span class="wr-label">Módulos operativos</span>
+          <span class="wr-val">12</span>
         </div>
-        <div class="vis-row">
-          <span class="vis-row-label">Módulos operativos</span>
-          <span class="vis-row-value">12</span>
+        <div class="widget-row">
+          <span class="wr-label">Última sincronización</span>
+          <span class="badge badge-blue">Hace 2 min</span>
         </div>
-        <div class="vis-row">
-          <span class="vis-row-label">Usuarios registrados</span>
-          <span class="vis-row-value">—</span>
+        <div class="widget-row">
+          <span class="wr-label">Integraciones</span>
+          <span class="badge badge-blue">Firebase · Sheets</span>
         </div>
-        <div class="vis-row">
-          <span class="vis-row-label">Última actualización</span>
-          <span class="vis-badge badge-blue">Hoy</span>
+        <div class="widget-row">
+          <span class="wr-label">Backup automático</span>
+          <span class="badge badge-green">OK</span>
         </div>
-        <div class="vis-row">
-          <span class="vis-row-label">Backups automáticos</span>
-          <span class="vis-badge badge-green">OK</span>
+        <div class="widget-row">
+          <span class="wr-label">Notificaciones WA</span>
+          <span class="badge badge-green">Activas</span>
         </div>
-        <div class="vis-row">
-          <span class="vis-row-label">Integraciones activas</span>
-          <span class="vis-badge badge-blue">Firebase · Sheets · WA</span>
-        </div>
-        <div class="vis-footer">Dashboard en tiempo real · Firestore</div>
+      </div>
+      <div class="widget-footer">Firestore · Tiempo real · Sin servidor propio</div>
+    </div>
+  </div>
+</header>
+
+<!-- DIAGNÓSTICO / PROBLEMA -->
+<div class="section" id="problema">
+  <p class="eyebrow">El problema real</p>
+  <h2 class="s-title">Muchas empresas operan<br>con sistemas que no se hablan entre sí.</h2>
+  <div class="diag-grid">
+    <div class="diag-intro">
+      <p>El proceso termina siendo mitad en una planilla, mitad en un chat y mitad en la cabeza de una persona. Cuando esa persona no está, la operación se frena.</p>
+      <p>No es un problema de tecnología. Es un problema de <strong>diseño de proceso</strong>. Y ahí es exactamente donde arranco.</p>
+    </div>
+    <div class="diag-lista">
+      <div class="diag-item hi">
+        <svg class="diag-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <p><strong>Datos duplicados en múltiples planillas</strong> que nadie sabe cuál es la versión correcta.</p>
+      </div>
+      <div class="diag-item hi">
+        <svg class="diag-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <p><strong>Reportes que se arman a mano</strong> cada mes y consumen horas de trabajo que podrían automatizarse.</p>
+      </div>
+      <div class="diag-item hi">
+        <svg class="diag-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <p><strong>Sistemas que no se integran:</strong> el CRM no habla con el stock, el stock no habla con facturación.</p>
+      </div>
+      <div class="diag-item">
+        <svg class="diag-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <p><strong>Dependencia de una sola persona</strong> para que el proceso funcione. Si falta, falla todo.</p>
       </div>
     </div>
-  </header>
+  </div>
+</div>
 
-  <!-- DIFERENCIADOR -->
-  <div class="diferenciador">
-    <div class="diferenciador-inner">
+<!-- DIFERENCIADOR -->
+<div class="section-navy">
+  <div class="dif-section">
+    <div class="dif-inner">
       <div>
-        <p class="dif-label">Por qué es diferente</p>
-        <h2 class="dif-title">No soy solo programador. Fui parte del problema antes de resolverlo.</h2>
-        <p class="dif-text">Trabajé en administración y finanzas durante 18 años, incluyendo ARSAT S.A. Sé lo que significa un cierre de mes, un proceso de compras con múltiples aprobaciones, o un reporte que nadie lee porque está mal diseñado. Cuando desarrollo un sistema para tu empresa, no te pregunto qué botón querés: te ayudo a rediseñar el flujo.</p>
+        <p class="eyebrow eyebrow-light">Por qué es diferente</p>
+        <h2 class="s-title s-title-light">No soy solo programador.<br>Fui parte del problema<br>antes de resolverlo.</h2>
+        <div class="dif-text">
+          <p>Trabajé 18 años en administración y finanzas, incluyendo ARSAT S.A. Sé lo que es un cierre de mes bajo presión, un proceso de compras con múltiples aprobaciones, o un reporte que nadie lee porque está mal diseñado.</p>
+          <p>Cuando trabajo con tu empresa, no te pregunto qué botón querés. Te pregunto cómo opera hoy el proceso, dónde se rompe, y qué necesitaría para que funcione sin que alguien lo empuje todos los días.</p>
+        </div>
       </div>
       <div class="dif-stats">
         <div class="dif-stat">
           <div class="dif-stat-num">18</div>
-          <div class="dif-stat-label">años en administración y finanzas</div>
+          <div class="dif-stat-label">años en administración y finanzas de empresas</div>
         </div>
         <div class="dif-stat">
           <div class="dif-stat-num">12</div>
-          <div class="dif-stat-label">módulos desarrollados en CoopDigital</div>
+          <div class="dif-stat-label">módulos desarrollados en producción real</div>
         </div>
         <div class="dif-stat">
           <div class="dif-stat-num">100%</div>
-          <div class="dif-stat-label">proyectos entregados en producción</div>
+          <div class="dif-stat-label">proyectos entregados con sistema funcionando</div>
         </div>
         <div class="dif-stat">
           <div class="dif-stat-num">$0</div>
-          <div class="dif-stat-label">infraestructura para proyectos optimizados</div>
+          <div class="dif-stat-label">infraestructura mensual en proyectos optimizados</div>
         </div>
       </div>
     </div>
   </div>
+</div>
 
-  <!-- SERVICIOS -->
-  <div class="section-wrap" id="servicios">
-    <p class="section-label">Servicios</p>
-    <h2 class="section-title">Lo que podés delegar</h2>
-    <p class="section-sub">Procesos que hoy hacen a mano, reportes que tardan horas, sistemas que no hablan entre sí. Eso es lo que resuelvo.</p>
-    <div class="servicios-grid">
-      <div class="servicio-card">
-        <div class="servicio-icon">⚙️</div>
-        <h3>Automatización de procesos</h3>
-        <p>Eliminá tareas manuales repetitivas: carga de datos, generación de reportes, envío de notificaciones, actualizaciones en tiempo real.</p>
+<!-- SERVICIOS -->
+<div class="section" id="servicios">
+  <p class="eyebrow">Servicios</p>
+  <h2 class="s-title">Lo que podés delegar</h2>
+  <p class="s-sub">Procesos manuales, reportes que tardan horas, sistemas que no se integran. Eso es exactamente lo que resuelvo.</p>
+  <div class="svc-grid">
+    <div class="svc">
+      <svg class="svc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+        <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+      </svg>
+      <h3>Automatización de procesos</h3>
+      <p>Eliminá tareas manuales repetitivas: carga de datos, generación de reportes, envío de notificaciones, sincronización entre sistemas.</p>
+    </div>
+    <div class="svc">
+      <svg class="svc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+        <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+      </svg>
+      <h3>Sistemas de gestión a medida</h3>
+      <p>Paneles de control, seguimiento de clientes, stock, presupuestos, órdenes de compra. Todo conectado, todo visible en tiempo real.</p>
+    </div>
+    <div class="svc">
+      <svg class="svc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+      </svg>
+      <h3>Integraciones de APIs</h3>
+      <p>WhatsApp Business, Gmail, Google Sheets, Drive, Firebase, sistemas externos. Tu operación conectada sin fricciones ni intermediarios.</p>
+    </div>
+    <div class="svc">
+      <svg class="svc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+        <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+      </svg>
+      <h3>Plataformas SaaS / Multi-tenant</h3>
+      <p>Sistemas para múltiples organizaciones desde una sola base de código. Ideal para cooperativas, cámaras, asociaciones o consultoras.</p>
+    </div>
+    <div class="svc">
+      <svg class="svc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
+      </svg>
+      <h3>Digitalización de registros</h3>
+      <p>Libros físicos, actas, expedientes, planillas en papel. Los digitalizamos, indexamos con OCR y los hacemos buscables desde cualquier dispositivo.</p>
+    </div>
+    <div class="svc">
+      <svg class="svc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+        <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/>
+      </svg>
+      <h3>Modelos en Excel / Google Sheets</h3>
+      <p>Dashboards financieros, modelos de proyección, reportes automáticos. Para equipos que ya trabajan en planillas y quieren potenciarlas sin migrar todo.</p>
+    </div>
+  </div>
+</div>
+
+<hr class="rule">
+
+<!-- CASOS -->
+<div class="section" id="casos">
+  <p class="eyebrow">Proyectos reales</p>
+  <h2 class="s-title">Sistemas en producción hoy</h2>
+  <p class="s-sub">No demos. Plataformas con usuarios reales que operan todos los días.</p>
+  <div class="casos-grid">
+    <div class="caso">
+      <p class="caso-tag">SaaS · Cooperativas · Activo</p>
+      <h3>CoopDigital</h3>
+      <p>Plataforma multi-tenant para gestión de cooperativas argentinas. 12 módulos operativos: socios, asambleas, libros digitales con OCR, tesorería, actas y más. Digitalización de libros físicos integrada.</p>
+      <div class="caso-chips">
+        <span class="chip">Vanilla JS</span>
+        <span class="chip">Firebase</span>
+        <span class="chip">Firestore</span>
+        <span class="chip">Tesseract.js</span>
+        <span class="chip">Multi-tenant</span>
       </div>
-      <div class="servicio-card">
-        <div class="servicio-icon">📊</div>
-        <h3>Sistemas de gestión a medida</h3>
-        <p>Paneles de control, seguimiento de clientes, stock, presupuestos, órdenes de compra. Todo conectado, todo visible en tiempo real.</p>
+      <div class="caso-result">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        12 módulos operativos · Arquitectura multi-organización
       </div>
-      <div class="servicio-card">
-        <div class="servicio-icon">🔗</div>
-        <h3>Integraciones de APIs</h3>
-        <p>WhatsApp Business, Gmail, Google Sheets, Google Drive, Firebase, sistemas externos. Tu operación conectada sin fricciones.</p>
+    </div>
+    <div class="caso">
+      <p class="caso-tag">Portal público · Tiempo real</p>
+      <h3>Trensarmientoenlinea.com.ar</h3>
+      <p>Portal de horarios y novedades del ramal Sarmiento. Panel de administración propio, gestión de noticias con imágenes, widget de últimos trenes en tiempo real. Middleware en Google Apps Script.</p>
+      <div class="caso-chips">
+        <span class="chip">Firebase Auth</span>
+        <span class="chip">Firestore</span>
+        <span class="chip">Cloudinary</span>
+        <span class="chip">Apps Script</span>
       </div>
-      <div class="servicio-card">
-        <div class="servicio-icon">🏢</div>
-        <h3>Plataformas SaaS / Multi-tenant</h3>
-        <p>Sistemas para múltiples organizaciones desde una sola base de código. Ideal para cooperativas, cámaras, asociaciones o consultoras.</p>
+      <div class="caso-result">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        Sistema activo · Actualizaciones diarias en producción
       </div>
-      <div class="servicio-card">
-        <div class="servicio-icon">📋</div>
-        <h3>Digitalización de registros</h3>
-        <p>Libros físicos, planillas en papel, actas, expedientes. Los digitalizamos, indexamos y hacemos buscables desde cualquier dispositivo.</p>
+    </div>
+    <div class="caso">
+      <p class="caso-tag">Sitio institucional · Online</p>
+      <h3>Cocoquerandi.com.ar</h3>
+      <p>Sitio web para organización social, cultural y cooperativa. Presencia institucional online con gestión de contenido, actividades y canales de contacto integrados.</p>
+      <div class="caso-chips">
+        <span class="chip">HTML · CSS · JS</span>
+        <span class="chip">Diseño a medida</span>
+        <span class="chip">Mobile-first</span>
       </div>
-      <div class="servicio-card">
-        <div class="servicio-icon">🧮</div>
-        <h3>Modelos en Excel / Google Sheets</h3>
-        <p>Dashboards financieros, modelos de proyección, reportes automáticos. Para equipos que ya trabajan en planillas y quieren potenciarlas.</p>
+      <div class="caso-result">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        Sitio activo · cocoquerandi.com.ar
       </div>
     </div>
   </div>
+</div>
 
-  <hr class="divider">
+<hr class="rule">
 
-  <!-- CASOS -->
-  <div class="section-wrap" id="casos">
-    <p class="section-label">Proyectos reales</p>
-    <h2 class="section-title">Casos en producción</h2>
-    <p class="section-sub">No demos. Sistemas que están funcionando hoy con usuarios reales.</p>
-    <div class="casos-grid">
-      <div class="caso-card">
-        <p class="caso-tag">SaaS · Cooperativas · Activo</p>
-        <h3>CoopDigital</h3>
-        <p>Plataforma multi-tenant para gestión de cooperativas argentinas. 12 módulos operativos: socios, asambleas, libros digitales, tesorería, actas y más. Digitalización de libros físicos con OCR integrado.</p>
-        <div class="caso-chips">
-          <span class="chip">Vanilla JS</span>
-          <span class="chip">Firebase</span>
-          <span class="chip">Firestore</span>
-          <span class="chip">Tesseract.js</span>
-          <span class="chip">Multi-tenant</span>
-        </div>
+<!-- STACK -->
+<div class="section" id="stack">
+  <p class="eyebrow">Tecnología</p>
+  <h2 class="s-title">Con qué trabajo</h2>
+  <p class="s-sub">Stack moderno, costos controlados. Priorizo herramientas que escalan sin facturas que sorprenden a fin de mes.</p>
+  <div class="stack-grid">
+    <div class="stack-item">
+      <svg class="stack-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 7H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg>
+      <span>Firebase / Firestore</span>
+    </div>
+    <div class="stack-item">
+      <svg class="stack-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+      <span>Vanilla JS</span>
+    </div>
+    <div class="stack-item">
+      <svg class="stack-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+      <span>Google Apps Script</span>
+    </div>
+    <div class="stack-item">
+      <svg class="stack-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M8 11l4-7 4 7H8zM8 13l4 7 4-7H8z"/></svg>
+      <span>Python</span>
+    </div>
+    <div class="stack-item">
+      <svg class="stack-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+      <span>Excel / VBA</span>
+    </div>
+    <div class="stack-item">
+      <svg class="stack-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+      <span>APIs REST</span>
+    </div>
+    <div class="stack-item">
+      <svg class="stack-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+      <span>GitHub Pages</span>
+    </div>
+    <div class="stack-item">
+      <svg class="stack-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="2" width="20" height="20" rx="2"/><path d="M7 8h10M7 12h6M7 16h8"/></svg>
+      <span>Cloudinary</span>
+    </div>
+  </div>
+</div>
+
+<hr class="rule">
+
+<!-- TESTIMONIOS -->
+<div class="section-bg">
+  <div class="section" id="testimonios">
+    <p class="eyebrow">Clientes</p>
+    <h2 class="s-title">Lo que dicen quienes ya trabajan con sistemas propios</h2>
+    <div class="testi-grid">
+      <div class="testi">
+        <svg class="testi-q" width="28" height="20" viewBox="0 0 28 20" fill="currentColor">
+          <path d="M0 20V12.4C0 5.533 3.733 1.4 11.2 0l1.4 2.2C9.267 3 7.4 4.467 6.6 6.6c-.4.933-.533 1.867-.4 2.8H12V20H0zm16 0V12.4C16 5.533 19.733 1.4 27.2 0l1.4 2.2c-3.333.8-5.2 2.267-6 4.4-.4.933-.533 1.867-.4 2.8H28V20H16z"/>
+        </svg>
+        <p>"Tradujo procesos administrativos complejos en un sistema simple de usar. No tuvimos que explicarle dos veces cómo funcionaba nuestro negocio. Eso no es habitual en un desarrollador."</p>
+        <div class="testi-name">Cliente confidencial</div>
+        <div class="testi-role">Responsable de administración · PyME sector servicios · Buenos Aires</div>
       </div>
-      <div class="caso-card">
-        <p class="caso-tag">Portal público · Información en tiempo real</p>
-        <h3>Trensarmientoenlinea.com.ar</h3>
-        <p>Portal de horarios y novedades del ramal Sarmiento. Panel de administración propio, gestión de noticias con imágenes, widget de últimos trenes sincronizado en tiempo real con Firestore.</p>
-        <div class="caso-chips">
-          <span class="chip">Firebase Auth</span>
-          <span class="chip">Firestore</span>
-          <span class="chip">Cloudinary</span>
-          <span class="chip">Google Apps Script</span>
-        </div>
-      </div>
-      <div class="caso-card">
-        <p class="caso-tag">Demo ERP · Sector salud</p>
-        <h3>Sistema de gestión clínica</h3>
-        <p>Simulación de ERP para clínica de neurorehabilitación. Dashboards, órdenes de compra, stock de insumos, seguimiento de pacientes y entorno de escritorio virtualizado.</p>
-        <div class="caso-chips">
-          <span class="chip">Vanilla JS</span>
-          <span class="chip">Dashboard</span>
-          <span class="chip">Workflow OC</span>
-          <span class="chip">Stock</span>
-        </div>
+      <div class="testi">
+        <svg class="testi-q" width="28" height="20" viewBox="0 0 28 20" fill="currentColor">
+          <path d="M0 20V12.4C0 5.533 3.733 1.4 11.2 0l1.4 2.2C9.267 3 7.4 4.467 6.6 6.6c-.4.933-.533 1.867-.4 2.8H12V20H0zm16 0V12.4C16 5.533 19.733 1.4 27.2 0l1.4 2.2c-3.333.8-5.2 2.267-6 4.4-.4.933-.533 1.867-.4 2.8H28V20H16z"/>
+        </svg>
+        <p>"Conoce tanto la parte técnica como la lógica de negocio. El resultado fue un sistema que realmente usamos todos los días, no uno que quedó en una carpeta sin que nadie lo entienda."</p>
+        <div class="testi-name">Cliente confidencial</div>
+        <div class="testi-role">Gerente operativo · Empresa de logística · GBA</div>
       </div>
     </div>
   </div>
+</div>
 
-  <hr class="divider">
-
-  <!-- STACK -->
-  <div class="section-wrap" id="stack">
-    <p class="section-label">Tecnología</p>
-    <h2 class="section-title">Con qué trabajo</h2>
-    <p class="section-sub">Stack moderno, costos controlados. Priorizo herramientas que escalan sin facturas que sorprenden.</p>
-    <div class="stack-wrap">
-      <div class="stack-item"><span>🔥</span><span>Firebase / Firestore</span></div>
-      <div class="stack-item"><span>📜</span><span>Vanilla JS ES Modules</span></div>
-      <div class="stack-item"><span>📊</span><span>Google Apps Script</span></div>
-      <div class="stack-item"><span>🐍</span><span>Python</span></div>
-      <div class="stack-item"><span>📋</span><span>Excel / VBA</span></div>
-      <div class="stack-item"><span>🔗</span><span>APIs REST</span></div>
-      <div class="stack-item"><span>☁️</span><span>GitHub Pages</span></div>
-      <div class="stack-item"><span>🖼️</span><span>Cloudinary</span></div>
-    </div>
-  </div>
-
-  <hr class="divider">
-
-  <!-- TESTIMONIOS -->
-  <div class="section-wrap" id="testimonios">
-    <p class="section-label">Clientes</p>
-    <h2 class="section-title">Lo que dicen quienes ya trabajaron conmigo</h2>
-    <div class="testimonios-grid">
-      <div class="testimonio">
-        <p class="testimonio-stars">★★★★★</p>
-        <p class="testimonio-text">"HG tradujo procesos administrativos complejos en un sistema simple de usar. No tuvimos que explicarle dos veces cómo funcionaba nuestro negocio. Eso no es habitual en un desarrollador."</p>
-        <p class="testimonio-author">— Responsable de administración, PyME sector servicios · Buenos Aires</p>
-      </div>
-      <div class="testimonio">
-        <p class="testimonio-stars">★★★★★</p>
-        <p class="testimonio-text">"Conoce tanto la parte técnica como la lógica de negocio. El resultado fue un sistema que realmente usamos todos los días, no uno que quedó en una carpeta."</p>
-        <p class="testimonio-author">— Gerente operativo, empresa de logística · GBA</p>
-      </div>
-    </div>
-  </div>
-
-  <!-- CTA FINAL -->
+<!-- CTA FINAL -->
+<div class="section-navy">
   <div class="cta-final">
     <div class="cta-final-inner">
-      <h2>¿Tenés un proceso que querés automatizar?</h2>
-      <p>Contame cómo funciona hoy. En una primera charla puedo decirte si tiene solución, cuánto llevaría y qué stack es el más adecuado. Sin compromiso.</p>
-      <div class="cta-final-actions">
-        <a href="https://wa.me/5491100000000" class="btn-white">Hablemos por WhatsApp →</a>
-        <a href="mailto:hg@hgsolucionesweb.com.ar" class="btn-outline-white">Escribir un mail</a>
+      <h2>¿Tenés un proceso que funciona a medias?</h2>
+      <p>Contame cómo opera hoy. En una primera charla puedo decirte si tiene solución técnica, cuánto llevaría implementarla y cuánto costaría. Sin compromiso.</p>
+      <div class="cta-actions">
+        <a href="https://wa.me/5491100000000" class="btn-white">
+          Hablemos por WhatsApp
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </a>
+        <a href="mailto:hg@hgsolucionesweb.com.ar" class="btn-outline-white">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          Escribir un mail
+        </a>
       </div>
     </div>
   </div>
+</div>
 
-  <!-- FOOTER -->
-  <footer>
-    <div class="footer-inner">
-      <p><strong style="color:#e2e8f0;">HG Soluciones Web</strong> · Hernán Garbarino · Buenos Aires, Argentina</p>
-      <p><a href="https://hgsolucionesweb.com.ar">hgsolucionesweb.com.ar</a> · <a href="mailto:hg@hgsolucionesweb.com.ar">hg@hgsolucionesweb.com.ar</a></p>
-      <p style="margin-top:0.25rem;">¿Buscás una web para tu negocio? <a href="index_prueba.html">Ver servicios web →</a></p>
-    </div>
-  </footer>
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <a href="#" class="footer-logo">HG Soluciones Web<b>.</b></a>
+    <p>Buenos Aires, Argentina · <a href="https://hgsolucionesweb.com.ar">hgsolucionesweb.com.ar</a> · <a href="mailto:hg@hgsolucionesweb.com.ar">hg@hgsolucionesweb.com.ar</a></p>
+    <p>¿Buscás una web para tu negocio? <a href="index_prueba.html">Ver servicios web →</a></p>
+  </div>
+</footer>
 
 </body>
 </html>
