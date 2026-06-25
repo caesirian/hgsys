@@ -258,6 +258,24 @@
     }
     .rule { border: none; border-top: 1px solid var(--border); max-width: 1080px; margin: 0 auto; }
 
+    /* foto + intro */
+    .dif-intro {
+      display: grid; grid-template-columns: 200px 1fr;
+      gap: 2.5rem; align-items: center;
+      margin-bottom: 2.5rem;
+    }
+    .dif-foto {
+      width: 200px; height: 200px;
+      border-radius: 12px; object-fit: cover;
+      border: 1px solid var(--border);
+      filter: grayscale(20%);
+    }
+    .dif-intro-text .s-sub { margin-bottom: 0; }
+    @media (max-width: 640px) {
+      .dif-intro { grid-template-columns: 1fr; gap: 1.5rem; }
+      .dif-foto { width: 140px; height: 140px; }
+    }
+
     /* diferenciador en 2 cols */
     .dif-cols {
       display: grid; grid-template-columns: 1fr 1fr;
@@ -615,6 +633,12 @@
   <p class="eyebrow">Por qué es diferente</p>
   <h2 class="s-title">No soy diseñador que programa.<br>Ni programador que diseña.</h2>
   <p class="s-sub">Tengo 18 años de experiencia en administración y finanzas de empresas. Sé cómo piensan los clientes, cómo opera un negocio, y qué hace que alguien decida contactar. Eso lo pongo en cada web.</p>
+  <div class="dif-intro">
+    <img src="perfil.jpg" alt="Hernán Garbarino — HG Soluciones Web" class="dif-foto">
+    <div class="dif-intro-text">
+      <p class="s-sub">Soy Hernán Garbarino, desarrollador web radicado en Buenos Aires. Antes de programar, pasé 18 años trabajando en administración y finanzas de empresas —incluyendo ARSAT S.A. Eso me enseñó cómo piensan los clientes, cómo opera un negocio real, y qué hace que alguien decida contactar. Hoy pongo todo eso en cada web que construyo.</p>
+    </div>
+  </div>
   <div class="dif-cols">
     <div class="dif-card accent-border">
       <div class="dif-icon">
