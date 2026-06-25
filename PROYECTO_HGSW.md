@@ -12,6 +12,9 @@
 | `index_prueba.html` | caesirian.github.io/Hgsys/index_prueba.html | Landing servicios web — público emprendedor/comercio |
 | `index_test.html` | caesirian.github.io/Hgsys/index_test.html | Landing servicios profesionales — PyMEs/cooperativas |
 | `erp-salud-demo.html` | caesirian.github.io/Hgsys/erp-salud-demo.html | Demo ERP salud — Pacientes, Agenda, Stock |
+| `catalogo-stock-demo.html` | caesirian.github.io/Hgsys/catalogo-stock-demo.html | Demo catálogo de indumentaria — stock/precio/agotado por talle en vivo |
+| `dashboard-turnos-demo.html` | caesirian.github.io/Hgsys/dashboard-turnos-demo.html | Demo dashboard de turnos — barbería, KPIs animados, simulación de día |
+| `bot-whatsapp-demo.html` | caesirian.github.io/Hgsys/bot-whatsapp-demo.html | Demo bot de WhatsApp — stock, horarios, envíos, handoff a humano |
 | `presupuesto.html` | hgsolucionesweb.com.ar/presupuesto.html | Cotizador actualizado junio 2026 |
 
 ---
@@ -38,6 +41,20 @@
 - Footer con link cruzado entre las dos landings
 - Todo el código debe poder abrirse como archivo HTML estático sin servidor
 
+### Demos de herramientas (catálogo, dashboard, bot)
+Tres demos interactivos, pensados como sección transversal — no pertenecen a una sola landing, sino que se linkean desde ambas como "esto es lo que sé construir, tocalo vos mismo".
+
+- **Negocio ficticio compartido:** "Ropa Urbana", tienda de indumentaria. Los tres demos comparten el mismo catálogo de productos (remera oversize, buzo canguro, pantalón cargo, camisa de lino, short deportivo) para que cuenten una sola historia coherente en vez de ser islas sueltas.
+- **Identidad visual propia pero coherente:** fondo oscuro `#0d0f17` (variación del negro de `index_prueba`), acento celeste `#38bdf8` heredado, tipografías Syne/Inter/**JetBrains Mono** (la mono es nueva — le da carácter de "panel de control real" a números de stock/precio/KPIs)
+- **Sin backend:** todo el estado vive en memoria (JS), con botón de reset/reinicio en los tres
+- **Orden de construcción:** catálogo → dashboard → bot (el bot se dejó para el final a pedido explícito)
+
+**`catalogo-stock-demo.html`** — Grilla de productos que se expanden mostrando talles. Por talle: stock editable (+/-), precio editable inline, toggle "agotado manual" independiente del stock (para reservas). Stats agregados (unidades totales, talles con stock bajo, talles agotados) recalculados en cada cambio.
+
+**`dashboard-turnos-demo.html`** — Barbería "Don Aldo" (clientes niños y adultos, servicios y precios distintos). 4 KPIs (turnos hoy, ocupación con barra, cancelaciones con alerta automática, ticket promedio + facturación estimada), mini-agenda con 4-5 turnos y estado, gráfico de barras por franja horaria. Animación count-up al cargar; botón "Simular otro día" regenera todo con datos aleatorios realistas.
+
+**`bot-whatsapp-demo.html`** — Mockup fiel de WhatsApp (burbujas, checks, indicador de escribiendo) conectado al mismo catálogo de "Ropa Urbana". Combina botones de respuesta rápida + texto libre con matching por keywords (producto, horarios, envíos, pagos, saludo). Si no entiende, lo dice y ofrece derivar a un humano — nunca inventa una respuesta. Panel lateral con contador en vivo de "resueltas por el bot" vs "derivadas a humano".
+
 ---
 
 ## Proyectos reales que aparecen en el portfolio
@@ -48,6 +65,8 @@
 | Cocoquerandi.com.ar | cocoquerandi.com.ar | index_prueba |
 | CoopDigital | Caesirian/Hgsys · Coopdigital/ | index_test |
 | ERP Salud Demo | erp-salud-demo.html | index_test |
+
+*Nota: los tres demos de herramientas ("Ropa Urbana") son ficticios y deben marcarse explícitamente como ejemplo/demo en cualquier landing donde se linkeen — no son un cliente real, a diferencia de los anteriores.*
 
 ---
 
@@ -73,7 +92,9 @@
 ### Alto impacto
 - [ ] **Foto de Hernán** en `index_prueba.html` — sección diferenciador. En servicios personales sube la conversión significativamente
 - [ ] **Testimonio con nombre real** en cualquiera de las dos páginas — los actuales dicen "cliente confidencial"
-- [ ] **Caso de portfolio de comercio/profesional independiente** en `index_prueba.html` — Cocoquerandí y el tren no generan identificación en ese público objetivo
+- [x] **Caso de portfolio de comercio/profesional independiente** en `index_prueba.html` — resuelto vía los tres demos de herramientas (catálogo, dashboard, bot), con negocio ficticio "Ropa Urbana" explícitamente marcado como ejemplo
+- [ ] **Página contenedora de demos** (`herramientas.html` o similar) que una los tres demos con tabs o cards, para linkear desde ambas landings con un único CTA tipo "Ver en acción"
+- [ ] **Links a los tres demos** desde `index_prueba.html` e `index_test.html` — hoy los archivos están en el repo pero ninguna landing los referencia todavía
 
 ### Medio impacto
 - [ ] **Link al presupuestador** desde las dos landings — hoy no hay ningún CTA que lleve a `presupuesto.html`
