@@ -1,361 +1,838 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<title>Presupuesto Desarrollo Web Premium</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Presupuesto — HG Soluciones Web</title>
+  <meta name="description" content="Calculá el presupuesto de tu proyecto web en tiempo real. Sin compromiso.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    :root {
+      --bg:      #07080f;
+      --bg2:     #0c0e1a;
+      --surface: #0f1525;
+      --border:  #1a2035;
+      --border2: #243050;
+      --accent:  #38bdf8;
+      --accent-lo: rgba(56,189,248,0.07);
+      --accent-md: rgba(56,189,248,0.15);
+      --text:    #dde4f0;
+      --muted:   #6b7594;
+      --dim:     #353d55;
+      --white:   #ffffff;
+      --green:   #22c55e;
+      --red:     #ef4444;
+    }
 
-<style>
-* {
-    box-sizing: border-box;
-}
+    html { scroll-behavior: smooth; }
 
-body {
-    margin: 0;
-    font-family: 'Poppins', sans-serif;
-    min-height: 100vh;
-    background: radial-gradient(circle at top, #0f766e, #0b1d26, #000);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 40px 20px;
-    color: white;
-}
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 0 0 4rem;
+    }
 
-.contenedor {
-    width: 100%;
-    max-width: 920px;
-    background: rgba(255, 255, 255, 0.06);
-    backdrop-filter: blur(18px);
-    -webkit-backdrop-filter: blur(18px);
-    border-radius: 26px;
-    padding: 45px;
-    box-shadow: 0 0 60px rgba(15,118,110,0.25);
-    border: 1px solid rgba(255,255,255,0.15);
-    animation: aparecer 0.8s ease;
-}
+    /* ── HEADER ── */
+    header {
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      padding: 1.25rem 2rem;
+      display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 50;
+      backdrop-filter: blur(12px);
+    }
+    .logo {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800; font-size: 1rem;
+      color: var(--white); text-decoration: none;
+    }
+    .logo b { color: var(--accent); }
+    .header-back {
+      font-size: 0.8rem; color: var(--muted);
+      text-decoration: none; display: flex; align-items: center; gap: 0.4rem;
+      transition: color 0.15s;
+    }
+    .header-back:hover { color: var(--accent); }
 
-@keyframes aparecer {
-    from { opacity: 0; transform: translateY(25px); }
-    to { opacity: 1; transform: translateY(0); }
-}
+    /* ── HERO ── */
+    .hero {
+      text-align: center;
+      padding: 4rem 2rem 3rem;
+      max-width: 680px; margin: 0 auto;
+    }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      font-size: 0.7rem; font-weight: 700;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--accent);
+      border: 1px solid rgba(56,189,248,0.25);
+      background: rgba(56,189,248,0.06);
+      padding: 0.3rem 0.85rem; border-radius: 3px;
+      margin-bottom: 1.5rem;
+    }
+    .badge-dot {
+      width: 5px; height: 5px; border-radius: 50%;
+      background: var(--accent);
+      animation: blink 2.4s ease-in-out infinite;
+    }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+    .hero h1 {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      font-weight: 800; letter-spacing: -0.025em;
+      color: var(--white); line-height: 1.1;
+      margin-bottom: 0.875rem;
+    }
+    .hero p {
+      font-size: 1rem; color: var(--muted);
+      line-height: 1.75; font-weight: 300;
+    }
 
-h1 {
-    text-align: center;
-    font-size: 38px;
-    margin-bottom: 12px;
-    letter-spacing: 0.5px;
-}
+    /* ── LAYOUT ── */
+    .layout {
+      max-width: 1000px; margin: 0 auto;
+      padding: 0 2rem;
+      display: grid; grid-template-columns: 1fr 340px;
+      gap: 1.5rem; align-items: start;
+    }
+    @media (max-width: 780px) {
+      .layout { grid-template-columns: 1fr; }
+      .sidebar-sticky { position: static !important; }
+    }
 
-.subtitulo {
-    text-align: center;
-    color: #cfd8dc;
-    margin-bottom: 40px;
-    font-weight: 300;
-}
+    /* ── SECCIÓN ── */
+    .seccion {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: 1.25rem;
+    }
+    .seccion-header {
+      display: flex; align-items: center; gap: 0.875rem;
+      padding: 1.1rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+    }
+    .seccion-num {
+      width: 24px; height: 24px; flex-shrink: 0;
+      border-radius: 50%;
+      background: var(--accent-lo);
+      border: 1px solid rgba(56,189,248,0.25);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.68rem; font-weight: 800;
+      color: var(--accent);
+    }
+    .seccion-title {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700; font-size: 0.9rem;
+      color: var(--white);
+    }
+    .seccion-desc {
+      font-size: 0.75rem; color: var(--muted);
+      margin-left: auto;
+    }
 
-.seccion {
-    margin-top: 40px;
-}
+    /* ── OPCIÓN RADIO / CHECKBOX ── */
+    .opcion {
+      display: flex; align-items: flex-start; gap: 0.875rem;
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      transition: background 0.15s;
+      user-select: none;
+    }
+    .opcion:last-child { border-bottom: none; }
+    .opcion:hover { background: var(--accent-lo); }
+    .opcion.selected { background: var(--accent-lo); }
 
-.seccion h2 {
-    font-size: 22px;
-    border-left: 4px solid #14b8a6;
-    padding-left: 12px;
-    margin-bottom: 18px;
-}
-.opcion {
-    background: rgba(255, 255, 255, 0.06);
-    border-radius: 14px;
-    padding: 16px 20px;
-    margin-bottom: 12px;
-    cursor: pointer;
-    transition: 0.3s;
-    display: grid;
-    grid-template-columns: 26px 1fr;  /* ✅ checkbox ancho fijo + texto flexible */
-    align-items: center;
-    gap: 14px;
-    line-height: 1.4;
-    overflow: hidden;                 /* ✅ evita que el texto se salga */
-}
+    /* custom input */
+    .opcion-input {
+      flex-shrink: 0; margin-top: 2px;
+      width: 17px; height: 17px;
+      border-radius: 50%;
+      border: 2px solid var(--dim);
+      background: transparent;
+      display: flex; align-items: center; justify-content: center;
+      transition: border-color 0.15s;
+    }
+    .opcion-input.checkbox { border-radius: 4px; }
+    .opcion.selected .opcion-input {
+      border-color: var(--accent);
+      background: var(--accent);
+    }
+    .opcion-input-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--bg); display: none;
+    }
+    .opcion-input.checkbox .opcion-input-dot {
+      width: 9px; height: 9px; border-radius: 2px;
+    }
+    .opcion.selected .opcion-input-dot { display: block; }
 
+    .opcion-body { flex: 1; }
+    .opcion-name {
+      font-size: 0.875rem; font-weight: 500;
+      color: var(--text); margin-bottom: 0.2rem;
+    }
+    .opcion.selected .opcion-name { color: var(--white); }
+    .opcion-detail {
+      font-size: 0.78rem; color: var(--muted);
+      line-height: 1.5;
+    }
+    .opcion-precio {
+      flex-shrink: 0;
+      font-family: 'Syne', sans-serif;
+      font-weight: 700; font-size: 0.875rem;
+      color: var(--muted);
+      text-align: right;
+    }
+    .opcion.selected .opcion-precio { color: var(--accent); }
 
+    /* mensuales */
+    .mensual-tag {
+      font-size: 0.62rem; font-weight: 700;
+      letter-spacing: 0.07em; text-transform: uppercase;
+      background: rgba(56,189,248,0.1);
+      color: var(--accent);
+      border: 1px solid rgba(56,189,248,0.2);
+      padding: 0.1rem 0.45rem; border-radius: 3px;
+      margin-left: 0.4rem;
+    }
 
-.opcion:hover {
-    background: rgba(255, 255, 255, 0.14);
-    transform: translateY(-2px);
-}
+    /* ── DATOS DE CONTACTO ── */
+    .form-grid {
+      padding: 1.25rem 1.5rem;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;
+    }
+    @media (max-width: 500px) { .form-grid { grid-template-columns: 1fr; } }
+    .form-full { grid-column: 1 / -1; }
+    .field label {
+      display: block;
+      font-size: 0.72rem; font-weight: 600;
+      letter-spacing: 0.06em; text-transform: uppercase;
+      color: var(--muted); margin-bottom: 0.4rem;
+    }
+    .field input,
+    .field textarea,
+    .field select {
+      width: 100%;
+      padding: 0.7rem 0.875rem;
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      border-radius: 5px;
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      font-size: 0.875rem;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .field input:focus,
+    .field textarea:focus,
+    .field select:focus {
+      border-color: var(--accent);
+    }
+    .field input::placeholder,
+    .field textarea::placeholder { color: var(--dim); }
+    .field textarea { resize: none; height: 90px; }
+    .field select option { background: var(--bg2); color: var(--text); }
 
-input[type="radio"],
-input[type="checkbox"] {
-    transform: scale(1.25);
-    cursor: pointer;
-    margin: 0;
-}
+    /* ── SIDEBAR STICKY ── */
+    .sidebar-sticky {
+      position: sticky; top: 74px;
+    }
+    .resumen {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .resumen-header {
+      padding: 1.1rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .resumen-title {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700; font-size: 0.9rem;
+      color: var(--white);
+    }
+    .resumen-clear {
+      font-size: 0.72rem; color: var(--muted);
+      cursor: pointer; transition: color 0.15s;
+      background: none; border: none;
+    }
+    .resumen-clear:hover { color: var(--red); }
 
+    .resumen-items { padding: 0.75rem 1.5rem; min-height: 80px; }
+    .resumen-empty {
+      font-size: 0.82rem; color: var(--dim);
+      text-align: center; padding: 1.25rem 0;
+    }
+    .resumen-item {
+      display: flex; justify-content: space-between; align-items: flex-start;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.8rem; gap: 0.75rem;
+    }
+    .resumen-item:last-child { border-bottom: none; }
+    .ri-name { color: var(--text); line-height: 1.45; flex: 1; }
+    .ri-tag {
+      font-size: 0.62rem; font-weight: 600;
+      background: rgba(56,189,248,0.1); color: var(--accent);
+      border: 1px solid rgba(56,189,248,0.2);
+      padding: 0.1rem 0.4rem; border-radius: 3px;
+      white-space: nowrap;
+    }
+    .ri-val { color: var(--accent); font-weight: 600; white-space: nowrap; }
 
-.dato {
-    margin-bottom: 16px;
-}
+    .resumen-footer {
+      padding: 1.25rem 1.5rem;
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+    }
+    .total-row {
+      display: flex; justify-content: space-between; align-items: baseline;
+      margin-bottom: 0.4rem;
+    }
+    .total-label { font-size: 0.75rem; color: var(--muted); }
+    .total-val {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800; font-size: 1.5rem;
+      color: var(--accent); line-height: 1;
+    }
+    .total-mensual-row {
+      display: flex; justify-content: space-between; align-items: baseline;
+      margin-bottom: 1.25rem;
+    }
+    .total-mensual-label { font-size: 0.72rem; color: var(--dim); }
+    .total-mensual-val {
+      font-size: 0.875rem; font-weight: 600;
+      color: var(--muted);
+    }
+    .total-nota {
+      font-size: 0.72rem; color: var(--dim);
+      margin-bottom: 1.1rem; line-height: 1.5;
+    }
 
-input, textarea {
-    width: 100%;
-    padding: 16px;
-    border-radius: 14px;
-    border: none;
-    background: rgba(255,255,255,0.12);
-    color: white;
-    font-size: 15px;
-    outline: none;
-}
+    /* ── BOTONES ── */
+    .btn-wa {
+      display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+      width: 100%;
+      background: #25d366; color: #000;
+      font-family: 'Syne', sans-serif;
+      font-weight: 700; font-size: 0.9rem;
+      padding: 0.82rem; border-radius: 5px;
+      border: none; cursor: pointer;
+      transition: opacity 0.15s, transform 0.15s;
+      text-decoration: none;
+      margin-bottom: 0.6rem;
+    }
+    .btn-wa:hover { opacity: 0.88; transform: translateY(-1px); }
+    .btn-email {
+      display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+      width: 100%;
+      background: transparent; color: var(--text);
+      font-size: 0.875rem; font-weight: 500;
+      padding: 0.75rem; border-radius: 5px;
+      border: 1px solid var(--border2); cursor: pointer;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    .btn-email:hover { border-color: var(--accent); color: var(--accent); }
 
-input::placeholder, textarea::placeholder {
-    color: #b0bec5;
-}
+    /* toast */
+    .toast {
+      position: fixed; bottom: 2rem; left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      border-radius: 8px; padding: 0.875rem 1.5rem;
+      font-size: 0.875rem; color: var(--text);
+      display: flex; align-items: center; gap: 0.6rem;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+      z-index: 999;
+      transition: transform 0.3s ease;
+    }
+    .toast.show { transform: translateX(-50%) translateY(0); }
+    .toast.success { border-color: rgba(34,197,94,0.4); }
+    .toast.error   { border-color: rgba(239,68,68,0.4); }
+    .toast-icon { font-size: 1rem; }
 
-textarea {
-    resize: none;
-    height: 110px;
-}
-
-.total {
-    margin-top: 40px;
-    padding: 22px;
-    border-radius: 20px;
-    background: linear-gradient(135deg, #14b8a6, #2563eb);
-    text-align: center;
-    font-size: 30px;
-    font-weight: 600;
-    color: black;
-    box-shadow: 0 0 25px rgba(20,184,166,0.6);
-}
-
-button {
-    margin-top: 28px;
-    width: 100%;
-    padding: 20px;
-    border: none;
-    border-radius: 18px;
-    font-size: 18px;
-    font-weight: 600;
-    cursor: pointer;
-    background: linear-gradient(135deg, #14b8a6, #2563eb);
-    color: black;
-    box-shadow: 0 10px 28px rgba(20,184,166,0.5);
-    transition: 0.25s;
-}
-
-button:hover {
-    transform: translateY(-2px) scale(1.02);
-    box-shadow: 0 14px 38px rgba(20,184,166,0.75);
-}
-
-.pie {
-    text-align: center;
-    margin-top: 30px;
-    font-size: 13px;
-    color: #9ca3af;
-}
-</style>
-
+    /* ── FOOTER ── */
+    .page-footer {
+      text-align: center;
+      padding: 2rem 1rem 0;
+      font-size: 0.76rem; color: var(--dim);
+    }
+    .page-footer a { color: var(--muted); text-decoration: none; }
+    .page-footer a:hover { color: var(--accent); }
+  </style>
 </head>
-<script>
-!function(){
-    var e=atob,
-        t=e("NTQ5MTEzNDc5NjU2Mg=="),
-        n=e("MTg2NTYxMQ=="),
-        o=function(e){
-            // Primero verificar parámetros UTM de la URL actual
-            var urlParams = new URLSearchParams(window.location.search);
-            var utmSource = urlParams.get('utm_source');
-            var utmMedium = urlParams.get('utm_medium');
-            var utmCampaign = urlParams.get('utm_campaign');
-            
-            // Si hay UTM parameters, usarlos
-            if (utmSource) {
-                var utmText = utmSource;
-                if (utmMedium) utmText += ' - ' + utmMedium;
-                if (utmCampaign) utmText += ' - ' + utmCampaign;
-                return 'UTM: ' + utmText;
-            }
-            
-            // Si no hay UTM, usar la lógica original del referrer
-            if(!e) return "Acceso Directo";
-            if(e.includes("web.whatsapp.com")) return "WhatsApp Web";
-            if(e.includes("instagram.com/stories/")) return "Instagram Story";
-            if(e.includes("instagram.com")) return "Instagram";
-            if(e.includes("facebook.com")) return "Facebook";
-            if(e.includes("twitter.com")) return "Twitter";
-            if(e.includes("linkedin.com")) return "LinkedIn";
-            if(e.includes("tiktok.com")) return "TikTok";
-            if(e.includes("google.com")) return "Google";
-            if(e.includes("youtube.com")) return "YouTube";
-            if(e.includes("github.com")) return "GitHub";
-            try{
-                return "Web: "+new URL(e).hostname;
-            }catch(t){
-                return "Enlace Externo";
-            }
-        };
-    
-    fetch("https://ipapi.co/json/")
-        .then(function(e){return e.json();})
-        .then(function(ipData){
-            if("AR"===ipData.country){
-                var a=new Date(),
-                    r=a.toLocaleTimeString("es-AR"),
-                    c=o(document.referrer),
-                    i=encodeURIComponent("📱 NUEVO ACCESO AL PRESUPUESTADOR:\n📍 País: "+ipData.country_name+"\n🏙️ Ciudad: "+ipData.city+"\n📅 Fecha: "+a.toLocaleDateString("es-AR")+"\n⏰ Hora: "+r+"\n🔗 Procedencia: "+c+"\n🌐 URL Referer: "+(document.referrer||"Ninguna"));
-                
-                // Enviar a WhatsApp
-                fetch("https://api.callmebot.com/whatsapp.php?phone="+t+"&text="+i+"&apikey="+n).catch(function(e){});
-                
-                // Registrar en Google Sheets
-                var sheetData = {
-                    pais: ipData.country_name,
-                    ciudad: ipData.city,
-                    procedencia: c,
-                    referer: document.referrer || "Ninguna",
-                    userAgent: navigator.userAgent,
-                    ip: ipData.ip,
-                    utm_source: new URLSearchParams(window.location.search).get('utm_source') || '',
-                    utm_medium: new URLSearchParams(window.location.search).get('utm_medium') || '',
-                    utm_campaign: new URLSearchParams(window.location.search).get('utm_campaign') || '',
-                    url_completa: window.location.href
-                };
-                
-                // Reemplaza con tu URL de Apps Script
-                fetch('https://script.google.com/macros/s/AKfycbxk9flcVDzmpmP7j2vyM9Aj440LXI1I7RivD_wrb2SYBTL7uqo98hjN7anNj9gHLY-tAA/exec', {
-                    method: 'POST',
-                    body: JSON.stringify(sheetData)
-                }).catch(function(e){});
-            }
-        })
-        .catch(function(e){});
-}();
-</script>
 <body>
 
-<div class="contenedor">
-<h1>Presupuesto de Desarrollo Web</h1>
-<p class="subtitulo">Elegí las opciones que necesitás y obtené tu presupuesto en tiempo real</p>
+<!-- HEADER -->
+<header>
+  <a href="index_prueba.html" class="logo">HG<b>.</b></a>
+  <a href="index_prueba.html" class="header-back">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+    Volver al sitio
+  </a>
+</header>
 
-<div class="seccion">
-<h2>1️⃣ Paquete Base</h2>
-
-<div class="opcion">
-<input type="radio" name="base" value="220000">
-<span>Web Profesional Básica – ARS 220.000  
-(Landing, responsive, formulario, WhatsApp)</span>
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-badge">
+    <span class="badge-dot"></span>
+    Presupuesto sin compromiso
+  </div>
+  <h1>¿Cuánto cuesta<br>tu proyecto?</h1>
+  <p>Seleccioná las opciones que necesitás y obtenés un estimado al instante. Precios actualizados a junio 2026.</p>
 </div>
 
-<div class="opcion">
-<input type="radio" name="base" value="480000">
-Web Comercial Avanzada – ARS 480.000  
-(Secciones múltiples, galería, blog)
+<!-- LAYOUT -->
+<div class="layout">
+
+  <!-- COLUMNA IZQUIERDA -->
+  <div class="main-col">
+
+    <!-- SECCIÓN 1: PAQUETE BASE -->
+    <div class="seccion">
+      <div class="seccion-header">
+        <div class="seccion-num">1</div>
+        <span class="seccion-title">Paquete base</span>
+        <span class="seccion-desc">Elegí uno</span>
+      </div>
+      <div class="opcion" data-group="base" data-valor="350000" data-nombre="Landing page" data-tipo="único" onclick="seleccionarRadio(this)">
+        <div class="opcion-input"></div>
+        <div class="opcion-body">
+          <div class="opcion-name">Landing page</div>
+          <div class="opcion-detail">Una página, un objetivo. Diseño a medida, WhatsApp integrado, mobile-first. Entrega en 5–7 días hábiles.</div>
+        </div>
+        <div class="opcion-precio">$ 350.000</div>
+      </div>
+      <div class="opcion" data-group="base" data-valor="680000" data-nombre="Sitio institucional completo" data-tipo="único" onclick="seleccionarRadio(this)">
+        <div class="opcion-input"></div>
+        <div class="opcion-body">
+          <div class="opcion-name">Sitio institucional completo</div>
+          <div class="opcion-detail">Hasta 5 secciones, formulario de contacto, Google Maps, galería, SEO básico. Entrega en 10–14 días hábiles.</div>
+        </div>
+        <div class="opcion-precio">$ 680.000</div>
+      </div>
+      <div class="opcion" data-group="base" data-valor="1800000" data-nombre="Sistema de gestión a medida" data-tipo="único" onclick="seleccionarRadio(this)">
+        <div class="opcion-input"></div>
+        <div class="opcion-body">
+          <div class="opcion-name">Sistema de gestión a medida</div>
+          <div class="opcion-detail">Usuarios, base de datos en tiempo real, reportes, panel de administración. Alcance definido en propuesta previa.</div>
+        </div>
+        <div class="opcion-precio">$ 1.800.000</div>
+      </div>
+    </div>
+
+    <!-- SECCIÓN 2: FUNCIONALIDADES ADICIONALES -->
+    <div class="seccion">
+      <div class="seccion-header">
+        <div class="seccion-num">2</div>
+        <span class="seccion-title">Funcionalidades adicionales</span>
+        <span class="seccion-desc">Opcional · Podés elegir varias</span>
+      </div>
+      <div class="opcion" data-group="extra" data-valor="130000" data-nombre="Login de usuarios" data-tipo="único" onclick="seleccionarCheck(this)">
+        <div class="opcion-input checkbox"></div>
+        <div class="opcion-body">
+          <div class="opcion-name">Login de usuarios</div>
+          <div class="opcion-detail">Registro, inicio de sesión y gestión de sesiones. Firebase Auth incluido.</div>
+        </div>
+        <div class="opcion-precio">$ 130.000</div>
+      </div>
+      <div class="opcion" data-group="extra" data-valor="180000" data-nombre="Panel de control / Dashboard" data-tipo="único" onclick="seleccionarCheck(this)">
+        <div class="opcion-input checkbox"></div>
+        <div class="opcion-body">
+          <div class="opcion-name">Panel de control / Dashboard</div>
+          <div class="opcion-detail">Visualización de datos en tiempo real, métricas y reportes en pantalla.</div>
+        </div>
+        <div class="opcion-precio">$ 180.000</div>
+      </div>
+      <div class="opcion" data-group="extra" data-valor="200000" data-nombre="Integración con Google (Sheets, Drive, Gmail)" data-tipo="único" onclick="seleccionarCheck(this)">
+        <div class="opcion-input checkbox"></div>
+        <div class="opcion-body">
+          <div class="opcion-name">Integración con Google</div>
+          <div class="opcion-detail">Conexión con Google Sheets, Drive o Gmail mediante Apps Script o API.</div>
+        </div>
+        <div class="opcion-precio">$ 200.000</div>
+      </div>
+      <div class="opcion" data-group="extra" data-valor="260000" data-nombre="Automatización de procesos" data-tipo="único" onclick="seleccionarCheck(this)">
+        <div class="opcion-input checkbox"></div>
+        <div class="opcion-body">
+          <div class="opcion-name">Automatización de procesos</div>
+          <div class="opcion-detail">Notificaciones automáticas, generación de reportes, flujos sin intervención manual.</div>
+        </div>
+        <div class="opcion-precio">$ 260.000</div>
+      </div>
+      <div class="opcion" data-group="extra" data-valor="230000" data-nombre="Sistema de turnos, reservas o pedidos" data-tipo="único" onclick="seleccionarCheck(this)">
+        <div class="opcion-input checkbox"></div>
+        <div class="opcion-body">
+          <div class="opcion-name">Sistema de turnos, reservas o pedidos</div>
+          <div class="opcion-detail">Agenda interactiva, disponibilidad en tiempo real, confirmaciones automáticas.</div>
+        </div>
+        <div class="opcion-precio">$ 230.000</div>
+      </div>
+    </div>
+
+    <!-- SECCIÓN 3: SERVICIOS MENSUALES -->
+    <div class="seccion">
+      <div class="seccion-header">
+        <div class="seccion-num">3</div>
+        <span class="seccion-title">Servicios mensuales</span>
+        <span class="seccion-desc">Opcional · Pago recurrente</span>
+      </div>
+      <div class="opcion" data-group="mensual" data-valor="60000" data-nombre="Mantenimiento técnico mensual" data-tipo="mensual" onclick="seleccionarCheck(this)">
+        <div class="opcion-input checkbox"></div>
+        <div class="opcion-body">
+          <div class="opcion-name">
+            Mantenimiento técnico
+            <span class="mensual-tag">/ mes</span>
+          </div>
+          <div class="opcion-detail">Actualizaciones, backups, monitoreo y correcciones menores. Prioridad de respuesta.</div>
+        </div>
+        <div class="opcion-precio">$ 60.000</div>
+      </div>
+      <div class="opcion" data-group="mensual" data-valor="40000" data-nombre="Soporte técnico por WhatsApp" data-tipo="mensual" onclick="seleccionarCheck(this)">
+        <div class="opcion-input checkbox"></div>
+        <div class="opcion-body">
+          <div class="opcion-name">
+            Soporte técnico por WhatsApp
+            <span class="mensual-tag">/ mes</span>
+          </div>
+          <div class="opcion-detail">Consultas y asistencia técnica directa. Respuesta en el día hábil.</div>
+        </div>
+        <div class="opcion-precio">$ 40.000</div>
+      </div>
+    </div>
+
+    <!-- SECCIÓN 4: DATOS DE CONTACTO -->
+    <div class="seccion">
+      <div class="seccion-header">
+        <div class="seccion-num">4</div>
+        <span class="seccion-title">Tus datos</span>
+        <span class="seccion-desc">Para enviarte la propuesta</span>
+      </div>
+      <div class="form-grid">
+        <div class="field">
+          <label>Nombre *</label>
+          <input type="text" id="nombre" placeholder="Tu nombre completo">
+        </div>
+        <div class="field">
+          <label>Email *</label>
+          <input type="email" id="email" placeholder="tu@email.com">
+        </div>
+        <div class="field">
+          <label>Teléfono / WhatsApp</label>
+          <input type="tel" id="telefono" placeholder="11 1234-5678">
+        </div>
+        <div class="field">
+          <label>Rubro / tipo de negocio</label>
+          <input type="text" id="rubro" placeholder="Ej: consultora, clínica, cooperativa">
+        </div>
+        <div class="field form-full">
+          <label>Contame brevemente tu proyecto</label>
+          <textarea id="mensaje" placeholder="¿Qué problema querés resolver? ¿Ya tenés web? ¿Hay alguna fecha importante?"></textarea>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /main-col -->
+
+  <!-- SIDEBAR -->
+  <div class="sidebar-sticky">
+    <div class="resumen">
+      <div class="resumen-header">
+        <span class="resumen-title">Tu presupuesto</span>
+        <button class="resumen-clear" onclick="limpiarTodo()">Limpiar</button>
+      </div>
+
+      <div class="resumen-items" id="resumen-items">
+        <div class="resumen-empty" id="resumen-empty">Seleccioná opciones para ver el estimado</div>
+      </div>
+
+      <div class="resumen-footer">
+        <div class="total-row">
+          <span class="total-label">Total del proyecto</span>
+          <span class="total-val" id="total-val">$ 0</span>
+        </div>
+        <div class="total-mensual-row" id="mensual-row" style="display:none">
+          <span class="total-mensual-label">+ servicios mensuales</span>
+          <span class="total-mensual-val" id="mensual-val">$ 0 / mes</span>
+        </div>
+        <p class="total-nota">Estimado orientativo. El precio final se confirma en propuesta formal tras una charla de 15 minutos.</p>
+        <button class="btn-wa" onclick="enviarWA()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+          Consultar por WhatsApp
+        </button>
+        <button class="btn-email" onclick="enviarEmail()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          Enviar por email
+        </button>
+      </div>
+    </div>
+
+    <!-- nota discreta -->
+    <p style="font-size:0.72rem;color:var(--dim);text-align:center;margin-top:0.875rem;line-height:1.5;">
+      Precios en ARS · Referencia junio 2026<br>
+      Primera consulta sin compromiso
+    </p>
+  </div>
+
+</div><!-- /layout -->
+
+<!-- FOOTER -->
+<div class="page-footer">
+  <p>HG Soluciones Web · Buenos Aires · <a href="https://hgsolucionesweb.com.ar">hgsolucionesweb.com.ar</a></p>
 </div>
 
-<div class="opcion">
-<input type="radio" name="base" value="1100000">
-Sistema de Gestión – ARS 1.100.000  
-(Usuarios, base de datos, reportes)
-</div>
-</div>
-
-<div class="seccion">
-<h2>2️⃣ Funcionalidades adicionales</h2>
-
-<div class="opcion"><input type="checkbox" class="extra" value="90000"> Login de usuarios (Inicio de sesión)</div>
-<div class="opcion"><input type="checkbox" class="extra" value="120000"> Panel de control (Dashboard)</div>
-<div class="opcion"><input type="checkbox" class="extra" value="140000"> Integración con Google (Sheets, Drive, Gmail)</div>
-<div class="opcion"><input type="checkbox" class="extra" value="180000"> Automatización de procesos</div>
-<div class="opcion"><input type="checkbox" class="extra" value="160000"> Sistema de reservas, turnos o pedidos</div>
+<!-- TOAST -->
+<div class="toast" id="toast">
+  <span class="toast-icon" id="toast-icon">✓</span>
+  <span id="toast-msg">Mensaje enviado</span>
 </div>
 
-<div class="seccion">
-<h2>3️⃣ Servicios mensuales</h2>
-
-<div class="opcion"><input type="checkbox" class="extra" value="25000"> Mantenimiento técnico mensual</div>
-<div class="opcion"><input type="checkbox" class="extra" value="18000"> Soporte técnico por WhatsApp</div>
-</div>
-
-<div class="seccion">
-<h2>4️⃣ Datos de contacto</h2>
-
-<div class="dato"><input type="text" id="nombre" placeholder="Tu nombre"></div>
-<div class="dato"><input type="email" id="email" placeholder="Tu email"></div>
-<div class="dato"><textarea id="mensaje" placeholder="Contame brevemente tu proyecto"></textarea></div>
-</div>
-
-<div class="total" id="total">Total estimado: ARS 0</div>
-
-<button onclick="enviarPresupuesto()">Solicitar presupuesto por Email</button>
-
-<div class="pie">
-Desarrollo Web & Sistemas de Gestión – Presupuesto sin compromiso
-</div>
-
-</div>
 <script>
-const radios = document.querySelectorAll('input[name="base"]');
-const extras = document.querySelectorAll('.extra');
-const totalDiv = document.getElementById("total");
+// ── TRACKING (igual que el original — solo se activa para AR) ──
+!function(){
+  var t = atob("NTQ5MTEzNDc5NjU2Mg=="),
+      n = atob("MTg2NTYxMQ=="),
+      o = function(e) {
+        var p = new URLSearchParams(window.location.search);
+        var src = p.get('utm_source'), med = p.get('utm_medium'), camp = p.get('utm_campaign');
+        if (src) {
+          var u = src; if (med) u += ' - ' + med; if (camp) u += ' - ' + camp;
+          return 'UTM: ' + u;
+        }
+        if (!e) return "Acceso Directo";
+        if (e.includes("web.whatsapp.com")) return "WhatsApp Web";
+        if (e.includes("instagram.com/stories/")) return "Instagram Story";
+        if (e.includes("instagram.com")) return "Instagram";
+        if (e.includes("facebook.com")) return "Facebook";
+        if (e.includes("google.com")) return "Google";
+        if (e.includes("github.com")) return "GitHub";
+        try { return "Web: " + new URL(e).hostname; } catch(x) { return "Enlace Externo"; }
+      };
+  fetch("https://ipapi.co/json/")
+    .then(r => r.json())
+    .then(ip => {
+      if (ip.country !== "AR") return;
+      var d = new Date(), ref = o(document.referrer),
+          txt = encodeURIComponent(
+            "📋 PRESUPUESTADOR VISITADO:\n📍 " + ip.country_name +
+            " · " + ip.city + "\n📅 " + d.toLocaleDateString("es-AR") +
+            " " + d.toLocaleTimeString("es-AR") + "\n🔗 " + ref
+          );
+      fetch("https://api.callmebot.com/whatsapp.php?phone=" + t + "&text=" + txt + "&apikey=" + n).catch(()=>{});
+      fetch('https://script.google.com/macros/s/AKfycbxk9flcVDzmpmP7j2vyM9Aj440LXI1I7RivD_wrb2SYBTL7uqo98hjN7anNj9gHLY-tAA/exec', {
+        method: 'POST',
+        body: JSON.stringify({
+          pais: ip.country_name, ciudad: ip.city,
+          procedencia: ref, referer: document.referrer || "Ninguna",
+          userAgent: navigator.userAgent, ip: ip.ip,
+          utm_source: new URLSearchParams(window.location.search).get('utm_source') || '',
+          utm_medium: new URLSearchParams(window.location.search).get('utm_medium') || '',
+          utm_campaign: new URLSearchParams(window.location.search).get('utm_campaign') || '',
+          url_completa: window.location.href
+        })
+      }).catch(()=>{});
+    }).catch(()=>{});
+}();
 
-function calcular() {
-  let total = 0;
-  let detalle = [];
+// ── ESTADO ──
+const estado = { base: null, extras: new Set(), mensuales: new Set() };
 
-  radios.forEach(radio => {
-    if (radio.checked) {
-      total += parseInt(radio.value);
-      detalle.push(radio.parentElement.innerText);
-    }
-  });
-
-  extras.forEach(extra => {
-    if (extra.checked) {
-      total += parseInt(extra.value);
-      detalle.push(extra.parentElement.innerText);
-    }
-  });
-
-  totalDiv.innerText = "Total estimado: ARS " + total.toLocaleString();
-  window.detallePresupuesto = detalle.join("\n");
-  window.totalPresupuesto = "ARS " + total.toLocaleString();
+// ── RADIO (paquete base) ──
+function seleccionarRadio(el) {
+  document.querySelectorAll('[data-group="base"]').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  estado.base = {
+    nombre: el.dataset.nombre,
+    valor: parseInt(el.dataset.valor),
+    tipo: el.dataset.tipo
+  };
+  actualizarResumen();
 }
 
-radios.forEach(r => r.addEventListener("change", calcular));
-extras.forEach(e => e.addEventListener("change", calcular));
+// ── CHECKBOX ──
+function seleccionarCheck(el) {
+  const key = el.dataset.nombre;
+  const grupo = el.dataset.group;
+  const set = grupo === 'mensual' ? estado.mensuales : estado.extras;
+  if (set.has(key)) {
+    set.delete(key);
+    el.classList.remove('selected');
+  } else {
+    set.add(key);
+    el.classList.add('selected');
+    // guardar datos
+    el.dataset.guardado = JSON.stringify({
+      nombre: el.dataset.nombre,
+      valor: parseInt(el.dataset.valor),
+      tipo: el.dataset.tipo
+    });
+  }
+  actualizarResumen();
+}
 
-function enviarPresupuesto() {
-  const nombre = document.getElementById("nombre").value;
-  const email = document.getElementById("email").value;
-  const mensaje = document.getElementById("mensaje").value;
+// ── RESUMEN ──
+function actualizarResumen() {
+  const container = document.getElementById('resumen-items');
+  const emptyEl = document.getElementById('resumen-empty');
+  let totalUnico = 0, totalMensual = 0;
+  let items = [];
 
-  if (!nombre || !email) {
-    alert("Completá nombre y email");
+  if (estado.base) {
+    totalUnico += estado.base.valor;
+    items.push({ nombre: estado.base.nombre, valor: estado.base.valor, tag: 'base' });
+  }
+
+  document.querySelectorAll('[data-group="extra"].selected').forEach(el => {
+    const v = parseInt(el.dataset.valor);
+    totalUnico += v;
+    items.push({ nombre: el.dataset.nombre, valor: v, tag: 'extra' });
+  });
+
+  document.querySelectorAll('[data-group="mensual"].selected').forEach(el => {
+    const v = parseInt(el.dataset.valor);
+    totalMensual += v;
+    items.push({ nombre: el.dataset.nombre, valor: v, tag: 'mensual' });
+  });
+
+  if (items.length === 0) {
+    container.innerHTML = '<div class="resumen-empty" id="resumen-empty">Seleccioná opciones para ver el estimado</div>';
+    document.getElementById('total-val').textContent = '$ 0';
+    document.getElementById('mensual-row').style.display = 'none';
     return;
   }
 
-  fetch("https://script.google.com/macros/s/AKfycbxEazT71UEDhRUKwcJK9ROULYguXXVR4j7sq_yXwx62TPawSQm8EhVdfobSBE2Nrhtrxw/exec", {
-    method: "POST",
+  const fmt = v => '$ ' + v.toLocaleString('es-AR');
+  const tagLabel = { base: 'base', extra: 'adicional', mensual: 'mensual' };
+  container.innerHTML = items.map(i => `
+    <div class="resumen-item">
+      <span class="ri-name">${i.nombre}</span>
+      <span class="ri-tag">${tagLabel[i.tag]}</span>
+      <span class="ri-val">${fmt(i.valor)}</span>
+    </div>
+  `).join('');
+
+  document.getElementById('total-val').textContent = fmt(totalUnico);
+
+  const mensualRow = document.getElementById('mensual-row');
+  if (totalMensual > 0) {
+    mensualRow.style.display = 'flex';
+    document.getElementById('mensual-val').textContent = fmt(totalMensual) + ' / mes';
+  } else {
+    mensualRow.style.display = 'none';
+  }
+}
+
+// ── LIMPIAR ──
+function limpiarTodo() {
+  document.querySelectorAll('.opcion.selected').forEach(o => o.classList.remove('selected'));
+  estado.base = null;
+  estado.extras.clear();
+  estado.mensuales.clear();
+  actualizarResumen();
+}
+
+// ── ARMAR TEXTO DEL PRESUPUESTO ──
+function armarTexto() {
+  const nombre = document.getElementById('nombre').value.trim();
+  const email = document.getElementById('email').value.trim();
+  const tel = document.getElementById('telefono').value.trim();
+  const rubro = document.getElementById('rubro').value.trim();
+  const msg = document.getElementById('mensaje').value.trim();
+  const total = document.getElementById('total-val').textContent;
+  const mensual = document.getElementById('mensual-val').textContent;
+  const mensualRow = document.getElementById('mensual-row');
+
+  let items = [];
+  if (estado.base) items.push('• ' + estado.base.nombre + ' (' + formatVal(estado.base.valor) + ')');
+  document.querySelectorAll('[data-group="extra"].selected').forEach(el =>
+    items.push('• ' + el.dataset.nombre + ' (' + formatVal(parseInt(el.dataset.valor)) + ')'));
+  document.querySelectorAll('[data-group="mensual"].selected').forEach(el =>
+    items.push('• ' + el.dataset.nombre + ' (' + formatVal(parseInt(el.dataset.valor)) + '/mes)'));
+
+  let texto = `Hola Hernán, completé el presupuestador en tu sitio.\n\n`;
+  if (nombre) texto += `Nombre: ${nombre}\n`;
+  if (email)  texto += `Email: ${email}\n`;
+  if (tel)    texto += `Teléfono: ${tel}\n`;
+  if (rubro)  texto += `Rubro: ${rubro}\n`;
+  texto += `\nOpciones seleccionadas:\n${items.join('\n')}\n`;
+  texto += `\nTotal estimado del proyecto: ${total}`;
+  if (mensualRow.style.display !== 'none') texto += `\nServicios mensuales: ${mensual}`;
+  if (msg) texto += `\n\nProyecto: ${msg}`;
+  return { texto, nombre, email };
+}
+
+function formatVal(v) { return '$ ' + v.toLocaleString('es-AR'); }
+
+// ── WHATSAPP ──
+function enviarWA() {
+  const { texto, nombre } = armarTexto();
+  if (!nombre) { showToast('Completá al menos tu nombre', 'error'); return; }
+  if (!estado.base && estado.extras.size === 0 && estado.mensuales.size === 0) {
+    showToast('Seleccioná al menos una opción', 'error'); return;
+  }
+  const num = '5491147932411';
+  window.open('https://wa.me/' + num + '?text=' + encodeURIComponent(texto), '_blank');
+}
+
+// ── EMAIL ──
+function enviarEmail() {
+  const { texto, nombre, email } = armarTexto();
+  if (!nombre || !email) { showToast('Completá nombre y email', 'error'); return; }
+  if (!estado.base && estado.extras.size === 0 && estado.mensuales.size === 0) {
+    showToast('Seleccioná al menos una opción', 'error'); return;
+  }
+
+  const rubro = document.getElementById('rubro').value.trim();
+  const msg = document.getElementById('mensaje').value.trim();
+  const total = document.getElementById('total-val').textContent;
+  const mensual = document.getElementById('mensual-val').textContent;
+  const mensualRow = document.getElementById('mensual-row');
+
+  let detalle = [];
+  if (estado.base) detalle.push(estado.base.nombre + ': ' + formatVal(estado.base.valor));
+  document.querySelectorAll('[data-group="extra"].selected').forEach(el =>
+    detalle.push(el.dataset.nombre + ': ' + formatVal(parseInt(el.dataset.valor))));
+  document.querySelectorAll('[data-group="mensual"].selected').forEach(el =>
+    detalle.push(el.dataset.nombre + ': ' + formatVal(parseInt(el.dataset.valor)) + '/mes'));
+
+  fetch('https://script.google.com/macros/s/AKfycbxEazT71UEDhRUKwcJK9ROULYguXXVR4j7sq_yXwx62TPawSQm8EhVdfobSBE2Nrhtrxw/exec', {
+    method: 'POST',
     body: JSON.stringify({
-      nombre,
-      email,
-      mensaje,
-      total: window.totalPresupuesto,
-      detalle: window.detallePresupuesto
+      nombre, email,
+      telefono: document.getElementById('telefono').value.trim(),
+      rubro, mensaje: msg,
+      total,
+      mensual: mensualRow.style.display !== 'none' ? mensual : '',
+      detalle: detalle.join(' | ')
     })
   })
-  .then(res => res.json())
-  .then(() => {
-    alert("✅ Presupuesto enviado correctamente");
-  })
-  .catch(() => {
-    alert("❌ Error al enviar presupuesto");
-  });
+  .then(r => r.json())
+  .then(() => showToast('¡Presupuesto enviado! Te respondo pronto.', 'success'))
+  .catch(() => showToast('Error al enviar. Intentá por WhatsApp.', 'error'));
+}
+
+// ── TOAST ──
+function showToast(msg, type = 'success') {
+  const t = document.getElementById('toast');
+  const icon = document.getElementById('toast-icon');
+  document.getElementById('toast-msg').textContent = msg;
+  t.className = 'toast ' + type;
+  icon.textContent = type === 'success' ? '✓' : '✕';
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3500);
 }
 </script>
 
