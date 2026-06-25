@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Catálogo con stock en vivo — Demo | HG Soluciones Web</title>
+<meta name="description" content="Demo interactivo: editá stock, precio y disponibilidad de un catálogo con talles, en tiempo real, sin tocar código.">
+
+<!-- OG -->
+<meta property="og:title" content="Catálogo con stock en vivo — Demo">
+<meta property="og:description" content="Así se ve un catálogo que vos mismo actualizás, sin llamar a nadie.">
+<meta property="og:type" content="website">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --bg: #0d0f17;
+    --surface: #161924;
+    --surface-2: #1d2130;
+    --border: #2a2f42;
+    --text: #eef1f8;
+    --text-dim: #8a90a8;
+    --accent: #38bdf8;
+    --accent-dim: #1a3a4a;
+    --warn: #f59e0b;
+    --warn-dim: #3a2f18;
+    --danger: #fb7185;
+    --ok: #34d399;
+    --radius: 14px;
+  }
+
+  *{ box-sizing: border-box; }
+  html{ scroll-behavior: smooth; }
+
+  body{
+    margin:0;
+    background: var(--bg);
+    background-image:
+      radial-gradient(circle at 15% 0%, rgba(56,189,248,0.07), transparent 45%),
+      radial-gradient(circle at 85% 100%, rgba(245,158,11,0.05), transparent 40%);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  a{ color: inherit; }
+
+  .wrap{
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+
+  /* ===== Header ===== */
+  header.top{
+    padding: 20px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .top-inner{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap: 16px;
+  }
+  .brand{
+    font-family:'Syne', sans-serif;
+    font-weight:700;
+    font-size: 1.05rem;
+    letter-spacing: -0.01em;
+    text-decoration:none;
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .brand svg{ flex-shrink:0; }
+  .back-link{
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    text-decoration:none;
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+  .back-link:hover{ color: var(--accent); }
+
+  /* ===== Hero ===== */
+  .hero{
+    padding: 64px 0 40px;
+  }
+  .eyebrow{
+    font-family:'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin-bottom: 18px;
+  }
+  .eyebrow .dot{
+    width:6px; height:6px; border-radius:50%;
+    background: var(--accent);
+    box-shadow: 0 0 0 0 rgba(56,189,248,0.6);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse{
+    0%{ box-shadow: 0 0 0 0 rgba(56,189,248,0.5); }
+    70%{ box-shadow: 0 0 0 7px rgba(56,189,248,0); }
+    100%{ box-shadow: 0 0 0 0 rgba(56,189,248,0); }
+  }
+  h1{
+    font-family:'Syne', sans-serif;
+    font-weight: 800;
+    font-size: clamp(1.9rem, 4vw, 2.7rem);
+    line-height: 1.12;
+    margin: 0 0 16px;
+    letter-spacing: -0.01em;
+    max-width: 720px;
+  }
+  h1 em{
+    color: var(--accent);
+    font-style: normal;
+  }
+  .hero p.lead{
+    color: var(--text-dim);
+    font-size: 1.05rem;
+    max-width: 580px;
+    margin: 0 0 28px;
+  }
+
+  .stat-row{
+    display:flex;
+    gap: 28px;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+  }
+  .stat{
+    font-family:'JetBrains Mono', monospace;
+  }
+  .stat .num{
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text);
+    display:block;
+  }
+  .stat .label{
+    font-size: 0.72rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .stat.alert .num{ color: var(--warn); }
+
+  /* ===== Toolbar ===== */
+  .toolbar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin: 8px 0 28px;
+  }
+  .hint{
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .hint svg{ flex-shrink:0; color: var(--accent); }
+
+  button.reset{
+    font-family:'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 0.85rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 10px 16px;
+    border-radius: 10px;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    transition: border-color .15s, background .15s;
+  }
+  button.reset:hover{ border-color: var(--accent); background: var(--surface-2); }
+  button.reset:focus-visible{ outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* ===== Grid de productos ===== */
+  .grid{
+    display:grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 18px;
+    padding-bottom: 90px;
+  }
+
+  .card{
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    transition: border-color .2s;
+  }
+  .card.expanded{ border-color: rgba(56,189,248,0.35); }
+
+  .card-top{
+    padding: 18px 18px 16px;
+    cursor: pointer;
+    display:flex;
+    gap: 14px;
+    align-items:flex-start;
+  }
+  .card-top:focus-visible{ outline: 2px solid var(--accent); outline-offset: -2px; }
+
+  .thumb{
+    width: 52px;
+    height: 52px;
+    border-radius: 10px;
+    background: var(--surface-2);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-shrink:0;
+    color: var(--accent);
+  }
+
+  .card-info{ flex:1; min-width:0; }
+  .card-info .name{
+    font-family:'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 1.02rem;
+    margin: 0 0 4px;
+  }
+  .card-info .meta{
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    display:flex;
+    gap: 10px;
+    align-items:center;
+    flex-wrap: wrap;
+  }
+
+  .badge{
+    font-family:'JetBrains Mono', monospace;
+    font-size: 0.68rem;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+  }
+  .badge.ok{ background: rgba(52,211,153,0.12); color: var(--ok); }
+  .badge.low{ background: var(--warn-dim); color: var(--warn); }
+  .badge.out{ background: rgba(251,113,133,0.12); color: var(--danger); }
+
+  .chevron{
+    color: var(--text-dim);
+    transition: transform .2s;
+    flex-shrink: 0;
+    margin-top: 6px;
+  }
+  .card.expanded .chevron{ transform: rotate(180deg); color: var(--accent); }
+
+  /* ===== Detalle de talles ===== */
+  .sizes{
+    border-top: 1px solid var(--border);
+    background: var(--surface-2);
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height .25s ease;
+  }
+  .card.expanded .sizes{ max-height: 600px; }
+
+  .sizes-inner{ padding: 14px 18px 18px; }
+
+  .size-row{
+    display:grid;
+    grid-template-columns: 36px 1fr auto auto;
+    gap: 12px;
+    align-items:center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .size-row:last-child{ border-bottom: none; }
+
+  .size-tag{
+    font-family:'JetBrains Mono', monospace;
+    font-weight: 700;
+    font-size: 0.8rem;
+    color: var(--text);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    width: 36px;
+    height: 28px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+
+  .price-edit{
+    font-family:'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    color: var(--text);
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    padding: 5px 7px;
+    width: 88px;
+    transition: border-color .15s, background .15s;
+  }
+  .price-edit::before{ content:"$"; }
+  .price-edit:hover{ background: var(--bg); border-color: var(--border); }
+  .price-edit:focus{ background: var(--bg); border-color: var(--accent); outline:none; }
+
+  .stock-control{
+    display:flex;
+    align-items:center;
+    gap: 8px;
+    font-family:'JetBrains Mono', monospace;
+  }
+  .stock-control button{
+    width: 26px; height: 26px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    font-size: 0.95rem;
+    line-height: 1;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    transition: border-color .15s, color .15s;
+  }
+  .stock-control button:hover{ border-color: var(--accent); color: var(--accent); }
+  .stock-control button:disabled{ opacity: 0.3; cursor: not-allowed; }
+  .stock-control button:focus-visible{ outline: 2px solid var(--accent); outline-offset: 1px; }
+  .stock-control .qty{
+    width: 28px;
+    text-align: center;
+    font-weight: 700;
+    font-size: 0.9rem;
+  }
+
+  .toggle-out{
+    display:flex;
+    align-items:center;
+    gap: 7px;
+    cursor:pointer;
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    white-space: nowrap;
+    justify-self: end;
+  }
+  .toggle-out input{
+    appearance:none;
+    width: 30px; height: 17px;
+    border-radius: 20px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    position: relative;
+    cursor: pointer;
+    flex-shrink:0;
+    transition: background .15s, border-color .15s;
+  }
+  .toggle-out input::after{
+    content:"";
+    position:absolute;
+    top: 2px; left: 2px;
+    width: 11px; height: 11px;
+    border-radius:50%;
+    background: var(--text-dim);
+    transition: transform .15s, background .15s;
+  }
+  .toggle-out input:checked{ background: rgba(245,158,11,0.18); border-color: var(--warn); }
+  .toggle-out input:checked::after{ transform: translateX(13px); background: var(--warn); }
+  .toggle-out input:focus-visible{ outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .size-row.is-out .size-tag,
+  .size-row.is-out .qty{
+    color: var(--text-dim);
+    text-decoration: line-through;
+    text-decoration-color: var(--danger);
+  }
+  .size-row.is-out{ opacity: 0.55; }
+
+  /* ===== Footer CTA ===== */
+  .cta-bar{
+    border-top: 1px solid var(--border);
+    padding: 36px 0 56px;
+  }
+  .cta-inner{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+  .cta-inner h2{
+    font-family:'Syne', sans-serif;
+    font-size: 1.3rem;
+    margin: 0 0 6px;
+  }
+  .cta-inner p{
+    color: var(--text-dim);
+    margin: 0;
+    font-size: 0.92rem;
+    max-width: 460px;
+  }
+  .cta-btn{
+    font-family:'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 0.92rem;
+    background: var(--accent);
+    color: #07101a;
+    padding: 13px 22px;
+    border-radius: 10px;
+    text-decoration:none;
+    white-space: nowrap;
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    transition: filter .15s;
+  }
+  .cta-btn:hover{ filter: brightness(1.08); }
+  .cta-btn:focus-visible{ outline: 2px solid var(--text); outline-offset: 2px; }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ transition: none !important; animation: none !important; }
+  }
+
+  @media (max-width: 600px){
+    .hero{ padding: 44px 0 28px; }
+    .size-row{ grid-template-columns: 32px 1fr auto; row-gap: 8px; }
+    .toggle-out{ grid-column: 1 / -1; justify-self: start; margin-top: 4px; }
+    .cta-inner{ flex-direction: column; align-items: flex-start; }
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap top-inner">
+    <a class="brand" href="https://hgsolucionesweb.com.ar" target="_blank" rel="noopener">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M3 12L12 3L21 12M5 10V20H19V10" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      HG Soluciones Web
+    </a>
+    <a class="back-link" href="#" onclick="history.back();return false;">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M19 12H5M12 19L5 12L12 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Volver
+    </a>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="hero">
+    <div class="eyebrow"><span class="dot"></span> Demo en vivo — sin servidor, sin recarga</div>
+    <h1>Tu catálogo, editado por <em>vos</em>, en tiempo real.</h1>
+    <p class="lead">Cambiá stock, precio o disponibilidad por talle. Así se actualiza el sitio al instante — sin llamarme a mí, sin esperar, sin Excel paralelo.</p>
+
+    <div class="stat-row" id="statRow">
+      <div class="stat"><span class="num" id="statTotal">0</span><span class="label">Unidades en stock</span></div>
+      <div class="stat alert"><span class="num" id="statLow">0</span><span class="label">Talles con stock bajo</span></div>
+      <div class="stat"><span class="num" id="statOut">0</span><span class="label">Talles agotados</span></div>
+    </div>
+  </section>
+
+  <div class="toolbar">
+    <div class="hint">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><path d="M12 16V12M12 8H12.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      Tocá un producto para ver sus talles
+    </div>
+    <button class="reset" id="resetBtn">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M3 12C3 7.03 7.03 3 12 3C15.18 3 17.94 4.68 19.5 7.2M21 12C21 16.97 16.97 21 12 21C8.82 21 6.06 19.32 4.5 16.8M19.5 3V7.2H15.3M4.5 21V16.8H8.7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Reiniciar demo
+    </button>
+  </div>
+
+  <div class="grid" id="grid"></div>
+
+  <section class="cta-bar">
+    <div class="cta-inner">
+      <div>
+        <h2>¿Querés esto para tu negocio?</h2>
+        <p>Catálogo, talles, stock y precios — vos lo manejás, sin depender de nadie para actualizar lo que vendés.</p>
+      </div>
+      <a class="cta-btn" href="https://hgsolucionesweb.com.ar/presupuesto.html" target="_blank" rel="noopener">
+        Ver presupuesto
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+    </div>
+  </section>
+</main>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---- Estado inicial (fuente de verdad, usado también para "Reiniciar demo") ----
+  function initialData(){
+    return [
+      {
+        id: "rem-oversize",
+        nombre: "Remera oversize",
+        meta: "Algodón peinado 24/1",
+        icon: "tshirt",
+        talles: [
+          { talle: "S",  stock: 8,  precio: 14500, agotado: false },
+          { talle: "M",  stock: 3,  precio: 14500, agotado: false },
+          { talle: "L",  stock: 0,  precio: 14500, agotado: false },
+          { talle: "XL", stock: 6,  precio: 15200, agotado: false }
+        ]
+      },
+      {
+        id: "buzo-canguro",
+        nombre: "Buzo canguro",
+        meta: "Frisa interior",
+        icon: "hoodie",
+        talles: [
+          { talle: "S",  stock: 4,  precio: 26900, agotado: false },
+          { talle: "M",  stock: 9,  precio: 26900, agotado: false },
+          { talle: "L",  stock: 2,  precio: 26900, agotado: false },
+          { talle: "XL", stock: 0,  precio: 27800, agotado: false }
+        ]
+      },
+      {
+        id: "pantalon-cargo",
+        nombre: "Pantalón cargo",
+        meta: "Gabardina reforzada",
+        icon: "pants",
+        talles: [
+          { talle: "38", stock: 5,  precio: 31500, agotado: false },
+          { talle: "40", stock: 1,  precio: 31500, agotado: false },
+          { talle: "42", stock: 7,  precio: 31500, agotado: false },
+          { talle: "44", stock: 3,  precio: 32400, agotado: false }
+        ]
+      },
+      {
+        id: "camisa-lino",
+        nombre: "Camisa de lino",
+        meta: "Calce regular",
+        icon: "shirt",
+        talles: [
+          { talle: "S",  stock: 0,  precio: 22300, agotado: true  },
+          { talle: "M",  stock: 6,  precio: 22300, agotado: false },
+          { talle: "L",  stock: 5,  precio: 22300, agotado: false },
+          { talle: "XL", stock: 2,  precio: 23100, agotado: false }
+        ]
+      },
+      {
+        id: "short-deportivo",
+        nombre: "Short deportivo",
+        meta: "Secado rápido",
+        icon: "shorts",
+        talles: [
+          { talle: "S",  stock: 11, precio: 12800, agotado: false },
+          { talle: "M",  stock: 4,  precio: 12800, agotado: false },
+          { talle: "L",  stock: 3,  precio: 12800, agotado: false }
+        ]
+      }
+    ];
+  }
+
+  var ICONS = {
+    tshirt: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M8 4L4 7L6 11L8 9.5V20H16V9.5L18 11L20 7L16 4L14 6H10L8 4Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>',
+    hoodie: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M9 3C9 4.5 10.5 5.5 12 5.5C13.5 5.5 15 4.5 15 3M6 7L3 9L5 13L7 11.5V20H17V11.5L19 13L21 9L18 7C18 7 16 5.5 12 5.5C8 5.5 6 7 6 7Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M10 9.5V13" stroke="currentColor" stroke-width="1.6"/></svg>',
+    pants: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M7 3H17L18 20H14.5L12 8L9.5 20H6L7 3Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M7 3H17" stroke="currentColor" stroke-width="1.6"/></svg>',
+    shirt: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M8 4L4 7L6 11L8 9.5V20H16V9.5L18 11L20 7L16 4L14 6H10L8 4Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M11 9V17" stroke="currentColor" stroke-width="1.4" stroke-dasharray="1.5 2.2"/></svg>',
+    shorts: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M6 4H18L19 13H14.5L13.5 20H10.5L9.5 13H5L6 4Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M6 4H18" stroke="currentColor" stroke-width="1.6"/></svg>'
+  };
+
+  var data = initialData();
+  var expandedId = null;
+  var grid = document.getElementById("grid");
+
+  function fmtMoney(n){
+    return n.toLocaleString("es-AR");
+  }
+
+  function statusFor(t){
+    if (t.agotado || t.stock === 0) return "out";
+    if (t.stock <= 3) return "low";
+    return "ok";
+  }
+
+  function productSummary(p){
+    var total = 0, low = 0, out = 0;
+    p.talles.forEach(function(t){
+      var s = statusFor(t);
+      if (s === "out") out++;
+      else { total += t.stock; if (s === "low") low++; }
+    });
+    return { total: total, low: low, out: out };
+  }
+
+  function renderStats(){
+    var totalUnits = 0, totalLow = 0, totalOut = 0;
+    data.forEach(function(p){
+      var s = productSummary(p);
+      totalUnits += s.total;
+      totalLow += s.low;
+      totalOut += s.out;
+    });
+    document.getElementById("statTotal").textContent = totalUnits;
+    document.getElementById("statLow").textContent = totalLow;
+    document.getElementById("statOut").textContent = totalOut;
+  }
+
+  function badgeFor(p){
+    var s = productSummary(p);
+    var totalTalles = p.talles.length;
+    if (s.out === totalTalles) return { cls: "out", label: "Agotado" };
+    if (s.out > 0 || s.low > 0) return { cls: "low", label: "Stock bajo" };
+    return { cls: "ok", label: "Disponible" };
+  }
+
+  function render(){
+    grid.innerHTML = "";
+    data.forEach(function(p){
+      var isExpanded = expandedId === p.id;
+      var badge = badgeFor(p);
+
+      var card = document.createElement("article");
+      card.className = "card" + (isExpanded ? " expanded" : "");
+
+      var top = document.createElement("div");
+      top.className = "card-top";
+      top.setAttribute("role", "button");
+      top.setAttribute("tabindex", "0");
+      top.setAttribute("aria-expanded", isExpanded ? "true" : "false");
+
+      top.innerHTML =
+        '<div class="thumb">' + (ICONS[p.icon] || "") + '</div>' +
+        '<div class="card-info">' +
+          '<p class="name">' + p.nombre + '</p>' +
+          '<div class="meta">' +
+            '<span>' + p.meta + '</span>' +
+            '<span class="badge ' + badge.cls + '">' + badge.label + '</span>' +
+          '</div>' +
+        '</div>' +
+        '<svg class="chevron" width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M6 9L12 15L18 9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+      top.addEventListener("click", function(){ toggleExpand(p.id); });
+      top.addEventListener("keydown", function(e){
+        if (e.key === "Enter" || e.key === " "){ e.preventDefault(); toggleExpand(p.id); }
+      });
+
+      var sizes = document.createElement("div");
+      sizes.className = "sizes";
+      var inner = document.createElement("div");
+      inner.className = "sizes-inner";
+
+      p.talles.forEach(function(t, idx){
+        var status = statusFor(t);
+        var row = document.createElement("div");
+        row.className = "size-row" + (status === "out" ? " is-out" : "");
+
+        var tag = document.createElement("div");
+        tag.className = "size-tag";
+        tag.textContent = t.talle;
+
+        var priceWrap = document.createElement("div");
+        var priceInput = document.createElement("input");
+        priceInput.type = "text";
+        priceInput.className = "price-edit";
+        priceInput.value = fmtMoney(t.precio);
+        priceInput.setAttribute("aria-label", "Precio talle " + t.talle);
+        priceInput.addEventListener("focus", function(){ this.select(); });
+        priceInput.addEventListener("change", function(){
+          var raw = this.value.replace(/[^0-9]/g, "");
+          var val = parseInt(raw, 10);
+          t.precio = isNaN(val) || val <= 0 ? t.precio : val;
+          this.value = fmtMoney(t.precio);
+        });
+        priceWrap.appendChild(priceInput);
+
+        var stockCtrl = document.createElement("div");
+        stockCtrl.className = "stock-control";
+
+        var minusBtn = document.createElement("button");
+        minusBtn.type = "button";
+        minusBtn.textContent = "–";
+        minusBtn.setAttribute("aria-label", "Restar stock talle " + t.talle);
+        minusBtn.disabled = t.stock <= 0;
+        minusBtn.addEventListener("click", function(){
+          if (t.stock > 0){ t.stock--; render(); }
+        });
+
+        var qty = document.createElement("span");
+        qty.className = "qty";
+        qty.textContent = t.stock;
+
+        var plusBtn = document.createElement("button");
+        plusBtn.type = "button";
+        plusBtn.textContent = "+";
+        plusBtn.setAttribute("aria-label", "Sumar stock talle " + t.talle);
+        plusBtn.addEventListener("click", function(){
+          t.stock++; render();
+        });
+
+        stockCtrl.appendChild(minusBtn);
+        stockCtrl.appendChild(qty);
+        stockCtrl.appendChild(plusBtn);
+
+        var toggleLabel = document.createElement("label");
+        toggleLabel.className = "toggle-out";
+        var toggleInput = document.createElement("input");
+        toggleInput.type = "checkbox";
+        toggleInput.checked = t.agotado;
+        toggleInput.setAttribute("aria-label", "Marcar agotado manualmente talle " + t.talle);
+        toggleInput.addEventListener("change", function(){
+          t.agotado = this.checked; render();
+        });
+        var toggleText = document.createElement("span");
+        toggleText.textContent = "Agotado manual";
+        toggleLabel.appendChild(toggleInput);
+        toggleLabel.appendChild(toggleText);
+
+        row.appendChild(tag);
+        row.appendChild(priceWrap);
+        row.appendChild(stockCtrl);
+        row.appendChild(toggleLabel);
+        inner.appendChild(row);
+      });
+
+      sizes.appendChild(inner);
+      card.appendChild(top);
+      card.appendChild(sizes);
+      grid.appendChild(card);
+    });
+
+    renderStats();
+  }
+
+  function toggleExpand(id){
+    expandedId = (expandedId === id) ? null : id;
+    render();
+  }
+
+  document.getElementById("resetBtn").addEventListener("click", function(){
+    data = initialData();
+    expandedId = null;
+    render();
+  });
+
+  render();
+})();
+</script>
+
+</body>
+</html>
