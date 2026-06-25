@@ -1,5 +1,5 @@
 # HG Soluciones Web — Estado del proyecto
-**Última actualización:** junio 2026  
+**Última actualización:** junio 2026 (sesión: index_pro + herramientas)  
 **Repo:** `Caesirian/Hgsys` (GitHub Pages → hgsolucionesweb.com.ar)  
 **Contacto:** hernan.garbarino@gmail.com · WhatsApp +5491125333769
 
@@ -9,8 +9,10 @@
 
 | Archivo | URL | Descripción |
 |---|---|---|
+| `index_pro.html` | caesirian.github.io/Hgsys/index_pro.html | Página de entrada — presenta las 3 líneas (web / sistemas / demos) |
 | `index_prueba.html` | caesirian.github.io/Hgsys/index_prueba.html | Landing servicios web — público emprendedor/comercio |
 | `index_test.html` | caesirian.github.io/Hgsys/index_test.html | Landing servicios profesionales — PyMEs/cooperativas |
+| `herramientas.html` | caesirian.github.io/Hgsys/herramientas.html | Contenedor de los 3 demos de herramientas, con cards |
 | `erp-salud-demo.html` | caesirian.github.io/Hgsys/erp-salud-demo.html | Demo ERP salud — Pacientes, Agenda, Stock |
 | `catalogo-stock-demo.html` | caesirian.github.io/Hgsys/catalogo-stock-demo.html | Demo catálogo de indumentaria — stock/precio/agotado por talle en vivo |
 | `dashboard-turnos-demo.html` | caesirian.github.io/Hgsys/dashboard-turnos-demo.html | Demo dashboard de turnos — barbería, KPIs animados, simulación de día |
@@ -55,6 +57,12 @@ Tres demos interactivos, pensados como sección transversal — no pertenecen a 
 
 **`bot-whatsapp-demo.html`** — Mockup fiel de WhatsApp (burbujas, checks, indicador de escribiendo) conectado al mismo catálogo de "Ropa Urbana". Combina botones de respuesta rápida + texto libre con matching por keywords (producto, horarios, envíos, pagos, saludo). Si no entiende, lo dice y ofrece derivar a un humano — nunca inventa una respuesta. Panel lateral con contador en vivo de "resueltas por el bot" vs "derivadas a humano".
 
+### index_pro.html (página de entrada)
+Resuelve el pendiente estratégico de tener un punto de entrada único al repo. Tres cards al mismo nivel (no dos): Presencia web (`index_prueba.html`), Sistemas y automatización (`index_test.html`), Demos en vivo (`herramientas.html`). Mismo lenguaje visual que `index_prueba` (Syne/Inter, fondo `#07080f`, acento celeste), grid responsive 3→2→1 columnas. Accesos directos abajo (presupuesto, demo ERP, WhatsApp, email) se mantuvieron en ancho angosto (720px) a propósito, para diferenciar jerárquicamente lo principal (cards) de lo secundario (accesos rápidos). SVGs decorativos con `aria-hidden="true"`.
+
+### herramientas.html (contenedor de demos)
+Página puente entre `index_pro.html` y los tres demos. Cards con eyebrow, título, descripción, chips y CTA "Probar demo" — mismo patrón visual que las cards de `index_pro.html`, pero adaptado a 3 columnas fijas en desktop. Nota explícita al pie aclarando que el negocio ("Ropa Urbana" / "Don Aldo") es ficticio.
+
 ---
 
 ## Proyectos reales que aparecen en el portfolio
@@ -93,8 +101,9 @@ Tres demos interactivos, pensados como sección transversal — no pertenecen a 
 - [ ] **Foto de Hernán** en `index_prueba.html` — sección diferenciador. En servicios personales sube la conversión significativamente
 - [ ] **Testimonio con nombre real** en cualquiera de las dos páginas — los actuales dicen "cliente confidencial"
 - [x] **Caso de portfolio de comercio/profesional independiente** en `index_prueba.html` — resuelto vía los tres demos de herramientas (catálogo, dashboard, bot), con negocio ficticio "Ropa Urbana" explícitamente marcado como ejemplo
-- [ ] **Página contenedora de demos** (`herramientas.html` o similar) que una los tres demos con tabs o cards, para linkear desde ambas landings con un único CTA tipo "Ver en acción"
-- [ ] **Links a los tres demos** desde `index_prueba.html` e `index_test.html` — hoy los archivos están en el repo pero ninguna landing los referencia todavía
+- [x] **Página contenedora de demos** — resuelto: `herramientas.html`, con cards a los tres demos
+- [ ] **Definir si `index_pro.html` reemplaza a `index.html`** como página servida por default en GitHub Pages — hoy `index.html` (el viejo, genérico) sigue siendo el que carga la raíz del sitio; `index_pro.html` solo se ve si se accede a esa URL directamente
+- [ ] **Links cruzados** entre `index_prueba.html`, `index_test.html` y `herramientas.html` — hoy `index_pro.html` linkea a las tres, pero las tres páginas entre sí no se referencian unas a otras todavía
 
 ### Medio impacto
 - [ ] **Link al presupuestador** desde las dos landings — hoy no hay ningún CTA que lleve a `presupuesto.html`
@@ -103,7 +112,7 @@ Tres demos interactivos, pensados como sección transversal — no pertenecen a 
 
 ### Pendiente estratégico
 - [ ] Decidir si `index_prueba.html` e `index_test.html` **reemplazan o complementan** el sitio principal `hgsolucionesweb.com.ar`
-- [ ] Crear un `index.html` de entrada en el repo que redirija según perfil del visitante o presente las dos opciones
+- [x] Crear un `index.html` de entrada en el repo que presente las opciones — resuelto vía `index_pro.html` (pendiente real: que sea efectivamente el que se sirve por default, ver arriba)
 - [ ] Definir dominio/subdominio definitivo para cada landing si se decide mantener las dos
 
 ---
