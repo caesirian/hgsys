@@ -13,8 +13,6 @@ function renderField(f, row) {
     return `<select name="${f.name}">${f.options.map(o => {
       const v = typeof o === 'object' ? o.value : o;
       const l = typeof o === 'object' ? o.label : o;
-      // String(v) === String(valorActual) en vez de == para evitar coerciones
-      // raras de JS con booleanos (false == "false" da false con ==).
       const seleccionado = String(v) === String(row?.[f.name]);
       return `<option value="${escapeHtml(v)}" ${seleccionado ? 'selected' : ''}>${escapeHtml(l)}</option>`;
     }).join('')}</select>`;
@@ -26,7 +24,7 @@ function renderField(f, row) {
   }
   if (f.type === 'file') {
     const urlField = f.urlField ?? 'url';
-    const pathField = f.pathField; // opcional: si no se define, no hay campo de storagePath
+    const pathField = f.pathField;
     const urlActual = row?.[urlField] ?? '';
     return `<div class="file-field" data-file-field data-url-field="${escapeHtml(urlField)}" ${pathField ? `data-path-field="${escapeHtml(pathField)}"` : ''}>
       <input type="file" data-file-input accept="${escapeHtml(f.accept ?? '')}">
@@ -41,20 +39,73 @@ function renderField(f, row) {
 export function openModal(title, fields, row, onSave) {
   const modal = document.createElement('div');
   modal.className = 'modal';
-  modal.innerHTML = `<form class="modal-panel"><h2>${escapeHtml(title)}</h2><div class="form-grid">${fields.map(f => `<div class="field ${f.full ? 'full' : ''}"><label>${escapeHtml(f.label)}</label>${renderField(f, row)}</div>`).join('')}</div><div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px"><button class="btn ghost" type="button" data-close>Cancelar</button><button class="btn primary" data-submit>Guardar</button></div></form>`;
+  modal.innerHTML = `<form class="modal-panel"><h2>${escapeHtml(title)}</h2><div class="form-grid">${
+    fields.map(f => `<div class="field ${f.full ? 'full' : ''}" data-field-name="${escapeHtml(f.name)}">
+      <label>${escapeHtml(f.label)}</label>
+      ${renderField(f, row)}
+      ${f.hint ? `<span class="field-hint muted" data-hint="${escapeHtml(f.name)}"></span>` : ''}
+    </div>`).join('')
+  }</div><div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px"><button class="btn ghost" type="button" data-close>Cancelar</button><button class="btn primary" data-submit>Guardar</button></div></form>`;
   document.body.append(modal);
 
   modal.querySelector('[data-close]').onclick = () => modal.remove();
 
-  // Cablear la subida para cada campo tipo 'file' presente en el formulario.
+  // ── Cablear onBlur por campo ──────────────────────────────────────────────
+  // Si un field define `onBlur: async (valor, setField, setHint) => {}`,
+  // se ejecuta al salir del input. setField(name, val) modifica otro campo
+  // del mismo form. setHint(name, msg, tipo) muestra un mensaje debajo del campo.
+  fields.forEach(f => {
+    if (typeof f.onBlur !== 'function') return;
+
+    const input = modal.querySelector(`[name="${f.name}"]`);
+    if (!input) return;
+
+    input.addEventListener('blur', async () => {
+      const valor = input.value.trim();
+      if (!valor) return;
+
+      // setField: escribe el valor en otro input del mismo modal
+      const setField = (fieldName, val) => {
+        const target = modal.querySelector(`[name="${fieldName}"]`);
+        if (target && !target.value) {
+          // Solo autocompleta si el campo está vacío (no pisa lo que el
+          // usuario ya escribió a mano)
+          target.value = val ?? '';
+        }
+      };
+
+      // setHint: muestra un mensaje informativo bajo el campo con onBlur
+      const setHint = (fieldName, msg, tipo = 'muted') => {
+        const hint = modal.querySelector(`[data-hint="${fieldName}"]`);
+        if (!hint) return;
+        hint.textContent = msg;
+        hint.className = `field-hint ${tipo}`;
+      };
+
+      // Deshabilitar input mientras consulta
+      input.disabled = true;
+      setHint(f.name, 'Consultando ARCA…', 'muted');
+
+      try {
+        await f.onBlur(valor, setField, setHint);
+      } catch {
+        setHint(f.name, '', 'muted');
+      } finally {
+        input.disabled = false;
+        input.focus();
+      }
+    });
+  });
+
+  // ── Cablear subida de archivos ─────────────────────────────────────────────
   modal.querySelectorAll('[data-file-field]').forEach(wrapper => {
-    const fileInput = wrapper.querySelector('[data-file-input]');
-    const urlField = wrapper.dataset.urlField;
-    const pathField = wrapper.dataset.pathField;
-    const urlHidden = wrapper.querySelector(`input[name="${urlField}"]`);
+    const fileInput  = wrapper.querySelector('[data-file-input]');
+    const urlField   = wrapper.dataset.urlField;
+    const pathField  = wrapper.dataset.pathField;
+    const urlHidden  = wrapper.querySelector(`input[name="${urlField}"]`);
     const pathHidden = pathField ? wrapper.querySelector(`input[name="${pathField}"]`) : null;
-    const status = wrapper.querySelector('[data-file-status]');
-    const submitBtn = modal.querySelector('[data-submit]');
+    const status     = wrapper.querySelector('[data-file-status]');
+    const submitBtn  = modal.querySelector('[data-submit]');
 
     fileInput.onchange = async () => {
       const file = fileInput.files[0];
@@ -79,6 +130,7 @@ export function openModal(title, fields, row, onSave) {
     };
   });
 
+  // ── Submit ─────────────────────────────────────────────────────────────────
   modal.querySelector('form').onsubmit = async e => {
     e.preventDefault();
     const submitBtn = modal.querySelector('[data-submit]');
@@ -87,8 +139,6 @@ export function openModal(title, fields, row, onSave) {
       await onSave(Object.fromEntries(new FormData(e.currentTarget)));
       modal.remove();
     } catch {
-      // El error ya se reporta vía toast.err dentro de onSave (bindCrud).
-      // Acá solo evitamos cerrar el modal para que el usuario pueda corregir.
       submitBtn.disabled = false;
     }
   };
