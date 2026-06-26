@@ -99,14 +99,14 @@ Página puente entre `index_pro.html` y los tres demos. Cards con eyebrow, títu
 
 ### Completado en sesión junio 2026
 
+- [x] **Foto de Hernán** en `index_pro.html` — entre marca y pregunta central. Grid 120px + texto con `perfil.jpg` del repo
 - [x] **SEO técnico completo** — JSON-LD `Person` + `ProfessionalService` con `@id` compartido en index_pro/prueba/test; `<link rel="canonical">` en los 5 archivos; `robots: noindex,follow` en presupuesto y herramientas; `og:image` + Twitter card en todos; `rel="noopener"` en todos los `target="_blank"`
 - [x] **Seguridad inputs** — `maxlength` y `autocomplete` en los 4 campos del presupuestador
-- [x] **Foto de Hernán** en `index_prueba.html` — sección diferenciador. Bloque 2 cols (foto izq, texto der) con `perfil.jpg` del repo
 - [x] **Links cruzados** entre todas las páginas — footers de index_prueba, index_test y herramientas actualizados con navegación completa; logos del footer apuntan a index_pro
 - [x] **CTA al presupuestador** — botón secundario en cada card de precios y en el CTA final de ambas landings
 
 ### Alto impacto
-- [x] **Foto de Hernán** en `index_prueba.html` — sección diferenciador. Bloque 2 cols (foto izq, texto der) con `perfil.jpg` del repo
+- [x] **Foto de Hernán** en `index_pro.html` — entre marca y pregunta central. Grid 120px + texto con `perfil.jpg` del repo
 - [ ] **Testimonio con nombre real** en cualquiera de las dos páginas — los actuales dicen "cliente confidencial"
 - [x] **Caso de portfolio de comercio/profesional independiente** en `index_prueba.html` — resuelto vía los tres demos de herramientas (catálogo, dashboard, bot), con negocio ficticio "Ropa Urbana" explícitamente marcado como ejemplo
 - [x] **Página contenedora de demos** — resuelto: `herramientas.html`, con cards a los tres demos
