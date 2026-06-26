@@ -465,6 +465,14 @@
     .btn-pc-line:hover { border-color: var(--accent); color: var(--accent); }
     .btn-pc-fill { background: var(--accent); color: var(--bg); }
     .btn-pc-fill:hover { opacity: 0.87; }
+    .btn-pc-calc {
+      display: block; text-align: center;
+      font-size: 0.78rem; font-weight: 500;
+      padding: 0.45rem; color: var(--muted);
+      text-decoration: none; transition: color 0.15s;
+      margin-top: 0.5rem;
+    }
+    .btn-pc-calc:hover { color: var(--accent); }
 
     /* ── FAQ rápido ── */
     .faq { display: flex; flex-direction: column; gap: 0; margin-top: 3rem; }
@@ -854,6 +862,7 @@
         <li><svg class="chk" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Entrega en 5–7 días hábiles</li>
       </ul>
       <a href="https://wa.me/5491125333769" class="btn-pc btn-pc-line">Pedir presupuesto</a>
+      <a href="presupuesto.html" class="btn-pc-calc">Calculá el precio exacto →</a>
     </div>
     <div class="pc hi">
       <span class="pc-badge">Más pedido</span>
@@ -869,6 +878,7 @@
         <li><svg class="chk" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Entrega en 10–14 días hábiles</li>
       </ul>
       <a href="https://wa.me/5491125333769" class="btn-pc btn-pc-fill">Pedir presupuesto</a>
+      <a href="presupuesto.html" class="btn-pc-calc">Calculá el precio exacto →</a>
     </div>
     <div class="pc">
       <p class="pc-tier">Avanzado</p>
@@ -882,6 +892,7 @@
         <li><svg class="chk" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Funcionalidades a medida</li>
       </ul>
       <a href="https://wa.me/5491125333769" class="btn-pc btn-pc-line">Pedir presupuesto</a>
+      <a href="presupuesto.html" class="btn-pc-calc">Calculá el precio exacto →</a>
     </div>
   </div>
 
@@ -916,6 +927,10 @@
         Escribime por WhatsApp
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
       </a>
+      <a href="presupuesto.html" class="btn-ghost">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Calculá el presupuesto
+      </a>
       <a href="mailto:hernan.garbarino@gmail.com" class="btn-ghost">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
         Enviar un mail
@@ -926,9 +941,15 @@
 
 <!-- FOOTER -->
 <footer>
-  <a href="#" class="footer-logo">HG<b>.</b></a>
+  <a href="index_pro.html" class="footer-logo">HG<b>.</b></a>
   <p>Buenos Aires, Argentina · <a href="https://hgsolucionesweb.com.ar">hgsolucionesweb.com.ar</a></p>
-  <p>¿Necesitás automatización o sistemas? <a href="index_test.html">Ver servicios profesionales →</a></p>
+  <p>
+    <a href="index_test.html">Sistemas y automatización →</a>
+    &nbsp;·&nbsp;
+    <a href="herramientas.html">Ver demos en vivo →</a>
+    &nbsp;·&nbsp;
+    <a href="presupuesto.html">Calculá tu presupuesto →</a>
+  </p>
 </footer>
 
 </body>
