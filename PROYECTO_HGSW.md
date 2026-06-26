@@ -1,5 +1,5 @@
 # HG Soluciones Web — Estado del proyecto
-**Última actualización:** junio 2026 (sesión: index_pro + herramientas)  
+**Última actualización:** junio 2026 (sesión: SEO, seguridad, links cruzados, CTA cotizador)  
 **Repo:** `Caesirian/Hgsys` (GitHub Pages → hgsolucionesweb.com.ar)  
 **Contacto:** hernan.garbarino@gmail.com · WhatsApp +5491125333769
 
@@ -97,16 +97,24 @@ Página puente entre `index_pro.html` y los tres demos. Cards con eyebrow, títu
 
 ## Pendientes — por impacto
 
+### Completado en sesión junio 2026
+
+- [x] **SEO técnico completo** — JSON-LD `Person` + `ProfessionalService` con `@id` compartido en index_pro/prueba/test; `<link rel="canonical">` en los 5 archivos; `robots: noindex,follow` en presupuesto y herramientas; `og:image` + Twitter card en todos; `rel="noopener"` en todos los `target="_blank"`
+- [x] **Seguridad inputs** — `maxlength` y `autocomplete` en los 4 campos del presupuestador
+- [x] **Foto de Hernán** en `index_prueba.html` — sección diferenciador. Bloque 2 cols (foto izq, texto der) con `perfil.jpg` del repo
+- [x] **Links cruzados** entre todas las páginas — footers de index_prueba, index_test y herramientas actualizados con navegación completa; logos del footer apuntan a index_pro
+- [x] **CTA al presupuestador** — botón secundario en cada card de precios y en el CTA final de ambas landings
+
 ### Alto impacto
-- [ ] **Foto de Hernán** en `index_prueba.html` — sección diferenciador. En servicios personales sube la conversión significativamente
+- [x] **Foto de Hernán** en `index_prueba.html` — sección diferenciador. Bloque 2 cols (foto izq, texto der) con `perfil.jpg` del repo
 - [ ] **Testimonio con nombre real** en cualquiera de las dos páginas — los actuales dicen "cliente confidencial"
 - [x] **Caso de portfolio de comercio/profesional independiente** en `index_prueba.html` — resuelto vía los tres demos de herramientas (catálogo, dashboard, bot), con negocio ficticio "Ropa Urbana" explícitamente marcado como ejemplo
 - [x] **Página contenedora de demos** — resuelto: `herramientas.html`, con cards a los tres demos
-- [ ] **Definir si `index_pro.html` reemplaza a `index.html`** como página servida por default en GitHub Pages — hoy `index.html` (el viejo, genérico) sigue siendo el que carga la raíz del sitio; `index_pro.html` solo se ve si se accede a esa URL directamente
-- [ ] **Links cruzados** entre `index_prueba.html`, `index_test.html` y `herramientas.html` — hoy `index_pro.html` linkea a las tres, pero las tres páginas entre sí no se referencian unas a otras todavía
+- [ ] **Definir si `index_pro.html` reemplaza a `index.html`** como página servida por default — pendiente de decisión del titular, no urgente
+- [x] **Links cruzados** entre `index_prueba.html`, `index_test.html` y `herramientas.html` — footers actualizados con navegación completa entre las 4 páginas (incluyendo presupuesto)
 
 ### Medio impacto
-- [ ] **Link al presupuestador** desde las dos landings — hoy no hay ningún CTA que lleve a `presupuesto.html`
+- [x] **Link al presupuestador** desde las dos landings — CTA secundario en cada card de precios ("Calculá el precio exacto →") y como segundo botón en el CTA final de ambas páginas
 - [ ] **Google Analytics** o similar — sin medición no hay datos de visitas ni comportamiento
 - [ ] **Métricas de impacto** en los casos de `index_test.html` ("redujo X horas", "procesa Y operaciones")
 
