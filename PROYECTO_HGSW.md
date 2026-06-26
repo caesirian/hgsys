@@ -1,5 +1,5 @@
 # HG Soluciones Web — Estado del proyecto
-**Última actualización:** junio 2026 (sesión: SEO, seguridad, links cruzados, CTA cotizador)  
+**Última actualización:** junio 2026 (sesión: refactor index_pro sin scroll)  
 **Repo:** `Caesirian/Hgsys` (GitHub Pages → hgsolucionesweb.com.ar)  
 **Contacto:** hernan.garbarino@gmail.com · WhatsApp +5491125333769
 
@@ -58,7 +58,9 @@ Tres demos interactivos, pensados como sección transversal — no pertenecen a 
 **`bot-whatsapp-demo.html`** — Mockup fiel de WhatsApp (burbujas, checks, indicador de escribiendo) conectado al mismo catálogo de "Ropa Urbana". Combina botones de respuesta rápida + texto libre con matching por keywords (producto, horarios, envíos, pagos, saludo). Si no entiende, lo dice y ofrece derivar a un humano — nunca inventa una respuesta. Panel lateral con contador en vivo de "resueltas por el bot" vs "derivadas a humano".
 
 ### index_pro.html (página de entrada)
-Resuelve el pendiente estratégico de tener un punto de entrada único al repo. Tres cards al mismo nivel (no dos): Presencia web (`index_prueba.html`), Sistemas y automatización (`index_test.html`), Demos en vivo (`herramientas.html`). Mismo lenguaje visual que `index_prueba` (Syne/Inter, fondo `#07080f`, acento celeste), grid responsive 3→2→1 columnas. Accesos directos abajo (presupuesto, demo ERP, WhatsApp, email) se mantuvieron en ancho angosto (720px) a propósito, para diferenciar jerárquicamente lo principal (cards) de lo secundario (accesos rápidos). SVGs decorativos con `aria-hidden="true"`.
+Resuelve el pendiente estratégico de tener un punto de entrada único al repo. Tres cards al mismo nivel (no dos): Presencia web (`index_prueba.html`), Sistemas y automatización (`index_test.html`), Demos en vivo (`herramientas.html`). Mismo lenguaje visual que `index_prueba` (Syne/Inter, fondo `#07080f`, acento celeste). SVGs decorativos con `aria-hidden="true"`.
+
+**Refactor "sin scroll" (commit `a420469`):** se simplificó el layout para que todo entre en una sola pantalla, sin scroll. Efecto colateral intencional: se eliminó la fila de accesos directos secundarios que había debajo de las cards (links a `presupuesto.html` y `erp-salud-demo.html`). Decisión: **se dejan afuera** — el presupuesto ya es alcanzable vía las cards (`index_test.html` → CTA cotizador) y el demo ERP vive dentro del universo de `herramientas.html`. No recuperar esos dos links sueltos salvo que se decida lo contrario más adelante.
 
 ### herramientas.html (contenedor de demos)
 Página puente entre `index_pro.html` y los tres demos. Cards con eyebrow, título, descripción, chips y CTA "Probar demo" — mismo patrón visual que las cards de `index_pro.html`, pero adaptado a 3 columnas fijas en desktop. Nota explícita al pie aclarando que el negocio ("Ropa Urbana" / "Don Aldo") es ficticio.
@@ -104,6 +106,8 @@ Página puente entre `index_pro.html` y los tres demos. Cards con eyebrow, títu
 - [x] **Seguridad inputs** — `maxlength` y `autocomplete` en los 4 campos del presupuestador
 - [x] **Links cruzados** entre todas las páginas — footers de index_prueba, index_test y herramientas actualizados con navegación completa; logos del footer apuntan a index_pro
 - [x] **CTA al presupuestador** — botón secundario en cada card de precios y en el CTA final de ambas landings
+- [x] **Botón de WhatsApp flotante** con tooltip y pulso animado, mensaje prearmado en el link
+- [x] **Refactor `index_pro.html` sin scroll** — todo el contenido entra en una sola pantalla. Costo: se eliminaron los accesos directos secundarios a `presupuesto.html` y `erp-salud-demo.html` (decisión: se dejan afuera, ver sección de diseño arriba)
 
 ### Alto impacto
 - [x] **Foto de Hernán** en `index_pro.html` — entre marca y pregunta central. Grid 120px + texto con `perfil.jpg` del repo
