@@ -1,0 +1,1290 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CultivApp – Seguimiento de Cultivo</title>
+
+<!-- Firebase SDK -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getFirestore, collection, doc, addDoc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, onSnapshot, query, orderBy, where, serverTimestamp } 
+    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  // ─── CONFIGURACIÓN FIREBASE ─────────────────────────────────────────────────
+  // Reemplazá estos valores con los de tu proyecto Firebase
+  const firebaseConfig = {
+    apiKey:            "TU_API_KEY",
+    authDomain:        "TU_PROYECTO.firebaseapp.com",
+    projectId:         "TU_PROYECTO_ID",
+    storageBucket:     "TU_PROYECTO.appspot.com",
+    messagingSenderId: "TU_SENDER_ID",
+    appId:             "TU_APP_ID"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db  = getFirestore(app);
+
+  // ─── ESTADO GLOBAL ──────────────────────────────────────────────────────────
+  let cultivoActivo = null;
+  let unsubs = [];
+
+  // ─── HELPERS ────────────────────────────────────────────────────────────────
+  function fmt(ts) {
+    if (!ts) return "—";
+    const d = ts.toDate ? ts.toDate() : new Date(ts);
+    return d.toLocaleDateString("es-AR");
+  }
+  function diasDesde(ts) {
+    if (!ts) return "—";
+    const d = ts.toDate ? ts.toDate() : new Date(ts);
+    return Math.floor((Date.now() - d.getTime()) / 86400000);
+  }
+  function show(id) {
+    document.querySelectorAll(".vista").forEach(v => v.classList.remove("activa"));
+    document.getElementById(id)?.classList.add("activa");
+    document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("activo"));
+    document.querySelectorAll(`[data-vista="${id}"]`).forEach(b => b.classList.add("activo"));
+  }
+  function toast(msg, tipo = "ok") {
+    const t = document.createElement("div");
+    t.className = `toast toast-${tipo}`;
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 3200);
+  }
+  function cerrarModal(id) { document.getElementById(id).classList.remove("open"); }
+  function abrirModal(id)  { document.getElementById(id).classList.add("open"); }
+
+  // ─── COLECCIONES FIRESTORE ───────────────────────────────────────────────────
+  // cultivos/{cultivoId}
+  // cultivos/{cultivoId}/mediciones/{medicionId}
+  // cultivos/{cultivoId}/eventos/{eventoId}
+  // cultivos/{cultivoId}/nutricion/{semanaId}
+  // cultivos/{cultivoId}/inase/{registroId}
+
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // SECCIÓN: CULTIVOS
+  // ═══════════════════════════════════════════════════════════════════════════════
+  async function cargarCultivos() {
+    const lista = document.getElementById("lista-cultivos");
+    lista.innerHTML = '<p class="cargando">Cargando...</p>';
+    const snap = await getDocs(query(collection(db, "cultivos"), orderBy("creadoEn", "desc")));
+    lista.innerHTML = "";
+    if (snap.empty) {
+      lista.innerHTML = '<p class="empty">No hay cultivos registrados. ¡Creá uno nuevo!</p>';
+      return;
+    }
+    snap.forEach(d => {
+      const c = d.data();
+      const card = document.createElement("div");
+      card.className = "cultivo-card" + (cultivoActivo === d.id ? " activo" : "");
+      card.innerHTML = `
+        <div class="cult-header">
+          <span class="cult-nombre">${c.nombre}</span>
+          <span class="cult-fase fase-${c.fase}">${c.fase}</span>
+        </div>
+        <div class="cult-meta">
+          <span>🧬 ${c.genetica}</span>
+          <span>📅 Día ${diasDesde(c.fechaInicio)}</span>
+          <span>💡 ${c.tipoLuz}</span>
+        </div>
+        <div class="cult-meta">
+          <span>🪴 ${c.tipoOrigen === "semilla" ? "Semilla" : "Esqueje"}</span>
+          <span>🌱 ${c.substrato}</span>
+          <span>📦 ${c.tamMaceta}L</span>
+        </div>
+        <div class="cult-actions">
+          <button class="btn-sm btn-primary" onclick="seleccionarCultivo('${d.id}')">Ver detalle</button>
+          <button class="btn-sm btn-danger" onclick="eliminarCultivo('${d.id}', '${c.nombre}')">Eliminar</button>
+        </div>`;
+      lista.appendChild(card);
+    });
+  }
+
+  window.seleccionarCultivo = async (id) => {
+    cultivoActivo = id;
+    const snap = await getDoc(doc(db, "cultivos", id));
+    const c = snap.data();
+    document.getElementById("det-nombre").textContent  = c.nombre;
+    document.getElementById("det-genetica").textContent = c.genetica;
+    document.getElementById("det-fase").textContent    = c.fase;
+    document.getElementById("det-luz").textContent     = c.tipoLuz;
+    document.getElementById("det-watt").textContent    = c.watt || "—";
+    document.getElementById("det-espectro").textContent = c.espectro || "—";
+    document.getElementById("det-origen").textContent  = c.tipoOrigen === "semilla" ? "Semilla" : "Esqueje";
+    document.getElementById("det-inicio").textContent  = fmt(c.fechaInicio);
+    document.getElementById("det-dia").textContent     = `Día ${diasDesde(c.fechaInicio)}`;
+    document.getElementById("det-substrato").textContent = c.substrato;
+    document.getElementById("det-maceta").textContent  = c.tamMaceta + "L";
+    document.getElementById("det-riego").textContent   = c.sistemaRiego || "—";
+    document.getElementById("det-notas").textContent   = c.notas || "Sin notas";
+    show("vista-detalle");
+    cargarMediciones();
+    cargarEventos();
+    cargarNutricion();
+  };
+
+  window.eliminarCultivo = async (id, nombre) => {
+    if (!confirm(`¿Eliminar el cultivo "${nombre}"? Esta acción no se puede deshacer.`)) return;
+    await deleteDoc(doc(db, "cultivos", id));
+    if (cultivoActivo === id) { cultivoActivo = null; show("vista-cultivos"); }
+    cargarCultivos();
+    toast("Cultivo eliminado");
+  };
+
+  window.guardarCultivo = async () => {
+    const d = {
+      nombre:       val("c-nombre"),
+      genetica:     val("c-genetica"),
+      tipoOrigen:   val("c-origen"),
+      fechaInicio:  new Date(val("c-fecha") + "T00:00:00"),
+      tipoLuz:      val("c-luz"),
+      watt:         val("c-watt"),
+      espectro:     val("c-espectro"),
+      horasLuz:     val("c-horas"),
+      substrato:    val("c-substrato"),
+      tamMaceta:    val("c-maceta"),
+      sistemaRiego: val("c-riego"),
+      fase:         val("c-fase"),
+      notas:        val("c-notas"),
+      creadoEn:     serverTimestamp(),
+    };
+    if (!d.nombre || !d.genetica) { toast("Completá nombre y genética", "err"); return; }
+    await addDoc(collection(db, "cultivos"), d);
+    cerrarModal("modal-cultivo");
+    document.getElementById("form-cultivo").reset();
+    cargarCultivos();
+    toast("Cultivo registrado ✓");
+  };
+
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // SECCIÓN: MEDICIONES
+  // ═══════════════════════════════════════════════════════════════════════════════
+  async function cargarMediciones() {
+    if (!cultivoActivo) return;
+    const lista = document.getElementById("lista-mediciones");
+    lista.innerHTML = '<p class="cargando">Cargando...</p>';
+    const snap = await getDocs(query(
+      collection(db, "cultivos", cultivoActivo, "mediciones"),
+      orderBy("fecha", "desc")
+    ));
+    lista.innerHTML = "";
+    if (snap.empty) { lista.innerHTML = '<p class="empty">Sin mediciones aún.</p>'; return; }
+    snap.forEach(d => {
+      const m = d.data();
+      const row = document.createElement("div");
+      row.className = "med-row";
+      row.innerHTML = `
+        <span class="med-fecha">${fmt(m.fecha)}</span>
+        <span class="med-val"><i>☀️</i>${m.luz ?? "—"} <small>lux</small></span>
+        <span class="med-val"><i>🌡️</i>${m.tempAmb ?? "—"} <small>°C</small></span>
+        <span class="med-val"><i>🪴</i>${m.tempMaceta ?? "—"} <small>°C</small></span>
+        <span class="med-val"><i>💧</i>${m.humedad ?? "—"} <small>%</small></span>
+        <span class="med-val"><i>⚗️</i>pH ${m.ph ?? "—"}</span>
+        <span class="med-val"><i>🔋</i>${m.ec ?? "—"} <small>EC</small></span>
+        <span class="med-val"><i>🌊</i>${m.tdsAgua ?? "—"} <small>TDS</small></span>
+        <button class="btn-icon" onclick="eliminarMedicion('${d.id}')">🗑</button>`;
+      lista.appendChild(row);
+    });
+  }
+
+  window.guardarMedicion = async () => {
+    if (!cultivoActivo) { toast("Seleccioná un cultivo primero", "err"); return; }
+    const d = {
+      fecha:      new Date(val("m-fecha") + "T" + (val("m-hora") || "12:00") + ":00"),
+      luz:        parseFloat(val("m-luz"))     || null,
+      tempAmb:    parseFloat(val("m-tempamb")) || null,
+      tempMaceta: parseFloat(val("m-tempmac")) || null,
+      humedad:    parseFloat(val("m-humedad")) || null,
+      ph:         parseFloat(val("m-ph"))      || null,
+      ec:         parseFloat(val("m-ec"))      || null,
+      tdsAgua:    parseFloat(val("m-tds"))     || null,
+      co2:        parseFloat(val("m-co2"))     || null,
+      vpd:        parseFloat(val("m-vpd"))     || null,
+      notas:      val("m-notas"),
+      creadoEn:   serverTimestamp(),
+    };
+    await addDoc(collection(db, "cultivos", cultivoActivo, "mediciones"), d);
+    cerrarModal("modal-medicion");
+    document.getElementById("form-medicion").reset();
+    cargarMediciones();
+    toast("Medición guardada ✓");
+  };
+
+  window.eliminarMedicion = async (id) => {
+    if (!confirm("¿Eliminar esta medición?")) return;
+    await deleteDoc(doc(db, "cultivos", cultivoActivo, "mediciones", id));
+    cargarMediciones();
+    toast("Medición eliminada");
+  };
+
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // SECCIÓN: EVENTOS / AGENDA
+  // ═══════════════════════════════════════════════════════════════════════════════
+  async function cargarEventos() {
+    if (!cultivoActivo) return;
+    const lista = document.getElementById("lista-eventos");
+    lista.innerHTML = '<p class="cargando">Cargando...</p>';
+    const snap = await getDocs(query(
+      collection(db, "cultivos", cultivoActivo, "eventos"),
+      orderBy("fecha", "desc")
+    ));
+    lista.innerHTML = "";
+    if (snap.empty) { lista.innerHTML = '<p class="empty">Sin eventos registrados.</p>'; return; }
+    snap.forEach(d => {
+      const e = d.data();
+      const row = document.createElement("div");
+      row.className = `evento-row tipo-${e.tipo}`;
+      const hecho = e.realizado ? "✅" : "⏳";
+      row.innerHTML = `
+        <span class="ev-icon">${iconoEvento(e.tipo)}</span>
+        <div class="ev-body">
+          <strong>${e.titulo}</strong>
+          <small>${fmt(e.fecha)} ${e.hora || ""}</small>
+          ${e.descripcion ? `<p>${e.descripcion}</p>` : ""}
+        </div>
+        <span class="ev-estado">${hecho}</span>
+        <button class="btn-icon" onclick="toggleEvento('${d.id}', ${!e.realizado})">${e.realizado ? "↩" : "✓"}</button>
+        <button class="btn-icon" onclick="eliminarEvento('${d.id}')">🗑</button>`;
+      lista.appendChild(row);
+    });
+  }
+
+  function iconoEvento(tipo) {
+    const m = { riego:"💧", fertilizacion:"⚗️", cambio_fase:"🌿", poda:"✂️", transplante:"🪴",
+                cosecha:"🌾", inspeccion:"🔍", tratamiento:"💊", otro:"📌" };
+    return m[tipo] || "📌";
+  }
+
+  window.guardarEvento = async () => {
+    if (!cultivoActivo) { toast("Seleccioná un cultivo primero", "err"); return; }
+    const d = {
+      titulo:      val("ev-titulo"),
+      tipo:        val("ev-tipo"),
+      fecha:       new Date(val("ev-fecha") + "T00:00:00"),
+      hora:        val("ev-hora"),
+      descripcion: val("ev-desc"),
+      realizado:   false,
+      creadoEn:    serverTimestamp(),
+    };
+    if (!d.titulo) { toast("Ingresá un título", "err"); return; }
+    await addDoc(collection(db, "cultivos", cultivoActivo, "eventos"), d);
+    cerrarModal("modal-evento");
+    document.getElementById("form-evento").reset();
+    cargarEventos();
+    toast("Evento agendado ✓");
+  };
+
+  window.toggleEvento = async (id, estado) => {
+    await updateDoc(doc(db, "cultivos", cultivoActivo, "eventos", id), { realizado: estado });
+    cargarEventos();
+  };
+
+  window.eliminarEvento = async (id) => {
+    if (!confirm("¿Eliminar este evento?")) return;
+    await deleteDoc(doc(db, "cultivos", cultivoActivo, "eventos", id));
+    cargarEventos();
+    toast("Evento eliminado");
+  };
+
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // SECCIÓN: NUTRICIÓN
+  // ═══════════════════════════════════════════════════════════════════════════════
+  async function cargarNutricion() {
+    if (!cultivoActivo) return;
+    const lista = document.getElementById("lista-nutricion");
+    lista.innerHTML = '<p class="cargando">Cargando...</p>';
+    const snap = await getDocs(query(
+      collection(db, "cultivos", cultivoActivo, "nutricion"),
+      orderBy("semana", "asc")
+    ));
+    lista.innerHTML = "";
+    if (snap.empty) { lista.innerHTML = '<p class="empty">Sin plan nutricional cargado.</p>'; return; }
+    snap.forEach(d => {
+      const n = d.data();
+      const row = document.createElement("div");
+      row.className = "nutr-row";
+      row.innerHTML = `
+        <div class="nutr-sem">Sem. ${n.semana}</div>
+        <div class="nutr-body">
+          <strong>${n.fase || ""}</strong>
+          <div class="nutr-productos">
+            ${(n.productos || []).map(p => `<span class="nutr-tag">${p.nombre}: <b>${p.dosis}</b> ${p.unidad}</span>`).join("")}
+          </div>
+          ${n.notas ? `<small>${n.notas}</small>` : ""}
+        </div>
+        <button class="btn-icon" onclick="eliminarNutricion('${d.id}')">🗑</button>`;
+      lista.appendChild(row);
+    });
+  }
+
+  window.guardarNutricion = async () => {
+    if (!cultivoActivo) { toast("Seleccioná un cultivo primero", "err"); return; }
+    const productosRaw = val("nutr-productos");
+    let productos = [];
+    try {
+      productos = productosRaw.split("\n").filter(l => l.trim()).map(l => {
+        const parts = l.split(",");
+        return { nombre: parts[0]?.trim(), dosis: parts[1]?.trim(), unidad: parts[2]?.trim() || "ml/L" };
+      });
+    } catch(e) {}
+    const d = {
+      semana:    parseInt(val("nutr-semana")) || 1,
+      fase:      val("nutr-fase"),
+      productos,
+      phAgua:    parseFloat(val("nutr-ph")) || null,
+      ecObjetivo: parseFloat(val("nutr-ec")) || null,
+      notas:     val("nutr-notas"),
+      creadoEn:  serverTimestamp(),
+    };
+    await addDoc(collection(db, "cultivos", cultivoActivo, "nutricion"), d);
+    cerrarModal("modal-nutricion");
+    document.getElementById("form-nutricion").reset();
+    cargarNutricion();
+    toast("Semana nutricional guardada ✓");
+  };
+
+  window.eliminarNutricion = async (id) => {
+    if (!confirm("¿Eliminar esta semana?")) return;
+    await deleteDoc(doc(db, "cultivos", cultivoActivo, "nutricion", id));
+    cargarNutricion();
+  };
+
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // SECCIÓN: INASE
+  // ═══════════════════════════════════════════════════════════════════════════════
+  async function cargarInase() {
+    if (!cultivoActivo) return;
+    const lista = document.getElementById("lista-inase");
+    lista.innerHTML = '<p class="cargando">Cargando...</p>';
+    const snap = await getDocs(query(
+      collection(db, "cultivos", cultivoActivo, "inase"),
+      orderBy("creadoEn", "desc")
+    ));
+    lista.innerHTML = "";
+    if (snap.empty) { lista.innerHTML = '<p class="empty">Sin registros INASE.</p>'; return; }
+    snap.forEach(d => {
+      const r = d.data();
+      const row = document.createElement("div");
+      row.className = "inase-row";
+      row.innerHTML = `
+        <div class="inase-header">
+          <span class="inase-tipo">${r.tipoRegistro}</span>
+          <span class="inase-fecha">${fmt(r.fecha)}</span>
+        </div>
+        <div class="inase-body">
+          <div><b>N° Registro INASE:</b> ${r.nroRegistro || "—"}</div>
+          <div><b>Variedad:</b> ${r.variedad || "—"}</div>
+          <div><b>Categoría de semilla:</b> ${r.categoria || "—"}</div>
+          <div><b>Proveedor/Origen:</b> ${r.proveedor || "—"}</div>
+          <div><b>N° lote:</b> ${r.nroLote || "—"}</div>
+          <div><b>Cantidad:</b> ${r.cantidad || "—"} ${r.unidadCantidad || ""}</div>
+          <div><b>Superficie:</b> ${r.superficie || "—"} m²</div>
+          <div><b>Destino:</b> ${r.destino || "—"}</div>
+          ${r.observaciones ? `<div><b>Obs:</b> ${r.observaciones}</div>` : ""}
+        </div>
+        <button class="btn-icon" onclick="eliminarInase('${d.id}')">🗑</button>`;
+      lista.appendChild(row);
+    });
+  }
+
+  window.guardarInase = async () => {
+    if (!cultivoActivo) { toast("Seleccioná un cultivo primero", "err"); return; }
+    const d = {
+      tipoRegistro:   val("in-tipo"),
+      fecha:          new Date(val("in-fecha") + "T00:00:00"),
+      nroRegistro:    val("in-nro"),
+      variedad:       val("in-variedad"),
+      categoria:      val("in-categoria"),
+      proveedor:      val("in-proveedor"),
+      nroLote:        val("in-lote"),
+      cantidad:       val("in-cantidad"),
+      unidadCantidad: val("in-unidad"),
+      superficie:     val("in-superficie"),
+      destino:        val("in-destino"),
+      responsable:    val("in-responsable"),
+      observaciones:  val("in-obs"),
+      creadoEn:       serverTimestamp(),
+    };
+    if (!d.tipoRegistro || !d.fecha) { toast("Completá tipo y fecha", "err"); return; }
+    await addDoc(collection(db, "cultivos", cultivoActivo, "inase"), d);
+    cerrarModal("modal-inase");
+    document.getElementById("form-inase").reset();
+    cargarInase();
+    toast("Registro INASE guardado ✓");
+  };
+
+  window.eliminarInase = async (id) => {
+    if (!confirm("¿Eliminar este registro INASE?")) return;
+    await deleteDoc(doc(db, "cultivos", cultivoActivo, "inase", id));
+    cargarInase();
+  };
+
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // TUYA SMART – integración via API REST (Local API o Cloud API)
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // La integración con Tuya requiere credenciales de Tuya IoT Platform.
+  // Se usa la API REST de Tuya Cloud (región: us, eu, cn, in)
+  window.cargarSensoresTuya = async () => {
+    const baseUrl   = val("tuya-base") || "https://openapi.tuyaeu.com";
+    const clientId  = val("tuya-client");
+    const deviceId  = val("tuya-device");
+    const statusDiv = document.getElementById("tuya-status");
+    if (!clientId || !deviceId) {
+      statusDiv.innerHTML = '<p class="err-msg">Ingresá Client ID y Device ID en la configuración de Tuya.</p>';
+      return;
+    }
+    statusDiv.innerHTML = '<p class="cargando">Consultando sensores Tuya...</p>';
+    // Nota: en producción debés implementar firma HMAC-SHA256 en backend/Function
+    // ya que el client_secret no debe exponerse en el frontend.
+    statusDiv.innerHTML = `
+      <div class="tuya-aviso">
+        <h4>⚠️ Integración Tuya</h4>
+        <p>La API de Tuya Cloud requiere firma HMAC-SHA256 con tu <b>client_secret</b>. 
+        Por seguridad, esta firma debe generarse en un backend (Cloud Function, servidor propio).<br><br>
+        <b>Pasos para integrar:</b><br>
+        1. Registrate en <a href="https://iot.tuya.com" target="_blank">iot.tuya.com</a><br>
+        2. Creá un proyecto Cloud y vinculá tus dispositivos<br>
+        3. Implementá el endpoint de firma en tu backend<br>
+        4. Configurá la URL del backend en "URL Proxy Tuya" abajo</p>
+        <p><b>Device ID configurado:</b> ${deviceId}</p>
+      </div>`;
+  };
+
+  window.guardarConfigTuya = async () => {
+    localStorage.setItem("tuya_base",   val("tuya-base"));
+    localStorage.setItem("tuya_client", val("tuya-client"));
+    localStorage.setItem("tuya_device", val("tuya-device"));
+    localStorage.setItem("tuya_proxy",  val("tuya-proxy"));
+    toast("Configuración Tuya guardada ✓");
+  };
+
+  function cargarConfigTuya() {
+    document.getElementById("tuya-base").value   = localStorage.getItem("tuya_base")   || "";
+    document.getElementById("tuya-client").value = localStorage.getItem("tuya_client") || "";
+    document.getElementById("tuya-device").value = localStorage.getItem("tuya_device") || "";
+    document.getElementById("tuya-proxy").value  = localStorage.getItem("tuya_proxy")  || "";
+  }
+
+  // ─── HELPER: value de input ──────────────────────────────────────────────────
+  function val(id) { return document.getElementById(id)?.value?.trim() || ""; }
+
+  // ─── INIT ────────────────────────────────────────────────────────────────────
+  window.addEventListener("DOMContentLoaded", () => {
+    cargarCultivos();
+    cargarConfigTuya();
+    // fecha por defecto = hoy
+    const hoy = new Date().toISOString().split("T")[0];
+    ["c-fecha","m-fecha","ev-fecha","in-fecha"].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = hoy;
+    });
+    document.getElementById("m-hora").value = new Date().toTimeString().slice(0,5);
+
+    // Tabs detalle
+    document.querySelectorAll(".tab-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const tab = btn.dataset.tab;
+        document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("activo"));
+        document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("activo"));
+        btn.classList.add("activo");
+        document.getElementById("tab-" + tab).classList.add("activo");
+        if (tab === "inase") cargarInase();
+      });
+    });
+  });
+
+  // Exponer funciones globales
+  window.show = show;
+  window.abrirModal = abrirModal;
+  window.cerrarModal = cerrarModal;
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+/* ─── TOKENS ─────────────────────────────────────────────────────────────── */
+:root {
+  --bg:        #0a160c;
+  --surface:   #111e13;
+  --card:      #162019;
+  --border:    #1f3322;
+  --green:     #2d5a1b;
+  --lima:      #7ec845;
+  --lima2:     #5aaa28;
+  --text:      #e8f0e9;
+  --muted:     #7a9b7e;
+  --danger:    #c0392b;
+  --warning:   #e67e22;
+  --info:      #2980b9;
+  --radius:    10px;
+  --sidebar:   220px;
+  --nav-h:     60px; /* altura navbar mobile */
+}
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+html { height:100%; }
+body {
+  font-family:'Inter',sans-serif; background:var(--bg); color:var(--text);
+  min-height:100%; display:flex; overflow-x:hidden;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SIDEBAR – desktop
+═══════════════════════════════════════════════════════════════════════════ */
+.sidebar {
+  width:var(--sidebar); background:var(--surface); border-right:1px solid var(--border);
+  display:flex; flex-direction:column; position:fixed; top:0; left:0; height:100vh; z-index:100;
+}
+.sidebar-logo {
+  padding:20px 16px 12px; border-bottom:1px solid var(--border);
+  font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:1.1rem;
+  white-space:nowrap; overflow:hidden;
+}
+.sidebar-logo span { color:var(--lima); }
+.sidebar-logo small { display:block; font-size:.7rem; color:var(--muted); font-weight:400; margin-top:2px; }
+.nav-btn {
+  display:flex; align-items:center; gap:10px; padding:11px 16px; cursor:pointer;
+  border:none; background:none; color:var(--muted); width:100%; text-align:left;
+  font-size:.875rem; transition:all .15s; white-space:nowrap;
+}
+.nav-btn:hover  { background:var(--card); color:var(--text); }
+.nav-btn.activo { background:var(--green); color:var(--lima); font-weight:600; }
+.nav-btn .nav-icon { font-size:1.1rem; width:22px; text-align:center; flex-shrink:0; }
+.sidebar-footer {
+  margin-top:auto; padding:12px 16px; border-top:1px solid var(--border);
+  font-size:.75rem; color:var(--muted); white-space:nowrap; overflow:hidden;
+}
+/* navbar bottom mobile – oculta en desktop */
+.bottom-nav { display:none; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MAIN
+═══════════════════════════════════════════════════════════════════════════ */
+.main { margin-left:var(--sidebar); flex:1; padding:24px; overflow-y:auto; min-width:0; }
+.vista { display:none; }
+.vista.activa { display:block; }
+.page-header {
+  display:flex; align-items:flex-start; justify-content:space-between;
+  gap:12px; margin-bottom:24px; flex-wrap:wrap;
+}
+.page-title { font-family:'Space Grotesk',sans-serif; font-size:1.4rem; font-weight:700; }
+.page-title small { display:block; font-size:.78rem; color:var(--muted); font-weight:400; margin-top:2px; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   BOTONES
+═══════════════════════════════════════════════════════════════════════════ */
+.btn { padding:9px 18px; border-radius:var(--radius); border:none; cursor:pointer; font-size:.875rem; font-weight:500; transition:all .15s; white-space:nowrap; }
+.btn-primary { background:var(--lima); color:#0a160c; }
+.btn-primary:hover { background:var(--lima2); }
+.btn-ghost { background:transparent; border:1px solid var(--border); color:var(--text); }
+.btn-ghost:hover { border-color:var(--lima); color:var(--lima); }
+.btn-danger { background:var(--danger); color:#fff; }
+.btn-sm { padding:5px 12px; font-size:.78rem; border-radius:6px; border:none; cursor:pointer; font-weight:500; white-space:nowrap; }
+.btn-sm.btn-primary { background:var(--lima); color:#0a160c; }
+.btn-sm.btn-danger  { background:#8b1a1a; color:#fff; }
+.btn-icon { background:none; border:none; cursor:pointer; font-size:1rem; padding:6px 8px; border-radius:4px; color:var(--muted); transition:color .15s; flex-shrink:0; }
+.btn-icon:hover { color:var(--danger); }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CULTIVOS
+═══════════════════════════════════════════════════════════════════════════ */
+.cultivo-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(270px,1fr)); gap:16px; }
+.cultivo-card { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:16px; transition:border-color .15s; }
+.cultivo-card:hover  { border-color:var(--green); }
+.cultivo-card.activo { border-color:var(--lima); }
+.cult-header { display:flex; justify-content:space-between; align-items:flex-start; gap:8px; margin-bottom:10px; }
+.cult-nombre { font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:.95rem; }
+.cult-fase { font-size:.68rem; padding:3px 8px; border-radius:20px; font-weight:600; text-transform:uppercase; flex-shrink:0; }
+.fase-vegetativa  { background:#1a3a1a; color:#7ec845; }
+.fase-floracion   { background:#3a2a1a; color:#e67e22; }
+.fase-germinacion { background:#1a2a3a; color:#3498db; }
+.fase-cosecha     { background:#3a1a1a; color:#e74c3c; }
+.cult-meta { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:8px; font-size:.77rem; color:var(--muted); }
+.cult-actions { display:flex; gap:8px; margin-top:10px; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   INFO CARDS (detalle cultivo)
+═══════════════════════════════════════════════════════════════════════════ */
+.info-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:10px; margin-bottom:16px; }
+.info-card { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:12px; }
+.info-card .ic-label { font-size:.7rem; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; margin-bottom:4px; }
+.info-card .ic-val { font-family:'Space Grotesk',sans-serif; font-size:1rem; font-weight:600; word-break:break-word; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   TABS
+═══════════════════════════════════════════════════════════════════════════ */
+.tabs { display:flex; gap:2px; border-bottom:1px solid var(--border); margin-bottom:20px; overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; }
+.tabs::-webkit-scrollbar { display:none; }
+.tab-btn { padding:8px 14px; background:none; border:none; cursor:pointer; color:var(--muted); font-size:.82rem; border-bottom:2px solid transparent; transition:all .15s; white-space:nowrap; flex-shrink:0; }
+.tab-btn.activo { color:var(--lima); border-bottom-color:var(--lima); font-weight:600; }
+.tab-panel { display:none; }
+.tab-panel.activo { display:block; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MEDICIONES – scroll horizontal en mobile
+═══════════════════════════════════════════════════════════════════════════ */
+.med-scroll { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+.med-row {
+  display:grid;
+  grid-template-columns: 90px repeat(8, minmax(80px,1fr)) 36px;
+  align-items:center; gap:8px;
+  padding:10px 12px; background:var(--card); border:1px solid var(--border);
+  border-radius:8px; margin-bottom:8px; min-width:700px;
+}
+.med-header {
+  display:grid;
+  grid-template-columns: 90px repeat(8, minmax(80px,1fr)) 36px;
+  gap:8px; padding:4px 12px; margin-bottom:4px;
+  font-size:.68rem; color:var(--muted); text-transform:uppercase; letter-spacing:.4px;
+  min-width:700px;
+}
+.med-fecha { font-size:.78rem; color:var(--muted); }
+.med-val { display:flex; align-items:center; gap:3px; font-family:'Space Grotesk',sans-serif; font-size:.85rem; }
+.med-val small { color:var(--muted); font-size:.68rem; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   EVENTOS
+═══════════════════════════════════════════════════════════════════════════ */
+.evento-row { display:flex; align-items:flex-start; gap:10px; padding:12px; background:var(--card); border-left:3px solid var(--green); border-radius:8px; margin-bottom:8px; min-width:0; }
+.tipo-riego        { border-left-color:#2980b9; }
+.tipo-fertilizacion{ border-left-color:#8e44ad; }
+.tipo-cosecha      { border-left-color:#e67e22; }
+.tipo-poda         { border-left-color:#27ae60; }
+.ev-icon  { font-size:1.2rem; flex-shrink:0; }
+.ev-body  { flex:1; min-width:0; }
+.ev-body strong { display:block; font-size:.88rem; }
+.ev-body small   { color:var(--muted); font-size:.74rem; }
+.ev-body p       { font-size:.78rem; color:var(--muted); margin-top:3px; word-break:break-word; }
+.ev-acciones { display:flex; align-items:center; gap:2px; flex-shrink:0; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   NUTRICIÓN
+═══════════════════════════════════════════════════════════════════════════ */
+.nutr-row { display:flex; gap:10px; align-items:flex-start; padding:12px; background:var(--card); border:1px solid var(--border); border-radius:8px; margin-bottom:8px; }
+.nutr-sem { font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:1.1rem; color:var(--lima); min-width:46px; flex-shrink:0; }
+.nutr-body { flex:1; min-width:0; }
+.nutr-body strong { font-size:.88rem; display:block; margin-bottom:6px; }
+.nutr-productos { display:flex; flex-wrap:wrap; gap:5px; }
+.nutr-tag { background:var(--green); padding:3px 8px; border-radius:20px; font-size:.73rem; }
+.nutr-tag b { color:var(--lima); }
+.nutr-body small { color:var(--muted); font-size:.73rem; margin-top:6px; display:block; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   INASE
+═══════════════════════════════════════════════════════════════════════════ */
+.inase-badge { display:inline-block; background:#1a0a2e; color:#a78bfa; border:1px solid #4c1d95; padding:4px 10px; border-radius:4px; font-size:.73rem; font-weight:600; margin-bottom:14px; }
+.inase-row { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:14px; margin-bottom:10px; }
+.inase-header { display:flex; justify-content:space-between; align-items:flex-start; gap:8px; margin-bottom:10px; flex-wrap:wrap; }
+.inase-tipo  { background:#1a0a2e; color:#a78bfa; padding:3px 10px; border-radius:20px; font-size:.73rem; font-weight:600; }
+.inase-fecha { font-size:.76rem; color:var(--muted); }
+.inase-body { display:grid; grid-template-columns:1fr 1fr; gap:6px; font-size:.81rem; }
+.inase-body div b { color:var(--lima); }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   TUYA
+═══════════════════════════════════════════════════════════════════════════ */
+.tuya-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:12px; margin-bottom:20px; }
+.tuya-sensor { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:14px; text-align:center; position:relative; overflow:hidden; }
+.tuya-sensor::before { content:""; position:absolute; top:0; left:50%; transform:translateX(-50%); width:60%; height:2px; background:var(--lima); box-shadow:0 0 12px var(--lima); }
+.tuya-sensor .ts-val   { font-family:'Space Grotesk',sans-serif; font-size:1.5rem; font-weight:700; color:var(--lima); }
+.tuya-sensor .ts-label { font-size:.7rem; color:var(--muted); margin-top:4px; }
+.tuya-aviso { background:#1a1205; border:1px solid #4a3a10; border-radius:var(--radius); padding:16px; line-height:1.6; font-size:.84rem; }
+.tuya-aviso h4 { color:#f0a500; margin-bottom:8px; }
+.tuya-aviso a  { color:var(--lima); }
+.config-section { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin-bottom:16px; }
+.config-section h4 { color:var(--lima); margin-bottom:12px; font-size:.88rem; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   FORMULARIOS
+═══════════════════════════════════════════════════════════════════════════ */
+.form-row      { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px; }
+.form-row.col3 { grid-template-columns:1fr 1fr 1fr; }
+.form-row.col1 { grid-template-columns:1fr; }
+.form-group { display:flex; flex-direction:column; gap:4px; }
+.form-group label { font-size:.76rem; color:var(--muted); font-weight:500; }
+.form-group input, .form-group select, .form-group textarea {
+  background:#0d1a0f; border:1px solid var(--border); border-radius:6px; color:var(--text);
+  padding:9px 10px; font-size:1rem; /* 1rem evita zoom en iOS */
+  font-family:'Inter',sans-serif; outline:none; transition:border-color .15s; width:100%;
+}
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color:var(--lima); }
+.form-group textarea { resize:vertical; min-height:60px; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MODALES
+═══════════════════════════════════════════════════════════════════════════ */
+.modal-overlay {
+  display:none; position:fixed; inset:0; background:rgba(0,0,0,.75);
+  z-index:1000; align-items:flex-end; justify-content:center;
+  padding:0;
+}
+.modal-overlay.open { display:flex; }
+.modal {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:16px 16px 0 0; width:100%; max-width:640px;
+  max-height:92vh; overflow-y:auto; padding:20px 20px 32px;
+  /* centrado en desktop */
+  margin:auto; border-radius:14px;
+}
+.modal-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; }
+.modal-header h3 { font-family:'Space Grotesk',sans-serif; font-size:1.05rem; font-weight:700; }
+.modal-footer { display:flex; gap:10px; justify-content:flex-end; margin-top:18px; padding-top:14px; border-top:1px solid var(--border); flex-wrap:wrap; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   TOAST
+═══════════════════════════════════════════════════════════════════════════ */
+.toast { position:fixed; bottom:80px; right:16px; padding:10px 16px; border-radius:8px; font-size:.84rem; z-index:9999; animation:slideIn .2s ease; max-width:calc(100vw - 32px); }
+.toast-ok  { background:#1a3a1a; border:1px solid var(--lima); color:var(--lima); }
+.toast-err { background:#3a1a1a; border:1px solid var(--danger); color:#ff8080; }
+@keyframes slideIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MISC
+═══════════════════════════════════════════════════════════════════════════ */
+.cargando { color:var(--muted); font-size:.84rem; padding:16px 0; }
+.empty { color:var(--muted); font-size:.84rem; padding:24px 0; text-align:center; }
+.err-msg { color:#ff8080; font-size:.84rem; }
+.section-toolbar { display:flex; justify-content:flex-end; margin-bottom:12px; }
+hr.divider { border:none; border-top:1px solid var(--border); margin:20px 0; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   RESPONSIVE – tablet (≤ 900px): sidebar colapsada a íconos
+═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 900px) {
+  :root { --sidebar: 60px; }
+  .sidebar-logo small { display:none; }
+  .sidebar-logo { padding:16px 0; text-align:center; font-size:1.3rem; }
+  .nav-btn .nav-label { display:none; }
+  .nav-btn { justify-content:center; padding:12px; }
+  .sidebar-footer { display:none; }
+  .main { margin-left:var(--sidebar); padding:20px 16px; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   RESPONSIVE – mobile (≤ 600px): sidebar oculta → navbar bottom
+═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 600px) {
+  /* ocultar sidebar lateral */
+  .sidebar { display:none; }
+
+  /* navbar inferior */
+  .bottom-nav {
+    display:flex; position:fixed; bottom:0; left:0; right:0; height:var(--nav-h);
+    background:var(--surface); border-top:1px solid var(--border); z-index:200;
+    justify-content:space-around; align-items:stretch;
+  }
+  .bottom-nav .nav-btn {
+    flex-direction:column; align-items:center; justify-content:center;
+    gap:3px; padding:6px 4px; font-size:.62rem; flex:1;
+    border-radius:0;
+  }
+  .bottom-nav .nav-btn .nav-icon { font-size:1.3rem; width:auto; }
+  .bottom-nav .nav-btn .nav-label { display:block !important; }
+
+  /* main ocupa todo el ancho + deja espacio para navbar */
+  .main {
+    margin-left:0; padding:16px 12px;
+    padding-bottom:calc(var(--nav-h) + 16px);
+  }
+
+  /* toast sobre navbar */
+  .toast { bottom:calc(var(--nav-h) + 12px); }
+
+  /* modal como sheet desde abajo */
+  .modal-overlay { align-items:flex-end; padding:0; }
+  .modal {
+    border-radius:16px 16px 0 0; max-height:88vh;
+    padding:16px 16px calc(var(--nav-h) + 16px);
+    margin:0;
+  }
+
+  /* formularios: todo a 1 columna */
+  .form-row, .form-row.col3 { grid-template-columns:1fr; }
+
+  /* modal footer: botones full width */
+  .modal-footer { flex-direction:column-reverse; }
+  .modal-footer .btn { width:100%; text-align:center; }
+
+  /* info grid: 2 columnas en mobile */
+  .info-grid { grid-template-columns:1fr 1fr; }
+
+  /* inase body: 1 columna */
+  .inase-body { grid-template-columns:1fr; }
+
+  /* page header: wrap */
+  .page-header { flex-direction:column; align-items:flex-start; }
+  .page-header .btn { align-self:stretch; text-align:center; }
+
+  /* cultivos: 1 columna */
+  .cultivo-grid { grid-template-columns:1fr; }
+
+  /* tuya: 2 columnas */
+  .tuya-grid { grid-template-columns:1fr 1fr; }
+
+  /* tabs más compactos */
+  .tab-btn { padding:8px 10px; font-size:.78rem; }
+
+  /* section toolbar */
+  .section-toolbar .btn { width:100%; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════ SIDEBAR ═══════════ -->
+<aside class="sidebar">
+  <div class="sidebar-logo">🌿 <span>Cultiv</span>App<small>Seguimiento de cultivo</small></div>
+  <button class="nav-btn activo" data-vista="vista-cultivos" onclick="show('vista-cultivos');cargarCultivos()">
+    <span class="nav-icon">🪴</span><span class="nav-label">Mis cultivos</span>
+  </button>
+  <button class="nav-btn" data-vista="vista-detalle" onclick="show('vista-detalle')">
+    <span class="nav-icon">📊</span><span class="nav-label">Detalle</span>
+  </button>
+  <button class="nav-btn" data-vista="vista-tuya" onclick="show('vista-tuya')">
+    <span class="nav-icon">📡</span><span class="nav-label">Sensores Tuya</span>
+  </button>
+  <div class="sidebar-footer">HG Soluciones Web</div>
+</aside>
+
+<!-- ═══════════ NAVBAR BOTTOM (mobile) ═══════════ -->
+<nav class="bottom-nav">
+  <button class="nav-btn activo" data-vista="vista-cultivos" onclick="show('vista-cultivos');cargarCultivos()">
+    <span class="nav-icon">🪴</span><span class="nav-label">Cultivos</span>
+  </button>
+  <button class="nav-btn" data-vista="vista-detalle" onclick="show('vista-detalle')">
+    <span class="nav-icon">📊</span><span class="nav-label">Detalle</span>
+  </button>
+  <button class="nav-btn" data-vista="vista-tuya" onclick="show('vista-tuya')">
+    <span class="nav-icon">📡</span><span class="nav-label">Tuya</span>
+  </button>
+</nav>
+
+<!-- ═══════════ MAIN ═══════════ -->
+<main class="main">
+
+  <!-- VISTA: MIS CULTIVOS -->
+  <section id="vista-cultivos" class="vista activa">
+    <div class="page-header">
+      <div class="page-title">Mis cultivos<small>Seleccioná un cultivo para ver el detalle</small></div>
+      <button class="btn btn-primary" onclick="abrirModal('modal-cultivo')">+ Nuevo cultivo</button>
+    </div>
+    <div id="lista-cultivos" class="cultivo-grid"></div>
+  </section>
+
+  <!-- VISTA: DETALLE DEL CULTIVO -->
+  <section id="vista-detalle" class="vista">
+    <div class="page-header">
+      <div class="page-title" id="det-nombre">—<small id="det-dia">—</small></div>
+      <button class="btn btn-ghost" onclick="show('vista-cultivos')">← Volver</button>
+    </div>
+
+    <!-- Info cards -->
+    <div class="info-grid">
+      <div class="info-card"><div class="ic-label">Genética</div><div class="ic-val" id="det-genetica">—</div></div>
+      <div class="info-card"><div class="ic-label">Fase</div><div class="ic-val" id="det-fase">—</div></div>
+      <div class="info-card"><div class="ic-label">Origen</div><div class="ic-val" id="det-origen">—</div></div>
+      <div class="info-card"><div class="ic-label">Fecha inicio</div><div class="ic-val" id="det-inicio">—</div></div>
+      <div class="info-card"><div class="ic-label">Tipo de luz</div><div class="ic-val" id="det-luz">—</div></div>
+      <div class="info-card"><div class="ic-label">Watt</div><div class="ic-val" id="det-watt">—</div></div>
+      <div class="info-card"><div class="ic-label">Espectro</div><div class="ic-val" id="det-espectro">—</div></div>
+      <div class="info-card"><div class="ic-label">Substrato</div><div class="ic-val" id="det-substrato">—</div></div>
+      <div class="info-card"><div class="ic-label">Maceta</div><div class="ic-val" id="det-maceta">—</div></div>
+      <div class="info-card"><div class="ic-label">Riego</div><div class="ic-val" id="det-riego">—</div></div>
+    </div>
+    <div class="info-card" style="margin-bottom:20px"><div class="ic-label">Notas</div><div id="det-notas" style="font-size:.85rem;margin-top:4px">—</div></div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab-btn activo" data-tab="mediciones">🌡️ Mediciones</button>
+      <button class="tab-btn" data-tab="eventos">📅 Agenda</button>
+      <button class="tab-btn" data-tab="nutricion">⚗️ Nutrición</button>
+      <button class="tab-btn" data-tab="inase">📋 INASE</button>
+    </div>
+
+    <!-- Tab: Mediciones -->
+    <div id="tab-mediciones" class="tab-panel activo">
+      <div class="section-toolbar">
+        <button class="btn btn-primary" onclick="abrirModal('modal-medicion')">+ Registrar medición</button>
+      </div>
+      <div class="med-scroll">
+        <div class="med-header">
+          <span>Fecha</span><span>Luz</span><span>T. Amb</span><span>T. Mac.</span>
+          <span>Humedad</span><span>pH</span><span>EC</span><span>TDS</span><span>CO₂</span><span></span>
+        </div>
+        <div id="lista-mediciones"></div>
+      </div>
+    </div>
+
+    <!-- Tab: Eventos -->
+    <div id="tab-eventos" class="tab-panel">
+      <div class="section-toolbar">
+        <button class="btn btn-primary" onclick="abrirModal('modal-evento')">+ Agendar evento</button>
+      </div>
+      <div id="lista-eventos"></div>
+    </div>
+
+    <!-- Tab: Nutrición -->
+    <div id="tab-nutricion" class="tab-panel">
+      <div class="section-toolbar">
+        <button class="btn btn-primary" onclick="abrirModal('modal-nutricion')">+ Agregar semana</button>
+      </div>
+      <div id="lista-nutricion"></div>
+    </div>
+
+    <!-- Tab: INASE -->
+    <div id="tab-inase" class="tab-panel">
+      <div class="inase-badge">📋 Registro INASE – Instituto Nacional de Semillas</div>
+      <div class="section-toolbar">
+        <button class="btn btn-primary" onclick="abrirModal('modal-inase')">+ Nuevo registro</button>
+      </div>
+      <div id="lista-inase"></div>
+    </div>
+  </section>
+
+  <!-- VISTA: TUYA SMART -->
+  <section id="vista-tuya" class="vista">
+    <div class="page-header">
+      <div class="page-title">Sensores Tuya Smart<small>Monitoreo en tiempo real</small></div>
+      <button class="btn btn-primary" onclick="cargarSensoresTuya()">🔄 Actualizar</button>
+    </div>
+
+    <div class="tuya-grid">
+      <div class="tuya-sensor"><div class="ts-val" id="ts-temp">—</div><div class="ts-label">🌡️ Temp. Ambiente (°C)</div></div>
+      <div class="tuya-sensor"><div class="ts-val" id="ts-hum">—</div><div class="ts-label">💧 Humedad (%)</div></div>
+      <div class="tuya-sensor"><div class="ts-val" id="ts-co2">—</div><div class="ts-label">💨 CO₂ (ppm)</div></div>
+      <div class="tuya-sensor"><div class="ts-val" id="ts-vpd">—</div><div class="ts-label">🌫️ VPD (kPa)</div></div>
+      <div class="tuya-sensor"><div class="ts-val" id="ts-luz">—</div><div class="ts-label">☀️ Luz (lux)</div></div>
+      <div class="tuya-sensor"><div class="ts-val" id="ts-tmac">—</div><div class="ts-label">🪴 Temp. Maceta (°C)</div></div>
+    </div>
+
+    <div id="tuya-status"></div>
+    <hr class="divider">
+
+    <div class="config-section">
+      <h4>⚙️ Configuración Tuya IoT</h4>
+      <div class="form-row">
+        <div class="form-group"><label>Base URL región</label>
+          <select id="tuya-base">
+            <option value="https://openapi.tuyaeu.com">EU (Europa)</option>
+            <option value="https://openapi.tuyaus.com">US (América)</option>
+            <option value="https://openapi.tuyacn.com">CN (China)</option>
+            <option value="https://openapi.tuyain.com">IN (India)</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Client ID</label><input id="tuya-client" type="text" placeholder="xxxxxxxxxxxxxxxx"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Device ID</label><input id="tuya-device" type="text" placeholder="ID del dispositivo Tuya"></div>
+        <div class="form-group"><label>URL Proxy Backend (HMAC)</label><input id="tuya-proxy" type="text" placeholder="https://mi-backend.com/tuya"></div>
+      </div>
+      <button class="btn btn-primary" onclick="guardarConfigTuya()">Guardar configuración</button>
+    </div>
+
+    <div class="config-section">
+      <h4>📖 Cómo integrar Tuya</h4>
+      <p style="font-size:.82rem;color:var(--muted);line-height:1.7">
+        1. Registrate en <b>iot.tuya.com</b> y creá un proyecto Cloud.<br>
+        2. Vinculá tus dispositivos (ej: termómetro, sensor de CO₂, medidor de suelo).<br>
+        3. Obtenés Client ID y Client Secret del proyecto.<br>
+        4. Implementá un endpoint en tu backend que firme las requests con HMAC-SHA256 y consulte <code>GET /v1.0/devices/{device_id}/status</code>.<br>
+        5. Configurá la URL del proxy arriba y hacé clic en "Actualizar".<br>
+        6. Los datos se pueden autoguardar como medición con el botón "Importar a medición".
+      </p>
+    </div>
+  </section>
+
+</main>
+
+<!-- ═══════════ MODALES ═══════════ -->
+
+<!-- Modal: Nuevo cultivo -->
+<div class="modal-overlay" id="modal-cultivo">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>🌱 Nuevo cultivo</h3>
+      <button class="btn-icon" onclick="cerrarModal('modal-cultivo')">✕</button>
+    </div>
+    <div id="form-cultivo">
+      <div class="form-row">
+        <div class="form-group"><label>Nombre del cultivo *</label><input id="c-nombre" placeholder="Ej: OG Kush #1"></div>
+        <div class="form-group"><label>Genética *</label><input id="c-genetica" placeholder="Ej: OG Kush, Wedding Cake..."></div>
+      </div>
+      <div class="form-row col3">
+        <div class="form-group"><label>Origen</label>
+          <select id="c-origen">
+            <option value="semilla">Semilla</option>
+            <option value="esqueje">Esqueje</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Fecha siembra / llegada</label><input id="c-fecha" type="date"></div>
+        <div class="form-group"><label>Fase actual</label>
+          <select id="c-fase">
+            <option value="germinacion">Germinación</option>
+            <option value="vegetativa" selected>Vegetativa</option>
+            <option value="floracion">Floración</option>
+            <option value="cosecha">Cosecha</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row col3">
+        <div class="form-group"><label>Tipo de luz</label>
+          <select id="c-luz">
+            <option>LED Full Spectrum</option>
+            <option>LED COB</option>
+            <option>LEC/CMH</option>
+            <option>HPS</option>
+            <option>MH</option>
+            <option>Fluorescente CFL</option>
+            <option>Luz natural</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Watt</label><input id="c-watt" type="number" placeholder="240"></div>
+        <div class="form-group"><label>Horas de luz</label><input id="c-horas" type="number" placeholder="18"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Espectro</label><input id="c-espectro" placeholder="Ej: 3000K-5000K, Full, Bloom..."></div>
+        <div class="form-group"><label>Substrato</label>
+          <select id="c-substrato">
+            <option>Tierra + perlita</option>
+            <option>Coco coir</option>
+            <option>Hidropónico</option>
+            <option>Aeropónico</option>
+            <option>Orgánico vivo</option>
+            <option>Tierra premium</option>
+            <option>Otro</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Tamaño maceta (litros)</label><input id="c-maceta" type="number" placeholder="11"></div>
+        <div class="form-group"><label>Sistema de riego</label>
+          <select id="c-riego">
+            <option value="">Manual</option>
+            <option>Goteo</option>
+            <option>Autorriego</option>
+            <option>NFT</option>
+            <option>DWC</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row col1">
+        <div class="form-group"><label>Notas / observaciones</label><textarea id="c-notas" placeholder="Información adicional del cultivo..."></textarea></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="cerrarModal('modal-cultivo')">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarCultivo()">Guardar cultivo</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Medición -->
+<div class="modal-overlay" id="modal-medicion">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>🌡️ Registrar medición</h3>
+      <button class="btn-icon" onclick="cerrarModal('modal-medicion')">✕</button>
+    </div>
+    <div id="form-medicion">
+      <div class="form-row">
+        <div class="form-group"><label>Fecha</label><input id="m-fecha" type="date"></div>
+        <div class="form-group"><label>Hora</label><input id="m-hora" type="time"></div>
+      </div>
+      <div class="form-row col3">
+        <div class="form-group"><label>Luz (lux)</label><input id="m-luz" type="number" step="0.1" placeholder="25000"></div>
+        <div class="form-group"><label>Temp. ambiente (°C)</label><input id="m-tempamb" type="number" step="0.1" placeholder="24.5"></div>
+        <div class="form-group"><label>Temp. maceta (°C)</label><input id="m-tempmac" type="number" step="0.1" placeholder="22.0"></div>
+      </div>
+      <div class="form-row col3">
+        <div class="form-group"><label>Humedad (%)</label><input id="m-humedad" type="number" step="0.1" placeholder="55"></div>
+        <div class="form-group"><label>pH agua</label><input id="m-ph" type="number" step="0.01" placeholder="6.2"></div>
+        <div class="form-group"><label>EC (mS/cm)</label><input id="m-ec" type="number" step="0.01" placeholder="1.8"></div>
+      </div>
+      <div class="form-row col3">
+        <div class="form-group"><label>TDS agua (ppm)</label><input id="m-tds" type="number" placeholder="900"></div>
+        <div class="form-group"><label>CO₂ (ppm)</label><input id="m-co2" type="number" placeholder="800"></div>
+        <div class="form-group"><label>VPD (kPa)</label><input id="m-vpd" type="number" step="0.01" placeholder="1.2"></div>
+      </div>
+      <div class="form-row col1">
+        <div class="form-group"><label>Notas</label><textarea id="m-notas" placeholder="Observaciones de la medición..."></textarea></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="cerrarModal('modal-medicion')">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarMedicion()">Guardar medición</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Evento -->
+<div class="modal-overlay" id="modal-evento">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>📅 Agendar evento</h3>
+      <button class="btn-icon" onclick="cerrarModal('modal-evento')">✕</button>
+    </div>
+    <div id="form-evento">
+      <div class="form-row col1">
+        <div class="form-group"><label>Título *</label><input id="ev-titulo" placeholder="Ej: Riego con nutrientes, Poda, Cambio a 12/12..."></div>
+      </div>
+      <div class="form-row col3">
+        <div class="form-group"><label>Tipo</label>
+          <select id="ev-tipo">
+            <option value="riego">💧 Riego</option>
+            <option value="fertilizacion">⚗️ Fertilización</option>
+            <option value="poda">✂️ Poda / LST</option>
+            <option value="transplante">🪴 Trasplante</option>
+            <option value="cambio_fase">🌿 Cambio de fase</option>
+            <option value="cosecha">🌾 Cosecha</option>
+            <option value="inspeccion">🔍 Inspección</option>
+            <option value="tratamiento">💊 Tratamiento</option>
+            <option value="otro">📌 Otro</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Fecha</label><input id="ev-fecha" type="date"></div>
+        <div class="form-group"><label>Hora (opcional)</label><input id="ev-hora" type="time"></div>
+      </div>
+      <div class="form-row col1">
+        <div class="form-group"><label>Descripción</label><textarea id="ev-desc" placeholder="Detalles del evento..."></textarea></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="cerrarModal('modal-evento')">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarEvento()">Agendar evento</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Nutrición -->
+<div class="modal-overlay" id="modal-nutricion">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>⚗️ Plan nutricional – Semana</h3>
+      <button class="btn-icon" onclick="cerrarModal('modal-nutricion')">✕</button>
+    </div>
+    <div id="form-nutricion">
+      <div class="form-row">
+        <div class="form-group"><label>Semana #</label><input id="nutr-semana" type="number" placeholder="1" min="1"></div>
+        <div class="form-group"><label>Fase</label>
+          <select id="nutr-fase">
+            <option>Germinación</option>
+            <option>Vegetativa temprana</option>
+            <option>Vegetativa</option>
+            <option>Pre-floración</option>
+            <option>Floración temprana</option>
+            <option>Floración pico</option>
+            <option>Engorde</option>
+            <option>Maduración</option>
+            <option>Flush</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>pH objetivo del agua</label><input id="nutr-ph" type="number" step="0.01" placeholder="6.2"></div>
+        <div class="form-group"><label>EC objetivo (mS/cm)</label><input id="nutr-ec" type="number" step="0.01" placeholder="1.6"></div>
+      </div>
+      <div class="form-row col1">
+        <div class="form-group">
+          <label>Productos (uno por línea: Nombre, Dosis, Unidad)</label>
+          <textarea id="nutr-productos" placeholder="BioBizz Grow, 4, ml/L&#10;BioBizz Bloom, 2, ml/L&#10;Top Max, 1, ml/L" style="min-height:90px"></textarea>
+          <small style="color:var(--muted);font-size:.72rem">Formato: Producto, cantidad, unidad (ej: CalMag, 1.5, ml/L)</small>
+        </div>
+      </div>
+      <div class="form-row col1">
+        <div class="form-group"><label>Notas</label><textarea id="nutr-notas" placeholder="Observaciones del plan nutricional..."></textarea></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="cerrarModal('modal-nutricion')">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarNutricion()">Guardar semana</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: INASE -->
+<div class="modal-overlay" id="modal-inase">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>📋 Registro INASE</h3>
+      <button class="btn-icon" onclick="cerrarModal('modal-inase')">✕</button>
+    </div>
+    <div id="form-inase">
+      <div class="form-row">
+        <div class="form-group"><label>Tipo de registro *</label>
+          <select id="in-tipo">
+            <option value="Adquisición de semillas">Adquisición de semillas</option>
+            <option value="Producción de semillas">Producción de semillas</option>
+            <option value="Acondicionamiento">Acondicionamiento</option>
+            <option value="Comercialización">Comercialización</option>
+            <option value="Importación">Importación</option>
+            <option value="Exportación">Exportación</option>
+            <option value="Siembra / plantación">Siembra / plantación</option>
+            <option value="Cosecha">Cosecha</option>
+            <option value="Stock / inventario">Stock / inventario</option>
+            <option value="Destrucción / descarte">Destrucción / descarte</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Fecha *</label><input id="in-fecha" type="date"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>N° Registro INASE</label><input id="in-nro" placeholder="Ej: IA-0001-2025"></div>
+        <div class="form-group"><label>Variedad</label><input id="in-variedad" placeholder="Nombre varietal registrado INASE"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Categoría de semilla</label>
+          <select id="in-categoria">
+            <option value="">— Seleccionar —</option>
+            <option>Original / Fundación</option>
+            <option>Registrada</option>
+            <option>Fiscalizada</option>
+            <option>Identificada</option>
+            <option>No categorizada</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Proveedor / Origen</label><input id="in-proveedor" placeholder="Nombre del proveedor o banco de semillas"></div>
+      </div>
+      <div class="form-row col3">
+        <div class="form-group"><label>N° de lote</label><input id="in-lote" placeholder="Lote proveedor"></div>
+        <div class="form-group"><label>Cantidad</label><input id="in-cantidad" type="number" step="0.01" placeholder="10"></div>
+        <div class="form-group"><label>Unidad</label>
+          <select id="in-unidad">
+            <option>semillas</option>
+            <option>kg</option>
+            <option>g</option>
+            <option>plantas</option>
+            <option>esquejes</option>
+            <option>unidades</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Superficie (m²)</label><input id="in-superficie" type="number" step="0.01" placeholder="4.5"></div>
+        <div class="form-group"><label>Destino / uso</label>
+          <select id="in-destino">
+            <option value="">— Seleccionar —</option>
+            <option>Uso personal</option>
+            <option>Investigación</option>
+            <option>Uso medicinal</option>
+            <option>Producción registrada</option>
+            <option>Otro</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row col1">
+        <div class="form-group"><label>Responsable técnico</label><input id="in-responsable" placeholder="Nombre y matrícula del responsable (si aplica)"></div>
+      </div>
+      <div class="form-row col1">
+        <div class="form-group"><label>Observaciones</label><textarea id="in-obs" placeholder="Notas adicionales del registro INASE..."></textarea></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="cerrarModal('modal-inase')">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarInase()">Guardar registro INASE</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
