@@ -422,49 +422,131 @@
   };
 
   // ═══════════════════════════════════════════════════════════════════════════════
-  // TUYA SMART – integración via API REST (Local API o Cloud API)
+  // TUYA SMART – sensor carpa 1x1x2
+  // Device ID: ebefb9fc12b7940a71l8gp
+  // Proxy: Cloud Function Firebase (functions/index.js)
   // ═══════════════════════════════════════════════════════════════════════════════
-  // La integración con Tuya requiere credenciales de Tuya IoT Platform.
-  // Se usa la API REST de Tuya Cloud (región: us, eu, cn, in)
+
+  const TUYA_DEVICE_ID  = "ebefb9fc12b7940a71l8gp";
+  let   tuyaIntervalId  = null;
+
   window.cargarSensoresTuya = async () => {
-    const baseUrl   = val("tuya-base") || "https://openapi.tuyaeu.com";
-    const clientId  = val("tuya-client");
-    const deviceId  = val("tuya-device");
-    const statusDiv = document.getElementById("tuya-status");
-    if (!clientId || !deviceId) {
-      statusDiv.innerHTML = '<p class="err-msg">Ingresá Client ID y Device ID en la configuración de Tuya.</p>';
+    const proxyUrl = localStorage.getItem("tuya_proxy") || "";
+    const estadoEl = document.getElementById("carpa-estado");
+
+    if (!proxyUrl) {
+      estadoEl.textContent = "⚠️ Configurá la URL del proxy abajo";
+      estadoEl.className   = "carpa-estado err";
       return;
     }
-    statusDiv.innerHTML = '<p class="cargando">Consultando sensores Tuya...</p>';
-    // Nota: en producción debés implementar firma HMAC-SHA256 en backend/Function
-    // ya que el client_secret no debe exponerse en el frontend.
-    statusDiv.innerHTML = `
-      <div class="tuya-aviso">
-        <h4>⚠️ Integración Tuya</h4>
-        <p>La API de Tuya Cloud requiere firma HMAC-SHA256 con tu <b>client_secret</b>. 
-        Por seguridad, esta firma debe generarse en un backend (Cloud Function, servidor propio).<br><br>
-        <b>Pasos para integrar:</b><br>
-        1. Registrate en <a href="https://iot.tuya.com" target="_blank">iot.tuya.com</a><br>
-        2. Creá un proyecto Cloud y vinculá tus dispositivos<br>
-        3. Implementá el endpoint de firma en tu backend<br>
-        4. Configurá la URL del backend en "URL Proxy Tuya" abajo</p>
-        <p><b>Device ID configurado:</b> ${deviceId}</p>
-      </div>`;
+
+    estadoEl.textContent = "Actualizando...";
+    estadoEl.className   = "carpa-estado";
+
+    try {
+      const url  = `${proxyUrl}?device=${TUYA_DEVICE_ID}`;
+      const resp = await fetch(url, { signal: AbortSignal.timeout(8000) });
+      if (!resp.ok) throw new Error("HTTP " + resp.status);
+      const data = await resp.json();
+
+      if (data.error) throw new Error(data.error);
+
+      const s = data.sensores || {};
+
+      // Temperatura
+      const temp = s.tempAmb ?? null;
+      document.getElementById("carpa-temp").textContent = temp !== null ? temp.toFixed(1) : "—";
+
+      // Humedad
+      const hum = s.humedad ?? null;
+      document.getElementById("carpa-hum").textContent  = hum !== null ? hum.toFixed(0)  : "—";
+
+      // Calcular VPD si tenemos temp y humedad
+      if (temp !== null && hum !== null) {
+        const svp = 0.6108 * Math.exp((17.27 * temp) / (temp + 237.3));
+        const vpd = svp * (1 - hum / 100);
+        document.getElementById("carpa-vpd").textContent = vpd.toFixed(2);
+        // Semáforo VPD
+        const vpdEl = document.getElementById("carpa-vpd-estado");
+        if (vpd < 0.4)       { vpdEl.textContent = "Muy bajo 🔵"; vpdEl.className = "vpd-tag vpd-bajo"; }
+        else if (vpd < 0.8)  { vpdEl.textContent = "Óptimo 🟢";   vpdEl.className = "vpd-tag vpd-ok";   }
+        else if (vpd < 1.2)  { vpdEl.textContent = "Bueno 🟡";    vpdEl.className = "vpd-tag vpd-bien"; }
+        else if (vpd < 1.6)  { vpdEl.textContent = "Alto 🟠";     vpdEl.className = "vpd-tag vpd-alto"; }
+        else                 { vpdEl.textContent = "Crítico 🔴";   vpdEl.className = "vpd-tag vpd-crit"; }
+      }
+
+      // Alertas
+      const alertas = [];
+      if (temp !== null && temp > 30) alertas.push("🌡️ Temperatura alta");
+      if (temp !== null && temp < 18) alertas.push("🌡️ Temperatura baja");
+      if (hum  !== null && hum  > 70) alertas.push("💧 Humedad alta – riesgo de moho");
+      if (hum  !== null && hum  < 40) alertas.push("💧 Humedad baja");
+
+      const alertaEl = document.getElementById("carpa-alertas");
+      alertaEl.innerHTML = alertas.length
+        ? alertas.map(a => `<span class="alerta-tag">${a}</span>`).join("")
+        : '<span class="alerta-ok">✅ Todo en rango</span>';
+
+      // Timestamp
+      const ahora = new Date().toLocaleTimeString("es-AR");
+      estadoEl.textContent = `Actualizado ${ahora}`;
+      estadoEl.className   = "carpa-estado ok";
+
+      // Guardar última lectura en localStorage para mostrar offline
+      localStorage.setItem("tuya_ultima", JSON.stringify({ temp, hum, ts: ahora }));
+
+    } catch(err) {
+      console.error("Tuya error:", err);
+      estadoEl.textContent = "❌ Error: " + err.message;
+      estadoEl.className   = "carpa-estado err";
+      // Mostrar última lectura guardada
+      const ultima = localStorage.getItem("tuya_ultima");
+      if (ultima) {
+        const u = JSON.parse(ultima);
+        document.getElementById("carpa-temp").textContent = u.temp?.toFixed(1) ?? "—";
+        document.getElementById("carpa-hum").textContent  = u.hum?.toFixed(0)  ?? "—";
+      }
+    }
   };
 
-  window.guardarConfigTuya = async () => {
-    localStorage.setItem("tuya_base",   val("tuya-base"));
-    localStorage.setItem("tuya_client", val("tuya-client"));
-    localStorage.setItem("tuya_device", val("tuya-device"));
-    localStorage.setItem("tuya_proxy",  val("tuya-proxy"));
-    toast("Configuración Tuya guardada ✓");
+  window.iniciarAutoRefresh = () => {
+    const mins = parseInt(document.getElementById("tuya-refresh").value) || 5;
+    if (tuyaIntervalId) clearInterval(tuyaIntervalId);
+    tuyaIntervalId = setInterval(cargarSensoresTuya, mins * 60 * 1000);
+    cargarSensoresTuya();
+    toast(`Auto-refresh cada ${mins} min ✓`);
+  };
+
+  window.detenerAutoRefresh = () => {
+    if (tuyaIntervalId) { clearInterval(tuyaIntervalId); tuyaIntervalId = null; }
+    toast("Auto-refresh detenido");
+  };
+
+  window.importarMedicionTuya = () => {
+    const temp = document.getElementById("carpa-temp").textContent;
+    const hum  = document.getElementById("carpa-hum").textContent;
+    if (temp === "—" && hum === "—") { toast("No hay datos del sensor aún", "err"); return; }
+    if (!cultivoActivo) { toast("Seleccioná un cultivo primero", "err"); return; }
+    // Pre-llenar modal de medición
+    if (temp !== "—") document.getElementById("m-tempamb").value = temp;
+    if (hum  !== "—") document.getElementById("m-humedad").value = hum;
+    document.getElementById("m-fecha").value = new Date().toISOString().split("T")[0];
+    document.getElementById("m-hora").value  = new Date().toTimeString().slice(0,5);
+    abrirModal("modal-medicion");
+    toast("Datos importados al formulario de medición");
+  };
+
+  window.guardarConfigTuya = () => {
+    localStorage.setItem("tuya_proxy", val("tuya-proxy"));
+    toast("URL del proxy guardada ✓");
+    cargarSensoresTuya();
   };
 
   function cargarConfigTuya() {
-    document.getElementById("tuya-base").value   = localStorage.getItem("tuya_base")   || "";
-    document.getElementById("tuya-client").value = localStorage.getItem("tuya_client") || "";
-    document.getElementById("tuya-device").value = localStorage.getItem("tuya_device") || "";
-    document.getElementById("tuya-proxy").value  = localStorage.getItem("tuya_proxy")  || "";
+    const proxy = localStorage.getItem("tuya_proxy") || "";
+    document.getElementById("tuya-proxy").value = proxy;
+    // Si hay proxy configurado, cargar automáticamente
+    if (proxy) cargarSensoresTuya();
   }
 
   // ─── HELPER: value de input ──────────────────────────────────────────────────
@@ -765,6 +847,59 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:20px 0; }
 /* ═══════════════════════════════════════════════════════════════════════════
    RESPONSIVE – mobile (≤ 600px): sidebar oculta → navbar bottom
 ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   WIDGET CARPA
+═══════════════════════════════════════════════════════════════════════════ */
+.carpa-widget {
+  background:var(--card); border:1px solid var(--border); border-radius:14px;
+  padding:20px; margin-bottom:20px;
+}
+.carpa-header {
+  display:flex; justify-content:space-between; align-items:center;
+  margin-bottom:20px; flex-wrap:wrap; gap:8px;
+}
+.carpa-titulo { font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:1.1rem; }
+.carpa-estado { font-size:.75rem; padding:4px 10px; border-radius:20px; background:var(--surface); color:var(--muted); }
+.carpa-estado.ok  { background:#1a3a1a; color:var(--lima); }
+.carpa-estado.err { background:#3a1a1a; color:#ff8080; }
+
+.carpa-sensores { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:16px; }
+.carpa-sensor-card {
+  background:var(--surface); border:1px solid var(--border); border-radius:10px;
+  padding:16px 12px; text-align:center; position:relative; overflow:hidden;
+}
+.carpa-sensor-card::before {
+  content:""; position:absolute; top:0; left:50%; transform:translateX(-50%);
+  width:50%; height:2px; background:var(--lima); box-shadow:0 0 10px var(--lima);
+}
+.csc-icon  { font-size:1.4rem; margin-bottom:6px; }
+.csc-val   { font-family:'Space Grotesk',sans-serif; font-size:2rem; font-weight:700; color:var(--lima); line-height:1; }
+.csc-unit  { font-size:.75rem; color:var(--muted); margin-top:2px; }
+.csc-label { font-size:.72rem; color:var(--muted); margin-top:6px; text-transform:uppercase; letter-spacing:.4px; }
+
+.vpd-tag   { display:inline-block; padding:4px 14px; border-radius:20px; font-size:.8rem; font-weight:600; }
+.vpd-bajo  { background:#0d2a3a; color:#3498db; }
+.vpd-ok    { background:#1a3a1a; color:#7ec845; }
+.vpd-bien  { background:#2a2a1a; color:#f1c40f; }
+.vpd-alto  { background:#3a2a1a; color:#e67e22; }
+.vpd-crit  { background:#3a1a1a; color:#e74c3c; }
+
+.carpa-alertas { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:14px; min-height:28px; }
+.alerta-tag { background:#3a2a1a; color:#e67e22; padding:4px 10px; border-radius:20px; font-size:.75rem; }
+.alerta-ok  { color:var(--muted); font-size:.78rem; }
+
+.carpa-acciones { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; }
+.refresh-ctrl   { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+
+@media (max-width:600px) {
+  .carpa-sensores { grid-template-columns:1fr 1fr; }
+  .carpa-sensor-card:last-child { grid-column:1/-1; }
+  .csc-val { font-size:1.6rem; }
+  .carpa-acciones { flex-direction:column; align-items:stretch; }
+  .refresh-ctrl { justify-content:center; }
+}
+
 @media (max-width: 600px) {
   /* ocultar sidebar lateral */
   .sidebar { display:none; }
@@ -946,51 +1081,84 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:20px 0; }
   <!-- VISTA: TUYA SMART -->
   <section id="vista-tuya" class="vista">
     <div class="page-header">
-      <div class="page-title">Sensores Tuya Smart<small>Monitoreo en tiempo real</small></div>
+      <div class="page-title">Sensor Carpa 1×1×2<small>Temperatura y humedad en tiempo real</small></div>
       <button class="btn btn-primary" onclick="cargarSensoresTuya()">🔄 Actualizar</button>
     </div>
 
-    <div class="tuya-grid">
-      <div class="tuya-sensor"><div class="ts-val" id="ts-temp">—</div><div class="ts-label">🌡️ Temp. Ambiente (°C)</div></div>
-      <div class="tuya-sensor"><div class="ts-val" id="ts-hum">—</div><div class="ts-label">💧 Humedad (%)</div></div>
-      <div class="tuya-sensor"><div class="ts-val" id="ts-co2">—</div><div class="ts-label">💨 CO₂ (ppm)</div></div>
-      <div class="tuya-sensor"><div class="ts-val" id="ts-vpd">—</div><div class="ts-label">🌫️ VPD (kPa)</div></div>
-      <div class="tuya-sensor"><div class="ts-val" id="ts-luz">—</div><div class="ts-label">☀️ Luz (lux)</div></div>
-      <div class="tuya-sensor"><div class="ts-val" id="ts-tmac">—</div><div class="ts-label">🪴 Temp. Maceta (°C)</div></div>
+    <!-- Widget principal carpa -->
+    <div class="carpa-widget">
+      <div class="carpa-header">
+        <span class="carpa-titulo">🏕️ Carpa de cultivo</span>
+        <span id="carpa-estado" class="carpa-estado">Sin datos</span>
+      </div>
+
+      <div class="carpa-sensores">
+        <!-- Temperatura -->
+        <div class="carpa-sensor-card">
+          <div class="csc-icon">🌡️</div>
+          <div class="csc-val" id="carpa-temp">—</div>
+          <div class="csc-unit">°C</div>
+          <div class="csc-label">Temperatura</div>
+        </div>
+        <!-- Humedad -->
+        <div class="carpa-sensor-card">
+          <div class="csc-icon">💧</div>
+          <div class="csc-val" id="carpa-hum">—</div>
+          <div class="csc-unit">%</div>
+          <div class="csc-label">Humedad rel.</div>
+        </div>
+        <!-- VPD calculado -->
+        <div class="carpa-sensor-card">
+          <div class="csc-icon">🌫️</div>
+          <div class="csc-val" id="carpa-vpd">—</div>
+          <div class="csc-unit">kPa</div>
+          <div class="csc-label">VPD calculado</div>
+        </div>
+      </div>
+
+      <!-- Estado VPD -->
+      <div style="text-align:center;margin:12px 0">
+        <span id="carpa-vpd-estado" class="vpd-tag">—</span>
+      </div>
+
+      <!-- Alertas -->
+      <div id="carpa-alertas" class="carpa-alertas"></div>
+
+      <!-- Acciones -->
+      <div class="carpa-acciones">
+        <button class="btn btn-ghost" onclick="importarMedicionTuya()">📥 Importar a medición</button>
+        <div class="refresh-ctrl">
+          <select id="tuya-refresh" style="background:#0d1a0f;border:1px solid var(--border);color:var(--text);padding:8px;border-radius:6px;font-size:.82rem">
+            <option value="2">Cada 2 min</option>
+            <option value="5" selected>Cada 5 min</option>
+            <option value="10">Cada 10 min</option>
+            <option value="30">Cada 30 min</option>
+          </select>
+          <button class="btn btn-primary" onclick="iniciarAutoRefresh()">▶ Auto</button>
+          <button class="btn btn-ghost"   onclick="detenerAutoRefresh()">⏹</button>
+        </div>
+      </div>
     </div>
 
-    <div id="tuya-status"></div>
     <hr class="divider">
 
+    <!-- Config proxy -->
     <div class="config-section">
-      <h4>⚙️ Configuración Tuya IoT</h4>
-      <div class="form-row">
-        <div class="form-group"><label>Base URL región</label>
-          <select id="tuya-base">
-            <option value="https://openapi.tuyaeu.com">EU (Europa)</option>
-            <option value="https://openapi.tuyaus.com">US (América)</option>
-            <option value="https://openapi.tuyacn.com">CN (China)</option>
-            <option value="https://openapi.tuyain.com">IN (India)</option>
-          </select>
+      <h4>⚙️ URL del proxy backend</h4>
+      <p style="font-size:.78rem;color:var(--muted);margin-bottom:10px">
+        Pegá la URL de tu Cloud Function de Firebase una vez que la deployaste.
+      </p>
+      <div class="form-row col1">
+        <div class="form-group">
+          <label>URL Proxy (Cloud Function)</label>
+          <input id="tuya-proxy" type="url" placeholder="https://us-central1-TU_PROYECTO.cloudfunctions.net/tuyaProxy">
         </div>
-        <div class="form-group"><label>Client ID</label><input id="tuya-client" type="text" placeholder="xxxxxxxxxxxxxxxx"></div>
       </div>
-      <div class="form-row">
-        <div class="form-group"><label>Device ID</label><input id="tuya-device" type="text" placeholder="ID del dispositivo Tuya"></div>
-        <div class="form-group"><label>URL Proxy Backend (HMAC)</label><input id="tuya-proxy" type="text" placeholder="https://mi-backend.com/tuya"></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn btn-primary" onclick="guardarConfigTuya()">Guardar y conectar</button>
       </div>
-      <button class="btn btn-primary" onclick="guardarConfigTuya()">Guardar configuración</button>
-    </div>
-
-    <div class="config-section">
-      <h4>📖 Cómo integrar Tuya</h4>
-      <p style="font-size:.82rem;color:var(--muted);line-height:1.7">
-        1. Registrate en <b>iot.tuya.com</b> y creá un proyecto Cloud.<br>
-        2. Vinculá tus dispositivos (ej: termómetro, sensor de CO₂, medidor de suelo).<br>
-        3. Obtenés Client ID y Client Secret del proyecto.<br>
-        4. Implementá un endpoint en tu backend que firme las requests con HMAC-SHA256 y consulte <code>GET /v1.0/devices/{device_id}/status</code>.<br>
-        5. Configurá la URL del proxy arriba y hacé clic en "Actualizar".<br>
-        6. Los datos se pueden autoguardar como medición con el botón "Importar a medición".
+      <p style="font-size:.75rem;color:var(--muted);margin-top:10px">
+        Device ID configurado: <code style="color:var(--lima)">ebefb9fc12b7940a71l8gp</code>
       </p>
     </div>
   </section>
