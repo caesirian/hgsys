@@ -543,10 +543,14 @@
   };
 
   function cargarConfigTuya() {
-    const proxy = localStorage.getItem("tuya_proxy") || "";
-    document.getElementById("tuya-proxy").value = proxy;
-    // Si hay proxy configurado, cargar automáticamente
-    if (proxy) cargarSensoresTuya();
+    // URL del proxy precargada por defecto
+    const DEFAULT_PROXY = "https://cultivapp-tuya-proxy.onrender.com/tuya";
+    const proxy = localStorage.getItem("tuya_proxy") || DEFAULT_PROXY;
+    localStorage.setItem("tuya_proxy", proxy);
+    const el = document.getElementById("tuya-proxy");
+    if (el) el.value = proxy;
+    // Cargar sensores automáticamente al abrir la vista
+    cargarSensoresTuya();
   }
 
   // ─── HELPER: value de input ──────────────────────────────────────────────────
@@ -1151,7 +1155,7 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:20px 0; }
       <div class="form-row col1">
         <div class="form-group">
           <label>URL Proxy (Cloud Function)</label>
-          <input id="tuya-proxy" type="url" placeholder="https://us-central1-TU_PROYECTO.cloudfunctions.net/tuyaProxy">
+          <input id="tuya-proxy" type="url" value="https://cultivapp-tuya-proxy.onrender.com/tuya" placeholder="https://cultivapp-tuya-proxy.onrender.com/tuya">
         </div>
       </div>
       <div style="display:flex;gap:10px;flex-wrap:wrap">
