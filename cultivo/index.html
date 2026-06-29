@@ -127,39 +127,42 @@ window.eliminarLugar = async (id, nombre) => {
 };
 
 window.guardarLugar = async () => {
-  // Recolectar luces
-  const luces = [];
-  document.querySelectorAll(".luz-row").forEach(row => {
-    const tipo = row.querySelector(".luz-tipo").value;
-    const cant = parseInt(row.querySelector(".luz-cant").value)||1;
-    if (tipo) luces.push({ tipo, cantidad: cant });
-  });
-  // Sensores seleccionados
-  const sensores = Array.from(document.querySelectorAll(".chk-sensor:checked")).map(c=>c.value);
-  const switchesLuces    = Array.from(document.querySelectorAll(".chk-switch-luz:checked")).map(c=>c.value);
-  const switchesTurbinas = Array.from(document.querySelectorAll(".chk-switch-turb:checked")).map(c=>c.value);
+  try {
+    const luces = [];
+    document.querySelectorAll(".luz-row").forEach(row => {
+      const tipoEl = row.querySelector(".luz-tipo");
+      const cantEl = row.querySelector(".luz-cant");
+      if (tipoEl && tipoEl.value) luces.push({ tipo: tipoEl.value, cantidad: parseInt(cantEl?.value)||1 });
+    });
+    const sensores        = Array.from(document.querySelectorAll(".chk-sensor:checked")).map(c=>c.value);
+    const switchesLuces   = Array.from(document.querySelectorAll(".chk-switch-luz:checked")).map(c=>c.value);
+    const switchesTurbinas= Array.from(document.querySelectorAll(".chk-switch-turb:checked")).map(c=>c.value);
+    const intractorEl     = document.getElementById("l-intractor");
+    const extractorEl     = document.getElementById("l-extractor");
 
-  const d = {
-    nombre:          val("l-nombre"),
-    dimensiones:     val("l-dim"),
-    luces,
-    sensoresTuya:    sensores,
-    switchLuces:     switchesLuces,
-    switchTurbinas:  switchesTurbinas,
-    intractor:       document.getElementById("l-intractor").checked,
-    extractor:       document.getElementById("l-extractor").checked,
-    intractorSmartSwitch: val("l-sw-intractor"),
-    extractorSmartSwitch: val("l-sw-extractor"),
-    notas:           val("l-notas"),
-    creadoEn:        serverTimestamp(),
-  };
-  if (!d.nombre) { toast("Ingresá un nombre","err"); return; }
-  await addDoc(collection(db,"lugares"), d);
-  cerrarModal("modal-lugar");
-  document.getElementById("form-lugar").reset();
-  document.getElementById("luces-rows").innerHTML = luzRowHTML();
-  cargarLugares();
-  toast("Lugar guardado ✓");
+    const d = {
+      nombre:        val("l-nombre"),
+      dimensiones:   val("l-dim"),
+      luces,
+      sensoresTuya:  sensores,
+      switchLuces:   switchesLuces,
+      switchTurbinas:switchesTurbinas,
+      intractor:     intractorEl ? intractorEl.checked : false,
+      extractor:     extractorEl ? extractorEl.checked : false,
+      notas:         val("l-notas"),
+      creadoEn:      serverTimestamp(),
+    };
+    if (!d.nombre) { toast("Ingresá un nombre","err"); return; }
+    await addDoc(collection(db,"lugares"), d);
+    cerrarModal("modal-lugar");
+    document.getElementById("form-lugar").reset();
+    document.getElementById("luces-rows").innerHTML = luzRowHTML();
+    cargarLugares();
+    toast("Lugar guardado ✓");
+  } catch(err) {
+    console.error("guardarLugar error:", err);
+    toast("Error: " + err.message, "err");
+  }
 };
 
 function luzRowHTML() {
