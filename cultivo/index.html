@@ -111,13 +111,15 @@ async function cargarLugares() {
 
 window.verLugar = async (id) => {
   lugarActivo = id;
+  show("vista-lugar");
   const snap = await getDoc(doc(db,"lugares",id));
   const l = snap.data();
-  document.getElementById("det-lugar-nombre").textContent = l.nombre;
-  document.getElementById("det-lugar-dim").textContent = l.dimensiones||"";
+  const nombreEl = document.getElementById("det-lugar-nombre");
+  const dimEl    = document.getElementById("det-lugar-dim");
+  if (nombreEl) nombreEl.textContent = l.nombre;
+  if (dimEl)    dimEl.textContent    = l.dimensiones||"";
   cargarAreas(id);
   cargarPlantasLugar(id);
-  show("vista-lugar");
 };
 
 window.eliminarLugar = async (id, nombre) => {
