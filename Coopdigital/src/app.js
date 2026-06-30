@@ -16,6 +16,7 @@ import { asambleasView, bindAsambleas } from './modules/asambleas/views/asamblea
 import { actasView, bindActas } from './modules/actas/views/actas.view.js';
 import { certificadosView, bindCertificados } from './modules/certificados/views/certificados.view.js';
 import { mesaEntradasView, bindMesaEntradas } from './modules/mesa-entradas/views/mesa-entradas.view.js';
+import { comunicacionesView, bindComunicaciones } from './modules/comunicaciones/views/comunicaciones.view.js';
 
 const app = document.querySelector('#app');
 let user = null;
@@ -138,6 +139,9 @@ async function render() {
   } else if (path === '/mesa-entradas') {
     view = mesaEntradasView();
     bind = () => bindMesaEntradas();
+  } else if (path === '/comunicaciones') {
+    view = comunicacionesView();
+    bind = () => bindComunicaciones();
   } else {
     view = dashboardView();
     bind = () => bindDashboard(user);
