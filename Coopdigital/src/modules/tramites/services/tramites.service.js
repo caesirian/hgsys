@@ -1,0 +1,1 @@
+import{makeCrudService}from'../../../services/crud.service.js';import{validateTramite}from'../../../validators/tramite.validator.js';export const tramitesService=makeCrudService('tramites','tramites',validateTramite);
