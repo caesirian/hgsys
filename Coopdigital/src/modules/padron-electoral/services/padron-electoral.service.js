@@ -1,0 +1,1 @@
+import{makeCrudService}from'../../../services/crud.service.js';import{validatePadronElectoral}from'../../../validators/padron-electoral.validator.js';export const padronElectoralService=makeCrudService('padronElectoral','padronElectoral',validatePadronElectoral);
