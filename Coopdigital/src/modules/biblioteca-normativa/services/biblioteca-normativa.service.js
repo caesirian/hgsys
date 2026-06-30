@@ -1,0 +1,1 @@
+import{makeCrudService}from'../../../services/crud.service.js';import{validateBibliotecaNormativa}from'../../../validators/biblioteca-normativa.validator.js';export const bibliotecaNormativaService=makeCrudService('bibliotecaNormativa','bibliotecaNormativa',validateBibliotecaNormativa);
