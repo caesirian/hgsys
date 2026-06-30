@@ -1,0 +1,1 @@
+import{makeCrudService}from'../../../services/crud.service.js';import{validateBibliotecaInstitucional}from'../../../validators/biblioteca-institucional.validator.js';export const bibliotecaInstitucionalService=makeCrudService('bibliotecaInstitucional','bibliotecaInstitucional',validateBibliotecaInstitucional);
