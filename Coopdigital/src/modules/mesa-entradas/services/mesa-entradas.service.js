@@ -1,0 +1,1 @@
+import{makeCrudService}from'../../../services/crud.service.js';import{validateRegistro}from'../../../validators/registro.validator.js';export const mesaEntradasService=makeCrudService('mesaEntradas','mesaEntradas',validateRegistro);
