@@ -75,5 +75,14 @@ export const firestoreDb = {
     const ref = doc(db, 'cooperativas', cooperativaId());
     const s = await getDoc(ref);
     return s.exists() ? { id: s.id, ...s.data() } : null;
+  },
+
+  // Actualiza el documento raíz de la cooperativa activa (datos institucionales).
+  async updateCooperativa(data) {
+    const ref = doc(db, 'cooperativas', cooperativaId());
+    const payload = { ...data, ...auditUpdate() };
+    await updateDoc(ref, payload);
+    return { id: cooperativaId(), ...payload };
   }
 };
+
