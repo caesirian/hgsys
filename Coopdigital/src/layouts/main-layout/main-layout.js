@@ -8,6 +8,7 @@ const nav = [
   { href: '/certificados',    ico: '🏅', label: 'Certificados' },
   { section: 'Gestión' },
   { href: '/mesa-entradas',   ico: '📥', label: 'Mesa de Entradas/Salidas' },
+  { href: '/tramites',        ico: '🗒️', label: 'Trámites' },
   { href: '/comunicaciones',  ico: '📢', label: 'Comunicaciones' },
   { href: '/biblioteca-institucional', ico: '📚', label: 'Biblioteca Institucional' },
   { href: '/biblioteca-normativa',     ico: '⚖️', label: 'Biblioteca Normativa' },
@@ -23,6 +24,7 @@ const nav = [
   { href: '/consejo',         ico: '🏛️', label: 'Consejo de Administración' },
   { href: '/sindicatura',     ico: '🔍', label: 'Sindicatura' },
   { href: '/asambleas',       ico: '🗳️', label: 'Asambleas' },
+  { href: '/padron-electoral', ico: '🗂️', label: 'Padrón Electoral' },
   { href: '/actas',           ico: '📜', label: 'Actas' },
   { href: '/eventos',         ico: '🧾', label: 'Eventos / Auditoría' },
 ];
