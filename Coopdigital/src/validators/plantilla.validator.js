@@ -1,6 +1,6 @@
 import { escapeText } from '../utils/security.js';
 
-const tipos = ['Nota', 'Acta', 'Certificado', 'Comunicación', 'Otro'];
+const tipos = ['Nota', 'Acta', 'Certificado', 'Comunicación', 'Convocatoria', 'Otro'];
 
 export function validatePlantilla(d) {
   const x = {
