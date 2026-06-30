@@ -16,6 +16,7 @@ const nav = [
   { section: 'Herramientas' },
   { href: '/generador-actas',          ico: '🪄', label: 'Generador de Actas' },
   { href: '/generador-convocatorias',  ico: '✉️', label: 'Generador de Convocatorias' },
+  { href: '/firmas',          ico: '✍️', label: 'Firma Digital' },
   { section: 'Sistema' },
   { href: '/configuracion',   ico: '⚙️', label: 'Configuración' },
   { href: '/documentos',      ico: '📄', label: 'Documentos' },
