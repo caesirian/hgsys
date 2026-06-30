@@ -17,6 +17,8 @@ import { actasView, bindActas } from './modules/actas/views/actas.view.js';
 import { certificadosView, bindCertificados } from './modules/certificados/views/certificados.view.js';
 import { mesaEntradasView, bindMesaEntradas } from './modules/mesa-entradas/views/mesa-entradas.view.js';
 import { comunicacionesView, bindComunicaciones } from './modules/comunicaciones/views/comunicaciones.view.js';
+import { bibliotecaInstitucionalView, bindBibliotecaInstitucional } from './modules/biblioteca-institucional/views/biblioteca-institucional.view.js';
+import { bibliotecaNormativaView, bindBibliotecaNormativa } from './modules/biblioteca-normativa/views/biblioteca-normativa.view.js';
 
 const app = document.querySelector('#app');
 let user = null;
@@ -142,6 +144,12 @@ async function render() {
   } else if (path === '/comunicaciones') {
     view = comunicacionesView();
     bind = () => bindComunicaciones();
+  } else if (path === '/biblioteca-institucional') {
+    view = bibliotecaInstitucionalView();
+    bind = () => bindBibliotecaInstitucional();
+  } else if (path === '/biblioteca-normativa') {
+    view = bibliotecaNormativaView();
+    bind = () => bindBibliotecaNormativa();
   } else {
     view = dashboardView();
     bind = () => bindDashboard(user);
