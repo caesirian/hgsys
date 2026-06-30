@@ -15,6 +15,7 @@ import { sindicaturaView, bindSindicatura } from './modules/sindicatura/views/si
 import { asambleasView, bindAsambleas } from './modules/asambleas/views/asambleas.view.js';
 import { actasView, bindActas } from './modules/actas/views/actas.view.js';
 import { certificadosView, bindCertificados } from './modules/certificados/views/certificados.view.js';
+import { mesaEntradasView, bindMesaEntradas } from './modules/mesa-entradas/views/mesa-entradas.view.js';
 
 const app = document.querySelector('#app');
 let user = null;
@@ -134,6 +135,9 @@ async function render() {
   } else if (path === '/certificados') {
     view = certificadosView();
     bind = () => bindCertificados();
+  } else if (path === '/mesa-entradas') {
+    view = mesaEntradasView();
+    bind = () => bindMesaEntradas();
   } else {
     view = dashboardView();
     bind = () => bindDashboard(user);
