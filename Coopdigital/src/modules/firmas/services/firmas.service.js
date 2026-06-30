@@ -1,0 +1,1 @@
+import{makeCrudService}from'../../../services/crud.service.js';import{validateFirma}from'../../../validators/firma.validator.js';export const firmasService=makeCrudService('firmas','firmas',validateFirma);
