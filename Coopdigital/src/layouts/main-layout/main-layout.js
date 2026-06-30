@@ -8,6 +8,7 @@ const nav = [
   { href: '/certificados',    ico: '🏅', label: 'Certificados' },
   { section: 'Gestión' },
   { href: '/mesa-entradas',   ico: '📥', label: 'Mesa de Entradas/Salidas' },
+  { href: '/comunicaciones',  ico: '📢', label: 'Comunicaciones' },
   { href: '/documentos',      ico: '📄', label: 'Documentos' },
   { href: '/vencimientos',    ico: '⏱',  label: 'Vencimientos' },
   { section: 'Contabilidad' },
