@@ -23,6 +23,8 @@ import { plantillasView, bindPlantillas } from './modules/plantillas/views/plant
 import { configuracionView, bindConfiguracion } from './modules/configuracion/views/configuracion.view.js';
 import { padronElectoralView, bindPadronElectoral } from './modules/padron-electoral/views/padron-electoral.view.js';
 import { tramitesView, bindTramites } from './modules/tramites/views/tramites.view.js';
+import { generadorActasView, bindGeneradorActas } from './modules/generadores/views/generador-actas.view.js';
+import { generadorConvocatoriasView, bindGeneradorConvocatorias } from './modules/generadores/views/generador-convocatorias.view.js';
 
 const app = document.querySelector('#app');
 let user = null;
@@ -166,6 +168,12 @@ async function render() {
   } else if (path === '/tramites') {
     view = tramitesView();
     bind = () => bindTramites();
+  } else if (path === '/generador-actas') {
+    view = generadorActasView();
+    bind = () => bindGeneradorActas();
+  } else if (path === '/generador-convocatorias') {
+    view = generadorConvocatoriasView();
+    bind = () => bindGeneradorConvocatorias();
   } else {
     view = dashboardView();
     bind = () => bindDashboard(user);
