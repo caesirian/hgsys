@@ -7,6 +7,7 @@ const nav = [
   { href: '/libro-asociados', ico: '📘', label: 'Libro de Asociados' },
   { href: '/certificados',    ico: '🏅', label: 'Certificados' },
   { section: 'Gestión' },
+  { href: '/mesa-entradas',   ico: '📥', label: 'Mesa de Entradas/Salidas' },
   { href: '/documentos',      ico: '📄', label: 'Documentos' },
   { href: '/vencimientos',    ico: '⏱',  label: 'Vencimientos' },
   { section: 'Contabilidad' },
