@@ -25,6 +25,7 @@ import { padronElectoralView, bindPadronElectoral } from './modules/padron-elect
 import { tramitesView, bindTramites } from './modules/tramites/views/tramites.view.js';
 import { generadorActasView, bindGeneradorActas } from './modules/generadores/views/generador-actas.view.js';
 import { generadorConvocatoriasView, bindGeneradorConvocatorias } from './modules/generadores/views/generador-convocatorias.view.js';
+import { firmasView, bindFirmas } from './modules/firmas/views/firmas.view.js';
 
 const app = document.querySelector('#app');
 let user = null;
@@ -174,6 +175,9 @@ async function render() {
   } else if (path === '/generador-convocatorias') {
     view = generadorConvocatoriasView();
     bind = () => bindGeneradorConvocatorias();
+  } else if (path === '/firmas') {
+    view = firmasView();
+    bind = () => bindFirmas();
   } else {
     view = dashboardView();
     bind = () => bindDashboard(user);
