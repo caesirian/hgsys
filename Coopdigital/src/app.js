@@ -21,6 +21,8 @@ import { bibliotecaInstitucionalView, bindBibliotecaInstitucional } from './modu
 import { bibliotecaNormativaView, bindBibliotecaNormativa } from './modules/biblioteca-normativa/views/biblioteca-normativa.view.js';
 import { plantillasView, bindPlantillas } from './modules/plantillas/views/plantillas.view.js';
 import { configuracionView, bindConfiguracion } from './modules/configuracion/views/configuracion.view.js';
+import { padronElectoralView, bindPadronElectoral } from './modules/padron-electoral/views/padron-electoral.view.js';
+import { tramitesView, bindTramites } from './modules/tramites/views/tramites.view.js';
 
 const app = document.querySelector('#app');
 let user = null;
@@ -158,6 +160,12 @@ async function render() {
   } else if (path === '/configuracion') {
     view = configuracionView();
     bind = () => bindConfiguracion();
+  } else if (path === '/padron-electoral') {
+    view = padronElectoralView();
+    bind = () => bindPadronElectoral();
+  } else if (path === '/tramites') {
+    view = tramitesView();
+    bind = () => bindTramites();
   } else {
     view = dashboardView();
     bind = () => bindDashboard(user);
