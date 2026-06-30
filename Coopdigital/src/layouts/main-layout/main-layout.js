@@ -9,6 +9,8 @@ const nav = [
   { section: 'Gestión' },
   { href: '/mesa-entradas',   ico: '📥', label: 'Mesa de Entradas/Salidas' },
   { href: '/comunicaciones',  ico: '📢', label: 'Comunicaciones' },
+  { href: '/biblioteca-institucional', ico: '📚', label: 'Biblioteca Institucional' },
+  { href: '/biblioteca-normativa',     ico: '⚖️', label: 'Biblioteca Normativa' },
   { href: '/documentos',      ico: '📄', label: 'Documentos' },
   { href: '/vencimientos',    ico: '⏱',  label: 'Vencimientos' },
   { section: 'Contabilidad' },
