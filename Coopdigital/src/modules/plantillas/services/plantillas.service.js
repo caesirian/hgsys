@@ -1,0 +1,1 @@
+import{makeCrudService}from'../../../services/crud.service.js';import{validatePlantilla}from'../../../validators/plantilla.validator.js';export const plantillasService=makeCrudService('plantillas','plantillas',validatePlantilla);
