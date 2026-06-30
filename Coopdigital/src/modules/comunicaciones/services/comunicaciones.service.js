@@ -1,0 +1,1 @@
+import{makeCrudService}from'../../../services/crud.service.js';import{validateComunicacion}from'../../../validators/comunicacion.validator.js';export const comunicacionesService=makeCrudService('comunicaciones','comunicaciones',validateComunicacion);
