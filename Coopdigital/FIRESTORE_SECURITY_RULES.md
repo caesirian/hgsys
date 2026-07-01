@@ -532,6 +532,17 @@ operador
 
 ---
 
+# Login biométrico (WebAuthn)
+
+Rutas:
+
+webauthnCredentials
+webauthnChallenges
+
+Lectura, escritura:
+
+nadie (solo Admin SDK desde coopdigital-api, igual que usuariosIndex)
+
 # Gastos a Rendir
 
 Ruta:
