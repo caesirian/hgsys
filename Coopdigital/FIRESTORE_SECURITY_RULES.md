@@ -532,6 +532,39 @@ operador
 
 ---
 
+# Gastos a Rendir
+
+Ruta:
+
+gastosARendir
+
+Lectura:
+
+todos
+
+Creación/Actualización del gasto:
+
+admin
+consejero
+operador
+
+Eliminación:
+
+admin
+
+Subcolección firmas (registro de firma en papel, no editable ni
+eliminable una vez creada — mismo criterio que Certificados y Firma
+Digital):
+
+Creación:
+
+admin
+consejero
+
+Actualización, eliminación:
+
+nadie
+
 # Plantillas
 
 Lectura:

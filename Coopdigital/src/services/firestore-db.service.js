@@ -18,6 +18,14 @@ function col(name) {
   return collection(db, 'cooperativas', cooperativaId(), name);
 }
 
+// Subcolección de un documento dentro de la cooperativa activa, p. ej.
+// gastosARendir/{gastoId}/firmas. Uso puntual (una única subcolección real
+// en el sistema hoy); si se repite en más módulos, evaluar generalizar
+// firestoreDb con un helper de nivel más alto.
+function subCol(parentColName, parentId, subName) {
+  return collection(db, 'cooperativas', cooperativaId(), parentColName, parentId, subName);
+}
+
 function snap(querySnap) {
   return querySnap.docs.map(d => ({ id: d.id, ...d.data() }));
 }
@@ -62,6 +70,16 @@ export const firestoreDb = {
     const ref = doc(db, 'cooperativas', cooperativaId(), colName, id);
     await deleteDoc(ref);
     return id;
+  },
+
+  async listSub(parentColName, parentId, subName) {
+    return snap(await getDocs(subCol(parentColName, parentId, subName)));
+  },
+
+  async createSub(parentColName, parentId, subName, data) {
+    const payload = { ...data, ...auditCreate() };
+    const ref = await addDoc(subCol(parentColName, parentId, subName), payload);
+    return { id: ref.id, ...payload };
   },
 
   async get(colName, id) {

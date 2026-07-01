@@ -792,6 +792,70 @@ vencido
 ---
 
 ############################################################
+# GASTOS A RENDIR
+############################################################
+
+cooperativas/{cooperativaId}/gastosARendir/{gastoId}
+
+{
+  concepto: string,
+
+  categoria: string,
+
+  monto: number,
+
+  fecha: timestamp,
+
+  consejeroId: string,
+
+  comprobanteUrl: string,
+
+  observaciones: string,
+
+  estado: string,
+
+  creadoPor: string,
+
+  fechaCreacion: timestamp,
+
+  modificadoPor: string,
+
+  fechaModificacion: timestamp
+}
+
+Estados:
+
+pendiente
+
+firmado
+
+consejeroId referencia a un cargo vigente de consejoAdministracion (ver
+sección CONSEJO DE ADMINISTRACION), es decir, a quien rindió el gasto y
+cuya firma en papel debe registrarse para saldarlo.
+
+Subcolección (registro de la firma en papel del consejero; no es firma
+digital con valor legal, es un registro administrativo de que la firma en
+papel fue recibida y verificada):
+
+cooperativas/{cooperativaId}/gastosARendir/{gastoId}/firmas/{firmaId}
+
+{
+  consejeroId: string,
+
+  firmadoPor: string,
+
+  fecha: timestamp
+}
+
+La firma se crea exclusivamente desde el sistema completo (nunca desde
+Lite): solo admin/consejero pueden registrarla, y nunca se edita ni se
+elimina una vez creada (misma lógica que certificados y firmas). En Lite
+(rol: 'lite') el módulo equivalente solo permite crear/editar el gasto en
+sí, sin acceso a esta subcolección.
+
+---
+
+############################################################
 # PLANTILLAS
 ############################################################
 

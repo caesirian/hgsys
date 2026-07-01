@@ -98,6 +98,22 @@ service cloud.firestore {
         allow create, update: if puedeEscribirGeneral(cooperativaId);
       }
 
+      // Gastos a rendir: admin/consejero/operador dan de alta y editan el
+      // gasto en sí. La firma en papel (subcolección) es más restrictiva:
+      // solo admin/consejero pueden registrarla, y nunca se edita ni se
+      // elimina una vez creada (mismo criterio que certificados).
+      match /gastosARendir/{gastoId} {
+        allow read: if puedeLeer(cooperativaId);
+        allow create, update: if puedeEscribirGeneral(cooperativaId);
+        allow delete: if isAdmin(cooperativaId);
+
+        match /firmas/{firmaId} {
+          allow read: if puedeLeer(cooperativaId);
+          allow create: if puedeEscribirGobernanza(cooperativaId);
+          allow update, delete: if false;
+        }
+      }
+
       // Contabilidad: movimientos (ingresos/egresos) bajo categorías INAES
       // predefinidas en el frontend (registro simplificado, no partida
       // doble). Lectura: todos los roles activos. Escritura: admin/
