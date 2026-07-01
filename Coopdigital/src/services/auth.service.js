@@ -1,11 +1,13 @@
 import {
   signInWithEmailAndPassword,
+  signInWithCustomToken,
   signOut,
   onAuthStateChanged
 } from 'https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js';
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js';
 import { auth, db } from '../firebase/firebase.config.js';
 import { authStore } from '../stores/auth.store.js';
+import { webauthnService } from './webauthn.service.js';
 
 // Resuelve cooperativaId leyendo la entrada propia en el índice global
 // usuariosIndex/{uid}. Esa entrada la crea exclusivamente un Admin SDK
@@ -51,6 +53,18 @@ export const authService = {
   async login(email, password) {
     const cred = await signInWithEmailAndPassword(auth, email, password);
     return loadPerfil(cred.user);
+  },
+  // Login sin contraseña: la verificación biométrica ya ocurrió en
+  // webauthnService.loginConPasskey(), acá solo se canjea el customToken
+  // que devuelve por una sesión real de Firebase.
+  async loginWithPasskey() {
+    const customToken = await webauthnService.loginConPasskey();
+    const cred = await signInWithCustomToken(auth, customToken);
+    return loadPerfil(cred.user);
+  },
+  // Suma una passkey al usuario YA logueado, para este dispositivo.
+  async registerPasskey(deviceName) {
+    return webauthnService.registrarPasskey(deviceName);
   },
   async logout() {
     authStore.set(null);
