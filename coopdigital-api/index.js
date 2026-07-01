@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import { apiKeyAuth } from './src/middleware/api-key-auth.js';
 import { router as v1Router } from './src/routes/v1.js';
+import { router as webauthnRouter } from './src/routes/auth-webauthn.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -21,6 +22,13 @@ app.get('/', (req, res) => {
 });
 
 app.use('/v1', apiKeyAuth, v1Router);
+
+// Login biométrico del panel de CoopDigital (no de integraciones externas,
+// por eso no pasa por apiKeyAuth). El registro de passkey exige sesión de
+// Firebase vigente (ver firebaseAuth middleware dentro del router); el
+// login en sí es público por naturaleza — es el mecanismo para entrar sin
+// contraseña.
+app.use('/auth/webauthn', webauthnRouter);
 
 app.use((req, res) => res.status(404).json({ error: 'Ruta no encontrada.' }));
 

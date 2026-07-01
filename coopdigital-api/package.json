@@ -10,6 +10,7 @@
   "dependencies": {
     "express": "^4.19.2",
     "firebase-admin": "^12.1.0",
-    "cors": "^2.8.5"
+    "cors": "^2.8.5",
+    "@simplewebauthn/server": "^13.3.2"
   }
 }
