@@ -26,6 +26,7 @@ import { tramitesView, bindTramites } from './modules/tramites/views/tramites.vi
 import { generadorActasView, bindGeneradorActas } from './modules/generadores/views/generador-actas.view.js';
 import { generadorConvocatoriasView, bindGeneradorConvocatorias } from './modules/generadores/views/generador-convocatorias.view.js';
 import { firmasView, bindFirmas } from './modules/firmas/views/firmas.view.js';
+import { gastosARendirView, bindGastosARendir } from './modules/gastos-a-rendir/views/gastos-a-rendir.view.js';
 
 const app = document.querySelector('#app');
 let user = null;
@@ -127,6 +128,9 @@ async function render() {
   } else if (path === '/reportes-contables') {
     view = reportesContablesView();
     bind = () => bindReportesContables();
+  } else if (path === '/gastos-a-rendir') {
+    view = gastosARendirView();
+    bind = () => bindGastosARendir();
   } else if (path === '/eventos') {
     view = eventosView();
     bind = () => bindEventos();
