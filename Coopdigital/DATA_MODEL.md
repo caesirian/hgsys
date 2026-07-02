@@ -792,6 +792,55 @@ vencido
 ---
 
 ############################################################
+# LOGIN BIOMÉTRICO (WEBAUTHN / PASSKEYS)
+############################################################
+
+Colecciones de nivel raíz, análogas a usuariosIndex: se escriben y leen
+EXCLUSIVAMENTE desde coopdigital-api (Admin SDK), nunca desde el cliente
+del panel. firestore.rules las deniega explícitamente.
+
+webauthnCredentials/{credentialId}
+
+  El id del documento es el credentialID que devuelve el navegador
+  (base64url), así el backend puede resolver el usuario en el login sin
+  pedir email primero (passkey "discoverable").
+
+{
+  uid: string,
+
+  cooperativaId: string,
+
+  publicKey: string,
+
+  counter: number,
+
+  deviceName: string,
+
+  transports: array,
+
+  creadoEn: timestamp
+}
+
+webauthnChallenges/{challengeId}
+
+  Documento efímero de un solo uso: se crea al pedir opciones de
+  registro/login y se borra al verificarlas (o queda huérfano si el
+  usuario abandona el flujo; no tiene datos sensibles, solo el challenge
+  aleatorio, así que no hace falta limpieza automática).
+
+{
+  tipo: string,
+
+  uid: string,
+
+  challenge: string,
+
+  creadoEn: timestamp
+}
+
+---
+
+############################################################
 # GASTOS A RENDIR
 ############################################################
 

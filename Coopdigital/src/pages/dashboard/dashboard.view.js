@@ -5,6 +5,9 @@ import { vencimientoService } from '../../modules/vencimientos/services/vencimie
 import { movimientoService } from '../../modules/contabilidad/services/movimiento.service.js';
 import { eventoService } from '../../modules/eventos/services/evento.service.js';
 import { cooperativaService } from '../../services/cooperativa.service.js';
+import { authService } from '../../services/auth.service.js';
+import { webauthnService } from '../../services/webauthn.service.js';
+import { toast } from '../../utils/toast.js';
 import { fmt, daysUntil } from '../../utils/date.js';
 import { escapeHtml } from '../../utils/security.js';
 
@@ -28,6 +31,12 @@ export function dashboardView() {
     <div class="dash-grid">
       <div class="card" id="dashVencimientos"><h3>Próximos vencimientos</h3><div class="loading">Cargando…</div></div>
       <div class="card" id="dashEventos"><h3>Actividad reciente</h3><div class="loading">Cargando…</div></div>
+      <div class="card" id="dashSeguridad">
+        <h3>Seguridad de tu cuenta</h3>
+        <p class="muted">Activá el ingreso con huella o Face ID en este dispositivo, sin escribir tu contraseña cada vez.</p>
+        <button class="btn ghost" id="btnActivarBiometria" style="display:none">🔐 Activar biometría en este dispositivo</button>
+        <p class="muted" id="bioNoSoportado" style="display:none">Este navegador o dispositivo no soporta login biométrico.</p>
+      </div>
     </div>
   </section>`;
 }
@@ -87,4 +96,37 @@ export async function bindDashboard(user) {
         <span class="muted">${fmt(e.fecha)} · ${escapeHtml(e.descripcion ?? '')}</span>
       </div>`).join('')
     : '<p class="muted empty">Sin actividad registrada.</p>');
+
+  // Seguridad — activar biometría en este dispositivo. Chequeo puramente
+  // local (localStorage) para no mostrar dos veces el botón en el mismo
+  // dispositivo; no es la fuente de verdad (esa es webauthnCredentials en
+  // Firestore, solo accesible desde el backend), es solo una comodidad de UI.
+  const btnBio = document.querySelector('#btnActivarBiometria');
+  const bioNoSoportado = document.querySelector('#bioNoSoportado');
+  const yaEnroladoKey = `webauthnEnrolado:${user.uid}`;
+
+  if (!webauthnService.soportado()) {
+    bioNoSoportado.style.display = '';
+  } else if (localStorage.getItem(yaEnroladoKey) === '1') {
+    btnBio.style.display = '';
+    btnBio.textContent = '🔐 Biometría activa en este dispositivo';
+    btnBio.disabled = true;
+  } else {
+    btnBio.style.display = '';
+    btnBio.onclick = async () => {
+      btnBio.disabled = true;
+      btnBio.textContent = 'Activando…';
+      try {
+        const deviceName = `${navigator.platform || 'Dispositivo'} · ${new Date().toLocaleDateString('es-AR')}`;
+        await authService.registerPasskey(deviceName);
+        localStorage.setItem(yaEnroladoKey, '1');
+        btnBio.textContent = '🔐 Biometría activa en este dispositivo';
+        toast.ok('Biometría activada en este dispositivo.');
+      } catch (err) {
+        btnBio.disabled = false;
+        btnBio.textContent = '🔐 Activar biometría en este dispositivo';
+        toast.err(err.message);
+      }
+    };
+  }
 }

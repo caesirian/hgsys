@@ -68,6 +68,18 @@ service cloud.firestore {
       allow list, write: if false;
     }
 
+    // Login biométrico (WebAuthn): credenciales y challenges efímeros.
+    // Se leen/escriben exclusivamente desde coopdigital-api con Admin SDK
+    // (necesario porque el login-verify ocurre ANTES de tener sesión de
+    // Firebase). El cliente del panel nunca accede a esto directamente.
+    match /webauthnCredentials/{credentialId} {
+      allow read, write: if false;
+    }
+
+    match /webauthnChallenges/{challengeId} {
+      allow read, write: if false;
+    }
+
     match /cooperativas/{cooperativaId} {
       allow read: if puedeLeer(cooperativaId);
       allow write: if isAdmin(cooperativaId);

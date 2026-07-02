@@ -1,4 +1,5 @@
 import { authService } from './services/auth.service.js';
+import { webauthnService } from './services/webauthn.service.js';
 import { layout } from './layouts/main-layout/main-layout.js';
 import { loginView } from './pages/login/login.view.js';
 import { dashboardView, bindDashboard } from './pages/dashboard/dashboard.view.js';
@@ -51,6 +52,25 @@ function renderLogin(errorMessage) {
   }
   const form = document.querySelector('#loginForm');
   const submitBtn = document.querySelector('#loginSubmit');
+  const bioBtn = document.querySelector('#loginBiometrico');
+
+  if (webauthnService.soportado()) {
+    bioBtn.style.display = '';
+    bioBtn.onclick = async () => {
+      bioBtn.disabled = true;
+      bioBtn.textContent = 'Verificando…';
+      try {
+        user = await authService.loginWithPasskey();
+        location.hash = '/dashboard';
+        render();
+      } catch (err) {
+        bioBtn.disabled = false;
+        bioBtn.textContent = '🔐 Ingresar con biometría';
+        renderLogin(mapAuthError(err));
+      }
+    };
+  }
+
   form.onsubmit = async (e) => {
     e.preventDefault();
     submitBtn.disabled = true;
@@ -75,6 +95,12 @@ function mapAuthError(err) {
   }
   if (code.includes('too-many-requests')) {
     return 'Demasiados intentos. Esperá un momento.';
+  }
+  if (err?.name === 'NotAllowedError') {
+    return 'No se completó la verificación biométrica (cancelada o expiró el tiempo).';
+  }
+  if (err?.name === 'InvalidStateError') {
+    return 'Este dispositivo ya tiene una passkey registrada para esta cuenta.';
   }
   return err?.message || 'No se pudo iniciar sesión.';
 }
