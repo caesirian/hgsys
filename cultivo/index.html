@@ -1127,7 +1127,6 @@ window.actualizarSensores = async () => {
     }
   }
   document.getElementById("tuya-estado").textContent = errores ? `${errores} sensor(es) con error` : `Actualizado ${new Date().toLocaleTimeString("es-AR")}`;
-  actualizarSwitches();
 };
 
 window.iniciarAutoRefresh = () => {
@@ -1182,7 +1181,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
   // Iniciar sensores al cargar vista Tuya
   document.querySelector('[data-vista="vista-tuya"]')?.addEventListener("click", () => {
-    setTimeout(actualizarSensores, 300);
+    setTimeout(()=>{actualizarSensores();actualizarSwitches();}, 300);
   });
   document.querySelectorAll('[data-vista="vista-tuya"]')?.forEach(b => {
     b.addEventListener("click", () => setTimeout(actualizarSensores, 300));
@@ -1474,19 +1473,16 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
   .sv-val{font-size:1.3rem}
 }
 
-/* SWITCHES */
-.switch-card { border-top: 2px solid var(--border); }
-.switch-card.encendido { border-top-color: var(--lima); box-shadow: 0 0 12px rgba(126,200,69,.15); }
-.switch-card.apagado   { border-top-color: #555; }
-.switch-card.offline   { border-top-color: var(--border); }
-.sw-estado-row { margin: 10px 0 8px; }
-.sw-badge { font-size:.82rem; font-weight:600; padding:4px 10px; border-radius:20px; }
-.sw-badge.encendido { background:#1a3a1a; color:var(--lima); }
-.sw-badge.apagado   { background:#2a2a2a; color:#888; }
-.sw-badge.offline   { background:#1a1a1a; color:#555; }
-.sw-acciones { display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; }
-.sw-acciones .btn { flex:1; font-size:.8rem; padding:7px 10px; }
-
+.switch-card.encendido{border-top-color:var(--lima);box-shadow:0 0 12px rgba(126,200,69,.15)}
+.switch-card.apagado{border-top-color:#555}
+.switch-card.offline{border-top-color:var(--border)}
+.sw-estado-row{margin:10px 0 8px}
+.sw-badge{font-size:.82rem;font-weight:600;padding:4px 10px;border-radius:20px}
+.sw-badge.encendido{background:#1a3a1a;color:var(--lima)}
+.sw-badge.apagado{background:#2a2a2a;color:#888}
+.sw-badge.offline{background:#1a1a1a;color:#555}
+.sw-acciones{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.sw-acciones .btn{flex:1;font-size:.8rem;padding:7px 10px}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
@@ -1680,9 +1676,7 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
     <div class="sensor-card switch-card" id="sw-luces_carpa">
       <div class="sensor-lugar">Carpa 1×1×2</div>
       <div class="sensor-nombre">💡 Luces Carpa</div>
-      <div class="sw-estado-row">
-        <span class="sw-badge offline" id="sw-badge-luces_carpa">⬤ Sin datos</span>
-      </div>
+      <div class="sw-estado-row"><span class="sw-badge offline" id="sw-badge-luces_carpa">⬤ Sin datos</span></div>
       <div class="sw-acciones">
         <button class="btn btn-primary sw-btn-on"  onclick="toggleSwitch('luces_carpa','ebb60fa54c54559c63ysur',true)">Encender</button>
         <button class="btn btn-danger  sw-btn-off" onclick="toggleSwitch('luces_carpa','ebb60fa54c54559c63ysur',false)">Apagar</button>
@@ -1693,9 +1687,7 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
     <div class="sensor-card switch-card" id="sw-turbinas_carpa">
       <div class="sensor-lugar">Carpa 1×1×2</div>
       <div class="sensor-nombre">🌀 Turbinas Carpa</div>
-      <div class="sw-estado-row">
-        <span class="sw-badge offline" id="sw-badge-turbinas_carpa">⬤ Sin datos</span>
-      </div>
+      <div class="sw-estado-row"><span class="sw-badge offline" id="sw-badge-turbinas_carpa">⬤ Sin datos</span></div>
       <div class="sw-acciones">
         <button class="btn btn-primary sw-btn-on"  onclick="toggleSwitch('turbinas_carpa','3522204898f4abba2357',true)">Encender</button>
         <button class="btn btn-danger  sw-btn-off" onclick="toggleSwitch('turbinas_carpa','3522204898f4abba2357',false)">Apagar</button>
@@ -1706,9 +1698,7 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
     <div class="sensor-card switch-card" id="sw-luces_3x1">
       <div class="sensor-lugar">Estructura 3×1×2</div>
       <div class="sensor-nombre">💡 Luces 3×1</div>
-      <div class="sw-estado-row">
-        <span class="sw-badge offline" id="sw-badge-luces_3x1">⬤ Sin datos</span>
-      </div>
+      <div class="sw-estado-row"><span class="sw-badge offline" id="sw-badge-luces_3x1">⬤ Sin datos</span></div>
       <div class="sw-acciones">
         <button class="btn btn-primary sw-btn-on"  onclick="toggleSwitch('luces_3x1','80210308a4cf12ac315b',true)">Encender</button>
         <button class="btn btn-danger  sw-btn-off" onclick="toggleSwitch('luces_3x1','80210308a4cf12ac315b',false)">Apagar</button>
