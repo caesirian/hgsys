@@ -80,18 +80,25 @@ function cerrarModal(id) { document.getElementById(id).classList.remove("open");
 // ════════════════════════════════════════════════════════════════════════════
 // LUGARES
 // ════════════════════════════════════════════════════════════════════════════
+const TEMP_OPTIMA_MIN = 16, TEMP_OPTIMA_MAX = 28;
+let lugaresClimaActivos = {}; // { lugarId: { sensorKey, luzKey } }
+let climaTimer = null;
+let chartsPorLugar = {};      // { lugarId: { temp: Chart, hum: Chart } }
+
 async function cargarLugares() {
   const lista = document.getElementById("lista-lugares");
   lista.innerHTML = '<p class="cargando">Cargando...</p>';
   const snap = await getDocs(query(collection(db,"lugares"), orderBy("creadoEn","desc")));
   lista.innerHTML = "";
+  lugaresClimaActivos = {};
   if (snap.empty) { lista.innerHTML = '<p class="empty">No hay lugares. Creá uno nuevo.</p>'; return; }
   snap.forEach(d => {
     const l = d.data();
     const card = document.createElement("div");
     card.className = "lugar-card";
-    const sensores = (l.sensoresTuya||[]).map(s=>DISPOSITIVOS_TUYA[s]?.nombre||s).join(", ") || "Sin sensor";
-    const sensorClima = (l.sensoresTuya||[]).find(s => DISPOSITIVOS_TUYA[s]?.tipo === "sensor");
+    const sensores     = (l.sensoresTuya||[]).map(s=>DISPOSITIVOS_TUYA[s]?.nombre||s).join(", ") || "Sin sensor";
+    const sensorClima  = (l.sensoresTuya||[]).find(s => DISPOSITIVOS_TUYA[s]?.tipo === "sensor");
+    const luzKey       = (l.switchLuces||[])[0];
     card.innerHTML = `
       <div class="lugar-header">
         <span class="lugar-nombre">${l.nombre}</span>
@@ -103,40 +110,143 @@ async function cargarLugares() {
       </div>
       ${l.intractor||l.extractor ? `<div class="lugar-meta"><span>${l.intractor?"✅ Intractor":""}${l.extractor?" ✅ Extractor":""}</span></div>`:""}
       ${sensorClima ? `<div class="lugar-clima" id="clima-${d.id}"><span class="clima-cargando">🌡️ Consultando sensor...</span></div>` : ""}
+      ${luzKey ? `<div class="luz-estado" id="luz-${d.id}"><span class="clima-cargando">💡 Consultando luces...</span></div>` : ""}
+      ${sensorClima ? `
+      <details class="clima-detalle">
+        <summary>📈 Histórico 7 días</summary>
+        <div class="clima-charts">
+          <div class="chart-box"><canvas id="chart-temp-${d.id}"></canvas></div>
+          <div class="chart-box"><canvas id="chart-hum-${d.id}"></canvas></div>
+        </div>
+      </details>` : ""}
       <div class="cult-actions">
         <button class="btn-sm btn-primary" onclick="verLugar('${d.id}')">Ver áreas y plantas</button>
         <button class="btn-sm btn-danger"  onclick="eliminarLugar('${d.id}','${l.nombre}')">Eliminar</button>
       </div>`;
     lista.appendChild(card);
-    if (sensorClima) cargarClimaLugar(d.id, sensorClima);
+
+    lugaresClimaActivos[d.id] = { sensorKey: sensorClima, luzKey };
+    if (sensorClima) { refrescarActualLugar(d.id, sensorClima); cargarHistoricoLugar(d.id, sensorClima); }
+    if (luzKey) refrescarLuzLugar(d.id, luzKey);
   });
+  iniciarAutoRefreshClima();
 }
 
-// Trae temp/humedad actual + estadística 24h del sensor asociado a un lugar
-async function cargarClimaLugar(lugarId, sensorKey) {
+// Refresco automático liviano (solo valores actuales, no historial) cada 1 minuto
+function iniciarAutoRefreshClima() {
+  if (climaTimer) clearInterval(climaTimer);
+  climaTimer = setInterval(() => {
+    Object.entries(lugaresClimaActivos).forEach(([lugarId, cfg]) => {
+      if (cfg.sensorKey) refrescarActualLugar(lugarId, cfg.sensorKey);
+      if (cfg.luzKey)    refrescarLuzLugar(lugarId, cfg.luzKey);
+    });
+  }, 60 * 1000);
+}
+
+function claseTemp(temp) {
+  if (temp == null) return "";
+  return (temp < TEMP_OPTIMA_MIN || temp > TEMP_OPTIMA_MAX) ? "temp-fuera" : "temp-ok";
+}
+
+// Temp/humedad actuales — llamada liviana (/tuya?device=), se repite cada 1 min
+async function refrescarActualLugar(lugarId, sensorKey) {
   const el = document.getElementById("clima-"+lugarId);
   if (!el) return;
   try {
     const proxyBase = (localStorage.getItem("tuya_proxy") || PROXY_URL).replace(/\/tuya$/, "");
-    const resp = await fetch(`${proxyBase}/tuya/history/resumen?device=${sensorKey}`, { signal: AbortSignal.timeout(15000) });
+    const resp = await fetch(`${proxyBase}/tuya?device=${sensorKey}`, { signal: AbortSignal.timeout(12000) });
     if (!resp.ok) throw new Error("HTTP "+resp.status);
     const data = await resp.json();
-    const a    = data.actual || {};
-    const h24  = (data.historico && data.historico["24h"]) || {};
-    const t    = h24.tempAmb, h = h24.humedad;
+    const s    = data.sensores || {};
+    const temp = s.tempAmb ?? null, hum = s.humedad ?? null;
+    const statsPrevios = el.querySelector(".clima-stats")?.outerHTML || "";
     el.innerHTML = `
       <div class="clima-actual">
-        <span>🌡️ ${a.tempAmb!=null ? a.tempAmb.toFixed(1) : "—"}°C</span>
-        <span>💧 ${a.humedad!=null ? a.humedad.toFixed(0) : "—"}%</span>
-      </div>
-      ${(t||h) ? `<div class="clima-stats">
-        ${t ? `<span class="clima-rango">24h temp ${t.min.toFixed(1)}–${t.max.toFixed(1)}°C · prom ${t.avg}</span>` : ""}
-        ${h ? `<span class="clima-rango">24h hum ${h.min.toFixed(0)}–${h.max.toFixed(0)}% · prom ${h.avg}</span>` : ""}
-      </div>` : ""}`;
+        <span class="${claseTemp(temp)}">🌡️ ${temp!=null?temp.toFixed(1):"—"}°C</span>
+        <span>💧 ${hum!=null?hum.toFixed(0):"—"}%</span>
+        <span class="clima-hora">${new Date().toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit"})}</span>
+      </div>${statsPrevios}`;
   } catch (err) {
     el.innerHTML = `<span class="clima-error">Sin datos del sensor</span>`;
   }
 }
+
+// Estado de luces encendido/apagado — llamada liviana, cada 1 min
+async function refrescarLuzLugar(lugarId, luzKey) {
+  const el = document.getElementById("luz-"+lugarId);
+  if (!el) return;
+  try {
+    const proxyBase = (localStorage.getItem("tuya_proxy") || PROXY_URL).replace(/\/tuya$/, "");
+    const resp = await fetch(`${proxyBase}/tuya?device=${luzKey}`, { signal: AbortSignal.timeout(12000) });
+    if (!resp.ok) throw new Error("HTTP "+resp.status);
+    const data = await resp.json();
+    const encendido = !!(data.sensores && data.sensores.encendido);
+    el.innerHTML = `<span class="${encendido?'luz-on':'luz-off'}">${encendido?'💡 Luces encendidas':'🌑 Luces apagadas'}</span>`;
+  } catch (err) {
+    el.innerHTML = `<span class="clima-error">Sin datos de luces</span>`;
+  }
+}
+
+// Estadística 24h + gráficos 7 días — llamada más pesada (report-logs), se carga una sola vez al entrar
+async function cargarHistoricoLugar(lugarId, sensorKey) {
+  const el = document.getElementById("clima-"+lugarId);
+  try {
+    const proxyBase = (localStorage.getItem("tuya_proxy") || PROXY_URL).replace(/\/tuya$/, "");
+    const resp = await fetch(`${proxyBase}/tuya/history/resumen?device=${sensorKey}`, { signal: AbortSignal.timeout(20000) });
+    if (!resp.ok) throw new Error("HTTP "+resp.status);
+    const data = await resp.json();
+    const h24  = (data.historico && data.historico["24h"]) || {};
+    const h7d  = (data.historico && data.historico["7d"])  || {};
+    const t    = h24.tempAmb, h = h24.humedad;
+    if (el && (t || h)) {
+      const statsHTML = `<div class="clima-stats">
+        ${t ? `<span class="clima-rango">24h temp ${t.min.toFixed(1)}–${t.max.toFixed(1)}°C · prom ${t.avg}</span>` : ""}
+        ${h ? `<span class="clima-rango">24h hum ${h.min.toFixed(0)}–${h.max.toFixed(0)}% · prom ${h.avg}</span>` : ""}
+      </div>`;
+      const existente = el.querySelector(".clima-stats");
+      if (existente) existente.outerHTML = statsHTML; else el.insertAdjacentHTML("beforeend", statsHTML);
+    }
+    dibujarGraficos(lugarId, h7d.tempAmb?.serie || [], h7d.humedad?.serie || []);
+  } catch (err) {
+    console.error("Error histórico", lugarId, err.message);
+  }
+}
+
+function chartOptionsBase(unidad) {
+  return {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { ticks: { color: "#8a9a8f", maxTicksLimit: 7, font: { size: 10 } }, grid: { display: false } },
+      y: { ticks: { color: "#8a9a8f", font: { size: 10 }, callback: v => v + unidad }, grid: { color: "rgba(255,255,255,.05)" } },
+    },
+  };
+}
+
+function dibujarGraficos(lugarId, serieTemp, serieHum) {
+  const ctxTemp = document.getElementById("chart-temp-"+lugarId);
+  const ctxHum  = document.getElementById("chart-hum-"+lugarId);
+  if (!ctxTemp || !ctxHum || typeof Chart === "undefined") return;
+  const fmt = ts => new Date(ts).toLocaleDateString("es-AR",{day:"2-digit",month:"2-digit"});
+
+  if (chartsPorLugar[lugarId]?.temp) chartsPorLugar[lugarId].temp.destroy();
+  if (chartsPorLugar[lugarId]?.hum)  chartsPorLugar[lugarId].hum.destroy();
+
+  chartsPorLugar[lugarId] = {
+    temp: new Chart(ctxTemp, {
+      type: "line",
+      data: { labels: serieTemp.map(p=>fmt(p.t)), datasets: [{ label:"Temp °C", data: serieTemp.map(p=>p.v), borderColor:"#ff8a3d", backgroundColor:"rgba(255,138,61,.15)", tension:.3, pointRadius:0, fill:true }] },
+      options: chartOptionsBase("°C"),
+    }),
+    hum: new Chart(ctxHum, {
+      type: "line",
+      data: { labels: serieHum.map(p=>fmt(p.t)), datasets: [{ label:"Humedad %", data: serieHum.map(p=>p.v), borderColor:"#3ddc97", backgroundColor:"rgba(61,220,151,.15)", tension:.3, pointRadius:0, fill:true }] },
+      options: chartOptionsBase("%"),
+    }),
+  };
+}
+
 
 window.verLugar = async (id) => {
   lugarActivo = id;
@@ -662,8 +772,8 @@ window.actualizarSensores = async () => {
       }
       // Alertas
       const alertas = [];
-      if (temp!==null&&temp>30) alertas.push("🌡️ Temp alta");
-      if (temp!==null&&temp<18) alertas.push("🌡️ Temp baja");
+      if (temp!==null&&temp>28) alertas.push("🌡️ Temp alta");
+      if (temp!==null&&temp<16) alertas.push("🌡️ Temp baja");
       if (hum!==null&&hum>70)   alertas.push("💧 Humedad alta");
       if (hum!==null&&hum<40)   alertas.push("💧 Humedad baja");
       card.querySelector(".s-alertas").innerHTML = alertas.length
@@ -800,11 +910,22 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .lugar-nombre,.area-nombre{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:.95rem}
 .lugar-dim,.area-dim{font-size:.72rem;color:var(--muted);background:var(--surface);padding:2px 8px;border-radius:20px}
 .lugar-meta{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;font-size:.77rem;color:var(--muted)}
-.lugar-clima{display:flex;flex-direction:column;gap:4px;margin-bottom:10px;padding:8px 10px;background:var(--surface);border-radius:10px}
-.clima-actual{display:flex;gap:14px;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.95rem}
+.lugar-clima{display:flex;flex-direction:column;gap:4px;margin-bottom:8px;padding:8px 10px;background:var(--surface);border-radius:10px}
+.clima-actual{display:flex;align-items:center;gap:14px;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.95rem}
+.clima-hora{margin-left:auto;font-family:inherit;font-weight:400;font-size:.68rem;color:var(--muted)}
 .clima-stats{display:flex;flex-wrap:wrap;gap:10px;font-size:.68rem;color:var(--muted)}
 .clima-cargando{font-size:.75rem;color:var(--muted)}
 .clima-error{font-size:.75rem;color:var(--muted)}
+.temp-ok{color:#3ddc97}
+.temp-fuera{color:#ff5c5c}
+.luz-estado{margin-bottom:10px;font-size:.82rem;font-weight:600}
+.luz-on{color:#ffd23d}
+.luz-off{color:var(--muted)}
+.clima-detalle{margin-bottom:10px}
+.clima-detalle summary{cursor:pointer;font-size:.75rem;color:var(--muted);padding:4px 0}
+.clima-charts{display:flex;flex-direction:column;gap:14px;margin-top:8px}
+.chart-box{position:relative;height:140px;background:var(--surface);border-radius:10px;padding:8px}
+@media(min-width:640px){.clima-charts{flex-direction:row}.chart-box{flex:1}}
 .cult-header{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:10px}
 .cult-nombre{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:.95rem}
 .cult-fase{font-size:.68rem;padding:3px 8px;border-radius:20px;font-weight:600;text-transform:uppercase;flex-shrink:0}
@@ -970,6 +1091,7 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
   .sv-val{font-size:1.3rem}
 }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 </head>
 <body>
 
