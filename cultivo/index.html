@@ -594,14 +594,17 @@ window.eliminarLugar = async (id, nombre) => {
   cargarLugares(); toast("Lugar eliminado");
 };
 
-// #form-lugar es un <div>, no un <form> real, así que no tiene .reset() nativo.
-// Limpiamos a mano los campos que usa el formulario de "Nuevo lugar".
-function resetFormLugar() {
-  ["l-nombre","l-dim","l-notas"].forEach(id => { const el = document.getElementById(id); if (el) el.value = ""; });
-  ["l-intractor","l-extractor"].forEach(id => { const el = document.getElementById(id); if (el) el.checked = false; });
-  document.querySelectorAll("#form-lugar .chk-sensor, #form-lugar .chk-switch-luz, #form-lugar .chk-switch-turb")
-    .forEach(chk => chk.checked = false);
+// Todos los "form-X" del sitio son <div>, no <form> reales, así que .reset() nunca
+// fue válido en ninguno. Esta función limpia a mano cualquiera de ellos.
+function resetCamposDiv(containerId) {
+  const cont = document.getElementById(containerId);
+  if (!cont) return;
+  cont.querySelectorAll("input[type='text'], input[type='number'], input[type='date'], input[type='month'], input:not([type]), textarea")
+    .forEach(el => el.value = "");
+  cont.querySelectorAll("input[type='checkbox'], input[type='radio']").forEach(el => el.checked = false);
+  cont.querySelectorAll("select").forEach(el => el.selectedIndex = 0);
 }
+function resetFormLugar() { resetCamposDiv("form-lugar"); }
 
 window.guardarLugar = async () => {
   try {
@@ -714,7 +717,7 @@ window.guardarArea = async () => {
   if (!d.nombre) { toast("Ingresá un nombre","err"); return; }
   await addDoc(collection(db,"lugares",lugarActivo,"areas"), d);
   cerrarModal("modal-area");
-  document.getElementById("form-area").reset();
+  resetCamposDiv("form-area");
   document.getElementById("luces-rows-area").innerHTML = luzRowAreaHTML();
   cargarAreas(lugarActivo);
   toast("Área guardada ✓");
@@ -828,7 +831,7 @@ window.guardarPlanta = async () => {
   if (!d.lugarId) { toast("Seleccioná un lugar primero","err"); return; }
   await addDoc(collection(db,"plantas"), d);
   cerrarModal("modal-planta");
-  document.getElementById("form-planta").reset();
+  resetCamposDiv("form-planta");
   if (lugarActivo) cargarPlantasLugar(lugarActivo);
   toast("Planta registrada ✓");
 };
@@ -878,7 +881,7 @@ window.guardarMedicion = async () => {
   };
   await addDoc(collection(db,"plantas",plantaActiva,"mediciones"),d);
   cerrarModal("modal-medicion");
-  document.getElementById("form-medicion").reset();
+  resetCamposDiv("form-medicion");
   cargarMediciones(); toast("Medición guardada ✓");
 };
 window.eliminarMedicion = async (id) => {
@@ -931,7 +934,7 @@ window.guardarEvento = async () => {
   if (!d.titulo) { toast("Ingresá un título","err"); return; }
   await addDoc(collection(db,"plantas",plantaActiva,"eventos"),d);
   cerrarModal("modal-evento");
-  document.getElementById("form-evento").reset();
+  resetCamposDiv("form-evento");
   cargarEventos(); toast("Evento agendado ✓");
 };
 window.toggleEvento = async (id, estado) => {
@@ -990,7 +993,7 @@ window.guardarNutricion = async () => {
   };
   await addDoc(collection(db,"plantas",plantaActiva,"nutricion"),d);
   cerrarModal("modal-nutricion");
-  document.getElementById("form-nutricion").reset();
+  resetCamposDiv("form-nutricion");
   cargarNutricion(); toast("Semana nutricional guardada ✓");
 };
 window.eliminarNutricion = async (id) => {
@@ -1053,7 +1056,7 @@ window.guardarInase = async () => {
   if (!d.tipoRegistro) { toast("Seleccioná tipo","err"); return; }
   await addDoc(collection(db,"plantas",plantaActiva,"inase"),d);
   cerrarModal("modal-inase");
-  document.getElementById("form-inase").reset();
+  resetCamposDiv("form-inase");
   cargarInase(); toast("Registro INASE guardado ✓");
 };
 window.eliminarInase = async (id) => {
