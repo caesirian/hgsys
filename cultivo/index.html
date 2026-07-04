@@ -106,14 +106,30 @@ function calcularVPD(tempC, rh) {
 function sugerenciaVPD(vpd, etapaKey, rhActual) {
   const e = ETAPAS_VPD[etapaKey];
   if (vpd == null || !e) return null;
+  const [hMin, hMax] = e.humedad;
+  const humedadBaja = rhActual != null && rhActual < hMin;
+  const humedadAlta  = rhActual != null && rhActual > hMax;
+
   if (vpd < e.vpdMin) {
-    return { estado: "bajo", texto: `VPD bajo (${vpd} kPa, objetivo ${e.vpdMin}–${e.vpdMax}). Bajá la humedad` +
-      (rhActual!=null && rhActual <= e.humedad[0] ? " un poco más, o subí la temperatura" : "") + "." };
+    // VPD bajo: aire "encharcado" respecto a la temperatura. Si la humedad YA está
+    // por encima del objetivo, ahí está la causa -> bajarla es lo correcto (menos hongos).
+    // Si la humedad está normal o baja, el problema es más bien la temperatura -> subirla.
+    if (humedadAlta) {
+      return { estado: "bajo", texto: `VPD bajo (${vpd} kPa, objetivo ${e.vpdMin}–${e.vpdMax}). La humedad (${rhActual}%) está por encima del rango ${hMin}–${hMax}%: bajala para no favorecer hongos.` };
+    }
+    return { estado: "bajo", texto: `VPD bajo (${vpd} kPa, objetivo ${e.vpdMin}–${e.vpdMax}). Subí un poco la temperatura.` };
   }
+
   if (vpd > e.vpdMax) {
-    return { estado: "alto", texto: `VPD alto (${vpd} kPa, objetivo ${e.vpdMin}–${e.vpdMax}). Bajá la temperatura primero; ` +
-      `evitá subir la humedad salvo que sea imprescindible, para no favorecer hongos.` };
+    // VPD alto: aire "sediento". Si la humedad YA está por debajo del objetivo,
+    // ahí está la causa real -> subirla (no alcanza con bajar temperatura).
+    // Si la humedad está en rango o alta, mejor bajar temperatura para no mojar de más.
+    if (humedadBaja) {
+      return { estado: "alto", texto: `VPD alto (${vpd} kPa, objetivo ${e.vpdMin}–${e.vpdMax}). La humedad (${rhActual}%) está por debajo del rango ${hMin}–${hMax}% para esta etapa: subila (y/o bajá la temperatura).` };
+    }
+    return { estado: "alto", texto: `VPD alto (${vpd} kPa, objetivo ${e.vpdMin}–${e.vpdMax}). Bajá la temperatura; evitá subir más la humedad (ya está en ${hMin}–${hMax}% o por encima) para no favorecer hongos.` };
   }
+
   return { estado: "ok", texto: `VPD en rango óptimo (${vpd} kPa) para ${e.nombre.toLowerCase()}.` };
 }
 
