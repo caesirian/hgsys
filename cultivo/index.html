@@ -354,6 +354,129 @@ function dibujarGraficos(lugarId, serieTemp, serieHum) {
   };
 }
 
+// ─── DASHBOARD VISUAL ────────────────────────────────────────────────────────
+let dashboardActivos = {}; // { lugarId: { sensorKey, luzKey, tipo } }
+let dashboardTimer   = null;
+
+// Detecta si el lugar es la Carpa (1×1×2) o la Estructura 3×1, usando el sensor
+// asociado como fuente de verdad y el texto de nombre/dimensiones como respaldo.
+function detectarTipoEstructura(l) {
+  const sensorKey = (l.sensoresTuya||[])[0];
+  const lugarDispositivo = sensorKey && DISPOSITIVOS_TUYA[sensorKey]?.lugar;
+  if (lugarDispositivo === "Estructura 3x1") return "estructura3x1";
+  if (lugarDispositivo === "Carpa") return "carpa";
+  const texto = ((l.dimensiones||"") + " " + (l.nombre||"")).toLowerCase();
+  if (texto.includes("3x1") || texto.includes("3×1") || texto.includes("estructura")) return "estructura3x1";
+  return "carpa";
+}
+
+function svgCarpa(encendida) {
+  return `
+  <svg viewBox="0 0 200 220" class="ilustracion ${encendida?'glow-on':'glow-off'}">
+    <polygon points="30,45 100,10 170,45 170,205 30,205" class="carpa-cuerpo"/>
+    <line x1="30" y1="45" x2="170" y2="45" class="carpa-marco"/>
+    <line x1="100" y1="45" x2="100" y2="205" class="carpa-cierre"/>
+    <ellipse cx="100" cy="100" rx="65" ry="55" class="glow-interior"/>
+    <rect x="55" y="38" width="90" height="10" rx="5" class="barra-luz"/>
+    <path d="M100 195 C88 165 68 155 58 122 C80 133 96 143 100 155 C104 143 120 133 142 122 C132 155 112 165 100 195 Z" class="planta-silueta"/>
+  </svg>`;
+}
+
+function svgEstructura3x1(encendida) {
+  return `
+  <svg viewBox="0 0 260 150" class="ilustracion ${encendida?'glow-on':'glow-off'}">
+    <rect x="18" y="95" width="8" height="42" class="estante-pata"/>
+    <rect x="234" y="95" width="8" height="42" class="estante-pata"/>
+    <rect x="12" y="85" width="236" height="12" rx="2" class="estante-base"/>
+    <ellipse cx="130" cy="55" rx="112" ry="35" class="glow-interior"/>
+    <rect x="28" y="22" width="204" height="10" rx="5" class="barra-luz"/>
+    <path d="M65 83 C58 70 46 64 40 53 C52 58 62 64 65 70 C68 64 78 58 90 53 C84 64 72 70 65 83Z" class="planta-silueta"/>
+    <path d="M130 83 C123 70 111 64 105 53 C117 58 127 64 130 70 C133 64 143 58 155 53 C149 64 137 70 130 83Z" class="planta-silueta"/>
+    <path d="M195 83 C188 70 176 64 170 53 C182 58 192 64 195 70 C198 64 208 58 220 53 C214 64 202 70 195 83Z" class="planta-silueta"/>
+  </svg>`;
+}
+
+async function cargarDashboard() {
+  const grid = document.getElementById("dashboard-grid");
+  grid.innerHTML = '<p class="cargando">Cargando...</p>';
+  const snap = await getDocs(query(collection(db,"lugares"), orderBy("creadoEn","desc")));
+  grid.innerHTML = "";
+  dashboardActivos = {};
+  if (snap.empty) { grid.innerHTML = '<p class="empty">No hay lugares creados todavía.</p>'; return; }
+
+  snap.forEach(d => {
+    const l = d.data();
+    const sensorKey = (l.sensoresTuya||[]).find(s => DISPOSITIVOS_TUYA[s]?.tipo === "sensor");
+    const luzKey    = (l.switchLuces||[])[0];
+    const tipo      = detectarTipoEstructura(l);
+    const svgInicial = tipo === "estructura3x1" ? svgEstructura3x1(false) : svgCarpa(false);
+
+    const card = document.createElement("div");
+    card.className = "dash-card";
+    card.innerHTML = `
+      <div class="dash-header">
+        <span class="dash-nombre">${l.nombre}</span>
+        <span class="dash-dim">${l.dimensiones||""}</span>
+      </div>
+      <div class="dash-body">
+        <div class="dash-ilustracion" id="dash-ilus-${d.id}">${svgInicial}</div>
+        <div class="dash-datos">
+          <div class="dash-dato"><div class="valor" id="dash-temp-${d.id}">—</div><div class="label">🌡️ Temp</div></div>
+          <div class="dash-dato"><div class="valor" id="dash-hum-${d.id}">—</div><div class="label">💧 Humedad</div></div>
+          <div class="dash-dato" id="dash-luz-${d.id}"><div class="label">${luzKey?'Consultando luces...':'Sin luces asociadas'}</div></div>
+        </div>
+      </div>`;
+    grid.appendChild(card);
+
+    dashboardActivos[d.id] = { sensorKey, luzKey, tipo };
+    refrescarDashboardCard(d.id, sensorKey, luzKey, tipo);
+  });
+  iniciarAutoRefreshDashboard();
+}
+
+function iniciarAutoRefreshDashboard() {
+  if (dashboardTimer) clearInterval(dashboardTimer);
+  dashboardTimer = setInterval(() => {
+    Object.entries(dashboardActivos).forEach(([id, cfg]) => refrescarDashboardCard(id, cfg.sensorKey, cfg.luzKey, cfg.tipo));
+  }, 60 * 1000);
+}
+
+async function refrescarDashboardCard(lugarId, sensorKey, luzKey, tipo) {
+  const proxyBase = (localStorage.getItem("tuya_proxy") || PROXY_URL).replace(/\/tuya$/, "");
+
+  if (sensorKey) {
+    try {
+      const resp = await fetch(`${proxyBase}/tuya?device=${sensorKey}`, { signal: AbortSignal.timeout(12000) });
+      if (!resp.ok) throw new Error("HTTP "+resp.status);
+      const data = await resp.json();
+      const s = data.sensores || {};
+      const tEl = document.getElementById("dash-temp-"+lugarId);
+      const hEl = document.getElementById("dash-hum-"+lugarId);
+      if (tEl) { tEl.textContent = s.tempAmb!=null ? s.tempAmb.toFixed(1)+"°C" : "—"; tEl.className = "valor "+claseTemp(s.tempAmb); }
+      if (hEl) hEl.textContent = s.humedad!=null ? s.humedad.toFixed(0)+"%" : "—";
+    } catch (err) {
+      const tEl = document.getElementById("dash-temp-"+lugarId);
+      if (tEl) tEl.textContent = "—";
+    }
+  }
+
+  if (luzKey) {
+    try {
+      const resp = await fetch(`${proxyBase}/tuya?device=${luzKey}`, { signal: AbortSignal.timeout(12000) });
+      if (!resp.ok) throw new Error("HTTP "+resp.status);
+      const data = await resp.json();
+      const encendido = !!(data.sensores && data.sensores.encendido);
+      const ilusEl = document.getElementById("dash-ilus-"+lugarId);
+      if (ilusEl) ilusEl.innerHTML = tipo === "estructura3x1" ? svgEstructura3x1(encendido) : svgCarpa(encendido);
+      const luzEl = document.getElementById("dash-luz-"+lugarId);
+      if (luzEl) luzEl.innerHTML = `<div class="label ${encendido?'luz-on':'luz-off'}">${encendido?'💡 Encendida':'🌑 Apagada'}</div>`;
+    } catch (err) {
+      const luzEl = document.getElementById("dash-luz-"+lugarId);
+      if (luzEl) luzEl.innerHTML = `<div class="label">Sin datos de luces</div>`;
+    }
+  }
+}
+
 
 window.verLugar = async (id) => {
   lugarActivo = id;
@@ -1042,6 +1165,35 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .chart-box{position:relative;height:150px;background:var(--surface);border-radius:10px;padding:8px}
 .chart-empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:12px;font-size:.68rem;color:var(--muted);pointer-events:none}
 @media(min-width:640px){.clima-charts{flex-direction:row}.chart-box{flex:1}}
+
+/* Dashboard visual */
+.dashboard-grid{display:grid;grid-template-columns:1fr;gap:16px}
+@media(min-width:640px){.dashboard-grid{grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}}
+.dash-card{background:var(--card,#101a14);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.dash-header{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.dash-nombre{font-family:'Space Grotesk',sans-serif;font-weight:700}
+.dash-dim{font-size:.72rem;color:var(--muted)}
+.dash-body{display:flex;align-items:center;gap:14px}
+.dash-ilustracion{flex:1;display:flex;justify-content:center;min-width:0}
+.dash-datos{display:flex;flex-direction:column;gap:10px;min-width:78px}
+.dash-dato{text-align:center}
+.dash-dato .valor{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.25rem}
+.dash-dato .label{font-size:.65rem;color:var(--muted)}
+
+.ilustracion{width:100%;max-width:210px;height:auto}
+.carpa-cuerpo{fill:#242b26;stroke:#0a0d0a;stroke-width:2}
+.carpa-marco{stroke:#0a0d0a;stroke-width:2}
+.carpa-cierre{stroke:#000;stroke-width:1;stroke-dasharray:3,3;opacity:.5}
+.estante-base,.estante-pata{fill:#33392f}
+.barra-luz{fill:#4a4a44;transition:fill .5s ease,filter .5s ease}
+.glow-interior{fill:#000;opacity:0;transition:opacity .6s ease,fill .6s ease}
+.planta-silueta{fill:#26402c;transition:fill .6s ease}
+
+.glow-on .barra-luz{fill:#ffd23d;filter:drop-shadow(0 0 6px #ffd23dcc)}
+.glow-on .glow-interior{fill:#ffd23d;opacity:.16}
+.glow-on .planta-silueta{fill:#6bbf5c}
+.glow-off .glow-interior{opacity:0}
+.glow-off .planta-silueta{fill:#233227}
 .cult-header{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:10px}
 .cult-nombre{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:.95rem}
 .cult-fase{font-size:.68rem;padding:3px 8px;border-radius:20px;font-weight:600;text-transform:uppercase;flex-shrink:0}
@@ -1215,6 +1367,9 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
 <!-- SIDEBAR -->
 <aside class="sidebar">
   <div class="sidebar-logo">🌿 <span>Cultiv</span>App<small>Seguimiento de cultivo</small></div>
+  <button class="nav-btn" data-vista="vista-dashboard" onclick="show('vista-dashboard');cargarDashboard()">
+    <span class="nav-icon">🖥️</span><span class="nav-label">Dashboard</span>
+  </button>
   <button class="nav-btn activo" data-vista="vista-lugares" onclick="show('vista-lugares');cargarLugares()">
     <span class="nav-icon">🏕️</span><span class="nav-label">Lugares</span>
   </button>
@@ -1232,6 +1387,9 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
 
 <!-- NAVBAR BOTTOM mobile -->
 <nav class="bottom-nav">
+  <button class="nav-btn" data-vista="vista-dashboard" onclick="show('vista-dashboard');cargarDashboard()">
+    <span class="nav-icon">🖥️</span><span class="nav-label">Dashboard</span>
+  </button>
   <button class="nav-btn activo" data-vista="vista-lugares" onclick="show('vista-lugares');cargarLugares()">
     <span class="nav-icon">🏕️</span><span class="nav-label">Lugares</span>
   </button>
@@ -1247,6 +1405,14 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
 </nav>
 
 <main class="main">
+
+<!-- VISTA: DASHBOARD -->
+<section id="vista-dashboard" class="vista">
+  <div class="page-header">
+    <div class="page-title">Dashboard<small>Vista visual de cada espacio de cultivo</small></div>
+  </div>
+  <div id="dashboard-grid" class="dashboard-grid"></div>
+</section>
 
 <!-- VISTA: LUGARES -->
 <section id="vista-lugares" class="vista activa">
