@@ -594,6 +594,15 @@ window.eliminarLugar = async (id, nombre) => {
   cargarLugares(); toast("Lugar eliminado");
 };
 
+// #form-lugar es un <div>, no un <form> real, así que no tiene .reset() nativo.
+// Limpiamos a mano los campos que usa el formulario de "Nuevo lugar".
+function resetFormLugar() {
+  ["l-nombre","l-dim","l-notas"].forEach(id => { const el = document.getElementById(id); if (el) el.value = ""; });
+  ["l-intractor","l-extractor"].forEach(id => { const el = document.getElementById(id); if (el) el.checked = false; });
+  document.querySelectorAll("#form-lugar .chk-sensor, #form-lugar .chk-switch-luz, #form-lugar .chk-switch-turb")
+    .forEach(chk => chk.checked = false);
+}
+
 window.guardarLugar = async () => {
   try {
     const luces = [];
@@ -623,7 +632,7 @@ window.guardarLugar = async () => {
     if (!d.nombre) { toast("Ingresá un nombre","err"); return; }
     await addDoc(collection(db,"lugares"), d);
     cerrarModal("modal-lugar");
-    document.getElementById("form-lugar").reset();
+    resetFormLugar();
     document.getElementById("luces-rows").innerHTML = luzRowHTML();
     cargarLugares();
     toast("Lugar guardado ✓");
