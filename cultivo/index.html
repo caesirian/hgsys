@@ -9,7 +9,7 @@
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
-import { getFirestore, collection, doc, addDoc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, query, orderBy, serverTimestamp }
+import { getFirestore, collection, doc, addDoc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, query, where, orderBy, serverTimestamp }
   from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -81,9 +81,55 @@ function cerrarModal(id) { document.getElementById(id).classList.remove("open");
 // LUGARES
 // ════════════════════════════════════════════════════════════════════════════
 const TEMP_OPTIMA_MIN = 16, TEMP_OPTIMA_MAX = 28;
-let lugaresClimaActivos = {}; // { lugarId: { sensorKey, luzKey } }
+let lugaresClimaActivos = {}; // { lugarId: { sensorKey, luzKey, etapa } }
 let climaTimer = null;
 let chartsPorLugar = {};      // { lugarId: { temp: Chart, hum: Chart } }
+
+// Tabla de VPD óptimo por etapa de cultivo (cannabis), en base a consenso de guías
+// de cultivo indoor 2026 (Blimburn, PlanaCan, Humboldt Seed Co, Smartfog, Emerald Harvest).
+const ETAPAS_VPD = {
+  plantula:           { nombre: "Plántula / Clon",              vpdMin: 0.4, vpdMax: 0.8, humedad: [70, 85] },
+  vegetativo:         { nombre: "Vegetativo",                   vpdMin: 0.8, vpdMax: 1.2, humedad: [55, 70] },
+  floracion_temprana: { nombre: "Floración temprana",           vpdMin: 1.0, vpdMax: 1.2, humedad: [50, 60] },
+  floracion_tardia:   { nombre: "Floración tardía / Maduración",vpdMin: 1.2, vpdMax: 1.6, humedad: [40, 55] },
+};
+// Mapeo desde el campo "fase" de las plantas a una etapa de VPD por defecto
+const FASE_A_ETAPA = { germinacion: "plantula", vegetativa: "vegetativo", floracion: "floracion_temprana", cosecha: "vegetativo" };
+
+function calcularVPD(tempC, rh) {
+  if (tempC == null || rh == null) return null;
+  const svp = 0.6108 * Math.exp((17.27 * tempC) / (tempC + 237.3)); // presión de vapor de saturación (kPa)
+  return +(svp * (1 - rh / 100)).toFixed(2);
+}
+
+// Sugerencia priorizando SIEMPRE bajar humedad antes que subirla (riesgo de hongos)
+function sugerenciaVPD(vpd, etapaKey, rhActual) {
+  const e = ETAPAS_VPD[etapaKey];
+  if (vpd == null || !e) return null;
+  if (vpd < e.vpdMin) {
+    return { estado: "bajo", texto: `VPD bajo (${vpd} kPa, objetivo ${e.vpdMin}–${e.vpdMax}). Bajá la humedad` +
+      (rhActual!=null && rhActual <= e.humedad[0] ? " un poco más, o subí la temperatura" : "") + "." };
+  }
+  if (vpd > e.vpdMax) {
+    return { estado: "alto", texto: `VPD alto (${vpd} kPa, objetivo ${e.vpdMin}–${e.vpdMax}). Bajá la temperatura primero; ` +
+      `evitá subir la humedad salvo que sea imprescindible, para no favorecer hongos.` };
+  }
+  return { estado: "ok", texto: `VPD en rango óptimo (${vpd} kPa) para ${e.nombre.toLowerCase()}.` };
+}
+
+// Detecta la etapa más frecuente entre las plantas activas de un lugar
+async function detectarEtapaLugar(lugarId) {
+  try {
+    const snap = await getDocs(query(collection(db, "plantas"), where("lugarId", "==", lugarId)));
+    const conteo = {};
+    snap.forEach(p => {
+      const etapa = FASE_A_ETAPA[p.data().fase] || "vegetativo";
+      conteo[etapa] = (conteo[etapa] || 0) + 1;
+    });
+    const entries = Object.entries(conteo).sort((a,b)=>b[1]-a[1]);
+    return entries[0]?.[0] || "vegetativo";
+  } catch { return "vegetativo"; }
+}
 
 async function cargarLugares() {
   const lista = document.getElementById("lista-lugares");
@@ -92,13 +138,20 @@ async function cargarLugares() {
   lista.innerHTML = "";
   lugaresClimaActivos = {};
   if (snap.empty) { lista.innerHTML = '<p class="empty">No hay lugares. Creá uno nuevo.</p>'; return; }
-  snap.forEach(d => {
+
+  for (const d of snap.docs) {
     const l = d.data();
     const card = document.createElement("div");
     card.className = "lugar-card";
     const sensores     = (l.sensoresTuya||[]).map(s=>DISPOSITIVOS_TUYA[s]?.nombre||s).join(", ") || "Sin sensor";
     const sensorClima  = (l.sensoresTuya||[]).find(s => DISPOSITIVOS_TUYA[s]?.tipo === "sensor");
     const luzKey       = (l.switchLuces||[])[0];
+    const etapaGuardada = localStorage.getItem("etapa_"+d.id);
+    const etapaInicial  = etapaGuardada || await detectarEtapaLugar(d.id);
+
+    const opcionesEtapa = Object.entries(ETAPAS_VPD)
+      .map(([k,v]) => `<option value="${k}" ${k===etapaInicial?"selected":""}>${v.nombre}</option>`).join("");
+
     card.innerHTML = `
       <div class="lugar-header">
         <span class="lugar-nombre">${l.nombre}</span>
@@ -112,25 +165,38 @@ async function cargarLugares() {
       ${sensorClima ? `<div class="lugar-clima" id="clima-${d.id}"><span class="clima-cargando">🌡️ Consultando sensor...</span></div>` : ""}
       ${luzKey ? `<div class="luz-estado" id="luz-${d.id}"><span class="clima-cargando">💡 Consultando luces...</span></div>` : ""}
       ${sensorClima ? `
-      <details class="clima-detalle">
-        <summary>📈 Histórico 7 días</summary>
-        <div class="clima-charts">
-          <div class="chart-box"><canvas id="chart-temp-${d.id}"></canvas></div>
-          <div class="chart-box"><canvas id="chart-hum-${d.id}"></canvas></div>
+      <div class="vpd-box">
+        <div class="vpd-header">
+          <span>🌬️ VPD</span>
+          <select class="vpd-etapa" id="etapa-${d.id}" onchange="cambiarEtapaLugar('${d.id}')">${opcionesEtapa}</select>
         </div>
-      </details>` : ""}
+        <div id="vpd-valor-${d.id}" class="vpd-valor">Calculando...</div>
+      </div>
+      <div class="clima-titulo">📈 Histórico 7 días</div>
+      <div class="clima-charts">
+        <div class="chart-box"><canvas id="chart-temp-${d.id}"></canvas><div class="chart-empty" id="chart-temp-empty-${d.id}"></div></div>
+        <div class="chart-box"><canvas id="chart-hum-${d.id}"></canvas><div class="chart-empty" id="chart-hum-empty-${d.id}"></div></div>
+      </div>` : ""}
       <div class="cult-actions">
         <button class="btn-sm btn-primary" onclick="verLugar('${d.id}')">Ver áreas y plantas</button>
         <button class="btn-sm btn-danger"  onclick="eliminarLugar('${d.id}','${l.nombre}')">Eliminar</button>
       </div>`;
     lista.appendChild(card);
 
-    lugaresClimaActivos[d.id] = { sensorKey: sensorClima, luzKey };
+    lugaresClimaActivos[d.id] = { sensorKey: sensorClima, luzKey, etapa: etapaInicial };
     if (sensorClima) { refrescarActualLugar(d.id, sensorClima); cargarHistoricoLugar(d.id, sensorClima); }
     if (luzKey) refrescarLuzLugar(d.id, luzKey);
-  });
+  }
   iniciarAutoRefreshClima();
 }
+
+window.cambiarEtapaLugar = function(lugarId) {
+  const sel = document.getElementById("etapa-"+lugarId);
+  if (!sel || !lugaresClimaActivos[lugarId]) return;
+  lugaresClimaActivos[lugarId].etapa = sel.value;
+  localStorage.setItem("etapa_"+lugarId, sel.value);
+  if (lugaresClimaActivos[lugarId].sensorKey) refrescarActualLugar(lugarId, lugaresClimaActivos[lugarId].sensorKey);
+};
 
 // Refresco automático liviano (solo valores actuales, no historial) cada 1 minuto
 function iniciarAutoRefreshClima() {
@@ -148,7 +214,7 @@ function claseTemp(temp) {
   return (temp < TEMP_OPTIMA_MIN || temp > TEMP_OPTIMA_MAX) ? "temp-fuera" : "temp-ok";
 }
 
-// Temp/humedad actuales — llamada liviana (/tuya?device=), se repite cada 1 min
+// Temp/humedad actuales + VPD — llamada liviana (/tuya?device=), se repite cada 1 min
 async function refrescarActualLugar(lugarId, sensorKey) {
   const el = document.getElementById("clima-"+lugarId);
   if (!el) return;
@@ -166,6 +232,17 @@ async function refrescarActualLugar(lugarId, sensorKey) {
         <span>💧 ${hum!=null?hum.toFixed(0):"—"}%</span>
         <span class="clima-hora">${new Date().toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit"})}</span>
       </div>${statsPrevios}`;
+
+    // VPD + sugerencia
+    const etapa = lugaresClimaActivos[lugarId]?.etapa || "vegetativo";
+    const vpd = calcularVPD(temp, hum);
+    const vEl = document.getElementById("vpd-valor-"+lugarId);
+    if (vEl) {
+      const sug = sugerenciaVPD(vpd, etapa, hum);
+      vEl.innerHTML = vpd==null ? "Sin datos" : `
+        <div class="vpd-num vpd-${sug?.estado||''}">${vpd} kPa</div>
+        <div class="vpd-sugerencia">${sug?.texto||""}</div>`;
+    }
   } catch (err) {
     el.innerHTML = `<span class="clima-error">Sin datos del sensor</span>`;
   }
@@ -192,7 +269,7 @@ async function cargarHistoricoLugar(lugarId, sensorKey) {
   const el = document.getElementById("clima-"+lugarId);
   try {
     const proxyBase = (localStorage.getItem("tuya_proxy") || PROXY_URL).replace(/\/tuya$/, "");
-    const resp = await fetch(`${proxyBase}/tuya/history/resumen?device=${sensorKey}`, { signal: AbortSignal.timeout(20000) });
+    const resp = await fetch(`${proxyBase}/tuya/history/resumen?device=${sensorKey}`, { signal: AbortSignal.timeout(25000) });
     if (!resp.ok) throw new Error("HTTP "+resp.status);
     const data = await resp.json();
     const h24  = (data.historico && data.historico["24h"]) || {};
@@ -209,41 +286,71 @@ async function cargarHistoricoLugar(lugarId, sensorKey) {
     dibujarGraficos(lugarId, h7d.tempAmb?.serie || [], h7d.humedad?.serie || []);
   } catch (err) {
     console.error("Error histórico", lugarId, err.message);
+    mostrarErrorGrafico(lugarId, err.message);
   }
 }
 
-function chartOptionsBase(unidad) {
-  return {
+function mostrarErrorGrafico(lugarId, msg) {
+  ["temp","hum"].forEach(tipo => {
+    const box = document.getElementById(`chart-${tipo}-empty-${lugarId}`);
+    if (box) box.innerHTML = `⚠️ No se pudo cargar el histórico (${msg})`;
+  });
+}
+
+function chartOptionsBase(unidad, banda) {
+  const opts = {
     responsive: true,
     maintainAspectRatio: false,
-    plugins: { legend: { display: false } },
+    animation: false,
+    plugins: {
+      legend: { display: false },
+      annotation: { annotations: {} },
+    },
     scales: {
-      x: { ticks: { color: "#8a9a8f", maxTicksLimit: 7, font: { size: 10 } }, grid: { display: false } },
+      x: { ticks: { color: "#8a9a8f", maxTicksLimit: 6, font: { size: 10 } }, grid: { display: false } },
       y: { ticks: { color: "#8a9a8f", font: { size: 10 }, callback: v => v + unidad }, grid: { color: "rgba(255,255,255,.05)" } },
     },
   };
+  if (banda) {
+    opts.plugins.annotation.annotations.banda = {
+      type: "box", yMin: banda.min, yMax: banda.max,
+      backgroundColor: "rgba(61,220,151,.10)", borderColor: "rgba(61,220,151,.35)", borderWidth: 1,
+      label: { display: true, content: banda.label, position: "start", color: "#3ddc97", font: { size: 9 }, backgroundColor: "rgba(0,0,0,0)" },
+    };
+  }
+  return opts;
 }
 
 function dibujarGraficos(lugarId, serieTemp, serieHum) {
-  const ctxTemp = document.getElementById("chart-temp-"+lugarId);
-  const ctxHum  = document.getElementById("chart-hum-"+lugarId);
-  if (!ctxTemp || !ctxHum || typeof Chart === "undefined") return;
+  const ctxTemp   = document.getElementById("chart-temp-"+lugarId);
+  const ctxHum    = document.getElementById("chart-hum-"+lugarId);
+  const emptyTemp = document.getElementById("chart-temp-empty-"+lugarId);
+  const emptyHum  = document.getElementById("chart-hum-empty-"+lugarId);
+  if (!ctxTemp || !ctxHum) return;
+  if (typeof Chart === "undefined") { if(emptyTemp) emptyTemp.textContent = "⚠️ No se pudo cargar Chart.js"; return; }
+
   const fmt = ts => new Date(ts).toLocaleDateString("es-AR",{day:"2-digit",month:"2-digit"});
+
+  if (emptyTemp) emptyTemp.innerHTML = serieTemp.length ? "" : "Sin lecturas históricas todavía (puede tardar unas horas en acumular datos)";
+  if (emptyHum)  emptyHum.innerHTML  = serieHum.length  ? "" : "Sin lecturas históricas todavía (puede tardar unas horas en acumular datos)";
+
+  const etapa = lugaresClimaActivos[lugarId]?.etapa || "vegetativo";
+  const bandaHum = ETAPAS_VPD[etapa]?.humedad;
 
   if (chartsPorLugar[lugarId]?.temp) chartsPorLugar[lugarId].temp.destroy();
   if (chartsPorLugar[lugarId]?.hum)  chartsPorLugar[lugarId].hum.destroy();
 
   chartsPorLugar[lugarId] = {
-    temp: new Chart(ctxTemp, {
+    temp: serieTemp.length ? new Chart(ctxTemp, {
       type: "line",
-      data: { labels: serieTemp.map(p=>fmt(p.t)), datasets: [{ label:"Temp °C", data: serieTemp.map(p=>p.v), borderColor:"#ff8a3d", backgroundColor:"rgba(255,138,61,.15)", tension:.3, pointRadius:0, fill:true }] },
-      options: chartOptionsBase("°C"),
-    }),
-    hum: new Chart(ctxHum, {
+      data: { labels: serieTemp.map(p=>fmt(p.t)), datasets: [{ label:"Temp °C", data: serieTemp.map(p=>p.v), borderColor:"#ff8a3d", backgroundColor:"rgba(255,138,61,.15)", tension:.3, pointRadius:0, borderWidth:2, fill:true }] },
+      options: chartOptionsBase("°C", { min: TEMP_OPTIMA_MIN, max: TEMP_OPTIMA_MAX, label: `Óptimo ${TEMP_OPTIMA_MIN}-${TEMP_OPTIMA_MAX}°C` }),
+    }) : null,
+    hum: serieHum.length ? new Chart(ctxHum, {
       type: "line",
-      data: { labels: serieHum.map(p=>fmt(p.t)), datasets: [{ label:"Humedad %", data: serieHum.map(p=>p.v), borderColor:"#3ddc97", backgroundColor:"rgba(61,220,151,.15)", tension:.3, pointRadius:0, fill:true }] },
-      options: chartOptionsBase("%"),
-    }),
+      data: { labels: serieHum.map(p=>fmt(p.t)), datasets: [{ label:"Humedad %", data: serieHum.map(p=>p.v), borderColor:"#3ddc97", backgroundColor:"rgba(61,220,151,.15)", tension:.3, pointRadius:0, borderWidth:2, fill:true }] },
+      options: chartOptionsBase("%", bandaHum ? { min: bandaHum[0], max: bandaHum[1], label: `Óptimo ${bandaHum[0]}-${bandaHum[1]}%` } : null),
+    }) : null,
   };
 }
 
@@ -921,10 +1028,19 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .luz-estado{margin-bottom:10px;font-size:.82rem;font-weight:600}
 .luz-on{color:#ffd23d}
 .luz-off{color:var(--muted)}
-.clima-detalle{margin-bottom:10px}
-.clima-detalle summary{cursor:pointer;font-size:.75rem;color:var(--muted);padding:4px 0}
-.clima-charts{display:flex;flex-direction:column;gap:14px;margin-top:8px}
-.chart-box{position:relative;height:140px;background:var(--surface);border-radius:10px;padding:8px}
+.vpd-box{margin-bottom:10px;padding:8px 10px;background:var(--surface);border-radius:10px}
+.vpd-header{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;font-size:.78rem;font-weight:600}
+.vpd-etapa{background:var(--bg,#0d1410);color:var(--fg,#e8f2ec);border:1px solid rgba(255,255,255,.15);border-radius:6px;font-size:.68rem;padding:3px 6px}
+.vpd-valor{font-size:.75rem}
+.vpd-num{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1rem;margin-bottom:2px}
+.vpd-ok{color:#3ddc97}
+.vpd-bajo{color:#5cb8ff}
+.vpd-alto{color:#ff5c5c}
+.vpd-sugerencia{font-size:.7rem;color:var(--muted);line-height:1.35}
+.clima-titulo{font-size:.75rem;color:var(--muted);margin-bottom:6px}
+.clima-charts{display:flex;flex-direction:column;gap:14px;margin-bottom:10px}
+.chart-box{position:relative;height:150px;background:var(--surface);border-radius:10px;padding:8px}
+.chart-empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:12px;font-size:.68rem;color:var(--muted);pointer-events:none}
 @media(min-width:640px){.clima-charts{flex-direction:row}.chart-box{flex:1}}
 .cult-header{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:10px}
 .cult-nombre{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:.95rem}
@@ -1092,6 +1208,7 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
 }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
 </head>
 <body>
 
