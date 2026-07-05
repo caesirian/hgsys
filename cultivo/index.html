@@ -42,7 +42,9 @@ const LUCES_LISTA = [
   "Mars Orbiter"
 ];
 
-const DISPOSITIVOS_TUYA = {
+// Fallback local por si el proxy no responde al arrancar (ej. Render recién despertando).
+// La fuente de verdad real es GET /tuya/devices del proxy — ver cargarCatalogoDispositivos().
+let DISPOSITIVOS_TUYA = {
   sensor_carpa:   { id: "ebefb9fc12b7940a71l8gp", tipo: "sensor",  nombre: "Sensor Carpa",   lugar: "Carpa" },
   luces_carpa:    { id: "ebb60fa54c54559c63ysur",  tipo: "switch",  nombre: "Luces Carpa",    lugar: "Carpa" },
   turbinas_carpa: { id: "3522204898f4abba2357",    tipo: "switch",  nombre: "Turbinas Carpa", lugar: "Carpa" },
@@ -51,6 +53,22 @@ const DISPOSITIVOS_TUYA = {
 };
 
 const PROXY_URL = "https://cultivapp-tuya-proxy.onrender.com/tuya";
+
+// Trae el catálogo real de dispositivos desde el proxy (fuente única de verdad).
+// Si falla, se sigue usando el fallback hardcodeado de arriba sin romper nada.
+async function cargarCatalogoDispositivos() {
+  try {
+    const proxyBase = (localStorage.getItem("tuya_proxy") || PROXY_URL).replace(/\/tuya$/, "");
+    const resp = await fetch(`${proxyBase}/tuya/devices`, { signal: AbortSignal.timeout(12000) });
+    if (!resp.ok) throw new Error("HTTP "+resp.status);
+    const data = await resp.json();
+    if (data.ok && data.devices && Object.keys(data.devices).length) {
+      DISPOSITIVOS_TUYA = data.devices;
+    }
+  } catch (err) {
+    console.warn("No se pudo cargar el catálogo de dispositivos del proxy, uso el de respaldo:", err.message);
+  }
+}
 
 // ─── ESTADO GLOBAL ───────────────────────────────────────────────────────────
 let lugarActivo  = null;
@@ -68,6 +86,10 @@ function show(id) {
   document.getElementById(id)?.classList.add("activa");
   document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("activo"));
   document.querySelectorAll(`[data-vista="${id}"]`).forEach(b => b.classList.add("activo"));
+  // Frenar los auto-refrescos de las vistas que no están activas, para no pegarle
+  // al proxy de fondo mientras el usuario está mirando otra pestaña.
+  if (id !== "vista-lugares" && typeof climaTimer !== "undefined" && climaTimer) { clearInterval(climaTimer); climaTimer = null; }
+  if (id !== "vista-dashboard" && typeof dashboardTimer !== "undefined" && dashboardTimer) { clearInterval(dashboardTimer); dashboardTimer = null; }
 }
 function toast(msg, tipo="ok") {
   const t = document.createElement("div");
@@ -298,11 +320,18 @@ async function refrescarLuzLugar(lugarId, luzKey) {
     const resp = await fetch(`${proxyBase}/tuya?device=${luzKey}`, { signal: AbortSignal.timeout(12000) });
     if (!resp.ok) throw new Error("HTTP "+resp.status);
     const data = await resp.json();
-    const encendido = !!(data.sensores && data.sensores.encendido);
-    el.innerHTML = `<span class="${encendido?'luz-on':'luz-off'}">${encendido?'💡 Luces encendidas':'🌑 Luces apagadas'}</span>`;
+    el.innerHTML = htmlEstadoLuz(data);
   } catch (err) {
     el.innerHTML = `<span class="clima-error">Sin datos de luces</span>`;
   }
+}
+
+// Tres estados posibles: encendida, apagada, o fuera de línea (el dispositivo no responde
+// a Tuya hace rato — en ese caso el último valor de "switch" conocido no es confiable).
+function htmlEstadoLuz(data) {
+  if (!data.online) return `<span class="luz-offline">📴 Luces fuera de línea</span>`;
+  const encendido = !!(data.sensores && data.sensores.encendido);
+  return `<span class="${encendido?'luz-on':'luz-off'}">${encendido?'💡 Luces encendidas':'🌑 Luces apagadas'}</span>`;
 }
 
 // Estadística 24h + gráficos 7 días — llamada más pesada (report-logs), se carga una sola vez al entrar
@@ -325,6 +354,12 @@ async function cargarHistoricoLugar(lugarId, sensorKey) {
       if (existente) existente.outerHTML = statsHTML; else el.insertAdjacentHTML("beforeend", statsHTML);
     }
     dibujarGraficos(lugarId, h7d.tempAmb?.serie || [], h7d.humedad?.serie || []);
+    if (data.truncado && data.truncado["7d"]) {
+      const chartsCont = document.getElementById("chart-temp-"+lugarId)?.closest(".clima-charts");
+      if (chartsCont && !chartsCont.parentElement.querySelector(".aviso-truncado")) {
+        chartsCont.insertAdjacentHTML("afterend", `<div class="aviso-truncado">⚠️ El sensor reportó tan seguido que puede haber más lecturas de las mostradas en los 7 días.</div>`);
+      }
+    }
   } catch (err) {
     console.error("Error histórico", lugarId, err.message);
     mostrarErrorGrafico(lugarId, err.message);
@@ -562,11 +597,11 @@ async function refrescarDashboardCard(lugarId, sensorKey, luzKey, tipo) {
       const resp = await fetch(`${proxyBase}/tuya?device=${luzKey}`, { signal: AbortSignal.timeout(12000) });
       if (!resp.ok) throw new Error("HTTP "+resp.status);
       const data = await resp.json();
-      const encendido = !!(data.sensores && data.sensores.encendido);
+      const encendido = data.online && !!(data.sensores && data.sensores.encendido);
       const ilusEl = document.getElementById("dash-ilus-"+lugarId);
       if (ilusEl) ilusEl.innerHTML = tipo === "estructura3x1" ? svgEstructura3x1(encendido) : svgCarpa(encendido);
       const luzEl = document.getElementById("dash-luz-"+lugarId);
-      if (luzEl) luzEl.innerHTML = `<div class="label ${encendido?'luz-on':'luz-off'}">${encendido?'💡 Encendida':'🌑 Apagada'}</div>`;
+      if (luzEl) luzEl.innerHTML = `<div class="label ${data.online ? (encendido?'luz-on':'luz-off') : 'luz-offline'}">${!data.online ? '📴 Fuera de línea' : (encendido?'💡 Encendida':'🌑 Apagada')}</div>`;
     } catch (err) {
       const luzEl = document.getElementById("dash-luz-"+lugarId);
       if (luzEl) luzEl.innerHTML = `<div class="label">Sin datos de luces</div>`;
@@ -1157,7 +1192,8 @@ window.importarDesde = (key) => {
 };
 
 // ─── INIT ─────────────────────────────────────────────────────────────────
-window.addEventListener("DOMContentLoaded", () => {
+window.addEventListener("DOMContentLoaded", async () => {
+  await cargarCatalogoDispositivos();
   cargarLugares();
   localStorage.setItem("tuya_proxy", PROXY_URL);
 
@@ -1258,11 +1294,13 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .clima-stats{display:flex;flex-wrap:wrap;gap:10px;font-size:.68rem;color:var(--muted)}
 .clima-cargando{font-size:.75rem;color:var(--muted)}
 .clima-error{font-size:.75rem;color:var(--muted)}
+.aviso-truncado{font-size:.68rem;color:#ffb84d;margin-bottom:10px;padding:6px 8px;background:rgba(255,184,77,.08);border-radius:8px}
 .temp-ok{color:#3ddc97}
 .temp-fuera{color:#ff5c5c}
 .luz-estado{margin-bottom:10px;font-size:.82rem;font-weight:600}
 .luz-on{color:#ffd23d}
 .luz-off{color:var(--muted)}
+.luz-offline{color:#ff7a7a}
 .vpd-box{margin-bottom:10px;padding:8px 10px;background:var(--surface);border-radius:10px}
 .vpd-header{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;font-size:.78rem;font-weight:600}
 .vpd-etapa{background:var(--bg,#0d1410);color:var(--fg,#e8f2ec);border:1px solid rgba(255,255,255,.15);border-radius:6px;font-size:.68rem;padding:3px 6px}
