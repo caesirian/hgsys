@@ -178,6 +178,10 @@ async function detectarEtapaLugar(lugarId) {
 
 // Prioridad de orden en "Lugares": encendida primero, luego apagada, sin luz asociada
 // en medio, y fuera de línea siempre al final (sin importar lo demás).
+// Último estado conocido de cada lugar (se actualiza en cada refresco de 1 min),
+// usado para reordenar sin tener que re-consultar todo de nuevo.
+let estadoLuzActivos = {}; // { lugarId: {online, encendido} }
+
 function prioridadLuz(estado) {
   if (!estado) return 1;
   if (!estado.online) return 3;
@@ -225,6 +229,7 @@ async function cargarLugares() {
     const l = d.data();
     const card = document.createElement("div");
     card.className = "lugar-card";
+    card.dataset.lugarId = d.id;
     const sensores     = (l.sensoresTuya||[]).map(s=>DISPOSITIVOS_TUYA[s]?.nombre||s).join(", ") || "Sin sensor";
     const sensorClima  = (l.sensoresTuya||[]).find(s => DISPOSITIVOS_TUYA[s]?.tipo === "sensor");
     const luzKey       = (l.switchLuces||[])[0];
@@ -331,12 +336,24 @@ window.cambiarEtapaLugar = function(lugarId) {
 // Refresco automático liviano (solo valores actuales, no historial) cada 1 minuto
 function iniciarAutoRefreshClima() {
   if (climaTimer) clearInterval(climaTimer);
-  climaTimer = setInterval(() => {
-    Object.entries(lugaresClimaActivos).forEach(([lugarId, cfg]) => {
-      if (cfg.sensorKey) refrescarActualLugar(lugarId, cfg.sensorKey);
-      if (cfg.luzKey)    refrescarLuzLugar(lugarId, cfg.luzKey);
-    });
+  climaTimer = setInterval(async () => {
+    const tareas = Object.entries(lugaresClimaActivos).map(([lugarId, cfg]) => Promise.all([
+      cfg.sensorKey ? refrescarActualLugar(lugarId, cfg.sensorKey) : null,
+      cfg.luzKey    ? refrescarLuzLugar(lugarId, cfg.luzKey)       : null,
+    ]));
+    await Promise.all(tareas);
+    reordenarListaLugares();
   }, 60 * 1000);
+}
+
+// Reordena las cards ya existentes en el DOM (sin recrearlas, para no perder
+// gráficos ya dibujados ni el estado de "minimizado") según prioridad de luces.
+function reordenarListaLugares() {
+  const lista = document.getElementById("lista-lugares");
+  if (!lista) return;
+  const tarjetas = Array.from(lista.querySelectorAll(":scope > .lugar-card"));
+  tarjetas.sort((a, b) => prioridadLuz(estadoLuzActivos[a.dataset.lugarId]) - prioridadLuz(estadoLuzActivos[b.dataset.lugarId]));
+  tarjetas.forEach(t => lista.appendChild(t));
 }
 
 function claseTemp(temp) {
@@ -381,15 +398,15 @@ async function refrescarActualLugar(lugarId, sensorKey) {
 // Estado de luces encendido/apagado — llamada liviana, cada 1 min
 async function refrescarLuzLugar(lugarId, luzKey) {
   const el = document.getElementById("luz-"+lugarId);
-  if (!el) return;
   try {
     const proxyBase = (localStorage.getItem("tuya_proxy") || PROXY_URL).replace(/\/tuya$/, "");
     const resp = await fetch(`${proxyBase}/tuya?device=${luzKey}`, { signal: AbortSignal.timeout(12000) });
     if (!resp.ok) throw new Error("HTTP "+resp.status);
     const data = await resp.json();
-    el.innerHTML = htmlEstadoLuz(data);
+    estadoLuzActivos[lugarId] = { online: !!data.online, encendido: !!(data.sensores && data.sensores.encendido) };
+    if (el) el.innerHTML = htmlEstadoLuz(data);
   } catch (err) {
-    el.innerHTML = `<span class="clima-error">Sin datos de luces</span>`;
+    if (el) el.innerHTML = `<span class="clima-error">Sin datos de luces</span>`;
   }
 }
 
@@ -621,6 +638,7 @@ async function cargarDashboard() {
 
     const card = document.createElement("div");
     card.className = "dash-card";
+    card.dataset.lugarId = d.id;
     card.innerHTML = `
       <div class="dash-header">
         <span class="dash-nombre">${l.nombre}</span>
@@ -644,9 +662,19 @@ async function cargarDashboard() {
 
 function iniciarAutoRefreshDashboard() {
   if (dashboardTimer) clearInterval(dashboardTimer);
-  dashboardTimer = setInterval(() => {
-    Object.entries(dashboardActivos).forEach(([id, cfg]) => refrescarDashboardCard(id, cfg.sensorKey, cfg.luzKey, cfg.tipo));
+  dashboardTimer = setInterval(async () => {
+    const tareas = Object.entries(dashboardActivos).map(([id, cfg]) => refrescarDashboardCard(id, cfg.sensorKey, cfg.luzKey, cfg.tipo));
+    await Promise.all(tareas);
+    reordenarDashboard();
   }, 60 * 1000);
+}
+
+function reordenarDashboard() {
+  const grid = document.getElementById("dashboard-grid");
+  if (!grid) return;
+  const tarjetas = Array.from(grid.querySelectorAll(":scope > .dash-card"));
+  tarjetas.sort((a, b) => prioridadLuz(estadoLuzActivos[a.dataset.lugarId]) - prioridadLuz(estadoLuzActivos[b.dataset.lugarId]));
+  tarjetas.forEach(t => grid.appendChild(t));
 }
 
 async function refrescarDashboardCard(lugarId, sensorKey, luzKey, tipo) {
@@ -674,6 +702,7 @@ async function refrescarDashboardCard(lugarId, sensorKey, luzKey, tipo) {
       if (!resp.ok) throw new Error("HTTP "+resp.status);
       const data = await resp.json();
       const encendido = data.online && !!(data.sensores && data.sensores.encendido);
+      estadoLuzActivos[lugarId] = { online: !!data.online, encendido: !!(data.sensores && data.sensores.encendido) };
       const ilusEl = document.getElementById("dash-ilus-"+lugarId);
       if (ilusEl) ilusEl.innerHTML = tipo === "estructura3x1" ? svgEstructura3x1(encendido) : svgCarpa(encendido);
       const luzEl = document.getElementById("dash-luz-"+lugarId);
