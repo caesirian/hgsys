@@ -1123,6 +1123,18 @@ window.actualizarSensores = async () => {
   let errores = 0;
 
   for (const [key, dev] of Object.entries(DISPOSITIVOS_TUYA)) {
+    if (dev.tipo === "switch") {
+      const el = document.getElementById("switch-estado-"+key);
+      if (!el) continue;
+      try {
+        const data = await consultarDispositivo(dev.id);
+        el.innerHTML = htmlEstadoLuz(data);
+      } catch (err) {
+        el.innerHTML = `<span class="clima-error">Error: ${err.message}</span>`;
+        errores++;
+      }
+      continue;
+    }
     if (dev.tipo !== "sensor") continue;
     const card = document.getElementById("sensor-"+key);
     if (!card) continue;
@@ -1133,6 +1145,8 @@ window.actualizarSensores = async () => {
       const hum  = s.humedad ?? null;
       card.querySelector(".s-temp").textContent = temp !== null ? temp.toFixed(1) : "—";
       card.querySelector(".s-hum").textContent  = hum  !== null ? hum.toFixed(0)  : "—";
+      const onlineEl = card.querySelector(".s-online");
+      if (onlineEl) onlineEl.innerHTML = data.online ? `<span class="luz-on">🟢 En línea</span>` : `<span class="luz-offline">📴 Fuera de línea</span>`;
       if (temp !== null && hum !== null) {
         const svp = 0.6108 * Math.exp((17.27*temp)/(temp+237.3));
         const vpd = (svp*(1-hum/100)).toFixed(2);
@@ -1665,6 +1679,7 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
     <div class="sensor-card" id="sensor-sensor_carpa">
       <div class="sensor-lugar">Carpa 1×1×2</div>
       <div class="sensor-nombre">🌡️ Sensor Ambiente</div>
+      <div class="s-online" style="margin-bottom:6px;font-size:.78rem"></div>
       <div class="sensor-vals">
         <div class="sv-item"><div class="sv-val s-temp">—</div><div class="sv-unit">°C</div><div class="sv-label">Temperatura</div></div>
         <div class="sv-item"><div class="sv-val s-hum">—</div><div class="sv-unit">%</div><div class="sv-label">Humedad</div></div>
@@ -1682,6 +1697,7 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
     <div class="sensor-card" id="sensor-sensor_3x1">
       <div class="sensor-lugar">Estructura 3×1×2</div>
       <div class="sensor-nombre">🌡️ Sensor Ambiente</div>
+      <div class="s-online" style="margin-bottom:6px;font-size:.78rem"></div>
       <div class="sensor-vals">
         <div class="sv-item"><div class="sv-val s-temp">—</div><div class="sv-unit">°C</div><div class="sv-label">Temperatura</div></div>
         <div class="sv-item"><div class="sv-val s-hum">—</div><div class="sv-unit">%</div><div class="sv-label">Humedad</div></div>
@@ -1702,20 +1718,20 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
     <div class="sensor-card">
       <div class="sensor-lugar">Carpa 1×1×2</div>
       <div class="sensor-nombre">💡 Luces Carpa</div>
-      <div style="font-size:.75rem;color:var(--muted);margin-top:6px">Device: <code style="color:var(--lima)">ebb60fa54c54559c63ysur</code></div>
-      <div style="font-size:.75rem;color:var(--muted);margin-top:4px">Control disponible vía app Tuya Smart</div>
+      <div class="s-switch-estado" id="switch-estado-luces_carpa" style="margin:8px 0;font-size:.85rem;font-weight:600">Consultando...</div>
+      <div style="font-size:.75rem;color:var(--muted)">Device: <code style="color:var(--lima)">ebb60fa54c54559c63ysur</code></div>
     </div>
     <div class="sensor-card">
       <div class="sensor-lugar">Carpa 1×1×2</div>
       <div class="sensor-nombre">🌀 Turbinas Carpa</div>
-      <div style="font-size:.75rem;color:var(--muted);margin-top:6px">Device: <code style="color:var(--lima)">3522204898f4abba2357</code></div>
-      <div style="font-size:.75rem;color:var(--muted);margin-top:4px">Control disponible vía app Tuya Smart</div>
+      <div class="s-switch-estado" id="switch-estado-turbinas_carpa" style="margin:8px 0;font-size:.85rem;font-weight:600">Consultando...</div>
+      <div style="font-size:.75rem;color:var(--muted)">Device: <code style="color:var(--lima)">3522204898f4abba2357</code></div>
     </div>
     <div class="sensor-card">
       <div class="sensor-lugar">Estructura 3×1×2</div>
       <div class="sensor-nombre">💡 Luces 3×1</div>
-      <div style="font-size:.75rem;color:var(--muted);margin-top:6px">Device: <code style="color:var(--lima)">80210308a4cf12ac315b</code></div>
-      <div style="font-size:.75rem;color:var(--muted);margin-top:4px">Control disponible vía app Tuya Smart</div>
+      <div class="s-switch-estado" id="switch-estado-luces_3x1" style="margin:8px 0;font-size:.85rem;font-weight:600">Consultando...</div>
+      <div style="font-size:.75rem;color:var(--muted)">Device: <code style="color:var(--lima)">80210308a4cf12ac315b</code></div>
     </div>
   </div>
 </section>
