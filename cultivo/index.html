@@ -176,15 +176,52 @@ async function detectarEtapaLugar(lugarId) {
   } catch { return "vegetativo"; }
 }
 
+// Prioridad de orden en "Lugares": encendida primero, luego apagada, sin luz asociada
+// en medio, y fuera de línea siempre al final (sin importar lo demás).
+function prioridadLuz(estado) {
+  if (!estado) return 1;
+  if (!estado.online) return 3;
+  return estado.encendido ? 0 : 2;
+}
+
+// Trae el estado de TODOS los dispositivos de una sola vez (para poder ordenar
+// las cards antes de dibujarlas, sin esperar N llamadas individuales).
+async function obtenerEstadoTodos() {
+  try {
+    const proxyBase = (localStorage.getItem("tuya_proxy") || PROXY_URL).replace(/\/tuya$/, "");
+    const resp = await fetch(`${proxyBase}/tuya/all`, { signal: AbortSignal.timeout(15000) });
+    if (!resp.ok) throw new Error("HTTP "+resp.status);
+    const data = await resp.json();
+    const estados = {};
+    Object.entries(data.dispositivos || {}).forEach(([alias, info]) => {
+      estados[alias] = { online: !!info.online, encendido: !!(info.sensores && info.sensores.encendido) };
+    });
+    return estados;
+  } catch (err) {
+    console.warn("No se pudo traer /tuya/all para ordenar por prioridad:", err.message);
+    return {};
+  }
+}
+
 async function cargarLugares() {
   const lista = document.getElementById("lista-lugares");
   lista.innerHTML = '<p class="cargando">Cargando...</p>';
-  const snap = await getDocs(query(collection(db,"lugares"), orderBy("creadoEn","desc")));
+  const [snap, estadoTodos] = await Promise.all([
+    getDocs(query(collection(db,"lugares"), orderBy("creadoEn","desc"))),
+    obtenerEstadoTodos(),
+  ]);
   lista.innerHTML = "";
   lugaresClimaActivos = {};
   if (snap.empty) { lista.innerHTML = '<p class="empty">No hay lugares. Creá uno nuevo.</p>'; return; }
 
-  for (const d of snap.docs) {
+  // Ordenar por prioridad de luces (encendida > apagada > sin luz > fuera de línea)
+  const docsOrdenados = [...snap.docs].sort((a, b) => {
+    const luzA = (a.data().switchLuces||[])[0];
+    const luzB = (b.data().switchLuces||[])[0];
+    return prioridadLuz(estadoTodos[luzA]) - prioridadLuz(estadoTodos[luzB]);
+  });
+
+  for (const d of docsOrdenados) {
     const l = d.data();
     const card = document.createElement("div");
     card.className = "lugar-card";
@@ -193,6 +230,7 @@ async function cargarLugares() {
     const luzKey       = (l.switchLuces||[])[0];
     const etapaGuardada = localStorage.getItem("etapa_"+d.id);
     const etapaInicial  = etapaGuardada || await detectarEtapaLugar(d.id);
+    const graficosColapsados = localStorage.getItem("graficosColapsados_"+d.id) === "1";
 
     const opcionesEtapa = Object.entries(ETAPAS_VPD)
       .map(([k,v]) => `<option value="${k}" ${k===etapaInicial?"selected":""}>${v.nombre}</option>`).join("");
@@ -217,18 +255,23 @@ async function cargarLugares() {
         </div>
         <div id="vpd-valor-${d.id}" class="vpd-valor">Calculando...</div>
       </div>
-      <div class="clima-titulo">📈 Histórico 7 días</div>
-      <div class="clima-charts">
-        <div class="chart-box"><canvas id="chart-temp-${d.id}"></canvas><div class="chart-empty" id="chart-temp-empty-${d.id}"></div></div>
-        <div class="chart-box"><canvas id="chart-hum-${d.id}"></canvas><div class="chart-empty" id="chart-hum-empty-${d.id}"></div></div>
+      <div class="clima-titulo graficos-header">
+        <span>📈 Histórico y gráficos</span>
+        <button class="btn-minimizar" onclick="toggleGraficosLugar('${d.id}')" id="btn-graf-${d.id}">${graficosColapsados?'▸ Mostrar':'▾ Minimizar'}</button>
       </div>
-      <div class="clima-titulo dia-titulo">
-        <span>📅 Ver un día puntual</span>
-        <input type="date" id="fecha-dia-${d.id}" class="input-fecha-dia" onchange="cargarGraficoDia('${d.id}','${sensorClima}')">
-      </div>
-      <div class="clima-charts">
-        <div class="chart-box"><canvas id="chart-dia-temp-${d.id}"></canvas><div class="chart-empty" id="chart-dia-temp-empty-${d.id}"></div></div>
-        <div class="chart-box"><canvas id="chart-dia-hum-${d.id}"></canvas><div class="chart-empty" id="chart-dia-hum-empty-${d.id}"></div></div>
+      <div class="graficos-contenedor ${graficosColapsados?'colapsado':''}" id="graficos-${d.id}">
+        <div class="clima-charts">
+          <div class="chart-box"><canvas id="chart-temp-${d.id}"></canvas><div class="chart-empty" id="chart-temp-empty-${d.id}"></div></div>
+          <div class="chart-box"><canvas id="chart-hum-${d.id}"></canvas><div class="chart-empty" id="chart-hum-empty-${d.id}"></div></div>
+        </div>
+        <div class="clima-titulo dia-titulo">
+          <span>📅 Ver un día puntual</span>
+          <input type="date" id="fecha-dia-${d.id}" class="input-fecha-dia" onchange="cargarGraficoDia('${d.id}','${sensorClima}')">
+        </div>
+        <div class="clima-charts">
+          <div class="chart-box"><canvas id="chart-dia-temp-${d.id}"></canvas><div class="chart-empty" id="chart-dia-temp-empty-${d.id}"></div></div>
+          <div class="chart-box"><canvas id="chart-dia-hum-${d.id}"></canvas><div class="chart-empty" id="chart-dia-hum-empty-${d.id}"></div></div>
+        </div>
       </div>` : ""}
       <div class="cult-actions">
         <button class="btn-sm btn-primary" onclick="verLugar('${d.id}')">Ver áreas y plantas</button>
@@ -239,19 +282,43 @@ async function cargarLugares() {
     lugaresClimaActivos[d.id] = { sensorKey: sensorClima, luzKey, etapa: etapaInicial };
     if (sensorClima) {
       refrescarActualLugar(d.id, sensorClima);
-      cargarHistoricoLugar(d.id, sensorClima);
+      if (!graficosColapsados) cargarHistoricoLugar(d.id, sensorClima);
       const fechaInput = document.getElementById("fecha-dia-"+d.id);
       if (fechaInput) {
         const hoy = fechaArgentinaISO(Date.now());
         const hace7 = fechaArgentinaISO(Date.now() - 7*24*60*60*1000);
         fechaInput.value = hoy; fechaInput.max = hoy; fechaInput.min = hace7;
-        cargarGraficoDia(d.id, sensorClima);
+        if (!graficosColapsados) cargarGraficoDia(d.id, sensorClima);
       }
     }
     if (luzKey) refrescarLuzLugar(d.id, luzKey);
   }
   iniciarAutoRefreshClima();
 }
+
+// Minimizar/mostrar los gráficos de un lugar. Si estaban colapsados y nunca se
+// cargaron los datos, los trae recién ahora (evita gastar llamadas de más si
+// el usuario nunca llega a abrirlos).
+window.toggleGraficosLugar = function(lugarId) {
+  const cont = document.getElementById("graficos-"+lugarId);
+  const btn  = document.getElementById("btn-graf-"+lugarId);
+  if (!cont) return;
+  const colapsado = cont.classList.toggle("colapsado");
+  localStorage.setItem("graficosColapsados_"+lugarId, colapsado ? "1" : "0");
+  if (btn) btn.textContent = colapsado ? "▸ Mostrar" : "▾ Minimizar";
+  if (!colapsado) {
+    if (!chartsPorLugar[lugarId] && lugaresClimaActivos[lugarId]?.sensorKey) {
+      cargarHistoricoLugar(lugarId, lugaresClimaActivos[lugarId].sensorKey);
+      cargarGraficoDia(lugarId, lugaresClimaActivos[lugarId].sensorKey);
+    } else {
+      // Ya estaban creados: solo hace falta recalcular tamaño (estaban con display:none)
+      chartsPorLugar[lugarId]?.temp?.resize();
+      chartsPorLugar[lugarId]?.hum?.resize();
+      chartsDiaPorLugar[lugarId]?.temp?.resize();
+      chartsDiaPorLugar[lugarId]?.hum?.resize();
+    }
+  }
+};
 
 window.cambiarEtapaLugar = function(lugarId) {
   const sel = document.getElementById("etapa-"+lugarId);
@@ -531,12 +598,21 @@ function svgEstructura3x1(encendida) {
 async function cargarDashboard() {
   const grid = document.getElementById("dashboard-grid");
   grid.innerHTML = '<p class="cargando">Cargando...</p>';
-  const snap = await getDocs(query(collection(db,"lugares"), orderBy("creadoEn","desc")));
+  const [snap, estadoTodos] = await Promise.all([
+    getDocs(query(collection(db,"lugares"), orderBy("creadoEn","desc"))),
+    obtenerEstadoTodos(),
+  ]);
   grid.innerHTML = "";
   dashboardActivos = {};
   if (snap.empty) { grid.innerHTML = '<p class="empty">No hay lugares creados todavía.</p>'; return; }
 
-  snap.forEach(d => {
+  const docsOrdenados = [...snap.docs].sort((a, b) => {
+    const luzA = (a.data().switchLuces||[])[0];
+    const luzB = (b.data().switchLuces||[])[0];
+    return prioridadLuz(estadoTodos[luzA]) - prioridadLuz(estadoTodos[luzB]);
+  });
+
+  docsOrdenados.forEach(d => {
     const l = d.data();
     const sensorKey = (l.sensoresTuya||[]).find(s => DISPOSITIVOS_TUYA[s]?.tipo === "sensor");
     const luzKey    = (l.switchLuces||[])[0];
@@ -1326,6 +1402,9 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .vpd-sugerencia{font-size:.7rem;color:var(--muted);line-height:1.35}
 .clima-titulo{font-size:.75rem;color:var(--muted);margin-bottom:6px}
 .dia-titulo{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.graficos-header{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.btn-minimizar{background:none;border:1px solid rgba(255,255,255,.15);color:var(--muted);border-radius:6px;font-size:.68rem;padding:3px 8px;cursor:pointer}
+.graficos-contenedor.colapsado{display:none}
 .input-fecha-dia{background:var(--surface);color:inherit;border:1px solid rgba(255,255,255,.15);border-radius:6px;font-size:.72rem;padding:4px 6px}
 .clima-charts{display:flex;flex-direction:column;gap:14px;margin-bottom:10px}
 .chart-box{position:relative;height:150px;background:var(--surface);border-radius:10px;padding:8px}
