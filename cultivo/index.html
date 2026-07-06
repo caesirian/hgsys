@@ -9,7 +9,7 @@
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
-import { getFirestore, collection, doc, addDoc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, query, where, orderBy, serverTimestamp }
+import { getFirestore, collection, doc, addDoc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, query, where, orderBy, limit, serverTimestamp }
   from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -187,6 +187,73 @@ async function detectarEtapaLugar(lugarId) {
 // usado para reordenar sin tener que re-consultar todo de nuevo.
 let estadoLuzActivos = {}; // { lugarId: {online, encendido} }
 
+const FASE_LABEL = { germinacion: "Germinación", vegetativa: "Vegetativo", floracion: "Floración", cosecha: "Cosecha" };
+
+function fechaComoDate(v) {
+  if (!v) return null;
+  if (typeof v.toDate === "function") return v.toDate();
+  const f = new Date(v);
+  return isNaN(f.getTime()) ? null : f;
+}
+
+function diasDesde(fecha) {
+  const f = fechaComoDate(fecha);
+  if (!f) return null;
+  return Math.max(0, Math.floor((Date.now() - f.getTime()) / 86400000));
+}
+
+// Última semana de nutrición cargada para una planta (fecha de creación del registro)
+async function obtenerUltimaFertilizacion(plantaId) {
+  try {
+    const snap = await getDocs(query(collection(db,"plantas",plantaId,"nutricion"), orderBy("creadoEn","desc"), limit(1)));
+    if (snap.empty) return null;
+    return fechaComoDate(snap.docs[0].data().creadoEn);
+  } catch { return null; }
+}
+
+// Trae todas las plantas de un lugar con su día de ciclo y última fertilización,
+// para mostrar en Lugares y Dashboard (genética, etapa real, cuidado reciente).
+async function obtenerPlantasResumenLugar(lugarId) {
+  try {
+    const snap = await getDocs(query(collection(db,"plantas"), where("lugarId","==",lugarId)));
+    return await Promise.all(snap.docs.map(async (pd) => {
+      const p = pd.data();
+      const ultimaFert = await obtenerUltimaFertilizacion(pd.id);
+      return {
+        id: pd.id, nombre: p.nombre, genetica: p.genetica, tipoOrigen: p.tipoOrigen,
+        fase: p.fase, dia: diasDesde(p.fechaInicio),
+        diasFert: ultimaFert ? diasDesde(ultimaFert) : null,
+      };
+    }));
+  } catch (err) {
+    console.warn("No se pudo traer plantas del lugar:", err.message);
+    return [];
+  }
+}
+
+function htmlResumenPlantas(plantas) {
+  if (!plantas.length) return `<div class="plantas-vacio">Sin plantas registradas en este lugar</div>`;
+  return plantas.map(p => `
+    <div class="planta-mini">
+      <div class="planta-mini-header">
+        <span class="planta-mini-nombre">${p.nombre}</span>
+        <span class="planta-mini-genetica">${p.genetica||"—"}</span>
+      </div>
+      <div class="planta-mini-meta">
+        <span>📅 Día ${p.dia ?? "—"} · ${FASE_LABEL[p.fase]||p.fase||"—"}</span>
+        ${p.tipoOrigen ? `<span>🌱 ${p.tipoOrigen}</span>` : ""}
+      </div>
+      <div class="planta-mini-fert">💧 Últ. fert: ${p.diasFert==null ? "sin registro" : (p.diasFert===0 ? "hoy" : `hace ${p.diasFert} día${p.diasFert>1?"s":""}`)}</div>
+    </div>`).join("");
+}
+
+async function cargarPlantasResumenCard(lugarId, contenedorId) {
+  const el = document.getElementById(contenedorId);
+  if (!el) return;
+  const plantas = await obtenerPlantasResumenLugar(lugarId);
+  el.innerHTML = htmlResumenPlantas(plantas);
+}
+
 function prioridadLuz(estado) {
   if (!estado) return 1;
   if (!estado.online) return 3;
@@ -255,6 +322,7 @@ async function cargarLugares() {
         <span>💡 ${(l.luces||[]).map(lu=>`${lu.cantidad}× ${lu.tipo}`).join(", ")||"Sin luces"}</span>
       </div>
       ${l.intractor||l.extractor ? `<div class="lugar-meta"><span>${l.intractor?"✅ Intractor":""}${l.extractor?" ✅ Extractor":""}</span></div>`:""}
+      <div class="plantas-resumen" id="plantas-${d.id}"><span class="clima-cargando">🌱 Consultando plantas...</span></div>
       ${sensorClima ? `<div class="lugar-clima" id="clima-${d.id}"><span class="clima-cargando">🌡️ Consultando sensor...</span></div>` : ""}
       ${luzKey ? `<div class="luz-estado" id="luz-${d.id}"><span class="clima-cargando">💡 Consultando luces...</span></div>` : ""}
       ${luzKey ? `<div class="foto-box" id="foto-${d.id}"><span class="clima-cargando">🕐 Calculando fotoperíodo...</span></div>` : ""}
@@ -289,6 +357,7 @@ async function cargarLugares() {
         <button class="btn-sm btn-danger"  onclick="eliminarLugar('${d.id}','${l.nombre}')">Eliminar</button>
       </div>`;
     lista.appendChild(card);
+    cargarPlantasResumenCard(d.id, "plantas-"+d.id);
 
     lugaresClimaActivos[d.id] = { sensorKey: sensorClima, luzKey, etapa: etapaInicial };
     if (sensorClima) {
@@ -694,8 +763,10 @@ async function cargarDashboard() {
           <div class="dash-dato"><div class="valor" id="dash-hum-${d.id}">—</div><div class="label">💧 Humedad</div></div>
           <div class="dash-dato" id="dash-luz-${d.id}"><div class="label">${luzKey?'Consultando luces...':'Sin luces asociadas'}</div></div>
         </div>
-      </div>`;
+      </div>
+      <div class="plantas-resumen" id="dash-plantas-${d.id}"><span class="clima-cargando">🌱 Consultando plantas...</span></div>`;
     grid.appendChild(card);
+    cargarPlantasResumenCard(d.id, "dash-plantas-"+d.id);
 
     dashboardActivos[d.id] = { sensorKey, luzKey, tipo };
     refrescarDashboardCard(d.id, sensorKey, luzKey, tipo);
@@ -1478,6 +1549,14 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .foto-aviso{color:#ffb84d;font-weight:600}
 .foto-alerta{color:#ff5c5c;font-weight:700}
 .foto-critico{font-size:.7rem;color:#ff8a8a;background:rgba(255,92,92,.1);border-radius:6px;padding:5px 7px}
+.plantas-resumen{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
+.plantas-vacio{font-size:.75rem;color:var(--muted);font-style:italic}
+.planta-mini{background:var(--surface);border-radius:8px;padding:7px 9px;font-size:.72rem}
+.planta-mini-header{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:3px}
+.planta-mini-nombre{font-weight:700;color:var(--lima)}
+.planta-mini-genetica{color:var(--muted);font-style:italic}
+.planta-mini-meta{display:flex;flex-wrap:wrap;gap:8px;color:var(--muted);margin-bottom:3px}
+.planta-mini-fert{color:var(--muted)}
 .vpd-box{margin-bottom:10px;padding:8px 10px;background:var(--surface);border-radius:10px}
 .vpd-header{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;font-size:.78rem;font-weight:600}
 .vpd-etapa{background:var(--bg,#0d1410);color:var(--fg,#e8f2ec);border:1px solid rgba(255,255,255,.15);border-radius:6px;font-size:.68rem;padding:3px 6px}
