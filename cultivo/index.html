@@ -233,7 +233,18 @@ async function obtenerPlantasResumenLugar(lugarId) {
 
 function htmlResumenPlantas(plantas) {
   if (!plantas.length) return `<div class="plantas-vacio">Sin plantas registradas en este lugar</div>`;
-  return plantas.map(p => `
+
+  const conteo = {};
+  plantas.forEach(p => {
+    const g = p.genetica || "Sin genética";
+    conteo[g] = (conteo[g] || 0) + 1;
+  });
+  const resumenConteo = Object.entries(conteo)
+    .sort((a,b) => b[1]-a[1])
+    .map(([g,n]) => `<span class="planta-conteo-item">${n}× ${g}</span>`).join("");
+  const encabezado = `<div class="planta-conteo">🌿 ${plantas.length} planta${plantas.length>1?"s":""} · ${resumenConteo}</div>`;
+
+  return encabezado + plantas.map(p => `
     <div class="planta-mini">
       <div class="planta-mini-header">
         <span class="planta-mini-nombre">${p.nombre}</span>
@@ -832,15 +843,10 @@ async function refrescarDashboardCard(lugarId, sensorKey, luzKey, tipo) {
 // El nav "Plantas" antes solo cambiaba de pantalla sin cargar nada (parecía que
 // las plantas habían desaparecido). Ahora entra al último lugar visto, o al
 // primero que encuentre si todavía no entraste a ninguno.
-window.irAPlantas = async () => {
+window.irAPlantas = () => {
   if (lugarActivo) return verLugar(lugarActivo);
-  try {
-    const snap = await getDocs(query(collection(db,"lugares"), orderBy("creadoEn","desc")));
-    if (snap.empty) { show("vista-lugares"); toast("Todavía no creaste ningún lugar de cultivo","err"); return; }
-    verLugar(snap.docs[0].id);
-  } catch (err) {
-    show("vista-lugares");
-  }
+  show("vista-lugares"); cargarLugares();
+  toast("Elegí un lugar para ver sus plantas 👇");
 };
 
 window.verLugar = async (id) => {
@@ -1557,6 +1563,8 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .planta-mini-genetica{color:var(--muted);font-style:italic}
 .planta-mini-meta{display:flex;flex-wrap:wrap;gap:8px;color:var(--muted);margin-bottom:3px}
 .planta-mini-fert{color:var(--muted)}
+.planta-conteo{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:.78rem;font-weight:600;color:var(--lima);margin-bottom:2px}
+.planta-conteo-item{background:var(--surface);border-radius:6px;padding:2px 7px;font-weight:600}
 .vpd-box{margin-bottom:10px;padding:8px 10px;background:var(--surface);border-radius:10px}
 .vpd-header{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;font-size:.78rem;font-weight:600}
 .vpd-etapa{background:var(--bg,#0d1410);color:var(--fg,#e8f2ec);border:1px solid rgba(255,255,255,.15);border-radius:6px;font-size:.68rem;padding:3px 6px}
