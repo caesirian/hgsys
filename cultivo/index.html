@@ -1311,9 +1311,8 @@ window.importarDesde = (key) => {
 };
 
 // ─── INIT ─────────────────────────────────────────────────────────────────
-window.addEventListener("DOMContentLoaded", async () => {
-  await cargarCatalogoDispositivos();
-  cargarLugares();
+window.addEventListener("DOMContentLoaded", () => {
+  cargarCatalogoDispositivos().finally(() => cargarLugares());
   localStorage.setItem("tuya_proxy", PROXY_URL);
 
   const hoy = new Date().toISOString().split("T")[0];
@@ -1335,9 +1334,6 @@ window.addEventListener("DOMContentLoaded", async () => {
   });
 
   // Iniciar sensores al cargar vista Tuya
-  document.querySelector('[data-vista="vista-tuya"]')?.addEventListener("click", () => {
-    setTimeout(actualizarSensores, 300);
-  });
   document.querySelectorAll('[data-vista="vista-tuya"]')?.forEach(b => {
     b.addEventListener("click", () => setTimeout(actualizarSensores, 300));
   });
