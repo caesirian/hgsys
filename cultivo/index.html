@@ -122,6 +122,11 @@ const ETAPAS_VPD = {
   floracion_temprana: { nombre: "Floración temprana",           vpdMin: 1.0, vpdMax: 1.2, humedad: [50, 60] },
   floracion_tardia:   { nombre: "Floración tardía / Maduración",vpdMin: 1.2, vpdMax: 1.6, humedad: [40, 55] },
 };
+// Horas de luz esperadas según etapa. 12/12 en floración es crítico: un solo
+// desvío puede inducir hermafroditismo y arruinar el ciclo.
+const FOTOPERIODO_ESPERADO = {
+  plantula: 18, vegetativo: 18, floracion_temprana: 12, floracion_tardia: 12,
+};
 // Mapeo desde el campo "fase" de las plantas a una etapa de VPD por defecto
 const FASE_A_ETAPA = { germinacion: "plantula", vegetativa: "vegetativo", floracion: "floracion_temprana", cosecha: "vegetativo" };
 
@@ -252,6 +257,7 @@ async function cargarLugares() {
       ${l.intractor||l.extractor ? `<div class="lugar-meta"><span>${l.intractor?"✅ Intractor":""}${l.extractor?" ✅ Extractor":""}</span></div>`:""}
       ${sensorClima ? `<div class="lugar-clima" id="clima-${d.id}"><span class="clima-cargando">🌡️ Consultando sensor...</span></div>` : ""}
       ${luzKey ? `<div class="luz-estado" id="luz-${d.id}"><span class="clima-cargando">💡 Consultando luces...</span></div>` : ""}
+      ${luzKey ? `<div class="foto-box" id="foto-${d.id}"><span class="clima-cargando">🕐 Calculando fotoperíodo...</span></div>` : ""}
       ${sensorClima ? `
       <div class="vpd-box">
         <div class="vpd-header">
@@ -296,7 +302,7 @@ async function cargarLugares() {
         if (!graficosColapsados) cargarGraficoDia(d.id, sensorClima);
       }
     }
-    if (luzKey) refrescarLuzLugar(d.id, luzKey);
+    if (luzKey) { refrescarLuzLugar(d.id, luzKey); cargarFotoperiodoLugar(d.id, luzKey); }
   }
   iniciarAutoRefreshClima();
 }
@@ -331,7 +337,44 @@ window.cambiarEtapaLugar = function(lugarId) {
   lugaresClimaActivos[lugarId].etapa = sel.value;
   localStorage.setItem("etapa_"+lugarId, sel.value);
   if (lugaresClimaActivos[lugarId].sensorKey) refrescarActualLugar(lugarId, lugaresClimaActivos[lugarId].sensorKey);
+  pintarFotoperiodo(lugarId);
 };
+
+// Trae las horas reales de luz de AYER (día completo, evita falsas alarmas a
+// mitad del día de hoy) y las compara contra lo esperado según la etapa.
+let fotoperiodoActivos = {}; // { lugarId: { horasEncendido, horasVentana, fecha, diaCompleto } }
+
+async function cargarFotoperiodoLugar(lugarId, luzKey) {
+  const el = document.getElementById("foto-"+lugarId);
+  if (!el) return;
+  try {
+    const proxyBase = (localStorage.getItem("tuya_proxy") || PROXY_URL).replace(/\/tuya$/, "");
+    const resp = await fetch(`${proxyBase}/tuya/fotoperiodo?device=${luzKey}`, { signal: AbortSignal.timeout(25000) });
+    if (!resp.ok) throw new Error("HTTP "+resp.status);
+    const data = await resp.json();
+    fotoperiodoActivos[lugarId] = data;
+    pintarFotoperiodo(lugarId);
+  } catch (err) {
+    el.innerHTML = `<span class="clima-error">Sin datos de fotoperíodo (${err.message})</span>`;
+  }
+}
+
+function pintarFotoperiodo(lugarId) {
+  const el   = document.getElementById("foto-"+lugarId);
+  const data = fotoperiodoActivos[lugarId];
+  if (!el || !data) return;
+  const etapa    = lugaresClimaActivos[lugarId]?.etapa || "vegetativo";
+  const objetivo = FOTOPERIODO_ESPERADO[etapa];
+  const diff     = Math.abs(data.horasEncendido - objetivo);
+  const critico  = etapa.startsWith("floracion"); // en floración, un desvío puede inducir hermafroditismo
+  const okRango  = diff <= (critico ? 0.3 : 1);
+  const clase    = okRango ? "foto-ok" : (critico ? "foto-alerta" : "foto-aviso");
+  const icono    = okRango ? "✅" : "⚠️";
+  el.innerHTML = `
+    <div>🕐 Fotoperíodo (${data.fecha}${data.diaCompleto ? "" : ", parcial"})</div>
+    <div class="${clase}">${icono} ${data.horasEncendido}h de luz · objetivo ${objetivo}h${!okRango ? ` (desvío ${diff.toFixed(1)}h)` : ""}</div>
+    ${critico && !okRango ? `<div class="foto-critico">⚠️ En floración esto puede inducir hermafroditismo — revisá el temporizador ya.</div>` : ""}`;
+}
 
 // Refresco automático liviano (solo valores actuales, no historial) cada 1 minuto
 function iniciarAutoRefreshClima() {
@@ -1430,6 +1473,11 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .luz-on{color:#ffd23d}
 .luz-off{color:var(--muted)}
 .luz-offline{color:#ff7a7a}
+.foto-box{margin-bottom:10px;padding:8px 10px;background:var(--surface);border-radius:10px;font-size:.78rem;display:flex;flex-direction:column;gap:4px}
+.foto-ok{color:#3ddc97;font-weight:600}
+.foto-aviso{color:#ffb84d;font-weight:600}
+.foto-alerta{color:#ff5c5c;font-weight:700}
+.foto-critico{font-size:.7rem;color:#ff8a8a;background:rgba(255,92,92,.1);border-radius:6px;padding:5px 7px}
 .vpd-box{margin-bottom:10px;padding:8px 10px;background:var(--surface);border-radius:10px}
 .vpd-header{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;font-size:.78rem;font-weight:600}
 .vpd-etapa{background:var(--bg,#0d1410);color:var(--fg,#e8f2ec);border:1px solid rgba(255,255,255,.15);border-radius:6px;font-size:.68rem;padding:3px 6px}
