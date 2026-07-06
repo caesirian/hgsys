@@ -715,6 +715,20 @@ async function refrescarDashboardCard(lugarId, sensorKey, luzKey, tipo) {
 }
 
 
+// El nav "Plantas" antes solo cambiaba de pantalla sin cargar nada (parecía que
+// las plantas habían desaparecido). Ahora entra al último lugar visto, o al
+// primero que encuentre si todavía no entraste a ninguno.
+window.irAPlantas = async () => {
+  if (lugarActivo) return verLugar(lugarActivo);
+  try {
+    const snap = await getDocs(query(collection(db,"lugares"), orderBy("creadoEn","desc")));
+    if (snap.empty) { show("vista-lugares"); toast("Todavía no creaste ningún lugar de cultivo","err"); return; }
+    verLugar(snap.docs[0].id);
+  } catch (err) {
+    show("vista-lugares");
+  }
+};
+
 window.verLugar = async (id) => {
   lugarActivo = id;
   show("vista-lugar");
@@ -1643,7 +1657,7 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
   <button class="nav-btn activo" data-vista="vista-lugares" onclick="show('vista-lugares');cargarLugares()">
     <span class="nav-icon">🏕️</span><span class="nav-label">Lugares</span>
   </button>
-  <button class="nav-btn" data-vista="vista-lugar" onclick="show('vista-lugar')">
+  <button class="nav-btn" data-vista="vista-lugar" onclick="irAPlantas()">
     <span class="nav-icon">🪴</span><span class="nav-label">Plantas</span>
   </button>
   <button class="nav-btn" data-vista="vista-planta" onclick="show('vista-planta')">
@@ -1663,7 +1677,7 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
   <button class="nav-btn activo" data-vista="vista-lugares" onclick="show('vista-lugares');cargarLugares()">
     <span class="nav-icon">🏕️</span><span class="nav-label">Lugares</span>
   </button>
-  <button class="nav-btn" data-vista="vista-lugar" onclick="show('vista-lugar')">
+  <button class="nav-btn" data-vista="vista-lugar" onclick="irAPlantas()">
     <span class="nav-icon">🪴</span><span class="nav-label">Plantas</span>
   </button>
   <button class="nav-btn" data-vista="vista-planta" onclick="show('vista-planta')">
