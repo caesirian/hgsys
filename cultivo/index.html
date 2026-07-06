@@ -445,15 +445,30 @@ function pintarFotoperiodo(lugarId) {
   if (!el || !data) return;
   const etapa    = lugaresClimaActivos[lugarId]?.etapa || "vegetativo";
   const objetivo = FOTOPERIODO_ESPERADO[etapa];
-  const diff     = Math.abs(data.horasEncendido - objetivo);
-  const critico  = etapa.startsWith("floracion"); // en floración, un desvío puede inducir hermafroditismo
-  const okRango  = diff <= (critico ? 0.3 : 1);
-  const clase    = okRango ? "foto-ok" : (critico ? "foto-alerta" : "foto-aviso");
-  const icono    = okRango ? "✅" : "⚠️";
+
+  // Línea principal: en curso, tipo "lleva 8.9h de luz de las 18h de hoy"
+  const s = data.sesionActual || {};
+  let lineaActual;
+  if (!s.online) {
+    lineaActual = `<span class="foto-aviso">📴 Luz fuera de línea</span>`;
+  } else if (s.encendido) {
+    lineaActual = `🕐 Lleva <b>${s.horasSesion}h</b> de luz encendida de las <b>${objetivo}h</b> de hoy`;
+  } else {
+    lineaActual = `🕐 Luz apagada ahora (objetivo del día: ${objetivo}h)`;
+  }
+
+  // Línea secundaria: chequeo estricto del día completo de ayer (para detectar
+  // desvíos reales de la automatización, no solo el progreso de hoy)
+  const diff    = Math.abs(data.horasEncendido - objetivo);
+  const critico = etapa.startsWith("floracion");
+  const okRango = diff <= (critico ? 0.3 : 1);
+  const clase   = okRango ? "foto-ok" : (critico ? "foto-alerta" : "foto-aviso");
+  const icono   = okRango ? "✅" : "⚠️";
+
   el.innerHTML = `
-    <div>🕐 Fotoperíodo (${data.fecha}${data.diaCompleto ? "" : ", parcial"})</div>
-    <div class="${clase}">${icono} ${data.horasEncendido}h de luz · objetivo ${objetivo}h${!okRango ? ` (desvío ${diff.toFixed(1)}h)` : ""}</div>
-    ${critico && !okRango ? `<div class="foto-critico">⚠️ En floración esto puede inducir hermafroditismo — revisá el temporizador ya.</div>` : ""}`;
+    <div>${lineaActual}</div>
+    <div class="${clase}" style="font-size:.68rem">${icono} Ayer (${data.fecha}): ${data.horasEncendido}h total${!okRango ? ` — desvío de ${diff.toFixed(1)}h vs objetivo` : " (dentro de lo esperado)"}</div>
+    ${critico && !okRango ? `<div class="foto-critico">⚠️ En floración esto puede inducir hermafroditismo — revisá el temporizador/automatización ya.</div>` : ""}`;
 }
 
 // Refresco automático liviano (solo valores actuales, no historial) cada 1 minuto
