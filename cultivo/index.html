@@ -810,6 +810,7 @@ function dibujarGraficosHL(lugarId, serieTemp, serieHum, nivel) {
 }
 
 
+let dashboardActivos = {}; // { lugarId: { sensorKey, luzKey, tipo } }
 let dashboardTimer   = null;
 
 // Detecta si el lugar es la Carpa (1×1×2) o la Estructura 3×1, usando el sensor
@@ -1568,7 +1569,8 @@ window.importarDesde = (key) => {
 
 // ─── INIT ─────────────────────────────────────────────────────────────────
 window.addEventListener("DOMContentLoaded", () => {
-  cargarCatalogoDispositivos().finally(() => cargarLugares());
+  show("vista-dashboard");
+  cargarCatalogoDispositivos().finally(() => cargarDashboard());
   localStorage.setItem("tuya_proxy", PROXY_URL);
 
   const hoy = new Date().toISOString().split("T")[0];
@@ -1912,10 +1914,10 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
 <!-- SIDEBAR -->
 <aside class="sidebar">
   <div class="sidebar-logo">🌿 <span>Cultiv</span>App<small>Seguimiento de cultivo</small></div>
-  <button class="nav-btn" data-vista="vista-dashboard" onclick="show('vista-dashboard');cargarDashboard()">
+  <button class="nav-btn activo" data-vista="vista-dashboard" onclick="show('vista-dashboard');cargarDashboard()">
     <span class="nav-icon">🖥️</span><span class="nav-label">Dashboard</span>
   </button>
-  <button class="nav-btn activo" data-vista="vista-lugares" onclick="show('vista-lugares');cargarLugares()">
+  <button class="nav-btn" data-vista="vista-lugares" onclick="show('vista-lugares');cargarLugares()">
     <span class="nav-icon">🏕️</span><span class="nav-label">Lugares</span>
   </button>
   <button class="nav-btn" data-vista="vista-lugar" onclick="irAPlantas()">
@@ -1932,10 +1934,10 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
 
 <!-- NAVBAR BOTTOM mobile -->
 <nav class="bottom-nav">
-  <button class="nav-btn" data-vista="vista-dashboard" onclick="show('vista-dashboard');cargarDashboard()">
+  <button class="nav-btn activo" data-vista="vista-dashboard" onclick="show('vista-dashboard');cargarDashboard()">
     <span class="nav-icon">🖥️</span><span class="nav-label">Dashboard</span>
   </button>
-  <button class="nav-btn activo" data-vista="vista-lugares" onclick="show('vista-lugares');cargarLugares()">
+  <button class="nav-btn" data-vista="vista-lugares" onclick="show('vista-lugares');cargarLugares()">
     <span class="nav-icon">🏕️</span><span class="nav-label">Lugares</span>
   </button>
   <button class="nav-btn" data-vista="vista-lugar" onclick="irAPlantas()">
@@ -1952,7 +1954,7 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
 <main class="main">
 
 <!-- VISTA: DASHBOARD -->
-<section id="vista-dashboard" class="vista">
+<section id="vista-dashboard" class="vista activa">
   <div class="page-header">
     <div class="page-title">Dashboard<small>Vista visual de cada espacio de cultivo</small></div>
   </div>
@@ -1960,7 +1962,7 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
 </section>
 
 <!-- VISTA: LUGARES -->
-<section id="vista-lugares" class="vista activa">
+<section id="vista-lugares" class="vista">
   <div class="page-header">
     <div class="page-title">Lugares de cultivo<small>Espacios físicos con sus plantas y sensores</small></div>
     <button class="btn btn-primary" onclick="abrirModal('modal-lugar')">+ Nuevo lugar</button>
