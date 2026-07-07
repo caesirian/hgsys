@@ -32,7 +32,7 @@ function filterRows(rows, q) {
 // `fields` puede ser un array fijo o una función async.
 // `extraActions` es una función opcional (r) => string de HTML adicional
 // que se agrega a cada fila junto con Editar y Eliminar.
-export async function bindCrud({ service, fields, columns, extraActions }) {
+export async function bindCrud({ service, fields, columns, extraActions, onAfterLoad }) {
   const tableEl = document.querySelector('#crudTable');
   let allRows = [];
 
@@ -60,6 +60,7 @@ export async function bindCrud({ service, fields, columns, extraActions }) {
     tableEl.innerHTML = '<div class="loading">Cargando datos…</div>';
     try {
       allRows = await service.list();
+      if (typeof onAfterLoad === 'function') onAfterLoad(allRows);
       const q = document.querySelector('#tableSearch')?.value ?? '';
       renderTable(filterRows(allRows, q));
     } catch (err) {
