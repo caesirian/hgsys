@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CoopDigital — Panel de Administración</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #080f14;
+      --surface: #0d1b26;
+      --surface2: #132233;
+      --border: #1e3448;
+      --cyan: #00c896;
+      --cyan-dim: #00a07a;
+      --danger: #e05c5c;
+      --warn: #e0a84a;
+      --text: #e8f0f7;
+      --muted: #7a9ab5;
+      --radius: 8px;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      font-size: 14px;
+      min-height: 100vh;
+    }
+
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    header h1 { font-size: 1.1rem; color: var(--cyan); font-weight: 700; letter-spacing: .5px; }
+    header p  { font-size: .8rem; color: var(--muted); margin-top: 2px; }
+
+    #lockScreen {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: calc(100vh - 60px);
+    }
+    .lock-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 40px 48px;
+      width: 100%;
+      max-width: 380px;
+      text-align: center;
+    }
+    .lock-card h2 { margin-bottom: 8px; font-size: 1.1rem; }
+    .lock-card p  { color: var(--muted); margin-bottom: 24px; font-size: .85rem; }
+
+    main { display: none; padding: 32px; max-width: 1100px; margin: 0 auto; }
+
+    .tabs {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 24px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0;
+    }
+    .tab {
+      padding: 10px 20px;
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: .9rem;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      transition: all .15s;
+    }
+    .tab:hover { color: var(--text); }
+    .tab.active { color: var(--cyan); border-bottom-color: var(--cyan); font-weight: 600; }
+
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+    .card h2 { font-size: 1rem; margin-bottom: 16px; color: var(--cyan); }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .form-grid .full { grid-column: 1 / -1; }
+
+    label { display: block; font-size: .8rem; color: var(--muted); margin-bottom: 4px; }
+    input, select {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 9px 12px;
+      color: var(--text);
+      font-size: .9rem;
+      outline: none;
+      transition: border-color .15s;
+    }
+    input:focus, select:focus { border-color: var(--cyan); }
+
+    .btn {
+      padding: 9px 20px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      font-size: .9rem;
+      font-weight: 600;
+      transition: opacity .15s;
+    }
+    .btn:disabled { opacity: .5; cursor: default; }
+    .btn.primary { background: var(--cyan); color: #000; }
+    .btn.primary:hover:not(:disabled) { background: var(--cyan-dim); }
+    .btn.ghost  { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+    .btn.ghost:hover:not(:disabled) { border-color: var(--cyan); }
+    .btn.danger { background: var(--danger); color: #fff; }
+
+    .toast-wrap {
+      position: fixed; bottom: 24px; right: 24px;
+      display: flex; flex-direction: column; gap: 8px; z-index: 999;
+    }
+    .toast {
+      padding: 12px 18px;
+      border-radius: 6px;
+      font-size: .875rem;
+      font-weight: 500;
+      animation: slideIn .2s ease;
+      max-width: 360px;
+    }
+    .toast.ok  { background: var(--cyan); color: #000; }
+    .toast.err { background: var(--danger); color: #fff; }
+    .toast.warn { background: var(--warn); color: #000; }
+    @keyframes slideIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; } }
+
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border); font-size: .85rem; }
+    th { color: var(--muted); font-weight: 600; font-size: .78rem; text-transform: uppercase; letter-spacing: .5px; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: var(--surface2); }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: .75rem;
+      font-weight: 600;
+    }
+    .badge.ok   { background: #0d3b2e; color: var(--cyan); }
+    .badge.bad  { background: #3b1414; color: var(--danger); }
+    .badge.muted { background: var(--surface2); color: var(--muted); }
+
+    .result-box {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 16px;
+      font-family: monospace;
+      font-size: .82rem;
+      color: var(--cyan);
+      white-space: pre-wrap;
+      word-break: break-all;
+      display: none;
+      margin-top: 16px;
+    }
+    .result-box.visible { display: block; }
+
+    .empty { color: var(--muted); font-style: italic; padding: 20px 0; text-align: center; }
+    .loading { color: var(--muted); padding: 20px 0; text-align: center; }
+
+    .coop-selector { margin-bottom: 20px; display: flex; gap: 10px; align-items: flex-end; }
+    .coop-selector .field { flex: 1; }
+
+    @media (max-width: 600px) {
+      .form-grid { grid-template-columns: 1fr; }
+      main { padding: 16px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>CoopDigital — Panel de Administración</h1>
+    <p id="headerSub">Acceso restringido</p>
+  </div>
+  <button class="btn ghost" id="btnLock" style="display:none">Cerrar sesión</button>
+</header>
+
+<!-- Pantalla de login con secret -->
+<div id="lockScreen">
+  <div class="lock-card">
+    <h2>Acceso restringido</h2>
+    <p>Ingresá el secret de administrador y la URL de la API para continuar.</p>
+    <div style="margin-bottom:12px">
+      <label>URL de la API</label>
+      <input type="url" id="apiUrl" placeholder="https://coopdigital-api.onrender.com" value="">
+    </div>
+    <div style="margin-bottom:20px">
+      <label>Admin Secret</label>
+      <input type="password" id="adminSecret" placeholder="••••••••••••••••">
+    </div>
+    <button class="btn primary" id="btnLogin" style="width:100%">Ingresar</button>
+  </div>
+</div>
+
+<!-- Panel principal -->
+<main id="mainPanel">
+  <div class="tabs">
+    <button class="tab active" data-tab="coops">Cooperativas</button>
+    <button class="tab" data-tab="nuevaCoop">Nueva cooperativa</button>
+    <button class="tab" data-tab="usuarios">Usuarios</button>
+    <button class="tab" data-tab="nuevoUsuario">Nuevo usuario</button>
+  </div>
+
+  <!-- Tab: listado de cooperativas -->
+  <div class="panel active" id="tab-coops">
+    <div class="card">
+      <h2>Cooperativas registradas</h2>
+      <div id="coopsTable"><div class="loading">Cargando…</div></div>
+    </div>
+  </div>
+
+  <!-- Tab: nueva cooperativa -->
+  <div class="panel" id="tab-nuevaCoop">
+    <div class="card">
+      <h2>Alta de cooperativa</h2>
+      <div class="form-grid">
+        <div class="full">
+          <label>Razón social *</label>
+          <input type="text" id="cNombre" placeholder="Cooperativa de Trabajo Ejemplo Ltda.">
+        </div>
+        <div>
+          <label>Matrícula INAES *</label>
+          <input type="text" id="cMatricula" placeholder="12345">
+        </div>
+        <div>
+          <label>CUIT * (formato NN-NNNNNNNN-N)</label>
+          <input type="text" id="cCuit" placeholder="30-12345678-9">
+        </div>
+        <div class="full">
+          <label>Email del primer usuario admin *</label>
+          <input type="email" id="cEmail" placeholder="admin@lacooperativa.com.ar">
+        </div>
+        <div>
+          <label>Domicilio</label>
+          <input type="text" id="cDomicilio">
+        </div>
+        <div>
+          <label>Localidad</label>
+          <input type="text" id="cLocalidad">
+        </div>
+        <div class="full">
+          <label>Provincia</label>
+          <input type="text" id="cProvincia">
+        </div>
+        <div class="full" style="margin-top:8px">
+          <button class="btn primary" id="btnCrearCoop">Crear cooperativa</button>
+        </div>
+      </div>
+      <div class="result-box" id="resultCoop"></div>
+    </div>
+  </div>
+
+  <!-- Tab: usuarios de cooperativa -->
+  <div class="panel" id="tab-usuarios">
+    <div class="card">
+      <h2>Usuarios por cooperativa</h2>
+      <div class="coop-selector">
+        <div class="field">
+          <label>Cooperativa</label>
+          <select id="selCoopUsuarios">
+            <option value="">— seleccioná una cooperativa —</option>
+          </select>
+        </div>
+        <button class="btn ghost" id="btnCargarUsuarios">Cargar</button>
+      </div>
+      <div id="usuariosTable"><div class="empty">Seleccioná una cooperativa para ver sus usuarios.</div></div>
+    </div>
+  </div>
+
+  <!-- Tab: nuevo usuario -->
+  <div class="panel" id="tab-nuevoUsuario">
+    <div class="card">
+      <h2>Alta de usuario</h2>
+      <div class="form-grid">
+        <div class="full">
+          <label>Cooperativa *</label>
+          <select id="uCoopId">
+            <option value="">— seleccioná una cooperativa —</option>
+          </select>
+        </div>
+        <div>
+          <label>Nombre *</label>
+          <input type="text" id="uNombre">
+        </div>
+        <div>
+          <label>Apellido *</label>
+          <input type="text" id="uApellido">
+        </div>
+        <div>
+          <label>Email *</label>
+          <input type="email" id="uEmail">
+        </div>
+        <div>
+          <label>Rol *</label>
+          <select id="uRol">
+            <option value="admin">admin — Acceso total</option>
+            <option value="consejero" selected>consejero — Gestión y gobernanza</option>
+            <option value="sindico">sindico — Solo lectura auditora</option>
+            <option value="operador">operador — Carga y modificación</option>
+            <option value="consulta">consulta — Solo lectura</option>
+          </select>
+        </div>
+        <div class="full" style="margin-top:8px">
+          <button class="btn primary" id="btnCrearUsuario">Crear usuario</button>
+        </div>
+      </div>
+      <div class="result-box" id="resultUsuario"></div>
+    </div>
+  </div>
+</main>
+
+<div class="toast-wrap" id="toastWrap"></div>
+
+<script>
+  // ─── Config ────────────────────────────────────────────────────────────────
+  let API_URL = '';
+  let ADMIN_SECRET = '';
+
+  // ─── Helpers ───────────────────────────────────────────────────────────────
+  function toast(msg, type = 'ok') {
+    const el = document.createElement('div');
+    el.className = `toast ${type}`;
+    el.textContent = msg;
+    document.getElementById('toastWrap').appendChild(el);
+    setTimeout(() => el.remove(), 4500);
+  }
+
+  async function api(method, path, body) {
+    const opts = {
+      method,
+      headers: { 'Content-Type': 'application/json', 'x-admin-secret': ADMIN_SECRET }
+    };
+    if (body) opts.body = JSON.stringify(body);
+    const resp = await fetch(`${API_URL}${path}`, opts);
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.error ?? `Error ${resp.status}`);
+    return data;
+  }
+
+  // ─── Login ─────────────────────────────────────────────────────────────────
+  document.getElementById('btnLogin').onclick = async () => {
+    const url = document.getElementById('apiUrl').value.trim().replace(/\/$/, '');
+    const secret = document.getElementById('adminSecret').value.trim();
+    if (!url || !secret) { toast('Completá URL y secret.', 'err'); return; }
+
+    const btn = document.getElementById('btnLogin');
+    btn.disabled = true;
+    btn.textContent = 'Verificando…';
+
+    try {
+      API_URL = url;
+      ADMIN_SECRET = secret;
+      await api('GET', '/admin/cooperativas');
+      // Login OK
+      document.getElementById('lockScreen').style.display = 'none';
+      document.getElementById('mainPanel').style.display = 'block';
+      document.getElementById('headerSub').textContent = url;
+      document.getElementById('btnLock').style.display = 'block';
+      await cargarCooperativas();
+    } catch {
+      toast('Secret incorrecto o API no disponible.', 'err');
+      API_URL = '';
+      ADMIN_SECRET = '';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Ingresar';
+    }
+  };
+
+  document.getElementById('adminSecret').addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.getElementById('btnLogin').click();
+  });
+
+  document.getElementById('btnLock').onclick = () => {
+    API_URL = ''; ADMIN_SECRET = '';
+    document.getElementById('adminSecret').value = '';
+    document.getElementById('lockScreen').style.display = 'flex';
+    document.getElementById('mainPanel').style.display = 'none';
+    document.getElementById('btnLock').style.display = 'none';
+  };
+
+  // ─── Tabs ──────────────────────────────────────────────────────────────────
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.onclick = () => {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById(`tab-${tab.dataset.tab}`).classList.add('active');
+    };
+  });
+
+  // ─── Cooperativas ──────────────────────────────────────────────────────────
+  let cooperativas = [];
+
+  async function cargarCooperativas() {
+    document.getElementById('coopsTable').innerHTML = '<div class="loading">Cargando…</div>';
+    try {
+      const { data } = await api('GET', '/admin/cooperativas');
+      cooperativas = data;
+      renderCoopsTable(data);
+      actualizarSelects(data);
+    } catch (err) {
+      document.getElementById('coopsTable').innerHTML = `<p class="empty">${err.message}</p>`;
+    }
+  }
+
+  function renderCoopsTable(data) {
+    if (!data.length) {
+      document.getElementById('coopsTable').innerHTML = '<p class="empty">No hay cooperativas registradas todavía.</p>';
+      return;
+    }
+    document.getElementById('coopsTable').innerHTML = `
+      <table>
+        <thead><tr><th>Nombre</th><th>Matrícula</th><th>Plan</th><th>Estado</th><th>ID</th></tr></thead>
+        <tbody>${data.map(c => `
+          <tr>
+            <td>${esc(c.nombre)}</td>
+            <td>${esc(c.matricula)}</td>
+            <td><span class="badge muted">${esc(c.plan)}</span></td>
+            <td>${c.activa ? '<span class="badge ok">Activa</span>' : '<span class="badge bad">Inactiva</span>'}</td>
+            <td style="font-size:.75rem;color:var(--muted);font-family:monospace">${esc(c.id)}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>`;
+  }
+
+  function actualizarSelects(data) {
+    const opts = data.map(c =>
+      `<option value="${esc(c.id)}">${esc(c.nombre)} (${esc(c.matricula)})</option>`
+    ).join('');
+    document.getElementById('selCoopUsuarios').innerHTML =
+      '<option value="">— seleccioná una cooperativa —</option>' + opts;
+    document.getElementById('uCoopId').innerHTML =
+      '<option value="">— seleccioná una cooperativa —</option>' + opts;
+  }
+
+  document.getElementById('btnCrearCoop').onclick = async () => {
+    const btn = document.getElementById('btnCrearCoop');
+    const resultEl = document.getElementById('resultCoop');
+    btn.disabled = true; btn.textContent = 'Creando…';
+    resultEl.classList.remove('visible');
+    try {
+      const result = await api('POST', '/admin/cooperativa', {
+        nombre:    document.getElementById('cNombre').value.trim(),
+        matricula: document.getElementById('cMatricula').value.trim(),
+        cuit:      document.getElementById('cCuit').value.trim(),
+        email:     document.getElementById('cEmail').value.trim(),
+        domicilio: document.getElementById('cDomicilio').value.trim(),
+        localidad: document.getElementById('cLocalidad').value.trim(),
+        provincia: document.getElementById('cProvincia').value.trim()
+      });
+      resultEl.textContent = [
+        '✅ Cooperativa creada correctamente.',
+        '',
+        `ID de cooperativa : ${result.cooperativaId}`,
+        `Email admin       : ${result.email}`,
+        `Password temporal : ${result.passwordTemporal}`,
+        '',
+        '⚠️  Guardá el password temporal y entregáselo al admin de la cooperativa.',
+        '    El usuario debe cambiarlo en su primer acceso.'
+      ].join('\n');
+      resultEl.classList.add('visible');
+      toast('Cooperativa creada.');
+      ['cNombre','cMatricula','cCuit','cEmail','cDomicilio','cLocalidad','cProvincia']
+        .forEach(id => document.getElementById(id).value = '');
+      await cargarCooperativas();
+    } catch (err) {
+      resultEl.textContent = `❌ Error: ${err.message}`;
+      resultEl.classList.add('visible');
+      toast(err.message, 'err');
+    } finally {
+      btn.disabled = false; btn.textContent = 'Crear cooperativa';
+    }
+  };
+
+  // ─── Usuarios ──────────────────────────────────────────────────────────────
+  document.getElementById('btnCargarUsuarios').onclick = async () => {
+    const cid = document.getElementById('selCoopUsuarios').value;
+    if (!cid) { toast('Seleccioná una cooperativa.', 'warn'); return; }
+    const tableEl = document.getElementById('usuariosTable');
+    tableEl.innerHTML = '<div class="loading">Cargando…</div>';
+    try {
+      const { data } = await api('GET', `/admin/usuarios/${cid}`);
+      if (!data.length) {
+        tableEl.innerHTML = '<p class="empty">No hay usuarios en esta cooperativa.</p>';
+        return;
+      }
+      tableEl.innerHTML = `
+        <table>
+          <thead><tr><th>Apellido y nombre</th><th>Email</th><th>Rol</th><th>Estado</th><th>Acciones</th></tr></thead>
+          <tbody>${data.map(u => `
+            <tr data-uid="${esc(u.uid)}">
+              <td>${esc(u.apellido)}, ${esc(u.nombre)}</td>
+              <td>${esc(u.email)}</td>
+              <td>
+                <select class="sel-rol" style="width:auto;padding:4px 8px;font-size:.8rem">
+                  ${['admin','consejero','sindico','operador','consulta'].map(r =>
+                    `<option value="${r}" ${u.rol === r ? 'selected' : ''}>${r}</option>`
+                  ).join('')}
+                </select>
+              </td>
+              <td>${u.activo
+                ? '<span class="badge ok">Activo</span>'
+                : '<span class="badge bad">Inactivo</span>'}</td>
+              <td style="display:flex;gap:6px">
+                <button class="btn ghost btn-guardar-rol" style="font-size:.78rem;padding:4px 10px"
+                  data-cid="${esc(cid)}" data-uid="${esc(u.uid)}">Guardar rol</button>
+                <button class="btn ${u.activo ? 'danger' : 'ghost'} btn-toggle"
+                  style="font-size:.78rem;padding:4px 10px"
+                  data-cid="${esc(cid)}" data-uid="${esc(u.uid)}" data-activo="${u.activo}">
+                  ${u.activo ? 'Desactivar' : 'Activar'}
+                </button>
+              </td>
+            </tr>`).join('')}
+          </tbody>
+        </table>`;
+
+      tableEl.querySelectorAll('.btn-guardar-rol').forEach(btn => {
+        btn.onclick = async () => {
+          const row = btn.closest('tr');
+          const rol = row.querySelector('.sel-rol').value;
+          btn.disabled = true;
+          try {
+            await api('PATCH', `/admin/usuario/${btn.dataset.cid}/${btn.dataset.uid}`, { rol });
+            toast('Rol actualizado.');
+          } catch (err) {
+            toast(err.message, 'err');
+          } finally {
+            btn.disabled = false;
+          }
+        };
+      });
+
+      tableEl.querySelectorAll('.btn-toggle').forEach(btn => {
+        btn.onclick = async () => {
+          const activo = btn.dataset.activo === 'true';
+          if (!confirm(`¿${activo ? 'Desactivar' : 'Activar'} este usuario?`)) return;
+          btn.disabled = true;
+          try {
+            await api('PATCH', `/admin/usuario/${btn.dataset.cid}/${btn.dataset.uid}`, { activo: !activo });
+            toast(`Usuario ${activo ? 'desactivado' : 'activado'}.`);
+            document.getElementById('btnCargarUsuarios').click();
+          } catch (err) {
+            toast(err.message, 'err');
+            btn.disabled = false;
+          }
+        };
+      });
+    } catch (err) {
+      tableEl.innerHTML = `<p class="empty">${err.message}</p>`;
+    }
+  };
+
+  document.getElementById('btnCrearUsuario').onclick = async () => {
+    const btn = document.getElementById('btnCrearUsuario');
+    const resultEl = document.getElementById('resultUsuario');
+    btn.disabled = true; btn.textContent = 'Creando…';
+    resultEl.classList.remove('visible');
+    try {
+      const result = await api('POST', '/admin/usuario', {
+        cooperativaId: document.getElementById('uCoopId').value,
+        nombre:        document.getElementById('uNombre').value.trim(),
+        apellido:      document.getElementById('uApellido').value.trim(),
+        email:         document.getElementById('uEmail').value.trim(),
+        rol:           document.getElementById('uRol').value
+      });
+      resultEl.textContent = [
+        '✅ Usuario creado correctamente.',
+        '',
+        `Nombre    : ${result.apellido}, ${result.nombre}`,
+        `Email     : ${result.email}`,
+        `Rol       : ${result.rol}`,
+        `UID       : ${result.uid}`,
+        `Password  : ${result.passwordTemporal}`,
+        '',
+        '⚠️  Entregá el email y password temporal al usuario.',
+        '    Debe cambiarlo en su primer acceso.'
+      ].join('\n');
+      resultEl.classList.add('visible');
+      toast('Usuario creado.');
+      ['uNombre','uApellido','uEmail'].forEach(id => document.getElementById(id).value = '');
+      document.getElementById('uRol').value = 'consejero';
+    } catch (err) {
+      resultEl.textContent = `❌ Error: ${err.message}`;
+      resultEl.classList.add('visible');
+      toast(err.message, 'err');
+    } finally {
+      btn.disabled = false; btn.textContent = 'Crear usuario';
+    }
+  };
+
+  function esc(str) {
+    return String(str ?? '').replace(/[&<>"']/g, c =>
+      ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+</script>
+</body>
+</html>
