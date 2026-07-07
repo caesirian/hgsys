@@ -170,6 +170,66 @@ service cloud.firestore {
         allow delete: if isAdmin(cooperativaId);
       }
 
+      // Fase 3: gestión operativa y documental.
+      match /mesaEntradas/{registroId} {
+        allow read: if puedeLeer(cooperativaId);
+        allow create, update: if puedeEscribirGeneral(cooperativaId);
+        allow delete: if isAdmin(cooperativaId);
+      }
+
+      match /comunicaciones/{comunicacionId} {
+        allow read: if puedeLeer(cooperativaId);
+        allow create, update: if puedeEscribirGeneral(cooperativaId);
+        allow delete: if isAdmin(cooperativaId);
+      }
+
+      match /bibliotecaInstitucional/{docId} {
+        allow read: if puedeLeer(cooperativaId);
+        allow create, update: if puedeEscribirGeneral(cooperativaId);
+        allow delete: if isAdmin(cooperativaId);
+      }
+
+      match /bibliotecaNormativa/{docId} {
+        allow read: if puedeLeer(cooperativaId);
+        allow create, update: if puedeEscribirGeneral(cooperativaId);
+        allow delete: if isAdmin(cooperativaId);
+      }
+
+      match /plantillas/{plantillaId} {
+        allow read: if puedeLeer(cooperativaId);
+        allow create, update: if puedeEscribirGeneral(cooperativaId);
+        allow delete: if isAdmin(cooperativaId);
+      }
+
+      // Padrón electoral: solo admin/consejero pueden modificarlo (acto
+      // de gobierno, no operación diaria).
+      match /padronElectoral/{registroId} {
+        allow read: if puedeLeer(cooperativaId);
+        allow create, update: if puedeEscribirGobernanza(cooperativaId);
+        allow delete: if isAdmin(cooperativaId);
+      }
+
+      match /tramites/{tramiteId} {
+        allow read: if puedeLeer(cooperativaId);
+        allow create, update: if puedeEscribirGeneral(cooperativaId);
+        allow delete: if isAdmin(cooperativaId);
+      }
+
+      // Fase 5: firmas simples de aceptación. Se crean pero nunca se
+      // modifican ni eliminan (valor probatorio del registro).
+      match /firmas/{firmaId} {
+        allow read: if puedeLeer(cooperativaId);
+        allow create: if puedeEscribirGeneral(cooperativaId);
+        allow update, delete: if false;
+      }
+
+      // API pública: keys por cooperativa. Lectura/escritura exclusiva
+      // del Admin SDK (coopdigital-api en Render). El cliente del panel
+      // nunca accede directamente.
+      match /apiKeys/{keyId} {
+        allow read, write: if false;
+      }
+
       // Certificados: solo se crean, nunca se modifican (trazabilidad).
       match /certificados/{certificadoId} {
         allow read: if puedeLeer(cooperativaId);
