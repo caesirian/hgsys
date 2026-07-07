@@ -107,6 +107,7 @@ let lugaresClimaActivos = {}; // { lugarId: { sensorKey, luzKey, etapa } }
 let climaTimer = null;
 let chartsPorLugar = {};      // { lugarId: { temp: Chart, hum: Chart } }
 let chartsDiaPorLugar = {};   // { lugarId: { temp: Chart, hum: Chart } } (gráfico del día seleccionado)
+let chartsHLPorLugar = {};    // { lugarId: { temp: Chart, hum: Chart } } (histórico largo, rollup propio)
 
 // Fecha en formato YYYY-MM-DD según el huso de Argentina (UTC-3), sin depender del huso del navegador
 function fechaArgentinaISO(timestampMs) {
@@ -362,6 +363,21 @@ async function cargarLugares() {
           <div class="chart-box"><canvas id="chart-dia-temp-${d.id}"></canvas><div class="chart-empty" id="chart-dia-temp-empty-${d.id}"></div></div>
           <div class="chart-box"><canvas id="chart-dia-hum-${d.id}"></canvas><div class="chart-empty" id="chart-dia-hum-empty-${d.id}"></div></div>
         </div>
+        <div class="clima-titulo dia-titulo">
+          <span>📊 Histórico largo (base propia, sin límite de 7 días)</span>
+        </div>
+        <div class="historico-largo-controles">
+          <select id="hl-nivel-${d.id}" class="input-fecha-dia" onchange="cargarHistoricoLargoLugar('${d.id}','${sensorClima}')">
+            <option value="hora">Por hora (últimas 2 semanas)</option>
+            <option value="dia">Por día (histórico completo)</option>
+          </select>
+          <input type="date" id="hl-desde-${d.id}" class="input-fecha-dia" onchange="cargarHistoricoLargoLugar('${d.id}','${sensorClima}')">
+          <input type="date" id="hl-hasta-${d.id}" class="input-fecha-dia" onchange="cargarHistoricoLargoLugar('${d.id}','${sensorClima}')">
+        </div>
+        <div class="clima-charts">
+          <div class="chart-box"><canvas id="chart-hl-temp-${d.id}"></canvas><div class="chart-empty" id="chart-hl-temp-empty-${d.id}"></div></div>
+          <div class="chart-box"><canvas id="chart-hl-hum-${d.id}"></canvas><div class="chart-empty" id="chart-hl-hum-empty-${d.id}"></div></div>
+        </div>
       </div>` : ""}
       <div class="cult-actions">
         <button class="btn-sm btn-primary" onclick="verLugar('${d.id}')">Ver áreas y plantas</button>
@@ -380,6 +396,14 @@ async function cargarLugares() {
         const hace7 = fechaArgentinaISO(Date.now() - 7*24*60*60*1000);
         fechaInput.value = hoy; fechaInput.max = hoy; fechaInput.min = hace7;
         if (!graficosColapsados) cargarGraficoDia(d.id, sensorClima);
+      }
+      const hlDesde = document.getElementById("hl-desde-"+d.id);
+      const hlHasta = document.getElementById("hl-hasta-"+d.id);
+      if (hlDesde && hlHasta) {
+        const hoy = fechaArgentinaISO(Date.now());
+        const hace30 = fechaArgentinaISO(Date.now() - 30*24*60*60*1000);
+        hlDesde.value = hace30; hlHasta.value = hoy; hlHasta.max = hoy;
+        if (!graficosColapsados) cargarHistoricoLargoLugar(d.id, sensorClima);
       }
     }
     if (luzKey) { refrescarLuzLugar(d.id, luzKey); cargarFotoperiodoLugar(d.id, luzKey); }
@@ -401,12 +425,15 @@ window.toggleGraficosLugar = function(lugarId) {
     if (!chartsPorLugar[lugarId] && lugaresClimaActivos[lugarId]?.sensorKey) {
       cargarHistoricoLugar(lugarId, lugaresClimaActivos[lugarId].sensorKey);
       cargarGraficoDia(lugarId, lugaresClimaActivos[lugarId].sensorKey);
+      cargarHistoricoLargoLugar(lugarId, lugaresClimaActivos[lugarId].sensorKey);
     } else {
       // Ya estaban creados: solo hace falta recalcular tamaño (estaban con display:none)
       chartsPorLugar[lugarId]?.temp?.resize();
       chartsPorLugar[lugarId]?.hum?.resize();
       chartsDiaPorLugar[lugarId]?.temp?.resize();
       chartsDiaPorLugar[lugarId]?.hum?.resize();
+      chartsHLPorLugar[lugarId]?.temp?.resize();
+      chartsHLPorLugar[lugarId]?.hum?.resize();
     }
   }
 };
@@ -708,8 +735,74 @@ function dibujarGraficosDia(lugarId, serieTemp, serieHum) {
   };
 }
 
+// Histórico largo: lee de NUESTRA base propia (lecturasSensores en Firestore),
+// no de Tuya, así que no tiene el límite de 7 días. Por hora (últimas 2 semanas,
+// que es lo que se retiene en crudo) o por día (todo el historial acumulado).
+async function cargarHistoricoLargoLugar(lugarId, sensorKey) {
+  const nivelSel = document.getElementById("hl-nivel-"+lugarId)?.value || "hora";
+  const desdeSel = document.getElementById("hl-desde-"+lugarId)?.value;
+  const hastaSel = document.getElementById("hl-hasta-"+lugarId)?.value;
+  const emptyTemp = document.getElementById("chart-hl-temp-empty-"+lugarId);
+  const emptyHum  = document.getElementById("chart-hl-hum-empty-"+lugarId);
+  if (emptyTemp) emptyTemp.innerHTML = "Cargando...";
+  if (emptyHum)  emptyHum.innerHTML  = "Cargando...";
 
-let dashboardActivos = {}; // { lugarId: { sensorKey, luzKey, tipo } }
+  try {
+    const proxyBase = (localStorage.getItem("tuya_proxy") || PROXY_URL).replace(/\/tuya$/, "");
+    // La clave de bucket es "YYYY-MM-DD" (día) o "YYYY-MM-DDTHH" (hora); con la
+    // fecha del <input type=date> alcanza como prefijo para acotar el rango.
+    const desde = nivelSel === "dia" ? desdeSel : `${desdeSel}T00`;
+    const hasta = nivelSel === "dia" ? hastaSel : `${hastaSel}T23`;
+    const resp = await fetch(`${proxyBase}/tuya/rollup?device=${sensorKey}&nivel=${nivelSel}&desde=${desde}&hasta=${hasta}`, { signal: AbortSignal.timeout(20000) });
+    if (!resp.ok) throw new Error("HTTP "+resp.status);
+    const data = await resp.json();
+    const puntos = data.puntos || [];
+    const serieTemp = puntos.filter(p => p.metrics?.tempAmb).map(p => ({ clave: p.clave, v: +(p.metrics.tempAmb.sum / p.metrics.tempAmb.count).toFixed(1) }));
+    const serieHum  = puntos.filter(p => p.metrics?.humedad).map(p => ({ clave: p.clave, v: +(p.metrics.humedad.sum / p.metrics.humedad.count).toFixed(1) }));
+    dibujarGraficosHL(lugarId, serieTemp, serieHum, nivelSel);
+  } catch (err) {
+    console.error("Error histórico largo", lugarId, err.message);
+    if (emptyTemp) emptyTemp.innerHTML = `⚠️ No se pudo cargar (${err.message})`;
+    if (emptyHum)  emptyHum.innerHTML  = `⚠️ No se pudo cargar (${err.message})`;
+  }
+}
+
+function dibujarGraficosHL(lugarId, serieTemp, serieHum, nivel) {
+  const ctxTemp   = document.getElementById("chart-hl-temp-"+lugarId);
+  const ctxHum    = document.getElementById("chart-hl-hum-"+lugarId);
+  const emptyTemp = document.getElementById("chart-hl-temp-empty-"+lugarId);
+  const emptyHum  = document.getElementById("chart-hl-hum-empty-"+lugarId);
+  if (!ctxTemp || !ctxHum) return;
+  if (typeof Chart === "undefined") { if(emptyTemp) emptyTemp.textContent = "⚠️ No se pudo cargar Chart.js"; return; }
+
+  const fmt = clave => nivel === "dia"
+    ? new Date(clave+"T12:00:00").toLocaleDateString("es-AR",{day:"2-digit",month:"2-digit"})
+    : new Date(clave+":00:00").toLocaleDateString("es-AR",{day:"2-digit",month:"2-digit"}) + " " + clave.slice(11)+"h";
+
+  if (emptyTemp) emptyTemp.innerHTML = serieTemp.length ? "" : "Sin datos propios en ese rango todavía";
+  if (emptyHum)  emptyHum.innerHTML  = serieHum.length  ? "" : "Sin datos propios en ese rango todavía";
+
+  const etapa    = lugaresClimaActivos[lugarId]?.etapa || "vegetativo";
+  const bandaHum = ETAPAS_VPD[etapa]?.humedad;
+
+  if (chartsHLPorLugar[lugarId]?.temp) chartsHLPorLugar[lugarId].temp.destroy();
+  if (chartsHLPorLugar[lugarId]?.hum)  chartsHLPorLugar[lugarId].hum.destroy();
+
+  chartsHLPorLugar[lugarId] = {
+    temp: serieTemp.length ? new Chart(ctxTemp, {
+      type: "line",
+      data: { labels: serieTemp.map(p=>fmt(p.clave)), datasets: [{ label:"Temp °C (prom.)", data: serieTemp.map(p=>p.v), borderColor:"#ff8a3d", backgroundColor:"rgba(255,138,61,.15)", tension:.3, pointRadius:0, borderWidth:2, fill:true }] },
+      options: chartOptionsBase("°C", { min: TEMP_OPTIMA_MIN, max: TEMP_OPTIMA_MAX, label: `Óptimo ${TEMP_OPTIMA_MIN}-${TEMP_OPTIMA_MAX}°C` }),
+    }) : null,
+    hum: serieHum.length ? new Chart(ctxHum, {
+      type: "line",
+      data: { labels: serieHum.map(p=>fmt(p.clave)), datasets: [{ label:"Humedad % (prom.)", data: serieHum.map(p=>p.v), borderColor:"#3ddc97", backgroundColor:"rgba(61,220,151,.15)", tension:.3, pointRadius:0, borderWidth:2, fill:true }] },
+      options: chartOptionsBase("%", bandaHum ? { min: bandaHum[0], max: bandaHum[1], label: `Óptimo ${bandaHum[0]}-${bandaHum[1]}%` } : null),
+    }) : null,
+  };
+}
+
+
 let dashboardTimer   = null;
 
 // Detecta si el lugar es la Carpa (1×1×2) o la Estructura 3×1, usando el sensor
@@ -1492,6 +1585,7 @@ window.show = show;
 window.abrirModal = abrirModal;
 window.cerrarModal = cerrarModal;
 window.cargarGraficoDia = cargarGraficoDia;
+window.cargarHistoricoLargoLugar = cargarHistoricoLargoLugar;
 window.cargarLugares = cargarLugares;
 window.cargarDashboard = cargarDashboard;
 </script>
@@ -1595,6 +1689,8 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .btn-minimizar{background:none;border:1px solid rgba(255,255,255,.15);color:var(--muted);border-radius:6px;font-size:.68rem;padding:3px 8px;cursor:pointer}
 .graficos-contenedor.colapsado{display:none}
 .input-fecha-dia{background:var(--surface);color:inherit;border:1px solid rgba(255,255,255,.15);border-radius:6px;font-size:.72rem;padding:4px 6px}
+.historico-largo-controles{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.historico-largo-controles select,.historico-largo-controles input{flex:1;min-width:110px}
 .clima-charts{display:flex;flex-direction:column;gap:14px;margin-bottom:10px}
 .chart-box{position:relative;height:150px;background:var(--surface);border-radius:10px;padding:8px}
 .chart-empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:12px;font-size:.68rem;color:var(--muted);pointer-events:none}
