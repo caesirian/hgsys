@@ -1,4 +1,4 @@
-import { escapeText } from '../utils/security.js';
+import { escapeText, isSafeUrl } from '../utils/security.js';
 import { categoriasIngreso, categoriasEgreso } from '../config/contabilidad.config.js';
 
 const tipos = ['ingreso', 'egreso'];
@@ -14,26 +14,19 @@ export function validateMovimientoContable(d) {
     monto,
     fecha: d.fecha,
     descripcion: escapeText(d.descripcion),
-    medioPago: escapeText(d.medioPago)
+    medioPago: escapeText(d.medioPago),
+    comprobante: escapeText(d.comprobante ?? ''),
+    comprobanteUrl: escapeText(d.comprobanteUrl ?? '')
   };
 
-  if (!tipos.includes(x.tipo)) {
-    throw new Error('El tipo de movimiento debe ser ingreso o egreso.');
-  }
-  if (!Number.isFinite(x.monto) || x.monto <= 0) {
-    throw new Error('El monto debe ser un número mayor a cero.');
-  }
-  if (!x.fecha) {
-    throw new Error('La fecha es obligatoria.');
-  }
-  if (!x.descripcion) {
-    throw new Error('La descripción es obligatoria.');
-  }
+  if (!tipos.includes(x.tipo)) throw new Error('El tipo de movimiento debe ser ingreso o egreso.');
+  if (!Number.isFinite(x.monto) || x.monto <= 0) throw new Error('El monto debe ser un número mayor a cero.');
+  if (!x.fecha) throw new Error('La fecha es obligatoria.');
+  if (!x.descripcion) throw new Error('La descripción es obligatoria.');
+  if (x.comprobanteUrl && !isSafeUrl(x.comprobanteUrl)) throw new Error('La URL del comprobante no es válida.');
 
   const categoriasValidas = x.tipo === 'ingreso' ? categoriasIngreso : categoriasEgreso;
-  if (!categoriasValidas.includes(x.categoria)) {
-    throw new Error('La categoría no corresponde al tipo de movimiento seleccionado.');
-  }
+  if (!categoriasValidas.includes(x.categoria)) throw new Error('La categoría no corresponde al tipo de movimiento seleccionado.');
 
   return x;
 }
