@@ -1,10 +1,15 @@
 import express from 'express';
 import cors from 'cors';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { apiKeyAuth } from './src/middleware/api-key-auth.js';
 import { adminAuth } from './src/middleware/admin-auth.js';
 import { router as v1Router } from './src/routes/v1.js';
 import { router as webauthnRouter } from './src/routes/auth-webauthn.js';
 import { router as adminRouter } from './src/routes/admin.routes.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -19,6 +24,12 @@ app.get('/', (req, res) => {
     version: 'v1',
     docs: 'Enviar header x-api-key en cada request a /v1/*'
   });
+});
+
+// Panel de administración: HTML standalone servido directo desde el
+// backend, sin depender de abrirlo local ni de GitHub Pages.
+app.get('/admin-panel.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'admin-panel.html'));
 });
 
 app.use('/v1', apiKeyAuth, v1Router);
