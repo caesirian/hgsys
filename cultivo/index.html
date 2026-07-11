@@ -719,7 +719,15 @@ function chartOptionsBase(unidad, banda) {
       },
     },
     scales: {
-      x: { ticks: { color: "#8a9a8f", maxTicksLimit: 6, font: { size: 10 } }, grid: { display: false } },
+      x: {
+        type: "time",
+        time: {
+          tooltipFormat: "dd/MM/yyyy HH:mm",
+          displayFormats: { minute: "HH:mm", hour: "HH:mm", day: "dd/MM", week: "dd/MM", month: "MM/yyyy" },
+        },
+        ticks: { color: "#8a9a8f", maxTicksLimit: 8, font: { size: 10 }, autoSkip: true },
+        grid: { display: false },
+      },
       y: { ticks: { color: "#8a9a8f", font: { size: 10 }, callback: v => v + unidad }, grid: { color: "rgba(255,255,255,.05)" } },
     },
   };
@@ -748,8 +756,6 @@ function dibujarGraficos(lugarId, serieTemp, serieHum) {
   if (!ctxTemp || !ctxHum) return;
   if (typeof Chart === "undefined") { if(emptyTemp) emptyTemp.textContent = "⚠️ No se pudo cargar Chart.js"; return; }
 
-  const fmt = ts => new Date(ts).toLocaleDateString("es-AR",{day:"2-digit",month:"2-digit"});
-
   if (emptyTemp) emptyTemp.innerHTML = serieTemp.length ? "" : "Sin lecturas históricas todavía (puede tardar unas horas en acumular datos)";
   if (emptyHum)  emptyHum.innerHTML  = serieHum.length  ? "" : "Sin lecturas históricas todavía (puede tardar unas horas en acumular datos)";
 
@@ -762,12 +768,12 @@ function dibujarGraficos(lugarId, serieTemp, serieHum) {
   chartsPorLugar[lugarId] = {
     temp: serieTemp.length ? new Chart(ctxTemp, {
       type: "line",
-      data: { labels: serieTemp.map(p=>fmt(p.t)), datasets: [{ label:"Temp °C", data: serieTemp.map(p=>p.v), borderColor:"#ff8a3d", backgroundColor:"rgba(255,138,61,.15)", tension:.3, pointRadius:0, borderWidth:2, fill:true }] },
+      data: { datasets: [{ label:"Temp °C", data: serieTemp.map(p=>({x:p.t,y:p.v})), borderColor:"#ff8a3d", backgroundColor:"rgba(255,138,61,.15)", tension:.3, pointRadius:0, borderWidth:2, fill:true }] },
       options: chartOptionsBase("°C", { min: TEMP_OPTIMA_MIN, max: TEMP_OPTIMA_MAX, label: `Óptimo ${TEMP_OPTIMA_MIN}-${TEMP_OPTIMA_MAX}°C` }),
     }) : null,
     hum: serieHum.length ? new Chart(ctxHum, {
       type: "line",
-      data: { labels: serieHum.map(p=>fmt(p.t)), datasets: [{ label:"Humedad %", data: serieHum.map(p=>p.v), borderColor:"#3ddc97", backgroundColor:"rgba(61,220,151,.15)", tension:.3, pointRadius:0, borderWidth:2, fill:true }] },
+      data: { datasets: [{ label:"Humedad %", data: serieHum.map(p=>({x:p.t,y:p.v})), borderColor:"#3ddc97", backgroundColor:"rgba(61,220,151,.15)", tension:.3, pointRadius:0, borderWidth:2, fill:true }] },
       options: chartOptionsBase("%", bandaHum ? { min: bandaHum[0], max: bandaHum[1], label: `Óptimo ${bandaHum[0]}-${bandaHum[1]}%` } : null),
     }) : null,
   };
@@ -806,8 +812,6 @@ function dibujarGraficosDia(lugarId, serieTemp, serieHum) {
   if (!ctxTemp || !ctxHum) return;
   if (typeof Chart === "undefined") { if(emptyTemp) emptyTemp.textContent = "⚠️ No se pudo cargar Chart.js"; return; }
 
-  const fmt = ts => new Date(ts).toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit"});
-
   if (emptyTemp) emptyTemp.innerHTML = serieTemp.length ? "" : "Sin lecturas ese día";
   if (emptyHum)  emptyHum.innerHTML  = serieHum.length  ? "" : "Sin lecturas ese día";
 
@@ -820,12 +824,12 @@ function dibujarGraficosDia(lugarId, serieTemp, serieHum) {
   chartsDiaPorLugar[lugarId] = {
     temp: serieTemp.length ? new Chart(ctxTemp, {
       type: "line",
-      data: { labels: serieTemp.map(p=>fmt(p.t)), datasets: [{ label:"Temp °C", data: serieTemp.map(p=>p.v), borderColor:"#ff8a3d", backgroundColor:"rgba(255,138,61,.15)", tension:.3, pointRadius:0, borderWidth:2, fill:true }] },
+      data: { datasets: [{ label:"Temp °C", data: serieTemp.map(p=>({x:p.t,y:p.v})), borderColor:"#ff8a3d", backgroundColor:"rgba(255,138,61,.15)", tension:.3, pointRadius:0, borderWidth:2, fill:true }] },
       options: chartOptionsBase("°C", { min: TEMP_OPTIMA_MIN, max: TEMP_OPTIMA_MAX, label: `Óptimo ${TEMP_OPTIMA_MIN}-${TEMP_OPTIMA_MAX}°C` }),
     }) : null,
     hum: serieHum.length ? new Chart(ctxHum, {
       type: "line",
-      data: { labels: serieHum.map(p=>fmt(p.t)), datasets: [{ label:"Humedad %", data: serieHum.map(p=>p.v), borderColor:"#3ddc97", backgroundColor:"rgba(61,220,151,.15)", tension:.3, pointRadius:0, borderWidth:2, fill:true }] },
+      data: { datasets: [{ label:"Humedad %", data: serieHum.map(p=>({x:p.t,y:p.v})), borderColor:"#3ddc97", backgroundColor:"rgba(61,220,151,.15)", tension:.3, pointRadius:0, borderWidth:2, fill:true }] },
       options: chartOptionsBase("%", bandaHum ? { min: bandaHum[0], max: bandaHum[1], label: `Óptimo ${bandaHum[0]}-${bandaHum[1]}%` } : null),
     }) : null,
   };
@@ -873,9 +877,7 @@ function dibujarGraficosHL(lugarId, serieTemp, serieHum, nivel) {
   if (!ctxTemp || !ctxHum) return;
   if (typeof Chart === "undefined") { if(emptyTemp) emptyTemp.textContent = "⚠️ No se pudo cargar Chart.js"; return; }
 
-  const fmt = clave => nivel === "dia"
-    ? new Date(clave+"T12:00:00").toLocaleDateString("es-AR",{day:"2-digit",month:"2-digit"})
-    : new Date(clave+":00:00").toLocaleDateString("es-AR",{day:"2-digit",month:"2-digit"}) + " " + clave.slice(11)+"h";
+  const claveATs = clave => nivel === "dia" ? new Date(clave+"T12:00:00").getTime() : new Date(clave+":00:00").getTime();
 
   if (emptyTemp) emptyTemp.innerHTML = serieTemp.length ? "" : "Sin datos propios en ese rango todavía";
   if (emptyHum)  emptyHum.innerHTML  = serieHum.length  ? "" : "Sin datos propios en ese rango todavía";
@@ -889,18 +891,20 @@ function dibujarGraficosHL(lugarId, serieTemp, serieHum, nivel) {
   chartsHLPorLugar[lugarId] = {
     temp: serieTemp.length ? new Chart(ctxTemp, {
       type: "line",
-      data: { labels: serieTemp.map(p=>fmt(p.clave)), datasets: [{ label:"Temp °C (prom.)", data: serieTemp.map(p=>p.v), borderColor:"#ff8a3d", backgroundColor:"rgba(255,138,61,.15)", tension:.3, pointRadius:0, borderWidth:2, fill:true }] },
+      data: { datasets: [{ label:"Temp °C (prom.)", data: serieTemp.map(p=>({x:claveATs(p.clave),y:p.v})), borderColor:"#ff8a3d", backgroundColor:"rgba(255,138,61,.15)", tension:.3, pointRadius:0, borderWidth:2, fill:true }] },
       options: chartOptionsBase("°C", { min: TEMP_OPTIMA_MIN, max: TEMP_OPTIMA_MAX, label: `Óptimo ${TEMP_OPTIMA_MIN}-${TEMP_OPTIMA_MAX}°C` }),
     }) : null,
     hum: serieHum.length ? new Chart(ctxHum, {
       type: "line",
-      data: { labels: serieHum.map(p=>fmt(p.clave)), datasets: [{ label:"Humedad % (prom.)", data: serieHum.map(p=>p.v), borderColor:"#3ddc97", backgroundColor:"rgba(61,220,151,.15)", tension:.3, pointRadius:0, borderWidth:2, fill:true }] },
+      data: { datasets: [{ label:"Humedad % (prom.)", data: serieHum.map(p=>({x:claveATs(p.clave),y:p.v})), borderColor:"#3ddc97", backgroundColor:"rgba(61,220,151,.15)", tension:.3, pointRadius:0, borderWidth:2, fill:true }] },
       options: chartOptionsBase("%", bandaHum ? { min: bandaHum[0], max: bandaHum[1], label: `Óptimo ${bandaHum[0]}-${bandaHum[1]}%` } : null),
     }) : null,
   };
   habilitarResetZoom(chartsHLPorLugar[lugarId].temp, ctxTemp);
   habilitarResetZoom(chartsHLPorLugar[lugarId].hum, ctxHum);
-} // { lugarId: { sensorKey, luzKey, tipo } }
+}
+
+let dashboardActivos = {}; // { lugarId: { sensorKey, luzKey, tipo } }
 let dashboardTimer   = null;
 
 // Detecta si el lugar es la Carpa (1×1×2) o la Estructura 3×1, usando el sensor
@@ -2022,6 +2026,7 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
 }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
