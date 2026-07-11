@@ -383,35 +383,55 @@ async function cargarLugares() {
         <span class="lugar-nombre">${l.nombre}</span>
         <span class="lugar-dim">${l.dimensiones||""}</span>
       </div>
-      <div class="lugar-meta">
-        <span>📡 ${sensores}</span>
-        <span>💡 ${(l.luces||[]).map(lu=>`${lu.cantidad}× ${lu.tipo}`).join(", ")||"Sin luces"}</span>
-      </div>
-      ${l.intractor||l.extractor ? `<div class="lugar-meta"><span>${l.intractor?"✅ Intractor":""}${l.extractor?" ✅ Extractor":""}</span></div>`:""}
-      <div class="plantas-resumen" id="plantas-${d.id}"><span class="clima-cargando">🌱 Consultando plantas...</span></div>
-      ${sensorClima ? `<div class="lugar-clima" id="clima-${d.id}"><span class="clima-cargando">🌡️ Consultando sensor...</span></div>` : ""}
-      ${sensorClima ? `<div class="anomalias-box" id="anomalias-${d.id}" style="display:none"></div>` : ""}
-      ${luzKey ? `<div class="luz-estado" id="luz-${d.id}"><span class="clima-cargando">💡 Consultando luces...</span></div>` : ""}
-      ${luzKey ? `<div class="foto-box" id="foto-${d.id}"><span class="clima-cargando">🕐 Calculando fotoperíodo...</span></div>` : ""}
+
       ${sensorClima ? `
-      <div class="vpd-box">
-        <div class="vpd-header">
-          <span>🌬️ VPD</span>
-          <select class="vpd-etapa" id="etapa-${d.id}" onchange="cambiarEtapaLugar('${d.id}')">${opcionesEtapa}</select>
+      <div class="eco-section eco-ambiente">
+        <div class="eco-title">🌡️ Ambiente</div>
+        <div class="lugar-clima" id="clima-${d.id}"><span class="clima-cargando">🌡️ Consultando sensor...</span></div>
+        <div class="anomalias-box" id="anomalias-${d.id}" style="display:none"></div>
+        <div class="vpd-box">
+          <div class="vpd-header">
+            <span>🌬️ VPD</span>
+            <select class="vpd-etapa" id="etapa-${d.id}" onchange="cambiarEtapaLugar('${d.id}')">${opcionesEtapa}</select>
+          </div>
+          <div id="vpd-valor-${d.id}" class="vpd-valor">Calculando...</div>
         </div>
-        <div id="vpd-valor-${d.id}" class="vpd-valor">Calculando...</div>
+      </div>` : ""}
+
+      ${luzKey ? `
+      <div class="eco-section eco-foto">
+        <div class="eco-title">☀️ Fotoperíodo</div>
+        <div class="luz-estado" id="luz-${d.id}"><span class="clima-cargando">💡 Consultando luces...</span></div>
+        <div class="foto-box" id="foto-${d.id}"><span class="clima-cargando">🕐 Calculando fotoperíodo...</span></div>
+      </div>` : ""}
+
+      <div class="eco-section eco-genetica">
+        <div class="eco-title">🌱 Genética / Plantas</div>
+        <div class="plantas-resumen" id="plantas-${d.id}"><span class="clima-cargando">🌱 Consultando plantas...</span></div>
       </div>
+
+      <div class="eco-section eco-tecnologia">
+        <div class="eco-title">🔧 Tecnología</div>
+        <div class="lugar-meta">
+          <span>📡 ${sensores}</span>
+          <span>💡 ${(l.luces||[]).map(lu=>`${lu.cantidad}× ${lu.tipo}`).join(", ")||"Sin luces"}</span>
+        </div>
+        ${l.intractor||l.extractor ? `<div class="lugar-meta"><span>${l.intractor?"✅ Intractor":""}${l.extractor?" ✅ Extractor":""}</span></div>`:""}
+      </div>
+
+      ${sensorClima ? `
       <div class="clima-titulo graficos-header">
         <span>📈 Histórico y gráficos</span>
         <button class="btn-minimizar" onclick="toggleGraficosLugar('${d.id}')" id="btn-graf-${d.id}">${graficosColapsados?'▸ Mostrar':'▾ Minimizar'}</button>
       </div>
+      <div class="graficos-hint">🖱️ Rueda: zoom · arrastrar: mover · doble click: volver a la vista completa</div>
       <div class="graficos-contenedor ${graficosColapsados?'colapsado':''}" id="graficos-${d.id}">
         <div class="clima-charts">
           <div class="chart-box"><canvas id="chart-temp-${d.id}"></canvas><div class="chart-empty" id="chart-temp-empty-${d.id}"></div></div>
           <div class="chart-box"><canvas id="chart-hum-${d.id}"></canvas><div class="chart-empty" id="chart-hum-empty-${d.id}"></div></div>
         </div>
         <div class="clima-titulo dia-titulo">
-          <span>📅 Ver un día puntual</span>
+          <span>📅 Ver un día puntual (datos minuto a minuto)</span>
           <input type="date" id="fecha-dia-${d.id}" class="input-fecha-dia" onchange="cargarGraficoDia('${d.id}','${sensorClima}')">
         </div>
         <div class="clima-charts">
@@ -690,6 +710,13 @@ function chartOptionsBase(unidad, banda) {
     plugins: {
       legend: { display: false },
       annotation: { annotations: {} },
+      // Rueda del mouse = zoom en X (ver minuto a minuto), arrastrar = mover
+      // la ventana visible, doble click = volver a la vista completa.
+      zoom: {
+        limits: { x: { min: "original", max: "original", minRange: 5 } },
+        pan:  { enabled: true, mode: "x" },
+        zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: "x" },
+      },
     },
     scales: {
       x: { ticks: { color: "#8a9a8f", maxTicksLimit: 6, font: { size: 10 } }, grid: { display: false } },
@@ -704,6 +731,13 @@ function chartOptionsBase(unidad, banda) {
     };
   }
   return opts;
+}
+
+// Doble click sobre un gráfico = volver a ver el rango completo (el plugin de
+// zoom no trae esto de fábrica, hay que engancharlo a mano por canvas).
+function habilitarResetZoom(chart, canvas) {
+  if (!chart || !canvas) return;
+  canvas.ondblclick = () => chart.resetZoom();
 }
 
 function dibujarGraficos(lugarId, serieTemp, serieHum) {
@@ -737,6 +771,8 @@ function dibujarGraficos(lugarId, serieTemp, serieHum) {
       options: chartOptionsBase("%", bandaHum ? { min: bandaHum[0], max: bandaHum[1], label: `Óptimo ${bandaHum[0]}-${bandaHum[1]}%` } : null),
     }) : null,
   };
+  habilitarResetZoom(chartsPorLugar[lugarId].temp, ctxTemp);
+  habilitarResetZoom(chartsPorLugar[lugarId].hum, ctxHum);
 }
 
 // Trae y dibuja el histórico de un día puntual (según la fecha elegida en el selector)
@@ -793,6 +829,8 @@ function dibujarGraficosDia(lugarId, serieTemp, serieHum) {
       options: chartOptionsBase("%", bandaHum ? { min: bandaHum[0], max: bandaHum[1], label: `Óptimo ${bandaHum[0]}-${bandaHum[1]}%` } : null),
     }) : null,
   };
+  habilitarResetZoom(chartsDiaPorLugar[lugarId].temp, ctxTemp);
+  habilitarResetZoom(chartsDiaPorLugar[lugarId].hum, ctxHum);
 }
 
 // Histórico largo: lee de NUESTRA base propia (lecturasSensores en Firestore),
@@ -860,10 +898,9 @@ function dibujarGraficosHL(lugarId, serieTemp, serieHum, nivel) {
       options: chartOptionsBase("%", bandaHum ? { min: bandaHum[0], max: bandaHum[1], label: `Óptimo ${bandaHum[0]}-${bandaHum[1]}%` } : null),
     }) : null,
   };
-}
-
-
-let dashboardActivos = {}; // { lugarId: { sensorKey, luzKey, tipo } }
+  habilitarResetZoom(chartsHLPorLugar[lugarId].temp, ctxTemp);
+  habilitarResetZoom(chartsHLPorLugar[lugarId].hum, ctxHum);
+} // { lugarId: { sensorKey, luzKey, tipo } }
 let dashboardTimer   = null;
 
 // Detecta si el lugar es la Carpa (1×1×2) o la Estructura 3×1, usando el sensor
@@ -1736,6 +1773,16 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .aviso-truncado{font-size:.68rem;color:#ffb84d;margin-bottom:10px;padding:6px 8px;background:rgba(255,184,77,.08);border-radius:8px}
 .temp-ok{color:#3ddc97}
 .temp-fuera{color:#ff5c5c}
+.graficos-hint{font-size:.68rem;color:var(--muted);margin:2px 0 8px;font-style:italic}
+/* Secciones "ecosistema" dentro de la card de Lugar: cada bloque temático
+   (ambiente, fotoperíodo, genética, tecnología) queda visualmente separado
+   para lectura y diagnóstico rápido, en vez de todo apilado sin jerarquía. */
+.eco-section{background:rgba(255,255,255,.025);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:10px}
+.eco-title{font-size:.72rem;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:var(--lima);margin-bottom:8px;opacity:.85}
+.eco-ambiente{border-left:3px solid #ff8a3d}
+.eco-foto{border-left:3px solid #f4c542}
+.eco-genetica{border-left:3px solid #3ddc97}
+.eco-tecnologia{border-left:3px solid #7a8a9a}
 .anomalias-box{margin-bottom:10px;padding:8px 10px;background:rgba(255,92,92,.08);border:1px solid rgba(255,92,92,.25);border-radius:10px;display:flex;flex-direction:column;gap:5px}
 .anomalias-titulo{font-size:.78rem;font-weight:700;color:#ff8a8a}
 .anomalia-item{font-size:.72rem;color:#ffb8b8;line-height:1.35}
@@ -1976,6 +2023,8 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
 </head>
 <body>
 
