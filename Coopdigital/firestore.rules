@@ -223,11 +223,15 @@ service cloud.firestore {
         allow update, delete: if false;
       }
 
-      // API pública: keys por cooperativa. Lectura/escritura exclusiva
-      // del Admin SDK (coopdigital-api en Render). El cliente del panel
-      // nunca accede directamente.
+      // API pública: keys por cooperativa.
+      // - El Admin SDK (coopdigital-api en Render) puede leer/escribir sin
+      //   pasar por estas reglas (bypassa Firestore Rules).
+      // - El cliente del panel (configuracion.view.js) necesita leer y
+      //   gestionar las keys, pero solo el rol admin lo puede hacer.
       match /apiKeys/{keyId} {
-        allow read, write: if false;
+        allow read: if puedeLeer(cooperativaId);
+        allow create, update: if isAdmin(cooperativaId);
+        allow delete: if false;
       }
 
       // Certificados: solo se crean, nunca se modifican (trazabilidad).
