@@ -2,12 +2,14 @@ import { firestoreDb } from '../../../services/firestore-db.service.js';
 import { hasPermission } from '../../../config/permissions.config.js';
 import { authStore } from '../../../stores/auth.store.js';
 import { validateCooperativa } from '../../../validators/cooperativa.validator.js';
-import { collection, addDoc, doc, updateDoc, getDocs, serverTimestamp }
-  from 'https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js';
 import { db } from '../../../firebase/firebase.config.js';
+import {
+  collection, addDoc, doc, updateDoc, getDocs, serverTimestamp
+} from 'https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js';
 
 function guard(action) {
-  if (!hasPermission(authStore.get(), 'configuracion', action)) throw new Error('Permiso insuficiente');
+  if (!hasPermission(authStore.get(), 'configuracion', action))
+    throw new Error('Permiso insuficiente');
 }
 
 function cooperativaId() {
