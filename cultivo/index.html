@@ -74,12 +74,24 @@ async function cargarCatalogoDispositivos() {
 let lugarActivo  = null;
 let areaActiva   = null;
 let plantaActiva = null;
+let plantaEditando = null; // id de la planta que se está editando, o null si es "Nueva planta"
 let tuyaTimer    = null;
 
 // ─── HELPERS ────────────────────────────────────────────────────────────────
-const val  = id => document.getElementById(id)?.value?.trim() || "";
+// Getter/setter de conveniencia: val("id") lee, val("id", valor) escribe.
+const val  = (id, set) => {
+  const el = document.getElementById(id);
+  if (!el) return "";
+  if (set !== undefined) { el.value = set; return set; }
+  return el.value?.trim() || "";
+};
 const fmt  = ts => { if (!ts) return "—"; const d = ts.toDate ? ts.toDate() : new Date(ts); return d.toLocaleDateString("es-AR"); };
 const dias = ts => { if (!ts) return "—"; const d = ts.toDate ? ts.toDate() : new Date(ts); return Math.floor((Date.now()-d.getTime())/86400000); };
+// Escapa un string para insertarlo de forma segura como VALOR de atributo HTML
+// (comillas, & y <> rompían botones onclick cuando un nombre de planta/lugar
+// traía un apóstrofe u otro caracter especial — causa más probable del bug
+// "Ver detalle no funciona").
+const escAttr = s => String(s??"").replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/'/g,"&#39;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 
 function show(id) {
   document.querySelectorAll(".vista").forEach(v => v.classList.remove("activa"));
@@ -1283,13 +1295,54 @@ async function cargarPlantasLugar(lugarId) {
       </div>
       ${p.areaId ? `<div class="cult-meta"><span>📍 ${p.areaNombre||"Área asignada"}</span></div>`:""}
       <div class="cult-actions">
-        <button class="btn-sm btn-primary" onclick="verPlanta('${d.id}')">Ver detalle</button>
-        <button class="btn-sm btn-danger"  onclick="eliminarPlanta('${d.id}','${p.nombre}')">Eliminar</button>
+        <button class="btn-sm btn-primary" data-accion="ver" data-id="${d.id}">Ver detalle</button>
+        <button class="btn-sm btn-ghost"   data-accion="editar" data-id="${d.id}">✏️ Editar</button>
+        <button class="btn-sm btn-danger"  data-accion="eliminar" data-id="${d.id}" data-nombre="${escAttr(p.nombre)}">Eliminar</button>
       </div>`;
     lista.appendChild(card);
   });
+  if (!lista.dataset.delegado) {
+    lista.dataset.delegado = "1";
+    lista.addEventListener("click", e => {
+      const btn = e.target.closest("button[data-accion]");
+      if (!btn) return;
+      const id = btn.dataset.id;
+      if (btn.dataset.accion === "ver")      window.verPlanta(id);
+      else if (btn.dataset.accion === "editar")   window.editarPlanta(id);
+      else if (btn.dataset.accion === "eliminar") window.eliminarPlanta(id, btn.dataset.nombre || "");
+    });
+  }
   if (!count) lista.innerHTML = '<p class="empty">Sin plantas en este lugar.</p>';
 }
+
+window.abrirModalPlantaNueva = () => {
+  plantaEditando = null;
+  resetCamposDiv("form-planta");
+  const t = document.getElementById("modal-planta-titulo");
+  if (t) t.textContent = "🌱 Nueva planta";
+  abrirModal("modal-planta");
+};
+
+window.editarPlanta = async (id) => {
+  const snap = await getDoc(doc(db,"plantas",id));
+  if (!snap.exists()) { toast("La planta ya no existe","err"); return; }
+  const p = snap.data();
+  plantaEditando = id;
+  val("p-nombre",    p.nombre||"");
+  val("p-genetica",  p.genetica||"");
+  val("p-origen",    p.tipoOrigen||"semilla");
+  val("p-fecha",     p.fechaInicio ? (p.fechaInicio.toDate?p.fechaInicio.toDate():new Date(p.fechaInicio)).toISOString().slice(0,10) : "");
+  val("p-fase",      p.fase||"");
+  val("p-altura",    p.alturaPlantin||"");
+  val("p-substrato", p.substrato||"");
+  val("p-maceta",    p.tamMaceta||"");
+  val("p-riego",     p.sistemaRiego||"");
+  val("p-notas",     p.notas||"");
+  const t = document.getElementById("modal-planta-titulo");
+  if (t) t.textContent = "✏️ Editar planta";
+  abrirModal("modal-planta");
+};
+window.editarPlantaActiva = () => window.editarPlanta(plantaActiva);
 
 window.verPlanta = async (id) => {
   plantaActiva = id;
@@ -1307,7 +1360,7 @@ window.verPlanta = async (id) => {
   document.getElementById("det-altura").textContent   = p.alturaPlantin ? p.alturaPlantin+" cm" : "—";
   document.getElementById("det-notas").textContent    = p.notas||"Sin notas";
   show("vista-planta");
-  cargarMediciones(); cargarEventos(); cargarNutricion();
+  cargarMediciones(); cargarEventos(); cargarNutricion(); cargarOpcionesImportPlantas();
 };
 
 window.eliminarPlanta = async (id, nombre) => {
@@ -1336,23 +1389,55 @@ window.guardarPlanta = async () => {
     sistemaRiego: val("p-riego"),
     alturaPlantin:val("p-altura"),
     notas:        val("p-notas"),
-    lugarId:      lugarActivo||"",
-    areaId:       areaActiva||"",
-    areaNombre,
-    creadoEn:     serverTimestamp(),
   };
   if (!d.nombre||!d.genetica) { toast("Completá nombre y genética","err"); return; }
-  if (!d.lugarId) { toast("Seleccioná un lugar primero","err"); return; }
-  await addDoc(collection(db,"plantas"), d);
+
+  if (plantaEditando) {
+    await updateDoc(doc(db,"plantas",plantaEditando), d);
+    toast("Planta actualizada ✓");
+  } else {
+    if (!lugarActivo) { toast("Seleccioná un lugar primero","err"); return; }
+    d.lugarId  = lugarActivo;
+    d.areaId   = areaActiva||"";
+    d.areaNombre = areaNombre;
+    d.creadoEn = serverTimestamp();
+    await addDoc(collection(db,"plantas"), d);
+    toast("Planta registrada ✓");
+  }
+  plantaEditando = null;
   cerrarModal("modal-planta");
   resetCamposDiv("form-planta");
   if (lugarActivo) cargarPlantasLugar(lugarActivo);
-  toast("Planta registrada ✓");
+  if (plantaActiva) verPlanta(plantaActiva); // refresca el detalle si estabas viéndolo
 };
 
 // ════════════════════════════════════════════════════════════════════════════
 // MEDICIONES
 // ════════════════════════════════════════════════════════════════════════════
+// Fecha/hora local en formato para <input type=date>/<input type=time>,
+// respetando el huso horario del navegador (no UTC) — así "ahora" es
+// realmente ahora en Buenos Aires y no se corre un día/horas.
+function fechaHoraLocalInputs() {
+  const n = new Date();
+  const pad = x => String(x).padStart(2,"0");
+  return {
+    fecha: `${n.getFullYear()}-${pad(n.getMonth()+1)}-${pad(n.getDate())}`,
+    hora:  `${pad(n.getHours())}:${pad(n.getMinutes())}`,
+  };
+}
+window.abrirModalMedicion = () => {
+  resetCamposDiv("form-medicion");
+  const { fecha, hora } = fechaHoraLocalInputs();
+  val("m-fecha", fecha); val("m-hora", hora);
+  abrirModal("modal-medicion");
+};
+window.abrirModalEvento = () => {
+  resetCamposDiv("form-evento");
+  const { fecha, hora } = fechaHoraLocalInputs();
+  val("ev-fecha", fecha); val("ev-hora", hora);
+  abrirModal("modal-evento");
+};
+
 async function cargarMediciones() {
   if (!plantaActiva) return;
   const lista = document.getElementById("lista-mediciones");
@@ -1371,6 +1456,8 @@ async function cargarMediciones() {
       <span class="med-val">⚗️ pH ${m.ph??'—'}</span>
       <span class="med-val">🔋 ${m.ec??'—'}<small>EC</small></span>
       <span class="med-val">☀️ ${m.luz??'—'}<small>lux</small></span>
+      <span class="med-val">🔆 ${m.ppfd??'—'}<small>PPFD</small></span>
+      <span class="med-val">📏 ${m.distanciaLuz??'—'}<small>cm luz</small></span>
       <span class="med-val">🪴 ${m.tempMaceta??'—'}<small>°C</small></span>
       <span class="med-val">💨 ${m.co2??'—'}<small>ppm</small></span>
       <button class="btn-icon" onclick="eliminarMedicion('${d.id}')">🗑</button>`;
@@ -1388,6 +1475,8 @@ window.guardarMedicion = async () => {
     ec:         parseFloat(val("m-ec"))||null,
     tdsAgua:    parseFloat(val("m-tds"))||null,
     luz:        parseFloat(val("m-luz"))||null,
+    ppfd:       parseFloat(val("m-ppfd"))||null,
+    distanciaLuz: parseFloat(val("m-distancia"))||null,
     co2:        parseFloat(val("m-co2"))||null,
     vpd:        parseFloat(val("m-vpd"))||null,
     notas:      val("m-notas"),
@@ -1407,6 +1496,80 @@ window.eliminarMedicion = async (id) => {
 // ════════════════════════════════════════════════════════════════════════════
 // EVENTOS
 // ════════════════════════════════════════════════════════════════════════════
+// Plantas del mismo lugar que la activa, para poder aplicar una importación
+// masiva de bitácora a varias plantas a la vez (ej: "se hizo lo mismo a las
+// 4 plantas de la Carpa").
+async function cargarOpcionesImportPlantas() {
+  const cont = document.getElementById("import-plantas");
+  if (!cont || !plantaActiva) return;
+  const pSnap = await getDoc(doc(db,"plantas",plantaActiva));
+  if (!pSnap.exists()) { cont.innerHTML = ""; return; }
+  const lugarId = pSnap.data().lugarId;
+  const snap = await getDocs(query(collection(db,"plantas"), orderBy("creadoEn","desc")));
+  const filas = [];
+  snap.forEach(d => {
+    const p = d.data();
+    if (p.lugarId !== lugarId) return;
+    const marcada = d.id === plantaActiva ? "checked" : "";
+    filas.push(`<label class="import-chk"><input type="checkbox" value="${d.id}" ${marcada}> ${escAttr(p.nombre)}</label>`);
+  });
+  cont.innerHTML = filas.length
+    ? `<div class="import-plantas-label">Aplicar a:</div>${filas.join("")}`
+    : "";
+}
+
+// Parsea líneas tipo WhatsApp: "[26/6 18:44] Autor: mensaje". El año no viene
+// en el export, así que se asume el año actual (con corrección si diera una
+// fecha futura, por si el pegado cruza fin de año).
+function parsearLineasWhatsApp(texto) {
+  const regex = /^\[(\d{1,2})\/(\d{1,2})\s+(\d{1,2}):(\d{2})\]\s*(.+)$/;
+  const anioActual = new Date().getFullYear();
+  const eventos = [];
+  for (const linea of texto.split("\n").map(l=>l.trim()).filter(Boolean)) {
+    const m = linea.match(regex);
+    if (!m) continue;
+    const [, dia, mes, hh, mm, resto] = m;
+    let fecha = new Date(anioActual, parseInt(mes)-1, parseInt(dia), parseInt(hh), parseInt(mm));
+    if (fecha.getTime() > Date.now() + 86400000) fecha = new Date(anioActual-1, parseInt(mes)-1, parseInt(dia), parseInt(hh), parseInt(mm));
+    const t = resto.trim();
+    const low = t.toLowerCase();
+    let tipo = "otro";
+    if (low.includes("fertiliz") || low.includes("feeding") || low.includes("micorriz")) tipo = "fertilizacion";
+    else if (low.includes("tricoderm") || low.includes("tratamiento") || low.includes("plaga") || low.includes("hongo")) tipo = "tratamiento";
+    else if (low.includes("riego") || low.includes("agua") || low.includes("eche") || low.includes("echo") || low.includes("regando")) tipo = "riego";
+    else if (low.includes("poda") || low.includes(" lst")) tipo = "poda";
+    eventos.push({ fecha, tipo, titulo: t.length>70 ? t.slice(0,67)+"…" : t, descripcion: t });
+  }
+  return eventos;
+}
+
+window.importarBitacoraTexto = async () => {
+  const texto = document.getElementById("import-texto")?.value || "";
+  const eventos = parsearLineasWhatsApp(texto);
+  if (!eventos.length) { toast("No se encontró ninguna línea con formato [D/M H:MM] ...","err"); return; }
+  const idsPlantas = Array.from(document.querySelectorAll("#import-plantas input:checked")).map(el=>el.value);
+  if (!idsPlantas.length) { toast("Marcá al menos una planta","err"); return; }
+  let creados = 0;
+  for (const pid of idsPlantas) {
+    for (const ev of eventos) {
+      await addDoc(collection(db,"plantas",pid,"eventos"), {
+        titulo: ev.titulo,
+        tipo: ev.tipo,
+        fecha: ev.fecha,
+        hora: `${String(ev.fecha.getHours()).padStart(2,"0")}:${String(ev.fecha.getMinutes()).padStart(2,"0")}`,
+        descripcion: ev.descripcion,
+        realizado: ev.fecha.getTime() <= Date.now(),
+        importadoDeTexto: true,
+        creadoEn: serverTimestamp(),
+      });
+      creados++;
+    }
+  }
+  document.getElementById("import-texto").value = "";
+  cargarEventos();
+  toast(`${eventos.length} línea(s) × ${idsPlantas.length} planta(s) = ${creados} eventos importados ✓`);
+};
+
 async function cargarEventos() {
   if (!plantaActiva) return;
   const lista = document.getElementById("lista-eventos");
@@ -1436,20 +1599,25 @@ async function cargarEventos() {
 }
 window.guardarEvento = async () => {
   if (!plantaActiva) { toast("Seleccioná una planta","err"); return; }
+  const horaVal = val("ev-hora") || "12:00";
+  const fechaHora = new Date(val("ev-fecha")+"T"+horaVal+":00");
   const d = {
     titulo:      val("ev-titulo"),
     tipo:        val("ev-tipo"),
-    fecha:       new Date(val("ev-fecha")+"T00:00:00"),
-    hora:        val("ev-hora"),
+    fecha:       fechaHora,
+    hora:        horaVal,
     descripcion: val("ev-desc"),
-    realizado:   false,
+    // Si la fecha/hora cargada ya pasó, se registra directamente como
+    // realizado (es una bitácora de algo que ya sucedió, no una tarea a
+    // futuro); si es una fecha futura queda pendiente como agenda.
+    realizado:   fechaHora.getTime() <= Date.now(),
     creadoEn:    serverTimestamp(),
   };
   if (!d.titulo) { toast("Ingresá un título","err"); return; }
   await addDoc(collection(db,"plantas",plantaActiva,"eventos"),d);
   cerrarModal("modal-evento");
   resetCamposDiv("form-evento");
-  cargarEventos(); toast("Evento agendado ✓");
+  cargarEventos(); toast("Evento guardado ✓");
 };
 window.toggleEvento = async (id, estado) => {
   await updateDoc(doc(db,"plantas",plantaActiva,"eventos",id),{realizado:estado});
@@ -1800,6 +1968,14 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .aviso-truncado{font-size:.68rem;color:#ffb84d;margin-bottom:10px;padding:6px 8px;background:rgba(255,184,77,.08);border-radius:8px}
 .temp-ok{color:#3ddc97}
 .temp-fuera{color:#ff5c5c}
+.import-box{background:rgba(255,255,255,.025);border:1px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:14px}
+.import-box summary{cursor:pointer;font-size:.85rem;font-weight:600;color:var(--lima)}
+.import-hint{font-size:.74rem;color:var(--muted);margin:8px 0}
+.import-hint code{background:#0d1a0f;padding:1px 5px;border-radius:4px}
+.import-box textarea{width:100%;min-height:110px;background:#0d1a0f;border:1px solid var(--border);color:var(--text);padding:8px;border-radius:6px;font-size:.8rem;font-family:monospace;resize:vertical}
+.import-plantas{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:8px}
+.import-plantas-label{font-size:.76rem;color:var(--muted);width:100%}
+.import-chk{display:flex;align-items:center;gap:5px;font-size:.8rem;background:#0d1a0f;border:1px solid var(--border);padding:5px 10px;border-radius:20px;cursor:pointer}
 .graficos-hint{font-size:.68rem;color:var(--muted);margin:2px 0 8px;font-style:italic}
 /* Secciones "ecosistema" dentro de la card de Lugar: cada bloque temático
    (ambiente, fotoperíodo, genética, tecnología) queda visualmente separado
@@ -2132,7 +2308,7 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
 
   <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px">
     <span class="section-label">Plantas en este lugar</span>
-    <button class="btn btn-primary" style="font-size:.8rem;padding:6px 12px" onclick="abrirModal('modal-planta')">+ Nueva planta</button>
+    <button class="btn btn-primary" style="font-size:.8rem;padding:6px 12px" onclick="abrirModalPlantaNueva()">+ Nueva planta</button>
   </div>
   <div id="lista-plantas-lugar" class="planta-grid"></div>
 </section>
@@ -2141,7 +2317,10 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
 <section id="vista-planta" class="vista">
   <div class="page-header">
     <div class="page-title" id="det-nombre">—<small id="det-dia">—</small></div>
-    <button class="btn btn-ghost" onclick="show('vista-lugar')">← Volver</button>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-ghost" onclick="editarPlantaActiva()">✏️ Editar</button>
+      <button class="btn btn-ghost" onclick="show('vista-lugar')">← Volver</button>
+    </div>
   </div>
 
   <div class="info-grid">
@@ -2164,11 +2343,19 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
   </div>
 
   <div id="tab-mediciones" class="tab-panel activo">
-    <div class="section-toolbar"><button class="btn btn-primary" onclick="abrirModal('modal-medicion')">+ Registrar medición</button></div>
+    <div class="section-toolbar"><button class="btn btn-primary" onclick="abrirModalMedicion()">+ Registrar medición</button></div>
     <div class="med-scroll"><div id="lista-mediciones"></div></div>
   </div>
   <div id="tab-eventos" class="tab-panel">
-    <div class="section-toolbar"><button class="btn btn-primary" onclick="abrirModal('modal-evento')">+ Agendar evento</button></div>
+    <div class="section-toolbar"><button class="btn btn-primary" onclick="abrirModalEvento()">+ Agendar evento</button></div>
+    <details class="import-box">
+      <summary>📥 Importar bitácora desde texto (pegar formato WhatsApp)</summary>
+      <p class="import-hint">Pegá líneas con el formato <code>[26/6 18:44] Autor: mensaje</code>, una por renglón. La fecha/hora se toma de cada línea; el tipo (riego/fertilización/tratamiento/otro) se detecta solo por palabras clave, y se puede aplicar a varias plantas del mismo lugar a la vez.</p>
+      <textarea id="import-texto" rows="6" placeholder="[26/6 18:44] Adrián Ces: Llegaron
+[27/6 16:20] se fertilizó con 1lts de agua con micorrizas, plagron growth..."></textarea>
+      <div class="import-plantas" id="import-plantas"><span class="cargando">Cargando plantas del lugar...</span></div>
+      <button class="btn btn-primary" style="margin-top:8px" onclick="importarBitacoraTexto()">Importar líneas</button>
+    </details>
     <div id="lista-eventos"></div>
   </div>
   <div id="tab-nutricion" class="tab-panel">
@@ -2366,7 +2553,7 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
 <!-- Modal: Nueva planta -->
 <div class="modal-overlay" id="modal-planta">
   <div class="modal">
-    <div class="modal-header"><h3>🌱 Nueva planta</h3><button class="btn-icon" onclick="cerrarModal('modal-planta')">✕</button></div>
+    <div class="modal-header"><h3 id="modal-planta-titulo">🌱 Nueva planta</h3><button class="btn-icon" onclick="cerrarModal('modal-planta')">✕</button></div>
     <div id="form-planta">
       <div class="form-row">
         <div class="form-group"><label>Nombre *</label><input id="p-nombre" placeholder="Ej: OG Kush #1"></div>
@@ -2444,6 +2631,10 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
       </div>
       <div class="form-row col3">
         <div class="form-group"><label>Luz (lux)</label><input id="m-luz" type="number" placeholder="25000"></div>
+        <div class="form-group"><label>PPFD (µmol/m²/s)</label><input id="m-ppfd" type="number" placeholder="600"></div>
+        <div class="form-group"><label>Distancia luz-planta (cm)</label><input id="m-distancia" type="number" step="0.5" placeholder="35"></div>
+      </div>
+      <div class="form-row col3">
         <div class="form-group"><label>CO₂ (ppm)</label><input id="m-co2" type="number" placeholder="800"></div>
         <div class="form-group"><label>VPD (kPa)</label><input id="m-vpd" type="number" step="0.01" placeholder="1.2"></div>
       </div>
