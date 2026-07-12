@@ -184,30 +184,53 @@ function calcularVPD(tempC, rh) {
   return +(svp * (1 - rh / 100)).toFixed(2);
 }
 
-// Sugerencia priorizando SIEMPRE bajar humedad antes que subirla (riesgo de hongos)
-function sugerenciaVPD(vpd, etapaKey, rhActual) {
+// Sugerencia priorizando SIEMPRE bajar humedad antes que subirla (riesgo de hongos).
+//
+// Criterio de temperatura (2026-07): la variable de optimización prioritaria es la
+// temperatura, y el objetivo agronómico por defecto es un ambiente cálido (salvo que
+// la caracterización de la genética indique lo contrario, hoy no modelado). Por eso
+// esta función NUNCA sugiere bajar la temperatura si ya está cerca del piso del rango
+// general (TEMP_OPTIMA_MIN), ni subirla si ya está cerca del techo (TEMP_OPTIMA_MAX):
+// en esos casos, el ajuste correcto para corregir el VPD pasa por la humedad.
+const TEMP_MARGEN_SUGERENCIA = 2; // °C de margen antes del piso/techo para dejar de sugerir mover la temp
+
+function sugerenciaVPD(vpd, etapaKey, rhActual, tempActual) {
   const e = ETAPAS_VPD[etapaKey];
   if (vpd == null || !e) return null;
   const [hMin, hMax] = e.humedad;
   const humedadBaja = rhActual != null && rhActual < hMin;
   const humedadAlta  = rhActual != null && rhActual > hMax;
+  const tempYaBaja = tempActual != null && tempActual <= TEMP_OPTIMA_MIN + TEMP_MARGEN_SUGERENCIA;
+  const tempYaAlta = tempActual != null && tempActual >= TEMP_OPTIMA_MAX - TEMP_MARGEN_SUGERENCIA;
 
   if (vpd < e.vpdMin) {
     // VPD bajo: aire "encharcado" respecto a la temperatura. Si la humedad YA está
     // por encima del objetivo, ahí está la causa -> bajarla es lo correcto (menos hongos).
-    // Si la humedad está normal o baja, el problema es más bien la temperatura -> subirla.
+    // Si la humedad está normal o baja, el problema es más bien la temperatura -> subirla,
+    // salvo que ya esté cerca del techo cálido: ahí se pivotea a bajar humedad.
     if (humedadAlta) {
       return { estado: "bajo", texto: `VPD bajo (${vpd} kPa, objetivo ${e.vpdMin}–${e.vpdMax}). La humedad (${rhActual}%) está por encima del rango ${hMin}–${hMax}%: bajala para no favorecer hongos.` };
     }
-    return { estado: "bajo", texto: `VPD bajo (${vpd} kPa, objetivo ${e.vpdMin}–${e.vpdMax}). Subí un poco la temperatura.` };
+    if (tempYaAlta) {
+      return { estado: "bajo", texto: `VPD bajo (${vpd} kPa, objetivo ${e.vpdMin}–${e.vpdMax}). La temperatura (${tempActual}°C) ya está cerca del techo recomendado, no la subas más: si podés, bajá un poco la humedad (ventilación/extracción) para corregir el VPD.` };
+    }
+    return { estado: "bajo", texto: `VPD bajo (${vpd} kPa, objetivo ${e.vpdMin}–${e.vpdMax}). Subí un poco la temperatura (el objetivo por defecto es un ambiente cálido).` };
   }
 
   if (vpd > e.vpdMax) {
     // VPD alto: aire "sediento". Si la humedad YA está por debajo del objetivo,
     // ahí está la causa real -> subirla (no alcanza con bajar temperatura).
-    // Si la humedad está en rango o alta, mejor bajar temperatura para no mojar de más.
+    // Si la humedad está en rango o alta, mejor bajar temperatura para no mojar de
+    // más — salvo que la temperatura ya esté cerca del piso: ahí NO se sugiere
+    // bajarla, se pivotea 100% a subir humedad.
     if (humedadBaja) {
+      if (tempYaBaja) {
+        return { estado: "alto", texto: `VPD alto (${vpd} kPa, objetivo ${e.vpdMin}–${e.vpdMax}). La temperatura (${tempActual}°C) ya está en el piso recomendado, no la bajes más: subí la humedad (${rhActual}% → objetivo ${hMin}–${hMax}%) para corregir el VPD.` };
+      }
       return { estado: "alto", texto: `VPD alto (${vpd} kPa, objetivo ${e.vpdMin}–${e.vpdMax}). La humedad (${rhActual}%) está por debajo del rango ${hMin}–${hMax}% para esta etapa: subila (y/o bajá la temperatura).` };
+    }
+    if (tempYaBaja) {
+      return { estado: "alto", texto: `VPD alto (${vpd} kPa, objetivo ${e.vpdMin}–${e.vpdMax}). La temperatura (${tempActual}°C) ya está en el piso recomendado: en vez de bajarla más, subí la humedad para corregir el VPD.` };
     }
     return { estado: "alto", texto: `VPD alto (${vpd} kPa, objetivo ${e.vpdMin}–${e.vpdMax}). Bajá la temperatura; evitá subir más la humedad (ya está en ${hMin}–${hMax}% o por encima) para no favorecer hongos.` };
   }
@@ -625,7 +648,7 @@ async function refrescarActualLugar(lugarId, sensorKey) {
     const vpd = calcularVPD(temp, hum);
     const vEl = document.getElementById("vpd-valor-"+lugarId);
     if (vEl) {
-      const sug = sugerenciaVPD(vpd, etapa, hum);
+      const sug = sugerenciaVPD(vpd, etapa, hum, temp);
       vEl.innerHTML = vpd==null ? "Sin datos" : `
         <div class="vpd-num vpd-${sug?.estado||''}">${vpd} kPa</div>
         <div class="vpd-sugerencia">${sug?.texto||""}</div>`;
