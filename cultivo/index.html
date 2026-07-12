@@ -1360,7 +1360,7 @@ window.verPlanta = async (id) => {
   document.getElementById("det-altura").textContent   = p.alturaPlantin ? p.alturaPlantin+" cm" : "—";
   document.getElementById("det-notas").textContent    = p.notas||"Sin notas";
   show("vista-planta");
-  cargarMediciones(); cargarEventos(); cargarNutricion(); cargarOpcionesImportPlantas();
+  cargarMediciones(); cargarEventos(); cargarNutricion(); cargarOpcionesImportPlantas(); mostrarCargaUnicaCarpa();
 };
 
 window.eliminarPlanta = async (id, nombre) => {
@@ -1568,6 +1568,63 @@ window.importarBitacoraTexto = async () => {
   document.getElementById("import-texto").value = "";
   cargarEventos();
   toast(`${eventos.length} línea(s) × ${idsPlantas.length} planta(s) = ${creados} eventos importados ✓`);
+};
+
+// ── Carga única: histórico de riego/fertilización de la Carpa (26/6–11/7) ──
+// Pedido puntual de Coco a partir de una conversación de WhatsApp que me pasó
+// para transcribir. Se aplica una sola vez a las 4 plantas de la Carpa con un
+// solo click; después de usarlo, lo lógico es borrarlo del código (no hace
+// falta dejarlo funcionando para siempre).
+const CARGA_UNICA_CARPA = [
+  { fecha: "2026-06-27T16:20", tipo: "fertilizacion", titulo: "Fertilización: micorrizas + Plagron Growth/Roots + calcio Feeding", descripcion: "1L de agua con micorrizas, Plagron Growth, Plagron Roots y calcio de Feeding." },
+  { fecha: "2026-07-01T13:48", tipo: "riego", titulo: "Riego solo con agua (sospecha de exceso de calcio)", descripcion: "Solo agua, sin fertilizante, por sospecha de exceso de calcio en una de las plantas (manchas)." },
+  { fecha: "2026-07-03T16:57", tipo: "fertilizacion", titulo: "Fertilización: Feeding Grow + calcio", descripcion: "1L de agua con Feeding Grow y calcio, agua templada." },
+  { fecha: "2026-07-09T14:24", tipo: "tratamiento", titulo: "Aplicación de tricodermas", descripcion: "1L de tricodermas, repartido." },
+  { fecha: "2026-07-11T15:23", tipo: "riego", titulo: "Riego solo con agua", descripcion: "1L de agua sola." },
+];
+
+async function mostrarCargaUnicaCarpa() {
+  const cont = document.getElementById("carga-unica-carpa");
+  if (!cont || !plantaActiva) return;
+  cont.innerHTML = "";
+  const pSnap = await getDoc(doc(db,"plantas",plantaActiva));
+  if (!pSnap.exists()) return;
+  const lSnap = await getDoc(doc(db,"lugares",pSnap.data().lugarId));
+  if (!lSnap.exists() || detectarTipoEstructura(lSnap.data()) !== "carpa") return;
+  cont.innerHTML = `
+    <div class="carga-unica-box">
+      <div class="carga-unica-titulo">📥 Carga única: histórico 26/6–11/7 (Carpa)</div>
+      <p>5 registros de riego/fertilización/tricodermas, transcriptos del chat que me pasaste. Se cargan en las 4 plantas de la Carpa con un click.</p>
+      <button class="btn btn-primary" onclick="ejecutarCargaUnicaCarpa()">Cargar estos 5 registros en las 4 plantas</button>
+    </div>`;
+}
+
+window.ejecutarCargaUnicaCarpa = async () => {
+  if (!confirm("Esto crea 5 eventos históricos en CADA planta de la Carpa (20 en total). Si ya los cargaste antes, se van a duplicar. ¿Confirmás?")) return;
+  const pSnap = await getDoc(doc(db,"plantas",plantaActiva));
+  const lugarId = pSnap.data().lugarId;
+  const plantasSnap = await getDocs(collection(db,"plantas"));
+  const idsCarpa = [];
+  plantasSnap.forEach(d => { if (d.data().lugarId === lugarId) idsCarpa.push(d.id); });
+  if (!idsCarpa.length) { toast("No encontré plantas en la Carpa","err"); return; }
+  let creados = 0;
+  for (const pid of idsCarpa) {
+    for (const ev of CARGA_UNICA_CARPA) {
+      await addDoc(collection(db,"plantas",pid,"eventos"), {
+        titulo: ev.titulo,
+        tipo: ev.tipo,
+        fecha: new Date(ev.fecha+":00"),
+        hora: ev.fecha.slice(11),
+        descripcion: ev.descripcion,
+        realizado: true,
+        creadoEn: serverTimestamp(),
+      });
+      creados++;
+    }
+  }
+  cargarEventos();
+  toast(`${creados} eventos cargados en ${idsCarpa.length} plantas de la Carpa ✓`);
+  document.getElementById("carga-unica-carpa").innerHTML = `<div class="carga-unica-box"><div class="carga-unica-titulo">✅ Ya cargado</div><p>Si volvés a hacer click en "Cargar" desde el código, se duplicaría — avisame y te lo saco del código.</p></div>`;
 };
 
 async function cargarEventos() {
@@ -1976,6 +2033,9 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .import-plantas{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:8px}
 .import-plantas-label{font-size:.76rem;color:var(--muted);width:100%}
 .import-chk{display:flex;align-items:center;gap:5px;font-size:.8rem;background:#0d1a0f;border:1px solid var(--border);padding:5px 10px;border-radius:20px;cursor:pointer}
+.carga-unica-box{background:rgba(244,197,66,.08);border:1px solid rgba(244,197,66,.35);border-radius:10px;padding:12px 14px;margin-bottom:14px}
+.carga-unica-titulo{font-size:.82rem;font-weight:700;color:#f4c542;margin-bottom:4px}
+.carga-unica-box p{font-size:.78rem;color:var(--muted);margin:0 0 10px}
 .graficos-hint{font-size:.68rem;color:var(--muted);margin:2px 0 8px;font-style:italic}
 /* Secciones "ecosistema" dentro de la card de Lugar: cada bloque temático
    (ambiente, fotoperíodo, genética, tecnología) queda visualmente separado
@@ -2348,6 +2408,7 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
   </div>
   <div id="tab-eventos" class="tab-panel">
     <div class="section-toolbar"><button class="btn btn-primary" onclick="abrirModalEvento()">+ Agendar evento</button></div>
+    <div id="carga-unica-carpa"></div>
     <details class="import-box">
       <summary>📥 Importar bitácora desde texto (pegar formato WhatsApp)</summary>
       <p class="import-hint">Pegá líneas con el formato <code>[26/6 18:44] Autor: mensaje</code>, una por renglón. La fecha/hora se toma de cada línea; el tipo (riego/fertilización/tratamiento/otro) se detecta solo por palabras clave, y se puede aplicar a varias plantas del mismo lugar a la vez.</p>
