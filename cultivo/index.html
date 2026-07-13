@@ -120,6 +120,7 @@ let climaTimer = null;
 let chartsPorLugar = {};      // { lugarId: { temp: Chart, hum: Chart } }
 let chartsDiaPorLugar = {};   // { lugarId: { temp: Chart, hum: Chart } } (gráfico del día seleccionado)
 let chartsHLPorLugar = {};    // { lugarId: { temp: Chart, hum: Chart } } (histórico largo, rollup propio)
+let chartsTimelinePorLugar = {}; // { lugarId: Chart } (EC/PPFD + marcas de riego/fertilización)
 
 // Fecha en formato YYYY-MM-DD según el huso de Argentina (UTC-3), sin depender del huso del navegador
 function fechaArgentinaISO(timestampMs) {
@@ -341,11 +342,26 @@ function htmlResumenPlantas(plantas) {
     </div>`).join("");
 }
 
-async function cargarPlantasResumenCard(lugarId, contenedorId) {
+// Ícono variable según la fase de la planta, para que el Dashboard muestre
+// de un vistazo en qué etapa está cada una (no solo cuántas hay).
+function iconoFase(fase) {
+  if (fase==="germinacion") return "🌱";
+  if (fase==="vegetativo")  return "🌿";
+  if (fase==="floracion")   return "🌸";
+  return "🪴";
+}
+
+async function cargarPlantasResumenCard(lugarId, contenedorId, iconosId) {
   const el = document.getElementById(contenedorId);
   if (!el) return;
   const plantas = await obtenerPlantasResumenLugar(lugarId);
   el.innerHTML = htmlResumenPlantas(plantas);
+  const elIconos = iconosId ? document.getElementById(iconosId) : null;
+  if (elIconos) {
+    elIconos.innerHTML = plantas.map(p =>
+      `<span class="dash-planta-icono" title="${escAttr(p.nombre)} · ${FASE_LABEL[p.fase]||p.fase||'—'}">${iconoFase(p.fase)}</span>`
+    ).join("");
+  }
 }
 
 function prioridadLuz(estado) {
@@ -443,6 +459,7 @@ async function cargarLugares() {
       <div class="eco-section eco-genetica">
         <div class="eco-title">🌱 Genética / Plantas</div>
         <div class="plantas-resumen" id="plantas-${d.id}"><span class="clima-cargando">🌱 Consultando plantas...</span></div>
+        <button class="btn-sm btn-primary btn-riego-lugar" style="margin-top:8px;width:100%">💧 Registrar riego / fertilización</button>
       </div>
 
       <div class="eco-section eco-tecnologia">
@@ -488,12 +505,17 @@ async function cargarLugares() {
           <div class="chart-box"><canvas id="chart-hl-temp-${d.id}"></canvas><div class="chart-empty" id="chart-hl-temp-empty-${d.id}"></div></div>
           <div class="chart-box"><canvas id="chart-hl-hum-${d.id}"></canvas><div class="chart-empty" id="chart-hl-hum-empty-${d.id}"></div></div>
         </div>
+        <div class="clima-titulo dia-titulo">
+          <span>🧪 EC / PPFD + fechas de riego y fertilización (todas las plantas del lugar)</span>
+        </div>
+        <div class="chart-box chart-box-timeline"><canvas id="chart-timeline-${d.id}"></canvas><div class="chart-empty" id="chart-timeline-empty-${d.id}"></div></div>
       </div>` : ""}
       <div class="cult-actions">
         <button class="btn-sm btn-primary" onclick="verLugar('${d.id}')">Ver áreas y plantas</button>
         <button class="btn-sm btn-danger"  onclick="eliminarLugar('${d.id}','${l.nombre}')">Eliminar</button>
       </div>`;
     lista.appendChild(card);
+    card.querySelector(".btn-riego-lugar").addEventListener("click", () => window.abrirModalRiegoLugar(d.id, l.nombre));
     cargarPlantasResumenCard(d.id, "plantas-"+d.id);
 
     lugaresClimaActivos[d.id] = { sensorKey: sensorClima, luzKey, etapa: etapaInicial };
@@ -515,6 +537,7 @@ async function cargarLugares() {
         hlDesde.value = hace30; hlHasta.value = hoy; hlHasta.max = hoy;
         if (!graficosColapsados) cargarHistoricoLargoLugar(d.id, sensorClima);
       }
+      if (!graficosColapsados) cargarTimelineLugar(d.id);
     }
     if (luzKey) { refrescarLuzLugar(d.id, luzKey); cargarFotoperiodoLugar(d.id, luzKey); }
   }
@@ -536,6 +559,7 @@ window.toggleGraficosLugar = function(lugarId) {
       cargarHistoricoLugar(lugarId, lugaresClimaActivos[lugarId].sensorKey);
       cargarGraficoDia(lugarId, lugaresClimaActivos[lugarId].sensorKey);
       cargarHistoricoLargoLugar(lugarId, lugaresClimaActivos[lugarId].sensorKey);
+      cargarTimelineLugar(lugarId);
     } else {
       // Ya estaban creados: solo hace falta recalcular tamaño (estaban con display:none)
       chartsPorLugar[lugarId]?.temp?.resize();
@@ -544,6 +568,7 @@ window.toggleGraficosLugar = function(lugarId) {
       chartsDiaPorLugar[lugarId]?.hum?.resize();
       chartsHLPorLugar[lugarId]?.temp?.resize();
       chartsHLPorLugar[lugarId]?.hum?.resize();
+      chartsTimelinePorLugar[lugarId]?.resize();
     }
   }
 };
@@ -939,6 +964,92 @@ function dibujarGraficosHL(lugarId, serieTemp, serieHum, nivel) {
   habilitarResetZoom(chartsHLPorLugar[lugarId].hum, ctxHum);
 }
 
+// Línea de tiempo por Lugar: junta EC/PPFD y fechas de riego/fertilización de
+// TODAS las plantas del lugar (no solo una), para tener el panorama completo
+// del espacio de cultivo en un solo gráfico.
+async function cargarTimelineLugar(lugarId) {
+  const ctx = document.getElementById("chart-timeline-"+lugarId);
+  const empty = document.getElementById("chart-timeline-empty-"+lugarId);
+  if (!ctx) return;
+  if (typeof Chart === "undefined") { if(empty) empty.textContent = "⚠️ No se pudo cargar Chart.js"; return; }
+
+  let puntosEc = [], puntosPpfd = [], marcasRiego = [];
+  try {
+    const plantasSnap = await getDocs(query(collection(db,"plantas"), where("lugarId","==",lugarId)));
+    for (const pd of plantasSnap.docs) {
+      const evSnap = await getDocs(collection(db,"plantas",pd.id,"eventos"));
+      evSnap.forEach(ed => {
+        const e = ed.data();
+        const t = e.fecha?.toDate ? e.fecha.toDate().getTime() : (e.fecha ? new Date(e.fecha).getTime() : null);
+        if (!t) return;
+        if (e.ec != null)   puntosEc.push({ x: t, y: e.ec });
+        if (e.ppfd != null) puntosPpfd.push({ x: t, y: e.ppfd });
+        if (e.tipo === "riego" || e.tipo === "fertilizacion") {
+          marcasRiego.push({ t, tipo: e.tipo, titulo: e.titulo||"", planta: pd.data().nombre||"" });
+        }
+      });
+    }
+  } catch (err) {
+    if (empty) empty.textContent = "⚠️ No se pudo cargar (" + err.message + ")";
+    return;
+  }
+  puntosEc.sort((a,b)=>a.x-b.x); puntosPpfd.sort((a,b)=>a.x-b.x);
+
+  if (!puntosEc.length && !puntosPpfd.length && !marcasRiego.length) {
+    if (empty) empty.textContent = "Todavía no hay EC/PPFD ni riegos/fertilizaciones cargados para este lugar.";
+    if (chartsTimelinePorLugar[lugarId]) { chartsTimelinePorLugar[lugarId].destroy(); chartsTimelinePorLugar[lugarId]=null; }
+    return;
+  }
+  if (empty) empty.textContent = "";
+
+  // Una línea vertical de color por cada riego/fertilización, con su propia etiqueta.
+  const anotaciones = {};
+  marcasRiego.forEach((m, i) => {
+    anotaciones["riego"+i] = {
+      type: "line", xMin: m.t, xMax: m.t,
+      borderColor: m.tipo==="fertilizacion" ? "#3ddc97" : "#4aa8ff",
+      borderWidth: 1.5, borderDash: [4,3],
+      label: { display: false },
+    };
+  });
+
+  if (chartsTimelinePorLugar[lugarId]) chartsTimelinePorLugar[lugarId].destroy();
+  chartsTimelinePorLugar[lugarId] = new Chart(ctx, {
+    type: "line",
+    data: {
+      datasets: [
+        puntosEc.length   ? { label:"EC",   data:puntosEc,   borderColor:"#f4c542", backgroundColor:"#f4c542", showLine:false, pointRadius:4, yAxisID:"yEc" } : null,
+        puntosPpfd.length ? { label:"PPFD", data:puntosPpfd, borderColor:"#ff8a3d", backgroundColor:"#ff8a3d", showLine:false, pointRadius:4, yAxisID:"yPpfd" } : null,
+      ].filter(Boolean),
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, animation: false,
+      plugins: {
+        legend: { display: true, labels: { color:"#8a9a8f", boxWidth:10, font:{size:10} } },
+        annotation: { annotations: anotaciones },
+        zoom: { limits:{x:{min:"original",max:"original"}}, pan:{enabled:true,mode:"x"}, zoom:{wheel:{enabled:true},pinch:{enabled:true},mode:"x"} },
+        tooltip: {
+          callbacks: {
+            afterBody: (items) => {
+              // Si hay un riego/fertilización cerca del punto, lo menciona en el tooltip
+              const t = items[0]?.parsed?.x;
+              if (t == null) return "";
+              const cerca = marcasRiego.find(m => Math.abs(m.t - t) < 3*3600*1000);
+              return cerca ? `${cerca.tipo==="fertilizacion"?"🌿":"💧"} ${cerca.planta}: ${cerca.titulo}` : "";
+            },
+          },
+        },
+      },
+      scales: {
+        x: { type:"time", time:{ tooltipFormat:"dd/MM/yyyy HH:mm", displayFormats:{minute:"HH:mm",hour:"HH:mm",day:"dd/MM",week:"dd/MM",month:"MM/yyyy"} }, ticks:{color:"#8a9a8f",maxTicksLimit:8,font:{size:10}}, grid:{display:false} },
+        yEc:   { position:"left",  ticks:{color:"#f4c542",font:{size:10}}, grid:{color:"rgba(255,255,255,.05)"}, title:{display:true,text:"EC",color:"#f4c542",font:{size:10}} },
+        yPpfd: { position:"right", ticks:{color:"#ff8a3d",font:{size:10}}, grid:{display:false}, title:{display:true,text:"PPFD",color:"#ff8a3d",font:{size:10}} },
+      },
+    },
+  });
+  habilitarResetZoom(chartsTimelinePorLugar[lugarId], ctx);
+}
+
 let dashboardActivos = {}; // { lugarId: { sensorKey, luzKey, tipo } }
 let dashboardTimer   = null;
 
@@ -962,7 +1073,6 @@ function svgCarpa(encendida) {
     <line x1="100" y1="45" x2="100" y2="205" class="carpa-cierre"/>
     <ellipse cx="100" cy="100" rx="65" ry="55" class="glow-interior"/>
     <rect x="55" y="38" width="90" height="10" rx="5" class="barra-luz"/>
-    <path d="M100 195 C88 165 68 155 58 122 C80 133 96 143 100 155 C104 143 120 133 142 122 C132 155 112 165 100 195 Z" class="planta-silueta"/>
   </svg>`;
 }
 
@@ -974,9 +1084,6 @@ function svgEstructura3x1(encendida) {
     <rect x="12" y="85" width="236" height="12" rx="2" class="estante-base"/>
     <ellipse cx="130" cy="55" rx="112" ry="35" class="glow-interior"/>
     <rect x="28" y="22" width="204" height="10" rx="5" class="barra-luz"/>
-    <path d="M65 83 C58 70 46 64 40 53 C52 58 62 64 65 70 C68 64 78 58 90 53 C84 64 72 70 65 83Z" class="planta-silueta"/>
-    <path d="M130 83 C123 70 111 64 105 53 C117 58 127 64 130 70 C133 64 143 58 155 53 C149 64 137 70 130 83Z" class="planta-silueta"/>
-    <path d="M195 83 C188 70 176 64 170 53 C182 58 192 64 195 70 C198 64 208 58 220 53 C214 64 202 70 195 83Z" class="planta-silueta"/>
   </svg>`;
 }
 
@@ -1020,16 +1127,22 @@ async function cargarDashboard() {
         <span class="dash-dim">${l.dimensiones||""}</span>
       </div>
       <div class="dash-body">
-        <div class="dash-ilustracion" id="dash-ilus-${d.id}">${svgInicial}</div>
+        <div class="dash-ilustracion" id="dash-ilus-${d.id}">${svgInicial}<div class="dash-plantas-iconos" id="dash-iconos-${d.id}"></div></div>
         <div class="dash-datos">
           <div class="dash-dato"><div class="valor" id="dash-temp-${d.id}">—</div><div class="label">🌡️ Temp</div></div>
           <div class="dash-dato"><div class="valor" id="dash-hum-${d.id}">—</div><div class="label">💧 Humedad</div></div>
           <div class="dash-dato" id="dash-luz-${d.id}"><div class="label">${luzKey?'Consultando luces...':'Sin luces asociadas'}</div></div>
         </div>
       </div>
-      <div class="plantas-resumen" id="dash-plantas-${d.id}"><span class="clima-cargando">🌱 Consultando plantas...</span></div>`;
+      <button class="btn-toggle-historial">📋 Ver historial de plantas y fertilización ▾</button>
+      <div class="plantas-resumen colapsado" id="dash-plantas-${d.id}"><span class="clima-cargando">🌱 Consultando plantas...</span></div>`;
     grid.appendChild(card);
-    cargarPlantasResumenCard(d.id, "dash-plantas-"+d.id);
+    card.querySelector(".btn-toggle-historial").addEventListener("click", (e) => {
+      const cont = document.getElementById("dash-plantas-"+d.id);
+      const oculto = cont.classList.toggle("colapsado");
+      e.target.textContent = oculto ? "📋 Ver historial de plantas y fertilización ▾" : "📋 Ocultar historial ▴";
+    });
+    cargarPlantasResumenCard(d.id, "dash-plantas-"+d.id, "dash-iconos-"+d.id);
 
     dashboardActivos[d.id] = { sensorKey, luzKey, tipo };
     refrescarDashboardCard(d.id, sensorKey, luzKey, tipo);
@@ -1081,7 +1194,11 @@ async function refrescarDashboardCard(lugarId, sensorKey, luzKey, tipo) {
       const encendido = data.online && !!(data.sensores && data.sensores.encendido);
       estadoLuzActivos[lugarId] = { online: !!data.online, encendido: !!(data.sensores && data.sensores.encendido) };
       const ilusEl = document.getElementById("dash-ilus-"+lugarId);
-      if (ilusEl) ilusEl.innerHTML = tipo === "estructura3x1" ? svgEstructura3x1(encendido) : svgCarpa(encendido);
+      if (ilusEl) {
+        const svgEl = ilusEl.querySelector("svg");
+        const nuevoSvg = tipo === "estructura3x1" ? svgEstructura3x1(encendido) : svgCarpa(encendido);
+        if (svgEl) svgEl.outerHTML = nuevoSvg; else ilusEl.insertAdjacentHTML("afterbegin", nuevoSvg);
+      }
       const luzEl = document.getElementById("dash-luz-"+lugarId);
       if (luzEl) luzEl.innerHTML = `<div class="label ${data.online ? (encendido?'luz-on':'luz-off') : 'luz-offline'}">${!data.online ? '📴 Fuera de línea' : (encendido?'💡 Encendida':'🌑 Apagada')}</div>`;
     } catch (err) {
@@ -1277,7 +1394,7 @@ async function cargarPlantasLugar(lugarId) {
     if (p.lugarId !== lugarId) return;
     count++;
     const card = document.createElement("div");
-    card.className = "planta-card" + (plantaActiva===d.id?" activa":"");
+    card.className = "planta-card clickeable" + (plantaActiva===d.id?" activa":"");
     card.innerHTML = `
       <div class="cult-header">
         <span class="cult-nombre">${p.nombre}</span>
@@ -1295,23 +1412,17 @@ async function cargarPlantasLugar(lugarId) {
       </div>
       ${p.areaId ? `<div class="cult-meta"><span>📍 ${p.areaNombre||"Área asignada"}</span></div>`:""}
       <div class="cult-actions">
-        <button class="btn-sm btn-primary" data-accion="ver" data-id="${d.id}">Ver detalle</button>
-        <button class="btn-sm btn-ghost"   data-accion="editar" data-id="${d.id}">✏️ Editar</button>
-        <button class="btn-sm btn-danger"  data-accion="eliminar" data-id="${d.id}" data-nombre="${escAttr(p.nombre)}">Eliminar</button>
+        <button class="btn-sm btn-ghost btn-editar">✏️ Editar</button>
+        <button class="btn-sm btn-danger btn-eliminar">Eliminar</button>
       </div>`;
+    // Closures directas (nada de ids embebidos en texto/onclick): elimina de
+    // raíz la clase de bug donde un caracter especial en un nombre rompía el
+    // atributo HTML y el botón dejaba de responder.
+    card.querySelector(".btn-editar").addEventListener("click", (e) => { e.stopPropagation(); window.editarPlanta(d.id); });
+    card.querySelector(".btn-eliminar").addEventListener("click", (e) => { e.stopPropagation(); window.eliminarPlanta(d.id, p.nombre||""); });
+    card.addEventListener("click", () => window.verPlanta(d.id));
     lista.appendChild(card);
   });
-  if (!lista.dataset.delegado) {
-    lista.dataset.delegado = "1";
-    lista.addEventListener("click", e => {
-      const btn = e.target.closest("button[data-accion]");
-      if (!btn) return;
-      const id = btn.dataset.id;
-      if (btn.dataset.accion === "ver")      window.verPlanta(id);
-      else if (btn.dataset.accion === "editar")   window.editarPlanta(id);
-      else if (btn.dataset.accion === "eliminar") window.eliminarPlanta(id, btn.dataset.nombre || "");
-    });
-  }
   if (!count) lista.innerHTML = '<p class="empty">Sin plantas en este lugar.</p>';
 }
 
@@ -1345,22 +1456,45 @@ window.editarPlanta = async (id) => {
 window.editarPlantaActiva = () => window.editarPlanta(plantaActiva);
 
 window.verPlanta = async (id) => {
-  plantaActiva = id;
-  const snap = await getDoc(doc(db,"plantas",id));
-  const p = snap.data();
-  document.getElementById("det-nombre").textContent   = p.nombre;
-  document.getElementById("det-genetica").textContent = p.genetica;
-  document.getElementById("det-fase").textContent     = p.fase;
-  document.getElementById("det-origen").textContent   = p.tipoOrigen==="semilla"?"Semilla":"Esqueje";
-  document.getElementById("det-inicio").textContent   = fmt(p.fechaInicio);
-  document.getElementById("det-dia").textContent      = `Día ${dias(p.fechaInicio)}`;
-  document.getElementById("det-substrato").textContent= p.substrato;
-  document.getElementById("det-maceta").textContent   = p.tamMaceta+"L";
-  document.getElementById("det-riego").textContent    = p.sistemaRiego||"—";
-  document.getElementById("det-altura").textContent   = p.alturaPlantin ? p.alturaPlantin+" cm" : "—";
-  document.getElementById("det-notas").textContent    = p.notas||"Sin notas";
-  show("vista-planta");
-  cargarMediciones(); cargarEventos(); cargarNutricion(); cargarOpcionesImportPlantas(); mostrarCargaUnicaCarpa();
+  try {
+    const snap = await getDoc(doc(db,"plantas",id));
+    if (!snap.exists()) { toast("Esa planta ya no existe (¿se borró?)","err"); return; }
+    plantaActiva = id;
+    const p = snap.data();
+    document.getElementById("det-nombre").textContent   = p.nombre||"—";
+    document.getElementById("det-genetica").textContent = p.genetica||"—";
+    document.getElementById("det-fase").textContent     = p.fase||"—";
+    document.getElementById("det-origen").textContent   = p.tipoOrigen==="semilla"?"Semilla":"Esqueje";
+    document.getElementById("det-inicio").textContent   = fmt(p.fechaInicio);
+    document.getElementById("det-dia").textContent      = `Día ${dias(p.fechaInicio)}`;
+    document.getElementById("det-substrato").textContent= p.substrato||"—";
+    document.getElementById("det-maceta").textContent   = (p.tamMaceta||"—")+"L";
+    document.getElementById("det-riego").textContent    = p.sistemaRiego||"—";
+    document.getElementById("det-altura").textContent   = p.alturaPlantin ? p.alturaPlantin+" cm" : "—";
+    document.getElementById("det-notas").textContent    = p.notas||"Sin notas";
+    show("vista-planta");
+    await cargarSelectorPlanta(p.lugarId, id);
+    cargarMediciones(); cargarEventos(); cargarNutricion();
+  } catch (err) {
+    console.error("verPlanta:", err);
+    toast("No se pudo abrir el detalle: "+err.message, "err");
+  }
+};
+
+// Selector manual, siempre visible arriba del detalle: permite elegir a qué
+// planta del mismo lugar se le va a cargar una medición/evento sin depender
+// de volver a la lista y clickear la card correcta.
+async function cargarSelectorPlanta(lugarId, idActual) {
+  const sel = document.getElementById("selector-planta-activa");
+  if (!sel || !lugarId) return;
+  const snap = await getDocs(query(collection(db,"plantas"), orderBy("creadoEn","desc")));
+  const opts = [];
+  snap.forEach(d => { if (d.data().lugarId===lugarId) opts.push(`<option value="${d.id}" ${d.id===idActual?"selected":""}>${escAttr(d.data().nombre)}</option>`); });
+  sel.innerHTML = opts.join("");
+}
+window.cambiarPlantaSeleccionada = () => {
+  const sel = document.getElementById("selector-planta-activa");
+  if (sel && sel.value) window.verPlanta(sel.value);
 };
 
 window.eliminarPlanta = async (id, nombre) => {
@@ -1494,139 +1628,67 @@ window.eliminarMedicion = async (id) => {
 };
 
 // ════════════════════════════════════════════════════════════════════════════
-// EVENTOS
+// RIEGO/FERTILIZACIÓN A NIVEL DE LUGAR (elegís qué plantas lo recibieron)
 // ════════════════════════════════════════════════════════════════════════════
-// Plantas del mismo lugar que la activa, para poder aplicar una importación
-// masiva de bitácora a varias plantas a la vez (ej: "se hizo lo mismo a las
-// 4 plantas de la Carpa").
-async function cargarOpcionesImportPlantas() {
-  const cont = document.getElementById("import-plantas");
-  if (!cont || !plantaActiva) return;
-  const pSnap = await getDoc(doc(db,"plantas",plantaActiva));
-  if (!pSnap.exists()) { cont.innerHTML = ""; return; }
-  const lugarId = pSnap.data().lugarId;
-  const snap = await getDocs(query(collection(db,"plantas"), orderBy("creadoEn","desc")));
-  const filas = [];
-  snap.forEach(d => {
-    const p = d.data();
-    if (p.lugarId !== lugarId) return;
-    const marcada = d.id === plantaActiva ? "checked" : "";
-    filas.push(`<label class="import-chk"><input type="checkbox" value="${d.id}" ${marcada}> ${escAttr(p.nombre)}</label>`);
-  });
-  cont.innerHTML = filas.length
-    ? `<div class="import-plantas-label">Aplicar a:</div>${filas.join("")}`
-    : "";
-}
+let rlLugarId = null;
 
-// Parsea líneas tipo WhatsApp: "[26/6 18:44] Autor: mensaje". El año no viene
-// en el export, así que se asume el año actual (con corrección si diera una
-// fecha futura, por si el pegado cruza fin de año).
-function parsearLineasWhatsApp(texto) {
-  const regex = /^\[(\d{1,2})\/(\d{1,2})\s+(\d{1,2}):(\d{2})\]\s*(.+)$/;
-  const anioActual = new Date().getFullYear();
-  const eventos = [];
-  for (const linea of texto.split("\n").map(l=>l.trim()).filter(Boolean)) {
-    const m = linea.match(regex);
-    if (!m) continue;
-    const [, dia, mes, hh, mm, resto] = m;
-    let fecha = new Date(anioActual, parseInt(mes)-1, parseInt(dia), parseInt(hh), parseInt(mm));
-    if (fecha.getTime() > Date.now() + 86400000) fecha = new Date(anioActual-1, parseInt(mes)-1, parseInt(dia), parseInt(hh), parseInt(mm));
-    const t = resto.trim();
-    const low = t.toLowerCase();
-    let tipo = "otro";
-    if (low.includes("fertiliz") || low.includes("feeding") || low.includes("micorriz")) tipo = "fertilizacion";
-    else if (low.includes("tricoderm") || low.includes("tratamiento") || low.includes("plaga") || low.includes("hongo")) tipo = "tratamiento";
-    else if (low.includes("riego") || low.includes("agua") || low.includes("eche") || low.includes("echo") || low.includes("regando")) tipo = "riego";
-    else if (low.includes("poda") || low.includes(" lst")) tipo = "poda";
-    eventos.push({ fecha, tipo, titulo: t.length>70 ? t.slice(0,67)+"…" : t, descripcion: t });
+window.abrirModalRiegoLugar = async (lugarId, lugarNombre) => {
+  rlLugarId = lugarId;
+  const t = document.getElementById("rl-titulo");
+  if (t) t.textContent = `💧 Registrar riego / fertilización — ${lugarNombre}`;
+  resetCamposDiv("form-riego-lugar");
+  const { fecha, hora } = fechaHoraLocalInputs();
+  val("rl-fecha", fecha); val("rl-hora", hora);
+
+  const cont = document.getElementById("rl-plantas");
+  cont.innerHTML = '<span class="cargando">Cargando plantas...</span>';
+  try {
+    const snap = await getDocs(query(collection(db,"plantas"), where("lugarId","==",lugarId)));
+    const filas = [];
+    snap.forEach(d => filas.push(`<label class="chk-pill"><input type="checkbox" value="${d.id}" checked> ${escAttr(d.data().nombre)}</label>`));
+    cont.innerHTML = filas.length
+      ? `<div class="chk-pill-label">Todas tildadas por defecto, destildá las que no correspondan:</div>${filas.join("")}`
+      : '<span class="empty">Este lugar todavía no tiene plantas registradas.</span>';
+  } catch (err) {
+    cont.innerHTML = `<span class="empty">⚠️ No se pudieron cargar las plantas (${err.message})</span>`;
   }
-  return eventos;
-}
+  abrirModal("modal-riego-lugar");
+};
 
-window.importarBitacoraTexto = async () => {
-  const texto = document.getElementById("import-texto")?.value || "";
-  const eventos = parsearLineasWhatsApp(texto);
-  if (!eventos.length) { toast("No se encontró ninguna línea con formato [D/M H:MM] ...","err"); return; }
-  const idsPlantas = Array.from(document.querySelectorAll("#import-plantas input:checked")).map(el=>el.value);
+window.guardarRiegoLugar = async () => {
+  const idsPlantas = Array.from(document.querySelectorAll("#rl-plantas input:checked")).map(el=>el.value);
   if (!idsPlantas.length) { toast("Marcá al menos una planta","err"); return; }
+  const horaVal = val("rl-hora") || "12:00";
+  const fechaHora = new Date(val("rl-fecha")+"T"+horaVal+":00");
+  if (isNaN(fechaHora.getTime())) { toast("Revisá la fecha","err"); return; }
+
+  const tipo = val("rl-tipo");
+  const detalle = val("rl-detalle");
+  const ec = parseFloat(val("rl-ec")) || null;
+  const ppfd = parseFloat(val("rl-ppfd")) || null;
+  const iconoTipo = { riego:"💧 Riego", fertilizacion:"🌿 Fertilización", tratamiento:"🛡️ Tratamiento", otro:"📝 Nota" }[tipo] || tipo;
+
   let creados = 0;
   for (const pid of idsPlantas) {
-    for (const ev of eventos) {
-      await addDoc(collection(db,"plantas",pid,"eventos"), {
-        titulo: ev.titulo,
-        tipo: ev.tipo,
-        fecha: ev.fecha,
-        hora: `${String(ev.fecha.getHours()).padStart(2,"0")}:${String(ev.fecha.getMinutes()).padStart(2,"0")}`,
-        descripcion: ev.descripcion,
-        realizado: ev.fecha.getTime() <= Date.now(),
-        importadoDeTexto: true,
-        creadoEn: serverTimestamp(),
-      });
-      creados++;
-    }
+    await addDoc(collection(db,"plantas",pid,"eventos"), {
+      titulo: detalle ? `${iconoTipo}: ${detalle.slice(0,60)}` : iconoTipo,
+      tipo, fecha: fechaHora,
+      hora: `${String(fechaHora.getHours()).padStart(2,"0")}:${String(fechaHora.getMinutes()).padStart(2,"0")}`,
+      descripcion: detalle,
+      ec, ppfd,
+      realizado: fechaHora.getTime() <= Date.now(),
+      creadoEn: serverTimestamp(),
+    });
+    creados++;
   }
-  document.getElementById("import-texto").value = "";
-  cargarEventos();
-  toast(`${eventos.length} línea(s) × ${idsPlantas.length} planta(s) = ${creados} eventos importados ✓`);
+  cerrarModal("modal-riego-lugar");
+  toast(`Registrado en ${creados} planta${creados>1?"s":""} ✓`);
+  if (plantaActiva && idsPlantas.includes(plantaActiva)) cargarEventos();
 };
 
-// ── Carga única: histórico de riego/fertilización de la Carpa (26/6–11/7) ──
-// Pedido puntual de Coco a partir de una conversación de WhatsApp que me pasó
-// para transcribir. Se aplica una sola vez a las 4 plantas de la Carpa con un
-// solo click; después de usarlo, lo lógico es borrarlo del código (no hace
-// falta dejarlo funcionando para siempre).
-const CARGA_UNICA_CARPA = [
-  { fecha: "2026-06-27T16:20", tipo: "fertilizacion", titulo: "Fertilización: micorrizas + Plagron Growth/Roots + calcio Feeding", descripcion: "1L de agua con micorrizas, Plagron Growth, Plagron Roots y calcio de Feeding." },
-  { fecha: "2026-07-01T13:48", tipo: "riego", titulo: "Riego solo con agua (sospecha de exceso de calcio)", descripcion: "Solo agua, sin fertilizante, por sospecha de exceso de calcio en una de las plantas (manchas)." },
-  { fecha: "2026-07-03T16:57", tipo: "fertilizacion", titulo: "Fertilización: Feeding Grow + calcio", descripcion: "1L de agua con Feeding Grow y calcio, agua templada." },
-  { fecha: "2026-07-09T14:24", tipo: "tratamiento", titulo: "Aplicación de tricodermas", descripcion: "1L de tricodermas, repartido." },
-  { fecha: "2026-07-11T15:23", tipo: "riego", titulo: "Riego solo con agua", descripcion: "1L de agua sola." },
-];
-
-async function mostrarCargaUnicaCarpa() {
-  const cont = document.getElementById("carga-unica-carpa");
-  if (!cont || !plantaActiva) return;
-  cont.innerHTML = "";
-  const pSnap = await getDoc(doc(db,"plantas",plantaActiva));
-  if (!pSnap.exists()) return;
-  const lSnap = await getDoc(doc(db,"lugares",pSnap.data().lugarId));
-  if (!lSnap.exists() || detectarTipoEstructura(lSnap.data()) !== "carpa") return;
-  cont.innerHTML = `
-    <div class="carga-unica-box">
-      <div class="carga-unica-titulo">📥 Carga única: histórico 26/6–11/7 (Carpa)</div>
-      <p>5 registros de riego/fertilización/tricodermas, transcriptos del chat que me pasaste. Se cargan en las 4 plantas de la Carpa con un click.</p>
-      <button class="btn btn-primary" onclick="ejecutarCargaUnicaCarpa()">Cargar estos 5 registros en las 4 plantas</button>
-    </div>`;
-}
-
-window.ejecutarCargaUnicaCarpa = async () => {
-  if (!confirm("Esto crea 5 eventos históricos en CADA planta de la Carpa (20 en total). Si ya los cargaste antes, se van a duplicar. ¿Confirmás?")) return;
-  const pSnap = await getDoc(doc(db,"plantas",plantaActiva));
-  const lugarId = pSnap.data().lugarId;
-  const plantasSnap = await getDocs(collection(db,"plantas"));
-  const idsCarpa = [];
-  plantasSnap.forEach(d => { if (d.data().lugarId === lugarId) idsCarpa.push(d.id); });
-  if (!idsCarpa.length) { toast("No encontré plantas en la Carpa","err"); return; }
-  let creados = 0;
-  for (const pid of idsCarpa) {
-    for (const ev of CARGA_UNICA_CARPA) {
-      await addDoc(collection(db,"plantas",pid,"eventos"), {
-        titulo: ev.titulo,
-        tipo: ev.tipo,
-        fecha: new Date(ev.fecha+":00"),
-        hora: ev.fecha.slice(11),
-        descripcion: ev.descripcion,
-        realizado: true,
-        creadoEn: serverTimestamp(),
-      });
-      creados++;
-    }
-  }
-  cargarEventos();
-  toast(`${creados} eventos cargados en ${idsCarpa.length} plantas de la Carpa ✓`);
-  document.getElementById("carga-unica-carpa").innerHTML = `<div class="carga-unica-box"><div class="carga-unica-titulo">✅ Ya cargado</div><p>Si volvés a hacer click en "Cargar" desde el código, se duplicaría — avisame y te lo saco del código.</p></div>`;
-};
-
+// ════════════════════════════════════════════════════════════════════════════
+// EVENTOS
+// ════════════════════════════════════════════════════════════════════════════
 async function cargarEventos() {
   if (!plantaActiva) return;
   const lista = document.getElementById("lista-eventos");
@@ -1645,6 +1707,7 @@ async function cargarEventos() {
         <strong>${e.titulo}</strong>
         <small>${fmt(e.fecha)} ${e.hora||""}</small>
         ${e.descripcion?`<p>${e.descripcion}</p>`:""}
+        ${(e.ec!=null||e.ppfd!=null)?`<p class="ev-medidas">${e.ec!=null?`🧪 EC ${e.ec}`:""} ${e.ppfd!=null?`🔆 PPFD ${e.ppfd}`:""}</p>`:""}
       </div>
       <div class="ev-acciones">
         <span>${e.realizado?"✅":"⏳"}</span>
@@ -2010,6 +2073,9 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 
 /* CARDS */
 .lugar-card,.planta-card,.area-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;transition:border-color .15s;min-width:0}
+.planta-card.clickeable{cursor:pointer}
+.planta-card.clickeable:hover{border-color:var(--lima)}
+.planta-card.clickeable .cult-actions button{cursor:pointer}
 .lugar-card:hover{border-color:var(--green)}
 .planta-card.activa,.area-card.activa{border-color:var(--lima)}
 .lugar-header,.area-header{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:10px}
@@ -2025,17 +2091,9 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .aviso-truncado{font-size:.68rem;color:#ffb84d;margin-bottom:10px;padding:6px 8px;background:rgba(255,184,77,.08);border-radius:8px}
 .temp-ok{color:#3ddc97}
 .temp-fuera{color:#ff5c5c}
-.import-box{background:rgba(255,255,255,.025);border:1px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:14px}
-.import-box summary{cursor:pointer;font-size:.85rem;font-weight:600;color:var(--lima)}
-.import-hint{font-size:.74rem;color:var(--muted);margin:8px 0}
-.import-hint code{background:#0d1a0f;padding:1px 5px;border-radius:4px}
-.import-box textarea{width:100%;min-height:110px;background:#0d1a0f;border:1px solid var(--border);color:var(--text);padding:8px;border-radius:6px;font-size:.8rem;font-family:monospace;resize:vertical}
-.import-plantas{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:8px}
-.import-plantas-label{font-size:.76rem;color:var(--muted);width:100%}
-.import-chk{display:flex;align-items:center;gap:5px;font-size:.8rem;background:#0d1a0f;border:1px solid var(--border);padding:5px 10px;border-radius:20px;cursor:pointer}
-.carga-unica-box{background:rgba(244,197,66,.08);border:1px solid rgba(244,197,66,.35);border-radius:10px;padding:12px 14px;margin-bottom:14px}
-.carga-unica-titulo{font-size:.82rem;font-weight:700;color:#f4c542;margin-bottom:4px}
-.carga-unica-box p{font-size:.78rem;color:var(--muted);margin:0 0 10px}
+.chk-pill{display:flex;align-items:center;gap:5px;font-size:.8rem;background:#0d1a0f;border:1px solid var(--border);padding:5px 10px;border-radius:20px;cursor:pointer}
+.chk-pill-label{font-size:.76rem;color:var(--muted);width:100%;margin-bottom:2px}
+.chk-pill-cont{display:flex;flex-wrap:wrap;gap:8px}
 .graficos-hint{font-size:.68rem;color:var(--muted);margin:2px 0 8px;font-style:italic}
 /* Secciones "ecosistema" dentro de la card de Lugar: cada bloque temático
    (ambiente, fotoperíodo, genética, tecnología) queda visualmente separado
@@ -2082,11 +2140,16 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .graficos-header{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .btn-minimizar{background:none;border:1px solid rgba(255,255,255,.15);color:var(--muted);border-radius:6px;font-size:.68rem;padding:3px 8px;cursor:pointer}
 .graficos-contenedor.colapsado{display:none}
+.plantas-resumen.colapsado{display:none}
+.btn-toggle-historial{width:100%;background:transparent;border:1px solid var(--border);color:var(--muted);font-size:.74rem;padding:6px;border-radius:8px;cursor:pointer;margin-top:8px}
+.btn-toggle-historial:hover{border-color:var(--lima);color:var(--lima)}
 .input-fecha-dia{background:var(--surface);color:inherit;border:1px solid rgba(255,255,255,.15);border-radius:6px;font-size:.72rem;padding:4px 6px}
 .historico-largo-controles{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
 .historico-largo-controles select,.historico-largo-controles input{flex:1;min-width:110px}
 .clima-charts{display:flex;flex-direction:column;gap:14px;margin-bottom:10px}
 .chart-box{position:relative;height:150px;background:var(--surface);border-radius:10px;padding:8px;min-width:0}
+.chart-box-timeline{height:190px;margin-bottom:6px}
+.ev-medidas{font-size:.72rem;color:#f4c542;margin-top:2px}
 .chart-box canvas{max-width:100%}
 .chart-empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:12px;font-size:.68rem;color:var(--muted);pointer-events:none}
 @media(min-width:640px){.clima-charts{flex-direction:row}.chart-box{flex:1}}
@@ -2099,7 +2162,9 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .dash-nombre{font-family:'Space Grotesk',sans-serif;font-weight:700}
 .dash-dim{font-size:.72rem;color:var(--muted)}
 .dash-body{display:flex;align-items:center;gap:14px}
-.dash-ilustracion{flex:1;display:flex;justify-content:center;min-width:0}
+.dash-ilustracion{flex:1;display:flex;justify-content:center;min-width:0;position:relative}
+.dash-plantas-iconos{position:absolute;bottom:2px;left:0;right:0;display:flex;justify-content:center;gap:4px;flex-wrap:wrap;pointer-events:none}
+.dash-planta-icono{font-size:1.1rem;filter:drop-shadow(0 1px 2px rgba(0,0,0,.6));pointer-events:auto}
 .dash-datos{display:flex;flex-direction:column;gap:10px;min-width:78px}
 .dash-dato{text-align:center}
 .dash-dato .valor{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.25rem}
@@ -2377,7 +2442,8 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
 <section id="vista-planta" class="vista">
   <div class="page-header">
     <div class="page-title" id="det-nombre">—<small id="det-dia">—</small></div>
-    <div style="display:flex;gap:8px">
+    <div style="display:flex;gap:8px;align-items:center">
+      <select id="selector-planta-activa" class="input-fecha-dia" onchange="cambiarPlantaSeleccionada()" title="Cambiar de planta"></select>
       <button class="btn btn-ghost" onclick="editarPlantaActiva()">✏️ Editar</button>
       <button class="btn btn-ghost" onclick="show('vista-lugar')">← Volver</button>
     </div>
@@ -2408,15 +2474,6 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
   </div>
   <div id="tab-eventos" class="tab-panel">
     <div class="section-toolbar"><button class="btn btn-primary" onclick="abrirModalEvento()">+ Agendar evento</button></div>
-    <div id="carga-unica-carpa"></div>
-    <details class="import-box">
-      <summary>📥 Importar bitácora desde texto (pegar formato WhatsApp)</summary>
-      <p class="import-hint">Pegá líneas con el formato <code>[26/6 18:44] Autor: mensaje</code>, una por renglón. La fecha/hora se toma de cada línea; el tipo (riego/fertilización/tratamiento/otro) se detecta solo por palabras clave, y se puede aplicar a varias plantas del mismo lugar a la vez.</p>
-      <textarea id="import-texto" rows="6" placeholder="[26/6 18:44] Adrián Ces: Llegaron
-[27/6 16:20] se fertilizó con 1lts de agua con micorrizas, plagron growth..."></textarea>
-      <div class="import-plantas" id="import-plantas"><span class="cargando">Cargando plantas del lugar...</span></div>
-      <button class="btn btn-primary" style="margin-top:8px" onclick="importarBitacoraTexto()">Importar líneas</button>
-    </details>
     <div id="lista-eventos"></div>
   </div>
   <div id="tab-nutricion" class="tab-panel">
@@ -2607,6 +2664,45 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="cerrarModal('modal-area')">Cancelar</button>
       <button class="btn btn-primary" onclick="guardarArea()">Guardar área</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Riego/Fertilización a nivel de Lugar (elegís qué plantas lo recibieron) -->
+<div class="modal-overlay" id="modal-riego-lugar">
+  <div class="modal">
+    <div class="modal-header"><h3 id="rl-titulo">💧 Registrar riego / fertilización</h3><button class="btn-icon" onclick="cerrarModal('modal-riego-lugar')">✕</button></div>
+    <div class="modal-body" id="form-riego-lugar">
+      <div class="form-group">
+        <label>Aplicar a</label>
+        <div class="chk-pill-cont" id="rl-plantas"><span class="cargando">Cargando plantas...</span></div>
+      </div>
+      <div class="form-row col2">
+        <div class="form-group">
+          <label>Tipo</label>
+          <select id="rl-tipo">
+            <option value="riego">💧 Riego</option>
+            <option value="fertilizacion">🌿 Fertilización</option>
+            <option value="tratamiento">🛡️ Tratamiento (plagas/hongos)</option>
+            <option value="otro">📝 Otro</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Fecha y hora</label>
+          <div style="display:flex;gap:6px">
+            <input id="rl-fecha" type="date" style="flex:1">
+            <input id="rl-hora" type="time" style="flex:1">
+          </div>
+        </div>
+      </div>
+      <div class="form-group"><label>Detalle (qué se usó, cantidad, etc.)</label><textarea id="rl-detalle" rows="3" placeholder="Ej: 1L de agua con Feeding Grow y calcio"></textarea></div>
+      <div class="form-row col2">
+        <div class="form-group"><label>EC (opcional)</label><input id="rl-ec" type="number" step="0.01" placeholder="1.4"></div>
+        <div class="form-group"><label>PPFD (opcional, µmol/m²/s)</label><input id="rl-ppfd" type="number" placeholder="600"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="cerrarModal('modal-riego-lugar')">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarRiegoLugar()">Guardar</button>
     </div>
   </div>
 </div>
