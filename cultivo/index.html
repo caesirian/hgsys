@@ -288,11 +288,20 @@ function diasDesde(fecha) {
 
 // Última semana de nutrición cargada para una planta (fecha de creación del registro)
 async function obtenerUltimaFertilizacion(plantaId) {
+  let fechas = [];
   try {
     const snap = await getDocs(query(collection(db,"plantas",plantaId,"nutricion"), orderBy("creadoEn","desc"), limit(1)));
-    if (snap.empty) return null;
-    return fechaComoDate(snap.docs[0].data().creadoEn);
-  } catch { return null; }
+    if (!snap.empty) fechas.push(fechaComoDate(snap.docs[0].data().creadoEn));
+  } catch {}
+  try {
+    // Fertilizaciones cargadas desde "💧 Registrar riego/fertilización" a nivel
+    // de Lugar quedan como eventos con tipo:"fertilizacion", no en "nutricion".
+    const snap2 = await getDocs(query(collection(db,"plantas",plantaId,"eventos"), where("tipo","==","fertilizacion")));
+    snap2.forEach(d => { const f = d.data().fecha; if (f) fechas.push(f.toDate ? f.toDate() : new Date(f)); });
+  } catch {}
+  fechas = fechas.filter(Boolean);
+  if (!fechas.length) return null;
+  return new Date(Math.max(...fechas.map(f=>f.getTime())));
 }
 
 // Trae todas las plantas de un lugar con su día de ciclo y última fertilización,
@@ -358,9 +367,15 @@ async function cargarPlantasResumenCard(lugarId, contenedorId, iconosId) {
   el.innerHTML = htmlResumenPlantas(plantas);
   const elIconos = iconosId ? document.getElementById(iconosId) : null;
   if (elIconos) {
-    elIconos.innerHTML = plantas.map(p =>
-      `<span class="dash-planta-icono" title="${escAttr(p.nombre)} · ${FASE_LABEL[p.fase]||p.fase||'—'}">${iconoFase(p.fase)}</span>`
-    ).join("");
+    elIconos.innerHTML = "";
+    plantas.forEach(p => {
+      const span = document.createElement("span");
+      span.className = "dash-planta-icono";
+      span.title = `${p.nombre} · ${FASE_LABEL[p.fase]||p.fase||'—'} · click para abrir`;
+      span.textContent = iconoFase(p.fase);
+      span.addEventListener("click", (e) => { e.stopPropagation(); window.verPlanta(p.id); });
+      elIconos.appendChild(span);
+    });
   }
 }
 
@@ -1072,7 +1087,15 @@ function svgCarpa(encendida) {
     <line x1="30" y1="45" x2="170" y2="45" class="carpa-marco"/>
     <line x1="100" y1="45" x2="100" y2="205" class="carpa-cierre"/>
     <ellipse cx="100" cy="100" rx="65" ry="55" class="glow-interior"/>
-    <rect x="55" y="38" width="90" height="10" rx="5" class="barra-luz"/>
+    <g class="panel-led">
+      <!-- Galponeras 100w blancas, en perspectiva hacia los costados (más chicas y altas cuanto más lejos) -->
+      <polygon points="14,36 33,33 35,40 15,42" class="galponera"/>
+      <polygon points="35,32 58,30 60,38 36,40" class="galponera"/>
+      <polygon points="142,30 165,32 164,40 140,38" class="galponera"/>
+      <polygon points="167,33 186,36 185,42 165,40" class="galponera"/>
+      <!-- Panel central Insativa 200w -->
+      <polygon points="62,28 138,28 145,40 55,40" class="barra-luz"/>
+    </g>
   </svg>`;
 }
 
@@ -2163,8 +2186,9 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .dash-dim{font-size:.72rem;color:var(--muted)}
 .dash-body{display:flex;align-items:center;gap:14px}
 .dash-ilustracion{flex:1;display:flex;justify-content:center;min-width:0;position:relative}
-.dash-plantas-iconos{position:absolute;bottom:2px;left:0;right:0;display:flex;justify-content:center;gap:4px;flex-wrap:wrap;pointer-events:none}
-.dash-planta-icono{font-size:1.1rem;filter:drop-shadow(0 1px 2px rgba(0,0,0,.6));pointer-events:auto}
+.dash-plantas-iconos{position:absolute;left:0;right:0;top:64%;bottom:6%;max-width:210px;margin:0 auto;display:flex;align-items:flex-end;justify-content:center;gap:5px;flex-wrap:wrap;pointer-events:none}
+.dash-planta-icono{font-size:1.3rem;filter:drop-shadow(0 1px 3px rgba(0,0,0,.7));pointer-events:auto;cursor:pointer;transition:transform .1s}
+.dash-planta-icono:hover{transform:scale(1.2)}
 .dash-datos{display:flex;flex-direction:column;gap:10px;min-width:78px}
 .dash-dato{text-align:center}
 .dash-dato .valor{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.25rem}
@@ -2176,10 +2200,12 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .carpa-cierre{stroke:#000;stroke-width:1;stroke-dasharray:3,3;opacity:.5}
 .estante-base,.estante-pata{fill:#33392f}
 .barra-luz{fill:#4a4a44;transition:fill .5s ease,filter .5s ease}
+.galponera{fill:#3d413f;transition:fill .5s ease,filter .5s ease}
 .glow-interior{fill:#000;opacity:0;transition:opacity .6s ease,fill .6s ease}
 .planta-silueta{fill:#26402c;transition:fill .6s ease}
 
 .glow-on .barra-luz{fill:#ffd23d;filter:drop-shadow(0 0 6px #ffd23dcc)}
+.glow-on .galponera{fill:#eef6ff;filter:drop-shadow(0 0 5px #eef6ffcc)}
 .glow-on .glow-interior{fill:#ffd23d;opacity:.16}
 .glow-on .planta-silueta{fill:#6bbf5c}
 .glow-off .glow-interior{opacity:0}
