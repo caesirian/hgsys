@@ -304,6 +304,20 @@ async function obtenerUltimaFertilizacion(plantaId) {
   return new Date(Math.max(...fechas.map(f=>f.getTime())));
 }
 
+// Mismo criterio que última fertilización, pero para eventos tipo "riego".
+// OJO: usa la FECHA del evento (que puede haberse cargado con fecha pasada,
+// ej. "regué ayer"), no la fecha en que se guardó el registro — así el
+// resumen refleja cuándo pasó de verdad, no cuándo lo cargaste en la app.
+async function obtenerUltimoRiego(plantaId) {
+  try {
+    const snap = await getDocs(query(collection(db,"plantas",plantaId,"eventos"), where("tipo","==","riego")));
+    let fechas = [];
+    snap.forEach(d => { const f = d.data().fecha; if (f) fechas.push(f.toDate ? f.toDate() : new Date(f)); });
+    if (!fechas.length) return null;
+    return new Date(Math.max(...fechas.map(f=>f.getTime())));
+  } catch { return null; }
+}
+
 // Trae todas las plantas de un lugar con su día de ciclo y última fertilización,
 // para mostrar en Lugares y Dashboard (genética, etapa real, cuidado reciente).
 async function obtenerPlantasResumenLugar(lugarId) {
@@ -312,10 +326,12 @@ async function obtenerPlantasResumenLugar(lugarId) {
     return await Promise.all(snap.docs.map(async (pd) => {
       const p = pd.data();
       const ultimaFert = await obtenerUltimaFertilizacion(pd.id);
+      const ultimoRiego = await obtenerUltimoRiego(pd.id);
       return {
         id: pd.id, nombre: p.nombre, genetica: p.genetica, tipoOrigen: p.tipoOrigen,
         fase: p.fase, dia: diasDesde(p.fechaInicio),
         diasFert: ultimaFert ? diasDesde(ultimaFert) : null,
+        diasRiego: ultimoRiego ? diasDesde(ultimoRiego) : null,
       };
     }));
   } catch (err) {
@@ -347,7 +363,7 @@ function htmlResumenPlantas(plantas) {
         <span>📅 Día ${p.dia ?? "—"} · ${FASE_LABEL[p.fase]||p.fase||"—"}</span>
         ${p.tipoOrigen ? `<span>🌱 ${p.tipoOrigen}</span>` : ""}
       </div>
-      <div class="planta-mini-fert">💧 Últ. fert: ${p.diasFert==null ? "sin registro" : (p.diasFert===0 ? "hoy" : `hace ${p.diasFert} día${p.diasFert>1?"s":""}`)}</div>
+      <div class="planta-mini-fert">💧 Últ. riego: ${p.diasRiego==null ? "sin registro" : (p.diasRiego===0 ? "hoy" : `hace ${p.diasRiego} día${p.diasRiego>1?"s":""}`)} · 🌿 Últ. fert: ${p.diasFert==null ? "sin registro" : (p.diasFert===0 ? "hoy" : `hace ${p.diasFert} día${p.diasFert>1?"s":""}`)}</div>
     </div>`).join("");
 }
 
@@ -1478,23 +1494,32 @@ window.editarPlanta = async (id) => {
 };
 window.editarPlantaActiva = () => window.editarPlanta(plantaActiva);
 
+// Setter null-safe: si el elemento no está en el DOM (ej. caché vieja del
+// navegador sirviendo un HTML desactualizado respecto al JS), avisa por
+// consola en vez de tirar abajo toda la función a mitad de camino.
+function setTxt(id, valor) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = valor;
+  else console.warn(`setTxt: no encontré #${id} en el DOM (¿caché vieja? probá Ctrl+Shift+R)`);
+}
+
 window.verPlanta = async (id) => {
   try {
     const snap = await getDoc(doc(db,"plantas",id));
     if (!snap.exists()) { toast("Esa planta ya no existe (¿se borró?)","err"); return; }
     plantaActiva = id;
     const p = snap.data();
-    document.getElementById("det-nombre").textContent   = p.nombre||"—";
-    document.getElementById("det-genetica").textContent = p.genetica||"—";
-    document.getElementById("det-fase").textContent     = p.fase||"—";
-    document.getElementById("det-origen").textContent   = p.tipoOrigen==="semilla"?"Semilla":"Esqueje";
-    document.getElementById("det-inicio").textContent   = fmt(p.fechaInicio);
-    document.getElementById("det-dia").textContent      = `Día ${dias(p.fechaInicio)}`;
-    document.getElementById("det-substrato").textContent= p.substrato||"—";
-    document.getElementById("det-maceta").textContent   = (p.tamMaceta||"—")+"L";
-    document.getElementById("det-riego").textContent    = p.sistemaRiego||"—";
-    document.getElementById("det-altura").textContent   = p.alturaPlantin ? p.alturaPlantin+" cm" : "—";
-    document.getElementById("det-notas").textContent    = p.notas||"Sin notas";
+    setTxt("det-nombre",    p.nombre||"—");
+    setTxt("det-genetica",  p.genetica||"—");
+    setTxt("det-fase",      p.fase||"—");
+    setTxt("det-origen",    p.tipoOrigen==="semilla"?"Semilla":"Esqueje");
+    setTxt("det-inicio",    fmt(p.fechaInicio));
+    setTxt("det-dia",       `Día ${dias(p.fechaInicio)}`);
+    setTxt("det-substrato", p.substrato||"—");
+    setTxt("det-maceta",    (p.tamMaceta||"—")+"L");
+    setTxt("det-riego",     p.sistemaRiego||"—");
+    setTxt("det-altura",    p.alturaPlantin ? p.alturaPlantin+" cm" : "—");
+    setTxt("det-notas",     p.notas||"Sin notas");
     show("vista-planta");
     await cargarSelectorPlanta(p.lugarId, id);
     cargarMediciones(); cargarEventos(); cargarNutricion();
@@ -2187,7 +2212,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .dash-body{display:flex;align-items:center;gap:14px}
 .dash-ilustracion{flex:1;display:flex;justify-content:center;min-width:0;position:relative}
 .dash-plantas-iconos{position:absolute;left:0;right:0;top:64%;bottom:6%;max-width:210px;margin:0 auto;display:flex;align-items:flex-end;justify-content:center;gap:5px;flex-wrap:wrap;pointer-events:none}
-.dash-planta-icono{font-size:1.3rem;filter:drop-shadow(0 1px 3px rgba(0,0,0,.7));pointer-events:auto;cursor:pointer;transition:transform .1s}
+.dash-planta-icono{font-size:1.3rem;text-shadow:0 1px 3px rgba(0,0,0,.7);pointer-events:auto;cursor:pointer;transition:transform .1s}
 .dash-planta-icono:hover{transform:scale(1.2)}
 .dash-datos{display:flex;flex-direction:column;gap:10px;min-width:78px}
 .dash-dato{text-align:center}
