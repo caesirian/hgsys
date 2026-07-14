@@ -409,7 +409,7 @@ async function cargarPlantasResumenCard(lugarId, contenedorId, iconosId) {
       const profundidad = rows <= 1 ? 1 : fila / (rows - 1); // 0=atrás, 1=adelante
       const topPct    = 8 + profundidad * 84;
       const escala    = 0.68 + profundidad * 0.5;
-      const anchoFila = 34 + profundidad * 60; // % del contenedor que ocupa esa fila
+      const anchoFila = 40 + profundidad * 40; // % del contenedor que ocupa esa fila (ajustado al ancho real del piso en cada estructura)
       const colT      = colsEnFila <= 1 ? 0.5 : col / (colsEnFila - 1);
       const leftPct   = 50 + (colT - 0.5) * anchoFila;
 
