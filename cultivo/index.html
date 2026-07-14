@@ -1267,7 +1267,7 @@ async function cargarDashboard() {
 function iniciarAutoRefreshDashboard() {
   if (dashboardTimer) clearInterval(dashboardTimer);
   dashboardTimer = setInterval(async () => {
-    const tareas = Object.entries(dashboardActivos).map(([id, cfg]) => refrescarDashboardCard(id, cfg.sensorKey, cfg.luzKey, cfg.tipo));
+    const tareas = Object.entries(dashboardActivos).map(([id, cfg]) => refrescarDashboardCard(id, cfg.sensorKey, cfg.luzKey, cfg.tipo, cfg.alturaLuces));
     await Promise.all(tareas);
     reordenarDashboard();
   }, 60 * 1000);
@@ -1281,7 +1281,7 @@ function reordenarDashboard() {
   tarjetas.forEach(t => grid.appendChild(t));
 }
 
-async function refrescarDashboardCard(lugarId, sensorKey, luzKey, tipo) {
+async function refrescarDashboardCard(lugarId, sensorKey, luzKey, tipo, alturaLuces) {
   const proxyBase = (localStorage.getItem("tuya_proxy") || PROXY_URL).replace(/\/tuya$/, "");
 
   if (sensorKey) {
@@ -1310,7 +1310,7 @@ async function refrescarDashboardCard(lugarId, sensorKey, luzKey, tipo) {
       const ilusEl = document.getElementById("dash-ilus-"+lugarId);
       if (ilusEl) {
         const svgEl = ilusEl.querySelector("svg");
-        const nuevoSvg = tipo === "estructura3x1" ? svgEstructura3x1(encendido) : svgCarpa(encendido);
+        const nuevoSvg = tipo === "estructura3x1" ? svgEstructura3x1(encendido, alturaLuces) : svgCarpa(encendido, alturaLuces);
         if (svgEl) svgEl.outerHTML = nuevoSvg; else ilusEl.insertAdjacentHTML("afterbegin", nuevoSvg);
       }
       const luzEl = document.getElementById("dash-luz-"+lugarId);
@@ -2306,6 +2306,8 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .carpa-piso{fill:#242b26;stroke:#0a0d0a;stroke-width:1}
 .carpa-fondo{fill:#12160f;stroke:#0a0d0a;stroke-width:1}
 .cable-luz{stroke:#3a3f3a;stroke-width:1}
+.mesa-pata{stroke:#3d4a3a;stroke-width:2.5}
+.mesa-tabla{fill:#4a3a2a;stroke:#2a201a;stroke-width:1}
 .estante-base,.estante-pata{fill:#33392f}
 .barra-luz{fill:#4a4a44;transition:fill .5s ease,filter .5s ease}
 .galponera{fill:#3d413f;transition:fill .5s ease,filter .5s ease}
