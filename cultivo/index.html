@@ -1133,7 +1133,9 @@ function detectarTipoEstructura(l) {
 // La pared del fondo va ANIDADA adentro de ese marco (más chica, centrada),
 // no apilada arriba — así la fuga converge hacia el centro y el alto real
 // (200cm) queda siempre vertical, sin mezclarse con la profundidad (100cm).
-function svgCarpa(encendida) {
+function svgCarpa(encendida, alturaLuces) {
+  const h = alturaLuces==null ? 70 : alturaLuces;
+  const yLuz = 22 + (100-h) * 0.22; // 100%→y=22 (arriba) · 0%→y=44 (abajo, más cerca de las plantas)
   return `
   <svg viewBox="0 0 120 240" class="ilustracion ${encendida?'glow-on':'glow-off'}">
     <!-- Marco frontal 10,10–110,230 · pared del fondo (anidada) 35,65–85,175 -->
@@ -1145,18 +1147,23 @@ function svgCarpa(encendida) {
     <rect x="10" y="10" width="100" height="220" fill="none" class="carpa-marco"/>
     <ellipse cx="60" cy="130" rx="42" ry="95" class="glow-interior"/>
     <g class="panel-led">
-      <!-- Galponeras 100w blancas (4), montadas cerca del fondo -->
-      <line x1="30" y1="30" x2="30" y2="37" class="cable-luz"/>
-      <line x1="40" y1="30" x2="40" y2="34" class="cable-luz"/>
-      <line x1="80" y1="30" x2="80" y2="34" class="cable-luz"/>
-      <line x1="90" y1="30" x2="90" y2="37" class="cable-luz"/>
-      <ellipse cx="30" cy="40" rx="3.5" ry="5" class="galponera"/>
-      <ellipse cx="40" cy="37" rx="4" ry="5.5" class="galponera"/>
-      <ellipse cx="80" cy="37" rx="4" ry="5.5" class="galponera"/>
-      <ellipse cx="90" cy="40" rx="3.5" ry="5" class="galponera"/>
+      <!-- Galponera izquierda -->
+      <line x1="38" y1="18" x2="38" y2="${(yLuz-2).toFixed(1)}" class="cable-luz"/>
+      <ellipse cx="38" cy="${yLuz.toFixed(1)}" rx="4.5" ry="6" class="galponera"/>
       <!-- Panel central Insativa 200w -->
-      <line x1="60" y1="28" x2="60" y2="36" class="cable-luz"/>
-      <rect x="46" y="36" width="28" height="7" rx="2" class="barra-luz"/>
+      <line x1="60" y1="16" x2="60" y2="${(yLuz-4).toFixed(1)}" class="cable-luz"/>
+      <rect x="46" y="${(yLuz-4).toFixed(1)}" width="28" height="7" rx="2" class="barra-luz"/>
+      <!-- Galponera derecha -->
+      <line x1="82" y1="18" x2="82" y2="${(yLuz-2).toFixed(1)}" class="cable-luz"/>
+      <ellipse cx="82" cy="${yLuz.toFixed(1)}" rx="4.5" ry="6" class="galponera"/>
+    </g>
+    <!-- Mesa 80x80cm, patas de 40cm — apoyo de esquejes -->
+    <g class="mesa">
+      <line x1="30" y1="185" x2="30" y2="212" class="mesa-pata"/>
+      <line x1="90" y1="185" x2="90" y2="212" class="mesa-pata"/>
+      <line x1="38" y1="196" x2="38" y2="223" class="mesa-pata"/>
+      <line x1="82" y1="196" x2="82" y2="223" class="mesa-pata"/>
+      <polygon points="30,185 90,185 82,196 38,196" class="mesa-tabla"/>
     </g>
   </svg>`;
 }
@@ -1201,6 +1208,32 @@ function svgEstructura3x1(encendida) {
   </svg>`;
 }
 
+// Clima exterior real (Villa Luzuriaga, La Matanza, Bs.As.) vía Open-Meteo,
+// sin API key. Se muestra como termómetro afuera de cada ilustración del
+// Dashboard, para comparar de un vistazo el ambiente interior vs. exterior.
+// Cache de 20 min: el clima no cambia tan rápido y evita pegarle a la API
+// en cada refresco del dashboard.
+let climaExteriorCache = null; // { temp, hum, ts }
+async function obtenerClimaExterior() {
+  if (climaExteriorCache && (Date.now() - climaExteriorCache.ts) < 20*60*1000) return climaExteriorCache;
+  try {
+    const resp = await fetch("https://api.open-meteo.com/v1/forecast?latitude=-34.69&longitude=-58.62&current=temperature_2m,relative_humidity_2m&timezone=America%2FArgentina%2FBuenos_Aires", { signal: AbortSignal.timeout(8000) });
+    if (!resp.ok) throw new Error("HTTP "+resp.status);
+    const data = await resp.json();
+    climaExteriorCache = { temp: data.current?.temperature_2m, hum: data.current?.relative_humidity_2m, ts: Date.now() };
+  } catch (err) {
+    console.warn("No se pudo traer el clima exterior:", err.message);
+  }
+  return climaExteriorCache;
+}
+async function pintarClimaExteriorDashboard() {
+  const clima = await obtenerClimaExterior();
+  document.querySelectorAll('[id^="dash-clima-ext-val-"]').forEach(el => {
+    el.textContent = clima && clima.temp!=null ? `${clima.temp.toFixed(0)}°C · 💧${clima.hum!=null?clima.hum.toFixed(0):'—'}%` : "—";
+    el.parentElement.title = "Clima exterior (Villa Luzuriaga)";
+  });
+}
+
 async function cargarDashboard() {
   const grid = document.getElementById("dashboard-grid");
   grid.innerHTML = '<p class="cargando">Cargando...</p>';
@@ -1230,7 +1263,7 @@ async function cargarDashboard() {
     const sensorKey = (l.sensoresTuya||[]).find(s => DISPOSITIVOS_TUYA[s]?.tipo === "sensor");
     const luzKey    = (l.switchLuces||[])[0];
     const tipo      = detectarTipoEstructura(l);
-    const svgInicial = tipo === "estructura3x1" ? svgEstructura3x1(false) : svgCarpa(false);
+    const svgInicial = tipo === "estructura3x1" ? svgEstructura3x1(false, l.alturaLuces) : svgCarpa(false, l.alturaLuces);
 
     const card = document.createElement("div");
     card.className = "dash-card";
@@ -1241,7 +1274,7 @@ async function cargarDashboard() {
         <span class="dash-dim">${l.dimensiones||""}</span>
       </div>
       <div class="dash-body">
-        <div class="dash-ilustracion" id="dash-ilus-${d.id}">${svgInicial}<div class="dash-plantas-iconos" id="dash-iconos-${d.id}" data-tipo="${tipo}"></div></div>
+        <div class="dash-ilustracion" id="dash-ilus-${d.id}">${svgInicial}<div class="dash-plantas-iconos" id="dash-iconos-${d.id}" data-tipo="${tipo}"></div><div class="dash-clima-ext" id="dash-clima-ext-${d.id}">🌡️<span id="dash-clima-ext-val-${d.id}">…</span></div></div>
         <div class="dash-datos">
           <div class="dash-dato"><div class="valor" id="dash-temp-${d.id}">—</div><div class="label">🌡️ Temp</div></div>
           <div class="dash-dato"><div class="valor" id="dash-hum-${d.id}">—</div><div class="label">💧 Humedad</div></div>
@@ -1258,10 +1291,11 @@ async function cargarDashboard() {
     });
     cargarPlantasResumenCard(d.id, "dash-plantas-"+d.id, "dash-iconos-"+d.id);
 
-    dashboardActivos[d.id] = { sensorKey, luzKey, tipo };
-    refrescarDashboardCard(d.id, sensorKey, luzKey, tipo);
+    dashboardActivos[d.id] = { sensorKey, luzKey, tipo, alturaLuces: l.alturaLuces };
+    refrescarDashboardCard(d.id, sensorKey, luzKey, tipo, l.alturaLuces);
   });
   iniciarAutoRefreshDashboard();
+  pintarClimaExteriorDashboard();
 }
 
 function iniciarAutoRefreshDashboard() {
@@ -1269,6 +1303,7 @@ function iniciarAutoRefreshDashboard() {
   dashboardTimer = setInterval(async () => {
     const tareas = Object.entries(dashboardActivos).map(([id, cfg]) => refrescarDashboardCard(id, cfg.sensorKey, cfg.luzKey, cfg.tipo, cfg.alturaLuces));
     await Promise.all(tareas);
+    pintarClimaExteriorDashboard();
     reordenarDashboard();
   }, 60 * 1000);
 }
@@ -1682,11 +1717,28 @@ function fechaHoraLocalInputs() {
     hora:  `${pad(n.getHours())}:${pad(n.getMinutes())}`,
   };
 }
-window.abrirModalMedicion = () => {
+window.abrirModalMedicion = async () => {
   resetCamposDiv("form-medicion");
   const { fecha, hora } = fechaHoraLocalInputs();
   val("m-fecha", fecha); val("m-hora", hora);
   abrirModal("modal-medicion");
+  // Autocompletar con la lectura actual del sensor del lugar de esta planta
+  // (antes había que ir a Sensores y usar "Importar" a mano).
+  if (plantaActiva) {
+    try {
+      const pSnap = await getDoc(doc(db,"plantas",plantaActiva));
+      if (pSnap.exists()) {
+        const lSnap = await getDoc(doc(db,"lugares",pSnap.data().lugarId));
+        const sensorKey = (lSnap.data()?.sensoresTuya||[]).find(s => DISPOSITIVOS_TUYA[s]?.tipo === "sensor");
+        if (sensorKey) {
+          const data = await consultarDispositivo(sensorKey);
+          const s = data.sensores || {};
+          if (s.tempAmb != null) val("m-tempamb", s.tempAmb);
+          if (s.humedad != null) val("m-humedad", s.humedad);
+        }
+      }
+    } catch (err) { console.warn("No se pudo autocompletar desde el sensor:", err.message); }
+  }
 };
 window.abrirModalEvento = () => {
   resetCamposDiv("form-evento");
@@ -2308,6 +2360,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .cable-luz{stroke:#3a3f3a;stroke-width:1}
 .mesa-pata{stroke:#3d4a3a;stroke-width:2.5}
 .mesa-tabla{fill:#4a3a2a;stroke:#2a201a;stroke-width:1}
+.dash-clima-ext{position:absolute;top:2px;right:2px;background:rgba(13,15,23,.75);border:1px solid var(--border);border-radius:20px;padding:2px 8px;font-size:.68rem;color:#8fd0ff;display:flex;align-items:center;gap:3px;white-space:nowrap}
 .estante-base,.estante-pata{fill:#33392f}
 .barra-luz{fill:#4a4a44;transition:fill .5s ease,filter .5s ease}
 .galponera{fill:#3d413f;transition:fill .5s ease,filter .5s ease}
