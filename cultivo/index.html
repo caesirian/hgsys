@@ -379,8 +379,8 @@ function iconoFase(fase) {
 // Zona del piso (en % del alto del contenedor) donde van las plantas, según
 // el tipo de estructura — cada una tiene proporciones reales distintas.
 const ZONA_PISO = {
-  carpa:          { top: 25, bottom: 8 },
-  estructura3x1:  { top: 27, bottom: 25 },
+  carpa:          { top: 73, bottom: 4 },
+  estructura3x1:  { top: 75, bottom: 10 },
 };
 
 async function cargarPlantasResumenCard(lugarId, contenedorId, iconosId) {
@@ -1128,70 +1128,75 @@ function detectarTipoEstructura(l) {
   return "carpa";
 }
 
-// Carpa real: 100x100cm de base x 200cm de alto → relación ancho:alto = 1:2.
-// El viewBox 130x260 respeta esa proporción real (no es estético, es a escala).
+// Carpa real: 100x100cm de base x 200cm de alto → el marco frontal (lo que
+// se ve mirando de frente) debe ser alto y angosto (ratio ancho:alto=1:2).
+// La pared del fondo va ANIDADA adentro de ese marco (más chica, centrada),
+// no apilada arriba — así la fuga converge hacia el centro y el alto real
+// (200cm) queda siempre vertical, sin mezclarse con la profundidad (100cm).
 function svgCarpa(encendida) {
   return `
-  <svg viewBox="0 0 130 260" class="ilustracion ${encendida?'glow-on':'glow-off'}">
-    <!-- Paredes/techo/piso en perspectiva (frente 15,60–115,240 · fondo 38,12–92,65) -->
-    <polygon points="15,60 115,60 92,12 38,12" class="carpa-techo"/>
-    <polygon points="15,60 15,240 38,65 38,12" class="carpa-pared"/>
-    <polygon points="115,60 115,240 92,65 92,12" class="carpa-pared"/>
-    <polygon points="15,240 115,240 92,65 38,65" class="carpa-piso"/>
-    <polygon points="38,12 92,12 92,65 38,65" class="carpa-fondo"/>
-    <rect x="15" y="60" width="100" height="180" fill="none" class="carpa-marco"/>
-    <ellipse cx="65" cy="160" rx="46" ry="72" class="glow-interior"/>
+  <svg viewBox="0 0 120 240" class="ilustracion ${encendida?'glow-on':'glow-off'}">
+    <!-- Marco frontal 10,10–110,230 · pared del fondo (anidada) 35,65–85,175 -->
+    <polygon points="10,10 110,10 85,65 35,65" class="carpa-techo"/>
+    <polygon points="10,10 10,230 35,175 35,65" class="carpa-pared"/>
+    <polygon points="110,10 110,230 85,175 85,65" class="carpa-pared"/>
+    <polygon points="10,230 110,230 85,175 35,175" class="carpa-piso"/>
+    <polygon points="35,65 85,65 85,175 35,175" class="carpa-fondo"/>
+    <rect x="10" y="10" width="100" height="220" fill="none" class="carpa-marco"/>
+    <ellipse cx="60" cy="130" rx="42" ry="95" class="glow-interior"/>
     <g class="panel-led">
-      <!-- Galponeras 100w blancas (4), colgando del fondo hacia los costados -->
-      <line x1="44" y1="12" x2="44" y2="23" class="cable-luz"/>
-      <line x1="52" y1="12" x2="52" y2="20" class="cable-luz"/>
-      <line x1="78" y1="12" x2="78" y2="20" class="cable-luz"/>
-      <line x1="86" y1="12" x2="86" y2="23" class="cable-luz"/>
-      <ellipse cx="44" cy="28" rx="4" ry="5.5" class="galponera"/>
-      <ellipse cx="52" cy="25" rx="4.5" ry="6" class="galponera"/>
-      <ellipse cx="78" cy="25" rx="4.5" ry="6" class="galponera"/>
-      <ellipse cx="86" cy="28" rx="4" ry="5.5" class="galponera"/>
+      <!-- Galponeras 100w blancas (4), montadas cerca del fondo -->
+      <line x1="30" y1="30" x2="30" y2="37" class="cable-luz"/>
+      <line x1="40" y1="30" x2="40" y2="34" class="cable-luz"/>
+      <line x1="80" y1="30" x2="80" y2="34" class="cable-luz"/>
+      <line x1="90" y1="30" x2="90" y2="37" class="cable-luz"/>
+      <ellipse cx="30" cy="40" rx="3.5" ry="5" class="galponera"/>
+      <ellipse cx="40" cy="37" rx="4" ry="5.5" class="galponera"/>
+      <ellipse cx="80" cy="37" rx="4" ry="5.5" class="galponera"/>
+      <ellipse cx="90" cy="40" rx="3.5" ry="5" class="galponera"/>
       <!-- Panel central Insativa 200w -->
-      <line x1="65" y1="12" x2="65" y2="21" class="cable-luz"/>
-      <rect x="50" y="21" width="30" height="7" rx="2" class="barra-luz"/>
+      <line x1="60" y1="28" x2="60" y2="36" class="cable-luz"/>
+      <rect x="46" y="36" width="28" height="7" rx="2" class="barra-luz"/>
     </g>
   </svg>`;
 }
 
-// Estructura real: 300cm ancho x 100cm profundidad x 200cm alto → relación
-// ancho:alto = 1.5:1. El viewBox 300x200 respeta esa proporción real.
+// Estructura real: 300cm ancho x 200cm alto x 100cm de profundidad. Mismo
+// criterio que la Carpa: marco frontal ancho×alto real, fondo (profundidad)
+// anidado adentro, fuga radiando hacia el centro.
 function svgEstructura3x1(encendida) {
   return `
   <svg viewBox="0 0 300 200" class="ilustracion ${encendida?'glow-on':'glow-off'}">
-    <!-- Patas y base elevada -->
-    <rect x="30" y="150" width="7" height="33" class="estante-pata"/>
-    <rect x="263" y="150" width="7" height="33" class="estante-pata"/>
-    <!-- Estructura en perspectiva: frente 20,45–280,150 · fondo 65,18–235,55, con 2 divisiones (3 compartimentos) -->
-    <polygon points="20,45 280,45 235,18 65,18" class="carpa-techo"/>
-    <polygon points="20,45 20,150 65,55 65,18" class="carpa-pared"/>
-    <polygon points="280,45 280,150 235,55 235,18" class="carpa-pared"/>
-    <polygon points="20,150 280,150 235,55 65,55" class="carpa-piso"/>
-    <polygon points="65,18 235,18 235,55 65,55" class="carpa-fondo"/>
-    <line x1="107" y1="45" x2="122" y2="18" class="carpa-marco"/>
-    <line x1="107" y1="150" x2="122" y2="55" class="carpa-marco"/>
-    <line x1="193" y1="45" x2="178" y2="18" class="carpa-marco"/>
-    <line x1="193" y1="150" x2="178" y2="55" class="carpa-marco"/>
-    <rect x="20" y="45" width="260" height="105" fill="none" class="carpa-marco"/>
-    <ellipse cx="150" cy="98" rx="128" ry="48" class="glow-interior"/>
+    <!-- Patas -->
+    <rect x="28" y="180" width="7" height="16" class="estante-pata"/>
+    <rect x="265" y="180" width="7" height="16" class="estante-pata"/>
+    <!-- Marco frontal 10,10–290,180 · pared del fondo (anidada) 59,40–241,150 -->
+    <polygon points="10,10 290,10 241,40 59,40" class="carpa-techo"/>
+    <polygon points="10,10 10,180 59,150 59,40" class="carpa-pared"/>
+    <polygon points="290,10 290,180 241,150 241,40" class="carpa-pared"/>
+    <polygon points="10,180 290,180 241,150 59,150" class="carpa-piso"/>
+    <polygon points="59,40 241,40 241,150 59,150" class="carpa-fondo"/>
+    <!-- 2 divisiones = 3 compartimentos -->
+    <line x1="103" y1="10" x2="120" y2="40" class="carpa-marco"/>
+    <line x1="103" y1="180" x2="120" y2="150" class="carpa-marco"/>
+    <line x1="197" y1="10" x2="180" y2="40" class="carpa-marco"/>
+    <line x1="197" y1="180" x2="180" y2="150" class="carpa-marco"/>
+    <rect x="10" y="10" width="280" height="170" fill="none" class="carpa-marco"/>
+    <ellipse cx="150" cy="95" rx="132" ry="80" class="glow-interior"/>
     <g class="panel-led">
       <!-- Insativa izquierda -->
-      <line x1="93" y1="18" x2="93" y2="26" class="cable-luz"/>
-      <rect x="78" y="26" width="30" height="6" rx="2" class="barra-luz"/>
+      <line x1="57" y1="16" x2="57" y2="24" class="cable-luz"/>
+      <rect x="42" y="24" width="30" height="6" rx="2" class="barra-luz"/>
       <!-- Insativa centro + 4 galponeras alrededor -->
-      <line x1="150" y1="18" x2="150" y2="26" class="cable-luz"/>
-      <rect x="135" y="26" width="30" height="6" rx="2" class="barra-luz"/>
-      <ellipse cx="130" cy="21" rx="4" ry="5" class="galponera"/>
-      <ellipse cx="170" cy="21" rx="4" ry="5" class="galponera"/>
-      <ellipse cx="130" cy="38" rx="4" ry="5" class="galponera"/>
-      <ellipse cx="170" cy="38" rx="4" ry="5" class="galponera"/>
+      <line x1="150" y1="16" x2="150" y2="24" class="cable-luz"/>
+      <rect x="135" y="24" width="30" height="6" rx="2" class="barra-luz"/>
+      <ellipse cx="120" cy="19" rx="4" ry="5" class="galponera"/>
+      <ellipse cx="180" cy="19" rx="4" ry="5" class="galponera"/>
+      <ellipse cx="120" cy="36" rx="4" ry="5" class="galponera"/>
+      <ellipse cx="180" cy="36" rx="4" ry="5" class="galponera"/>
       <!-- Insativa derecha -->
-      <line x1="207" y1="18" x2="207" y2="26" class="cable-luz"/>
-      <rect x="192" y="26" width="30" height="6" rx="2" class="barra-luz"/>
+      <line x1="243" y1="16" x2="243" y2="24" class="cable-luz"/>
+      <rect x="228" y="24" width="30" height="6" rx="2" class="barra-luz"/>
     </g>
   </svg>`;
 }
