@@ -655,6 +655,25 @@ window.toggleGraficosLugar = function(lugarId) {
   }
 };
 
+// Redibuja el panel de luces de la ilustración del Dashboard en vivo mientras
+// se arrastra el slider (sin red, sin esperar a Firestore). El guardado real
+// pasa por guardarAlturaLuces en el onchange (al soltar). Solo tiene efecto
+// visual en la Carpa por ahora: svgEstructura3x1 todavía no usa alturaLuces.
+window.actualizarAlturaLucesDashboard = (lugarId, valor) => {
+  const v = parseInt(valor);
+  const span = document.getElementById("altura-luces-dash-val-"+lugarId);
+  if (span) span.textContent = v;
+  const cfg = dashboardActivos[lugarId];
+  if (!cfg) return;
+  cfg.alturaLuces = v;
+  if (cfg.tipo === "estructura3x1") return; // sin soporte visual todavía
+  const ilusEl = document.getElementById("dash-ilus-"+lugarId);
+  const svgEl = ilusEl && ilusEl.querySelector("svg");
+  if (!svgEl) return;
+  const encendido = !!(estadoLuzActivos[lugarId] && estadoLuzActivos[lugarId].encendido);
+  svgEl.outerHTML = svgCarpa(encendido, v);
+};
+
 // Guarda la altura del panel de luces (0-100) para este lugar y refresca
 // tanto el estado en memoria (dashboardActivos) como el dibujo si el
 // Dashboard está visible en ese momento.
@@ -1318,6 +1337,13 @@ async function cargarDashboard() {
           <div class="dash-dato" id="dash-luz-${d.id}"><div class="label">${luzKey?'Consultando luces...':'Sin luces asociadas'}</div></div>
         </div>
       </div>
+      ${tipo === "carpa" ? `
+      <div class="altura-luces-box dash-altura-luces">
+        <label>🔆 Altura de luces: <span id="altura-luces-dash-val-${d.id}">${l.alturaLuces??70}</span>%</label>
+        <input type="range" min="0" max="100" value="${l.alturaLuces??70}" class="altura-luces-slider"
+               oninput="actualizarAlturaLucesDashboard('${d.id}', this.value)"
+               onchange="guardarAlturaLuces('${d.id}', this.value)">
+      </div>` : ""}
       <button class="btn-toggle-historial">📋 Ver historial de plantas y fertilización ▾</button>
       <div class="plantas-resumen colapsado" id="dash-plantas-${d.id}"><span class="clima-cargando">🌱 Consultando plantas...</span></div>`;
     grid.appendChild(card);
