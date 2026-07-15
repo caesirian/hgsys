@@ -546,8 +546,8 @@ async function cargarLugares() {
         </div>
         ${l.intractor||l.extractor ? `<div class="lugar-meta"><span>${l.intractor?"✅ Intractor":""}${l.extractor?" ✅ Extractor":""}</span></div>`:""}
         <div class="altura-luces-box">
-          <label>🔆 Altura de luces: <span id="altura-luces-val-${d.id}">${l.alturaLuces??70}</span>%</label>
-          <input type="range" min="0" max="100" value="${l.alturaLuces??70}" class="altura-luces-slider"
+          <label>🔆 Distancia de las luces a las plantas: <span id="altura-luces-val-${d.id}">${l.alturaLuces??70}</span>cm</label>
+          <input type="range" min="40" max="140" value="${l.alturaLuces??70}" class="altura-luces-slider"
                  oninput="document.getElementById('altura-luces-val-${d.id}').textContent=this.value"
                  onchange="guardarAlturaLuces('${d.id}', this.value)">
         </div>
@@ -1191,8 +1191,10 @@ function detectarTipoEstructura(l) {
 // no apilada arriba — así la fuga converge hacia el centro y el alto real
 // (200cm) queda siempre vertical, sin mezclarse con la profundidad (100cm).
 function svgCarpa(encendida, alturaLuces, lugarId) {
-  const h = alturaLuces==null ? 70 : alturaLuces;
-  const yLuz = 22 + (100-h) * 0.22; // 100%→y=22 (arriba) · 0%→y=44 (abajo, más cerca de las plantas)
+  const d = alturaLuces==null ? 70 : alturaLuces; // distancia real en cm de las luces a las plantas
+  // Referencia "0cm" = tabla de esquejes (y=185, real ≈41cm de altura). Escala:
+  // 220px de marco frontal representan 200cm de alto real → 1.1px/cm.
+  const yLuz = 185 - d * 1.1; // más cm → más arriba (lejos) · menos cm → más abajo (cerca)
   const gw = "bgW"+lugarId, gy = "bgY"+lugarId; // ids de gradiente únicos por lugar
   return `
   <svg viewBox="0 0 120 240" class="ilustracion ${encendida?'glow-on':'glow-off'}">
@@ -1246,8 +1248,10 @@ function svgCarpa(encendida, alturaLuces, lugarId) {
 // criterio que la Carpa: marco frontal ancho×alto real, fondo (profundidad)
 // anidado adentro, fuga radiando hacia el centro.
 function svgEstructura3x1(encendida, alturaLuces, lugarId) {
-  const h = alturaLuces==null ? 70 : alturaLuces;
-  const yLuz = 18 + (100-h) * 0.18; // 100%→y=18 (arriba) · 0%→y=36 (abajo, más cerca de las plantas)
+  const d = alturaLuces==null ? 70 : alturaLuces; // distancia real en cm de las luces a las plantas
+  // Referencia "0cm" = piso del fondo (y=150). Escala: 170px de marco frontal
+  // representan 200cm de alto real → 0.85px/cm.
+  const yLuz = 150 - d * 0.85;
   const gw = "egW"+lugarId, gy = "egY"+lugarId;
   return `
   <svg viewBox="0 0 300 200" class="ilustracion ${encendida?'glow-on':'glow-off'}">
@@ -1376,8 +1380,8 @@ async function cargarDashboard() {
         </div>
       </div>
       <div class="altura-luces-box dash-altura-luces">
-        <label>🔆 Altura de luces: <span id="altura-luces-dash-val-${d.id}">${l.alturaLuces??70}</span>%</label>
-        <input type="range" min="0" max="100" value="${l.alturaLuces??70}" class="altura-luces-slider"
+        <label>🔆 Distancia de las luces a las plantas: <span id="altura-luces-dash-val-${d.id}">${l.alturaLuces??70}</span>cm</label>
+        <input type="range" min="40" max="140" value="${l.alturaLuces??70}" class="altura-luces-slider"
                oninput="actualizarAlturaLucesDashboard('${d.id}', this.value)"
                onchange="guardarAlturaLuces('${d.id}', this.value)">
       </div>
