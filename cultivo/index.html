@@ -657,8 +657,8 @@ window.toggleGraficosLugar = function(lugarId) {
 
 // Redibuja el panel de luces de la ilustración del Dashboard en vivo mientras
 // se arrastra el slider (sin red, sin esperar a Firestore). El guardado real
-// pasa por guardarAlturaLuces en el onchange (al soltar). Solo tiene efecto
-// visual en la Carpa por ahora: svgEstructura3x1 todavía no usa alturaLuces.
+// pasa por guardarAlturaLuces en el onchange (al soltar). Soporta Carpa y
+// Estructura 3x1.
 window.actualizarAlturaLucesDashboard = (lugarId, valor) => {
   const v = parseInt(valor);
   const span = document.getElementById("altura-luces-dash-val-"+lugarId);
@@ -666,12 +666,13 @@ window.actualizarAlturaLucesDashboard = (lugarId, valor) => {
   const cfg = dashboardActivos[lugarId];
   if (!cfg) return;
   cfg.alturaLuces = v;
-  if (cfg.tipo === "estructura3x1") return; // sin soporte visual todavía
   const ilusEl = document.getElementById("dash-ilus-"+lugarId);
   const svgEl = ilusEl && ilusEl.querySelector("svg");
   if (!svgEl) return;
   const encendido = !!(estadoLuzActivos[lugarId] && estadoLuzActivos[lugarId].encendido);
-  svgEl.outerHTML = svgCarpa(encendido, v);
+  svgEl.outerHTML = cfg.tipo === "estructura3x1"
+    ? svgEstructura3x1(encendido, v, lugarId)
+    : svgCarpa(encendido, v, lugarId);
 };
 
 // Guarda la altura del panel de luces (0-100) para este lugar y refresca
@@ -1189,11 +1190,22 @@ function detectarTipoEstructura(l) {
 // La pared del fondo va ANIDADA adentro de ese marco (más chica, centrada),
 // no apilada arriba — así la fuga converge hacia el centro y el alto real
 // (200cm) queda siempre vertical, sin mezclarse con la profundidad (100cm).
-function svgCarpa(encendida, alturaLuces) {
+function svgCarpa(encendida, alturaLuces, lugarId) {
   const h = alturaLuces==null ? 70 : alturaLuces;
   const yLuz = 22 + (100-h) * 0.22; // 100%→y=22 (arriba) · 0%→y=44 (abajo, más cerca de las plantas)
+  const gw = "bgW"+lugarId, gy = "bgY"+lugarId; // ids de gradiente únicos por lugar
   return `
   <svg viewBox="0 0 120 240" class="ilustracion ${encendida?'glow-on':'glow-off'}">
+    <defs>
+      <linearGradient id="${gw}" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#ffffff" stop-opacity=".32"/>
+        <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+      </linearGradient>
+      <linearGradient id="${gy}" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#fff6c9" stop-opacity=".4"/>
+        <stop offset="100%" stop-color="#fff6c9" stop-opacity="0"/>
+      </linearGradient>
+    </defs>
     <!-- Marco frontal 10,10–110,230 · pared del fondo (anidada) 35,65–85,175 -->
     <polygon points="10,10 110,10 85,65 35,65" class="carpa-techo"/>
     <polygon points="10,10 10,230 35,175 35,65" class="carpa-pared"/>
@@ -1202,6 +1214,20 @@ function svgCarpa(encendida, alturaLuces) {
     <polygon points="35,65 85,65 85,175 35,175" class="carpa-fondo"/>
     <rect x="10" y="10" width="100" height="220" fill="none" class="carpa-marco"/>
     <ellipse cx="60" cy="130" rx="42" ry="95" class="glow-interior"/>
+    <!-- Mesa 80x80cm, patas de 40cm — apoyo de esquejes -->
+    <g class="mesa">
+      <line x1="30" y1="185" x2="30" y2="212" class="mesa-pata"/>
+      <line x1="90" y1="185" x2="90" y2="212" class="mesa-pata"/>
+      <line x1="38" y1="196" x2="38" y2="223" class="mesa-pata"/>
+      <line x1="82" y1="196" x2="82" y2="223" class="mesa-pata"/>
+      <polygon points="30,185 90,185 82,196 38,196" class="mesa-tabla"/>
+    </g>
+    <!-- Haces de luz (cono), sobre la mesa/piso -->
+    <g class="haces-luz">
+      <polygon points="34,${(yLuz+3).toFixed(1)} 42,${(yLuz+3).toFixed(1)} 55,225 21,225" fill="url(#${gw})" class="beam"/>
+      <polygon points="49,${(yLuz+1).toFixed(1)} 71,${(yLuz+1).toFixed(1)} 93,227 27,227" fill="url(#${gy})" class="beam"/>
+      <polygon points="78,${(yLuz+3).toFixed(1)} 86,${(yLuz+3).toFixed(1)} 99,225 65,225" fill="url(#${gw})" class="beam"/>
+    </g>
     <g class="panel-led">
       <!-- Galponera izquierda -->
       <line x1="38" y1="18" x2="38" y2="${(yLuz-2).toFixed(1)}" class="cable-luz"/>
@@ -1213,23 +1239,28 @@ function svgCarpa(encendida, alturaLuces) {
       <line x1="82" y1="18" x2="82" y2="${(yLuz-2).toFixed(1)}" class="cable-luz"/>
       <ellipse cx="82" cy="${yLuz.toFixed(1)}" rx="4.5" ry="6" class="galponera"/>
     </g>
-    <!-- Mesa 80x80cm, patas de 40cm — apoyo de esquejes -->
-    <g class="mesa">
-      <line x1="30" y1="185" x2="30" y2="212" class="mesa-pata"/>
-      <line x1="90" y1="185" x2="90" y2="212" class="mesa-pata"/>
-      <line x1="38" y1="196" x2="38" y2="223" class="mesa-pata"/>
-      <line x1="82" y1="196" x2="82" y2="223" class="mesa-pata"/>
-      <polygon points="30,185 90,185 82,196 38,196" class="mesa-tabla"/>
-    </g>
   </svg>`;
 }
 
 // Estructura real: 300cm ancho x 200cm alto x 100cm de profundidad. Mismo
 // criterio que la Carpa: marco frontal ancho×alto real, fondo (profundidad)
 // anidado adentro, fuga radiando hacia el centro.
-function svgEstructura3x1(encendida) {
+function svgEstructura3x1(encendida, alturaLuces, lugarId) {
+  const h = alturaLuces==null ? 70 : alturaLuces;
+  const yLuz = 18 + (100-h) * 0.18; // 100%→y=18 (arriba) · 0%→y=36 (abajo, más cerca de las plantas)
+  const gw = "egW"+lugarId, gy = "egY"+lugarId;
   return `
   <svg viewBox="0 0 300 200" class="ilustracion ${encendida?'glow-on':'glow-off'}">
+    <defs>
+      <linearGradient id="${gw}" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#ffffff" stop-opacity=".26"/>
+        <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+      </linearGradient>
+      <linearGradient id="${gy}" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#fff6c9" stop-opacity=".38"/>
+        <stop offset="100%" stop-color="#fff6c9" stop-opacity="0"/>
+      </linearGradient>
+    </defs>
     <!-- Patas -->
     <rect x="28" y="180" width="7" height="16" class="estante-pata"/>
     <rect x="265" y="180" width="7" height="16" class="estante-pata"/>
@@ -1246,20 +1277,27 @@ function svgEstructura3x1(encendida) {
     <line x1="197" y1="180" x2="180" y2="150" class="carpa-marco"/>
     <rect x="10" y="10" width="280" height="170" fill="none" class="carpa-marco"/>
     <ellipse cx="150" cy="95" rx="132" ry="80" class="glow-interior"/>
+    <!-- Haces de luz (cono), uno por compartimento -->
+    <g class="haces-luz">
+      <polygon points="47,${(yLuz+6).toFixed(1)} 67,${(yLuz+6).toFixed(1)} 85,145 29,145" fill="url(#${gy})" class="beam"/>
+      <polygon points="128,${(yLuz+2).toFixed(1)} 172,${(yLuz+2).toFixed(1)} 195,148 105,148" fill="url(#${gw})" class="beam"/>
+      <polygon points="140,${(yLuz+6).toFixed(1)} 160,${(yLuz+6).toFixed(1)} 178,145 122,145" fill="url(#${gy})" class="beam"/>
+      <polygon points="233,${(yLuz+6).toFixed(1)} 253,${(yLuz+6).toFixed(1)} 271,145 215,145" fill="url(#${gy})" class="beam"/>
+    </g>
     <g class="panel-led">
       <!-- Insativa izquierda -->
-      <line x1="57" y1="16" x2="57" y2="24" class="cable-luz"/>
-      <rect x="42" y="24" width="30" height="6" rx="2" class="barra-luz"/>
+      <line x1="57" y1="16" x2="57" y2="${yLuz.toFixed(1)}" class="cable-luz"/>
+      <rect x="42" y="${yLuz.toFixed(1)}" width="30" height="6" rx="2" class="barra-luz"/>
       <!-- Insativa centro + 4 galponeras alrededor -->
-      <line x1="150" y1="16" x2="150" y2="24" class="cable-luz"/>
-      <rect x="135" y="24" width="30" height="6" rx="2" class="barra-luz"/>
-      <ellipse cx="120" cy="19" rx="4" ry="5" class="galponera"/>
-      <ellipse cx="180" cy="19" rx="4" ry="5" class="galponera"/>
-      <ellipse cx="120" cy="36" rx="4" ry="5" class="galponera"/>
-      <ellipse cx="180" cy="36" rx="4" ry="5" class="galponera"/>
+      <line x1="150" y1="16" x2="150" y2="${yLuz.toFixed(1)}" class="cable-luz"/>
+      <rect x="135" y="${yLuz.toFixed(1)}" width="30" height="6" rx="2" class="barra-luz"/>
+      <ellipse cx="120" cy="${(yLuz-5).toFixed(1)}" rx="4" ry="5" class="galponera"/>
+      <ellipse cx="180" cy="${(yLuz-5).toFixed(1)}" rx="4" ry="5" class="galponera"/>
+      <ellipse cx="120" cy="${(yLuz+12).toFixed(1)}" rx="4" ry="5" class="galponera"/>
+      <ellipse cx="180" cy="${(yLuz+12).toFixed(1)}" rx="4" ry="5" class="galponera"/>
       <!-- Insativa derecha -->
-      <line x1="243" y1="16" x2="243" y2="24" class="cable-luz"/>
-      <rect x="228" y="24" width="30" height="6" rx="2" class="barra-luz"/>
+      <line x1="243" y1="16" x2="243" y2="${yLuz.toFixed(1)}" class="cable-luz"/>
+      <rect x="228" y="${yLuz.toFixed(1)}" width="30" height="6" rx="2" class="barra-luz"/>
     </g>
   </svg>`;
 }
@@ -1319,7 +1357,7 @@ async function cargarDashboard() {
     const sensorKey = (l.sensoresTuya||[]).find(s => DISPOSITIVOS_TUYA[s]?.tipo === "sensor");
     const luzKey    = (l.switchLuces||[])[0];
     const tipo      = detectarTipoEstructura(l);
-    const svgInicial = tipo === "estructura3x1" ? svgEstructura3x1(false, l.alturaLuces) : svgCarpa(false, l.alturaLuces);
+    const svgInicial = tipo === "estructura3x1" ? svgEstructura3x1(false, l.alturaLuces, d.id) : svgCarpa(false, l.alturaLuces, d.id);
 
     const card = document.createElement("div");
     card.className = "dash-card";
@@ -1337,13 +1375,12 @@ async function cargarDashboard() {
           <div class="dash-dato" id="dash-luz-${d.id}"><div class="label">${luzKey?'Consultando luces...':'Sin luces asociadas'}</div></div>
         </div>
       </div>
-      ${tipo === "carpa" ? `
       <div class="altura-luces-box dash-altura-luces">
         <label>🔆 Altura de luces: <span id="altura-luces-dash-val-${d.id}">${l.alturaLuces??70}</span>%</label>
         <input type="range" min="0" max="100" value="${l.alturaLuces??70}" class="altura-luces-slider"
                oninput="actualizarAlturaLucesDashboard('${d.id}', this.value)"
                onchange="guardarAlturaLuces('${d.id}', this.value)">
-      </div>` : ""}
+      </div>
       <button class="btn-toggle-historial">📋 Ver historial de plantas y fertilización ▾</button>
       <div class="plantas-resumen colapsado" id="dash-plantas-${d.id}"><span class="clima-cargando">🌱 Consultando plantas...</span></div>`;
     grid.appendChild(card);
@@ -1408,7 +1445,7 @@ async function refrescarDashboardCard(lugarId, sensorKey, luzKey, tipo, alturaLu
       const ilusEl = document.getElementById("dash-ilus-"+lugarId);
       if (ilusEl) {
         const svgEl = ilusEl.querySelector("svg");
-        const nuevoSvg = tipo === "estructura3x1" ? svgEstructura3x1(encendido, alturaLuces) : svgCarpa(encendido, alturaLuces);
+        const nuevoSvg = tipo === "estructura3x1" ? svgEstructura3x1(encendido, alturaLuces, lugarId) : svgCarpa(encendido, alturaLuces, lugarId);
         if (svgEl) svgEl.outerHTML = nuevoSvg; else ilusEl.insertAdjacentHTML("afterbegin", nuevoSvg);
       }
       const luzEl = document.getElementById("dash-luz-"+lugarId);
@@ -2439,6 +2476,15 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .glow-on .planta-silueta{fill:#6bbf5c}
 .glow-off .glow-interior{opacity:0}
 .glow-off .planta-silueta{fill:#233227}
+
+/* Haces de luz tipo cono, mismo criterio on/off que barra-luz/galponera */
+.beam{mix-blend-mode:screen;opacity:0;transition:opacity .5s ease;pointer-events:none}
+.glow-on .beam{opacity:1}
+
+/* Plantas del Dashboard (iconos HTML, hermanos del SVG): oscuras con la luz
+   apagada, brillo normal con la luz encendida. */
+.dash-planta-icono{filter:brightness(.5);transition:filter .5s ease}
+.ilustracion.glow-on ~ .dash-plantas-iconos .dash-planta-icono{filter:brightness(1)}
 .cult-header{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:10px}
 .cult-nombre{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:.95rem}
 .cult-fase{font-size:.68rem;padding:3px 8px;border-radius:20px;font-weight:600;text-transform:uppercase;flex-shrink:0}
