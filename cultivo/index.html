@@ -391,39 +391,52 @@ async function cargarPlantasResumenCard(lugarId, contenedorId, iconosId) {
   const elIconos = iconosId ? document.getElementById(iconosId) : null;
   if (elIconos) {
     elIconos.innerHTML = "";
-    const zona = ZONA_PISO[elIconos.dataset.tipo] || ZONA_PISO.carpa;
+    const tipo = elIconos.dataset.tipo;
+    const zona = ZONA_PISO[tipo] || ZONA_PISO.carpa;
     elIconos.style.top = zona.top + "%";
     elIconos.style.bottom = zona.bottom + "%";
 
-    // Distribución tipo grilla sobre la superficie (no en una sola fila):
-    // las filas de "atrás" quedan más chicas, más arriba y más juntas al
-    // centro (perspectiva); las de "adelante", más grandes, abajo y más
-    // separadas — así se ven repartidas sobre el piso, no amontonadas.
-    const n = plantas.length;
-    const cols = Math.max(1, Math.ceil(Math.sqrt(n)));
-    const rows = Math.max(1, Math.ceil(n / cols));
-    plantas.forEach((p, i) => {
-      const fila = Math.floor(i / cols);
-      const col  = i % cols;
-      const colsEnFila = Math.min(cols, n - fila*cols);
-      const profundidad = rows <= 1 ? 1 : fila / (rows - 1); // 0=atrás, 1=adelante
-      const topPct    = 8 + profundidad * 84;
-      const escala    = 0.68 + profundidad * 0.5;
-      const anchoFila = 40 + profundidad * 40; // % del contenedor que ocupa esa fila (ajustado al ancho real del piso en cada estructura)
-      const colT      = colsEnFila <= 1 ? 0.5 : col / (colsEnFila - 1);
-      const leftPct   = 50 + (colT - 0.5) * anchoFila;
+    // Distribución tipo grilla (no en una sola fila): filas de "atrás" más
+    // chicas/juntas al centro, filas de "adelante" más grandes/separadas.
+    // En la Carpa, además, los esquejes van sobre la mesa (zona angosta y
+    // más arriba dentro del piso) en vez de mezclados con el resto.
+    function distribuir(lista, topMin, topMax, escalaBase, anchoBase, zBase) {
+      const n = lista.length;
+      if (!n) return;
+      const cols = Math.max(1, Math.ceil(Math.sqrt(n)));
+      const rows = Math.max(1, Math.ceil(n / cols));
+      lista.forEach((p, i) => {
+        const fila = Math.floor(i / cols);
+        const col  = i % cols;
+        const colsEnFila = Math.min(cols, n - fila*cols);
+        const profundidad = rows <= 1 ? 1 : fila / (rows - 1); // 0=atrás, 1=adelante
+        const topPct    = topMin + profundidad * (topMax - topMin);
+        const escala    = escalaBase + profundidad * 0.3;
+        const anchoFila = anchoBase * (0.6 + profundidad * 0.4);
+        const colT      = colsEnFila <= 1 ? 0.5 : col / (colsEnFila - 1);
+        const leftPct   = 50 + (colT - 0.5) * anchoFila;
 
-      const wrap = document.createElement("div");
-      wrap.className = "dash-planta-wrap";
-      wrap.style.left = leftPct + "%";
-      wrap.style.top = topPct + "%";
-      wrap.style.zIndex = 10 + fila;
-      wrap.style.transform = `translate(-50%,-50%) scale(${escala.toFixed(2)})`;
-      wrap.title = `${p.nombre} · ${FASE_LABEL[p.fase]||p.fase||'—'} · click para abrir`;
-      wrap.innerHTML = `<span class="dash-planta-icono">${iconoFase(p.fase)}</span><span class="dash-planta-nombre">${p.genetica||p.nombre||""}</span>`;
-      wrap.addEventListener("click", (e) => { e.stopPropagation(); window.verPlanta(p.id); });
-      elIconos.appendChild(wrap);
-    });
+        const wrap = document.createElement("div");
+        wrap.className = "dash-planta-wrap";
+        wrap.style.left = leftPct + "%";
+        wrap.style.top = topPct + "%";
+        wrap.style.zIndex = zBase + fila;
+        wrap.style.transform = `translate(-50%,-50%) scale(${escala.toFixed(2)})`;
+        wrap.title = `${p.nombre} · ${FASE_LABEL[p.fase]||p.fase||'—'} · click para abrir`;
+        wrap.innerHTML = `<span class="dash-planta-icono">${iconoFase(p.fase)}</span><span class="dash-planta-nombre">${p.genetica||p.nombre||""}</span>`;
+        wrap.addEventListener("click", (e) => { e.stopPropagation(); window.verPlanta(p.id); });
+        elIconos.appendChild(wrap);
+      });
+    }
+
+    if (tipo === "carpa") {
+      const enMesa = plantas.filter(p => p.tipoOrigen === "esqueje");
+      const enPiso = plantas.filter(p => p.tipoOrigen !== "esqueje");
+      distribuir(enMesa, 14, 32, 0.48, 42, 20); // sobre la mesa: más arriba, más chicas
+      distribuir(enPiso, 44, 94, 0.6, 82, 10);  // resto: en el piso
+    } else {
+      distribuir(plantas, 8, 92, 0.68, 100, 10);
+    }
   }
 }
 
@@ -532,6 +545,12 @@ async function cargarLugares() {
           <span>💡 ${(l.luces||[]).map(lu=>`${lu.cantidad}× ${lu.tipo}`).join(", ")||"Sin luces"}</span>
         </div>
         ${l.intractor||l.extractor ? `<div class="lugar-meta"><span>${l.intractor?"✅ Intractor":""}${l.extractor?" ✅ Extractor":""}</span></div>`:""}
+        <div class="altura-luces-box">
+          <label>🔆 Altura de luces: <span id="altura-luces-val-${d.id}">${l.alturaLuces??70}</span>%</label>
+          <input type="range" min="0" max="100" value="${l.alturaLuces??70}" class="altura-luces-slider"
+                 oninput="document.getElementById('altura-luces-val-${d.id}').textContent=this.value"
+                 onchange="guardarAlturaLuces('${d.id}', this.value)">
+        </div>
       </div>
 
       ${sensorClima ? `
@@ -633,6 +652,24 @@ window.toggleGraficosLugar = function(lugarId) {
       chartsHLPorLugar[lugarId]?.hum?.resize();
       chartsTimelinePorLugar[lugarId]?.resize();
     }
+  }
+};
+
+// Guarda la altura del panel de luces (0-100) para este lugar y refresca
+// tanto el estado en memoria (dashboardActivos) como el dibujo si el
+// Dashboard está visible en ese momento.
+window.guardarAlturaLuces = async (lugarId, valor) => {
+  const v = parseInt(valor);
+  try {
+    await updateDoc(doc(db,"lugares",lugarId), { alturaLuces: v });
+    if (dashboardActivos[lugarId]) {
+      dashboardActivos[lugarId].alturaLuces = v;
+      const cfg = dashboardActivos[lugarId];
+      refrescarDashboardCard(lugarId, cfg.sensorKey, cfg.luzKey, cfg.tipo, v);
+    }
+    toast("Altura de luces guardada ✓");
+  } catch (err) {
+    toast("No se pudo guardar: "+err.message, "err");
   }
 };
 
@@ -2361,6 +2398,9 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .mesa-pata{stroke:#3d4a3a;stroke-width:2.5}
 .mesa-tabla{fill:#4a3a2a;stroke:#2a201a;stroke-width:1}
 .dash-clima-ext{position:absolute;top:2px;right:2px;background:rgba(13,15,23,.75);border:1px solid var(--border);border-radius:20px;padding:2px 8px;font-size:.68rem;color:#8fd0ff;display:flex;align-items:center;gap:3px;white-space:nowrap}
+.altura-luces-box{margin-top:8px;font-size:.74rem;color:var(--muted)}
+.altura-luces-box label{display:block;margin-bottom:3px}
+.altura-luces-slider{width:100%}
 .estante-base,.estante-pata{fill:#33392f}
 .barra-luz{fill:#4a4a44;transition:fill .5s ease,filter .5s ease}
 .galponera{fill:#3d413f;transition:fill .5s ease,filter .5s ease}
