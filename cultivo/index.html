@@ -370,10 +370,8 @@ function htmlResumenPlantas(plantas) {
 // Ícono variable según la fase de la planta, para que el Dashboard muestre
 // de un vistazo en qué etapa está cada una (no solo cuántas hay).
 function iconoFase(fase) {
-  if (fase==="germinacion") return "🌱";
-  if (fase==="vegetativo")  return "🌿";
-  if (fase==="floracion")   return "🌸";
-  return "🪴";
+  const f = ["germinacion","vegetativo","floracion"].includes(fase) ? fase : "cosecha";
+  return `<span class="dp-leaves dp-fase-${f}"><span class="dp-leaf dp-left"></span><span class="dp-leaf dp-center"></span><span class="dp-leaf dp-right"></span></span>`;
 }
 
 // Zona del piso (en % del alto del contenedor) donde van las plantas, según
@@ -432,10 +430,10 @@ async function cargarPlantasResumenCard(lugarId, contenedorId, iconosId) {
     if (tipo === "carpa") {
       const enMesa = plantas.filter(p => p.tipoOrigen === "esqueje");
       const enPiso = plantas.filter(p => p.tipoOrigen !== "esqueje");
-      distribuir(enMesa, 14, 32, 0.48, 42, 20); // sobre la mesa: más arriba, más chicas
-      distribuir(enPiso, 44, 94, 0.6, 82, 10);  // resto: en el piso
+      distribuir(enMesa, 16, 28, 0.46, 32, 20); // sobre la mesa: más arriba, más chicas, más al centro
+      distribuir(enPiso, 46, 84, 0.58, 56, 10);  // resto: en el piso, con margen a los bordes
     } else {
-      distribuir(plantas, 8, 92, 0.68, 100, 10);
+      distribuir(plantas, 12, 82, 0.62, 62, 10);
     }
   }
 }
@@ -2445,9 +2443,23 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .dash-plantas-iconos{position:absolute;left:0;right:0;max-width:210px;margin:0 auto;pointer-events:none}
 .dash-planta-wrap{position:absolute;display:flex;flex-direction:column;align-items:center;pointer-events:auto;cursor:pointer;transition:transform .15s}
 .dash-planta-wrap:hover{filter:brightness(1.25)}
-.dash-planta-icono{font-size:1.3rem;text-shadow:0 1px 3px rgba(0,0,0,.7);line-height:1}
+.dash-planta-icono{display:block}
 .dash-planta-nombre{font-size:.52rem;color:#dfe8e0;text-shadow:0 1px 2px rgba(0,0,0,.9);white-space:nowrap;max-width:52px;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
 .dash-planta-icono:hover{transform:scale(1.2)}
+/* Hojita de cannabis (3 folíolos tipo trébol) en vez de emoji genérico */
+.dp-leaves{position:relative;width:20px;height:20px;display:block}
+.dp-leaf{position:absolute;width:11px;height:11px;background:#2e7d32;border-radius:0 10px 0 10px;bottom:0}
+.dp-leaf.dp-center{left:4.5px;height:14px;bottom:2px;transform:rotate(45deg);background:#388e3c}
+.dp-leaf.dp-left{left:-2px;transform:rotate(5deg)}
+.dp-leaf.dp-right{right:-2px;transform:rotate(85deg)}
+.dp-fase-germinacion .dp-leaves{transform:scale(.6)}
+.dp-fase-germinacion .dp-leaf{background:#9fd89f}
+.dp-fase-germinacion .dp-leaf.dp-center{background:#b6e6b6}
+.dp-fase-floracion .dp-leaf{background:#245227}
+.dp-fase-floracion .dp-leaf.dp-center{background:#2e6b32}
+.dp-fase-floracion .dp-leaves::after{content:'';position:absolute;top:-2px;left:7px;width:6px;height:6px;border-radius:50%;background:#e8a33d;box-shadow:0 0 3px #e8a33d99}
+.dp-fase-cosecha .dp-leaf{background:#6b6142}
+.dp-fase-cosecha .dp-leaf.dp-center{background:#7d7350}
 .dash-datos{display:flex;flex-direction:column;gap:10px;min-width:78px}
 .dash-dato{text-align:center}
 .dash-dato .valor{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.25rem}
@@ -2487,8 +2499,8 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 
 /* Plantas del Dashboard (iconos HTML, hermanos del SVG): oscuras con la luz
    apagada, brillo normal con la luz encendida. */
-.dash-planta-icono{filter:brightness(.5);transition:filter .5s ease}
-.ilustracion.glow-on ~ .dash-plantas-iconos .dash-planta-icono{filter:brightness(1)}
+.dash-planta-icono{filter:brightness(.5) drop-shadow(0 1px 2px rgba(0,0,0,.6));transition:filter .5s ease}
+.ilustracion.glow-on ~ .dash-plantas-iconos .dash-planta-icono{filter:brightness(1) drop-shadow(0 1px 2px rgba(0,0,0,.6))}
 .cult-header{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:10px}
 .cult-nombre{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:.95rem}
 .cult-fase{font-size:.68rem;padding:3px 8px;border-radius:20px;font-weight:600;text-transform:uppercase;flex-shrink:0}
