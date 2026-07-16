@@ -372,20 +372,29 @@ function htmlResumenPlantas(plantas) {
 function iconoFase(fase) {
   const c = {
     germinacion: { hoja:"#9fd89f", tallo:"#6fae72", escala:.55, extra:"" },
-    vegetativo:  { hoja:"#3e9142", tallo:"#2e6b32", escala:.95, extra:"" },
+    vegetativa:  { hoja:"#3e9142", tallo:"#2e6b32", escala:.95, extra:"" },
     floracion:   { hoja:"#2e6b32", tallo:"#245227", escala:1,
-                   extra:'<circle cx="12" cy="2.4" r="1.7" fill="#e8a33d"/>' },
-  }[fase] || { hoja:"#7d7350", tallo:"#6b6142", escala:.85, extra:"" };
-  // Maceta fija abajo + tallo y 3 folíolos tipo cannabis arriba, todo en SVG
-  // (sin depender de ninguna fuente/emoji del sistema — evita el tofu/cuadrado vacío).
+                   extra:'<circle cx="12" cy="1.5" r="1.7" fill="#e8a33d"/>' },
+    cosecha:     { hoja:"#8a9a5b", tallo:"#6b6142", escala:.85, extra:"" },
+  }[fase] || { hoja:"#3e9142", tallo:"#2e6b32", escala:.95, extra:"" };
+  // Hoja de cannabis: un folíolo central + 2 pares laterales, más ancha y
+  // puntiaguda (silueta reconocible), sobre maceta fija. Todo en SVG, sin
+  // depender de ninguna fuente/emoji del sistema.
+  const hoja = (largo, ancho) =>
+    `M0,0 C-${ancho},-${(largo*0.32).toFixed(1)} -${(ancho*0.9).toFixed(1)},-${(largo*0.78).toFixed(1)} 0,-${largo} `+
+    `C${(ancho*0.9).toFixed(1)},-${(largo*0.78).toFixed(1)} ${ancho},-${(largo*0.32).toFixed(1)} 0,0 Z`;
   return `<svg viewBox="0 0 24 30" width="24" height="30" class="dp-icono-svg">
     <path d="M6,22 L18,22 L16,29 L8,29 Z" fill="#8d5a2b"/>
     <rect x="5.3" y="20.3" width="13.4" height="2.2" rx="1.1" fill="#a06b35"/>
     <g transform="translate(12,20.3) scale(${c.escala})">
-      <line x1="0" y1="0" x2="0" y2="-9" stroke="${c.tallo}" stroke-width="1.4"/>
-      <path d="M0,-9 C-1.6,-13 -1.6,-17 0,-19.5 C1.6,-17 1.6,-13 0,-9 Z" fill="${c.hoja}"/>
-      <path d="M0,-9 C-1.6,-13 -1.6,-17 0,-19.5 C1.6,-17 1.6,-13 0,-9 Z" transform="rotate(-38)" fill="${c.hoja}"/>
-      <path d="M0,-9 C-1.6,-13 -1.6,-17 0,-19.5 C1.6,-17 1.6,-13 0,-9 Z" transform="rotate(38)" fill="${c.hoja}"/>
+      <line x1="0" y1="0" x2="0" y2="-6" stroke="${c.tallo}" stroke-width="1.3"/>
+      <g transform="translate(0,-6)">
+        <path d="${hoja(13,3.4)}" fill="${c.hoja}"/>
+        <path d="${hoja(11,3)}" transform="rotate(-32)" fill="${c.hoja}"/>
+        <path d="${hoja(11,3)}" transform="rotate(32)" fill="${c.hoja}"/>
+        <path d="${hoja(8,2.4)}" transform="rotate(-62)" fill="${c.hoja}"/>
+        <path d="${hoja(8,2.4)}" transform="rotate(62)" fill="${c.hoja}"/>
+      </g>
     </g>
     ${c.extra}
   </svg>`;
