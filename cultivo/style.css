@@ -209,6 +209,28 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .fila-planta-expand td{background:var(--bg);padding:12px}
 .fp-detalle{display:flex;flex-wrap:wrap;gap:10px;font-size:.78rem;color:var(--muted);margin-bottom:10px}
 .fp-acciones{display:flex;flex-wrap:wrap;gap:8px}
+
+/* Panel lateral rápido de planta (Dashboard) */
+.panel-planta-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:200;opacity:0;pointer-events:none;transition:opacity .25s ease}
+.panel-planta-overlay.abierto{opacity:1;pointer-events:auto}
+.panel-planta{position:fixed;top:0;right:0;height:100%;width:380px;max-width:100vw;background:var(--surface);
+  box-shadow:-8px 0 24px rgba(0,0,0,.4);transform:translateX(100%);transition:transform .28s ease;
+  display:flex;flex-direction:column;overflow-y:auto}
+.panel-planta-overlay.abierto .panel-planta{transform:translateX(0)}
+.panel-planta-cerrar{position:absolute;top:10px;right:10px;z-index:2;background:rgba(0,0,0,.5);color:#fff;border-radius:50%;width:34px;height:34px}
+.panel-planta-carrusel{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;background:#000;flex-shrink:0;min-height:120px}
+.panel-planta-carrusel img{flex:0 0 100%;scroll-snap-align:start;width:100%;aspect-ratio:4/3;object-fit:cover}
+.panel-planta-foto-vacia{flex:0 0 100%;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  aspect-ratio:4/3;color:var(--muted);font-size:.8rem;text-align:center;gap:4px}
+.panel-planta-body{padding:16px}
+.panel-planta-info h3{margin:0 0 2px;font-size:1.15rem}
+.panel-planta-sub{margin:0 0 10px;color:var(--muted);font-size:.82rem}
+.panel-planta-chips{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:16px}
+.chip-dato{font-size:.72rem;padding:3px 9px;border-radius:20px;background:var(--card);color:var(--muted);border:1px solid var(--border)}
+.panel-planta-acciones{display:flex;flex-direction:column;gap:8px}
+@media (max-width:700px){
+  .panel-planta{width:100%}
+}
 .cult-meta{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;font-size:.77rem;color:var(--muted)}
 .cult-actions{display:flex;gap:8px;margin-top:10px}
 

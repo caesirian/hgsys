@@ -1,6 +1,8 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
 import { getFirestore, collection, doc, addDoc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, query, where, orderBy, limit, serverTimestamp }
   from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+import { getStorage, ref, uploadBytes, getDownloadURL }
+  from "https://www.gstatic.com/firebasejs/12.14.0/firebase-storage.js";
 
 const firebaseConfig = {
   apiKey:            "AIzaSyB1T67NPR_qNcAyFp8_DT_QWCst7OBIxTc",
@@ -12,6 +14,7 @@ const firebaseConfig = {
 };
 const app = initializeApp(firebaseConfig);
 const db  = getFirestore(app);
+const storage = getStorage(app);
 
 // ════════════════════════════════════════════════════════════════════════════
 // ESTRUCTURA FIRESTORE
@@ -64,6 +67,7 @@ async function cargarCatalogoDispositivos() {
 let lugarActivo  = null;
 let areaActiva   = null;
 let plantaActiva = null;
+let panelPlantaActiva = null; // qué planta tiene abierto el panel lateral (Dashboard)
 let plantaEditando = null; // id de la planta que se está editando, o null si es "Nueva planta"
 let tuyaTimer    = null;
 
@@ -383,7 +387,7 @@ function iconoFase(fase) {
   const hoja = (largo, ancho) =>
     `M0,0 C-${ancho},-${(largo*0.32).toFixed(1)} -${(ancho*0.9).toFixed(1)},-${(largo*0.78).toFixed(1)} 0,-${largo} `+
     `C${(ancho*0.9).toFixed(1)},-${(largo*0.78).toFixed(1)} ${ancho},-${(largo*0.32).toFixed(1)} 0,0 Z`;
-  return `<svg viewBox="0 0 24 30" width="24" height="30" class="dp-icono-svg">
+  return `<svg viewBox="0 0 24 30" width="48" height="60" class="dp-icono-svg">
     <path d="M6,22 L18,22 L16,29 L8,29 Z" fill="#8d5a2b"/>
     <rect x="5.3" y="20.3" width="13.4" height="2.2" rx="1.1" fill="#a06b35"/>
     <g transform="translate(12,20.3) scale(${c.escala})">
@@ -448,7 +452,7 @@ async function cargarPlantasResumenCard(lugarId, contenedorId, iconosId) {
         wrap.style.transform = `translate(-50%,-50%) scale(${escala.toFixed(2)})`;
         wrap.title = `${p.nombre} · ${FASE_LABEL[p.fase]||p.fase||'—'} · click para abrir`;
         wrap.innerHTML = `<span class="dash-planta-icono">${iconoFase(p.fase)}</span><span class="dash-planta-nombre">${p.genetica||p.nombre||""}</span>`;
-        wrap.addEventListener("click", (e) => { e.stopPropagation(); window.verPlanta(p.id); });
+        wrap.addEventListener("click", (e) => { e.stopPropagation(); window.abrirPanelPlanta(p.id); });
         elIconos.appendChild(wrap);
       });
     }
@@ -1510,7 +1514,7 @@ window.eliminarLugar = async (id, nombre) => {
 function resetCamposDiv(containerId) {
   const cont = document.getElementById(containerId);
   if (!cont) return;
-  cont.querySelectorAll("input[type='text'], input[type='number'], input[type='date'], input[type='month'], input:not([type]), textarea")
+  cont.querySelectorAll("input[type='text'], input[type='number'], input[type='date'], input[type='month'], input[type='file'], input:not([type]), textarea")
     .forEach(el => el.value = "");
   cont.querySelectorAll("input[type='checkbox'], input[type='radio']").forEach(el => el.checked = false);
   cont.querySelectorAll("select").forEach(el => el.selectedIndex = 0);
@@ -1803,6 +1807,59 @@ function setTxt(id, valor) {
   else console.warn(`setTxt: no encontré #${id} en el DOM (¿caché vieja? probá Ctrl+Shift+R)`);
 }
 
+// Panel lateral rápido: se abre al tocar una planta en el Dashboard, sin
+// navegar a la ficha completa. Muestra edad/fase + carrusel de fotos, que se
+// van sumando cada vez que se carga una medición con foto adjunta.
+window.abrirPanelPlanta = async (id) => {
+  panelPlantaActiva = id;
+  plantaActiva = id; // así "Cargar medición" ya sabe sobre qué planta escribir
+  const overlay = document.getElementById("panel-planta-overlay");
+  overlay.classList.add("abierto");
+  document.getElementById("panel-planta-info").innerHTML = '<p class="cargando">Cargando...</p>';
+  const btnFicha = document.getElementById("panel-planta-ficha-btn");
+  if (btnFicha) btnFicha.onclick = () => { cerrarPanelPlanta(); window.verPlanta(id); };
+  try {
+    const snap = await getDoc(doc(db,"plantas",id));
+    if (!snap.exists()) { cerrarPanelPlanta(); toast("Esa planta ya no existe","err"); return; }
+    const p = snap.data();
+    document.getElementById("panel-planta-info").innerHTML = `
+      <h3>${escAttr(p.genetica||p.nombre||"Planta")}</h3>
+      <p class="panel-planta-sub">${escAttr(p.nombre||"")}</p>
+      <div class="panel-planta-chips">
+        <span class="cult-fase fase-${p.fase}">${FASE_LABEL[p.fase]||p.fase||"—"}</span>
+        <span class="chip-dato">📅 Día ${dias(p.fechaInicio)}</span>
+        <span class="chip-dato">🪴 ${p.tipoOrigen==="semilla"?"Semilla":"Esqueje"}</span>
+      </div>`;
+  } catch (err) {
+    console.error("Error abriendo panel de planta:", err);
+    document.getElementById("panel-planta-info").innerHTML = `<p class="empty">⚠️ No se pudo cargar (${err.message})</p>`;
+  }
+  actualizarFotosPanel();
+};
+
+async function actualizarFotosPanel() {
+  if (!panelPlantaActiva) return;
+  const cont = document.getElementById("panel-planta-fotos");
+  cont.innerHTML = '<div class="panel-planta-foto-vacia">Cargando fotos...</div>';
+  try {
+    const snap = await getDocs(query(collection(db,"plantas",panelPlantaActiva,"mediciones"),orderBy("fecha","desc")));
+    const fotos = [];
+    snap.forEach(d => { const f = d.data().fotoUrl; if (f) fotos.push(f); });
+    cont.innerHTML = fotos.length
+      ? fotos.map(url => `<img src="${url}" loading="lazy" alt="Foto de la planta">`).join("")
+      : '<div class="panel-planta-foto-vacia">📷 Sin fotos todavía<br><small>Se suben desde "Cargar medición"</small></div>';
+  } catch (err) {
+    console.error("Error cargando fotos del panel:", err);
+    cont.innerHTML = '<div class="panel-planta-foto-vacia">⚠️ No se pudieron cargar las fotos</div>';
+  }
+}
+window.actualizarFotosPanel = actualizarFotosPanel;
+
+window.cerrarPanelPlanta = () => {
+  document.getElementById("panel-planta-overlay").classList.remove("abierto");
+  panelPlantaActiva = null;
+};
+
 window.verPlanta = async (id) => {
   try {
     const snap = await getDoc(doc(db,"plantas",id));
@@ -1965,26 +2022,44 @@ async function cargarMediciones() {
 }
 window.guardarMedicion = async () => {
   if (!plantaActiva) { toast("Seleccioná una planta primero","err"); return; }
-  const d = {
-    fecha:      new Date(val("m-fecha")+"T"+(val("m-hora")||"12:00")+":00"),
-    tempAmb:    parseFloat(val("m-tempamb"))||null,
-    tempMaceta: parseFloat(val("m-tempmac"))||null,
-    humedad:    parseFloat(val("m-humedad"))||null,
-    ph:         parseFloat(val("m-ph"))||null,
-    ec:         parseFloat(val("m-ec"))||null,
-    tdsAgua:    parseFloat(val("m-tds"))||null,
-    luz:        parseFloat(val("m-luz"))||null,
-    ppfd:       parseFloat(val("m-ppfd"))||null,
-    distanciaLuz: parseFloat(val("m-distancia"))||null,
-    co2:        parseFloat(val("m-co2"))||null,
-    vpd:        parseFloat(val("m-vpd"))||null,
-    notas:      val("m-notas"),
-    creadoEn:   serverTimestamp(),
-  };
-  await addDoc(collection(db,"plantas",plantaActiva,"mediciones"),d);
-  cerrarModal("modal-medicion");
-  resetCamposDiv("form-medicion");
-  cargarMediciones(); toast("Medición guardada ✓");
+  const btnGuardar = document.querySelector('#modal-medicion .btn-primary');
+  const archivo = document.getElementById("m-foto")?.files?.[0] || null;
+  if (btnGuardar) { btnGuardar.disabled = true; btnGuardar.textContent = archivo ? "Subiendo foto..." : "Guardando..."; }
+  try {
+    const d = {
+      fecha:      new Date(val("m-fecha")+"T"+(val("m-hora")||"12:00")+":00"),
+      tempAmb:    parseFloat(val("m-tempamb"))||null,
+      tempMaceta: parseFloat(val("m-tempmac"))||null,
+      humedad:    parseFloat(val("m-humedad"))||null,
+      ph:         parseFloat(val("m-ph"))||null,
+      ec:         parseFloat(val("m-ec"))||null,
+      tdsAgua:    parseFloat(val("m-tds"))||null,
+      luz:        parseFloat(val("m-luz"))||null,
+      ppfd:       parseFloat(val("m-ppfd"))||null,
+      distanciaLuz: parseFloat(val("m-distancia"))||null,
+      co2:        parseFloat(val("m-co2"))||null,
+      vpd:        parseFloat(val("m-vpd"))||null,
+      notas:      val("m-notas"),
+      creadoEn:   serverTimestamp(),
+    };
+    if (archivo) {
+      const path = `plantas/${plantaActiva}/mediciones/${Date.now()}_${archivo.name}`;
+      const fotoRef = ref(storage, path);
+      await uploadBytes(fotoRef, archivo);
+      d.fotoUrl = await getDownloadURL(fotoRef);
+    }
+    await addDoc(collection(db,"plantas",plantaActiva,"mediciones"),d);
+    cerrarModal("modal-medicion");
+    resetCamposDiv("form-medicion");
+    cargarMediciones(); toast("Medición guardada ✓");
+    // Si el panel lateral de esta misma planta está abierto, refresca el carrusel.
+    if (typeof actualizarFotosPanel === "function" && panelPlantaActiva === plantaActiva) actualizarFotosPanel();
+  } catch (err) {
+    console.error("Error guardando medición:", err);
+    toast("No se pudo guardar la medición: "+err.message, "err");
+  } finally {
+    if (btnGuardar) { btnGuardar.disabled = false; btnGuardar.textContent = "Guardar medición"; }
+  }
 };
 window.eliminarMedicion = async (id) => {
   if (!confirm("¿Eliminar medición?")) return;
