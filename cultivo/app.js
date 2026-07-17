@@ -83,16 +83,26 @@ const dias = ts => { if (!ts) return "—"; const d = ts.toDate ? ts.toDate() : 
 // "Ver detalle no funciona").
 const escAttr = s => String(s??"").replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/'/g,"&#39;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 
-function show(id) {
+function show(id, opts) {
   document.querySelectorAll(".vista").forEach(v => v.classList.remove("activa"));
   document.getElementById(id)?.classList.add("activa");
-  document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("activo"));
-  document.querySelectorAll(`[data-vista="${id}"]`).forEach(b => b.classList.add("activo"));
+  document.querySelectorAll(".nav-btn").forEach(b => { b.classList.remove("activo"); b.removeAttribute("aria-current"); });
+  document.querySelectorAll(`[data-vista="${id}"]`).forEach(b => { b.classList.add("activo"); b.setAttribute("aria-current","page"); });
   // Frenar los auto-refrescos de las vistas que no están activas, para no pegarle
   // al proxy de fondo mientras el usuario está mirando otra pestaña.
   if (id !== "vista-lugares" && typeof climaTimer !== "undefined" && climaTimer) { clearInterval(climaTimer); climaTimer = null; }
   if (id !== "vista-dashboard" && typeof dashboardTimer !== "undefined" && dashboardTimer) { clearInterval(dashboardTimer); dashboardTimer = null; }
+  // Empuja al historial del navegador para que el botón atrás (celular o
+  // navegador) navegue adentro de la app en vez de salir directo de la página.
+  if (!(opts && opts.sinHistorial)) history.pushState({ vista:id }, "", "#"+id);
 }
+window.addEventListener("popstate", (e) => {
+  const id = (e.state && e.state.vista) || "vista-dashboard";
+  show(id, { sinHistorial:true });
+  if (id === "vista-dashboard") cargarDashboard();
+  else if (id === "vista-lugares") cargarLugares();
+  else if (id === "vista-plantas") cargarTablaPlantas();
+});
 function toast(msg, tipo="ok") {
   const t = document.createElement("div");
   t.className = `toast toast-${tipo}`; t.textContent = msg;
@@ -1476,15 +1486,6 @@ async function refrescarDashboardCard(lugarId, sensorKey, luzKey, tipo, alturaLu
 }
 
 
-// El nav "Plantas" antes solo cambiaba de pantalla sin cargar nada (parecía que
-// las plantas habían desaparecido). Ahora entra al último lugar visto, o al
-// primero que encuentre si todavía no entraste a ninguno.
-window.irAPlantas = () => {
-  if (lugarActivo) return verLugar(lugarActivo);
-  show("vista-lugares"); cargarLugares();
-  toast("Elegí un lugar para ver sus plantas 👇");
-};
-
 window.verLugar = async (id) => {
   lugarActivo = id;
   show("vista-lugar");
@@ -1650,6 +1651,77 @@ window.agregarLuzRowArea = () => {
 // ════════════════════════════════════════════════════════════════════════════
 // PLANTAS
 // ════════════════════════════════════════════════════════════════════════════
+// Tabla global de plantas (todos los lugares juntos). Cada fila se puede
+// desplegar tocándola: muestra más datos + botones para cargar medición,
+// riego/fertilización o evento sin tener que entrar al detalle completo.
+async function cargarTablaPlantas() {
+  const tbody = document.getElementById("tabla-plantas-body");
+  tbody.innerHTML = '<tr><td colspan="3" class="cargando">Cargando...</td></tr>';
+  let lugaresSnap, plantasSnap;
+  try {
+    [lugaresSnap, plantasSnap] = await Promise.all([
+      getDocs(collection(db,"lugares")),
+      getDocs(query(collection(db,"plantas"), orderBy("creadoEn","desc"))),
+    ]);
+  } catch (err) {
+    console.error("Error cargando tabla de plantas:", err);
+    tbody.innerHTML = `<tr><td colspan="3" class="empty">⚠️ No se pudo cargar (${err.message})</td></tr>`;
+    return;
+  }
+  const nombreLugar = {};
+  lugaresSnap.forEach(d => nombreLugar[d.id] = d.data().nombre || "Lugar sin nombre");
+
+  tbody.innerHTML = "";
+  if (plantasSnap.empty) {
+    tbody.innerHTML = '<tr><td colspan="3" class="empty">Todavía no hay plantas registradas.</td></tr>';
+    return;
+  }
+  plantasSnap.forEach(d => {
+    const p = d.data(), id = d.id;
+    const fila = document.createElement("tr");
+    fila.className = "fila-planta clickeable";
+    fila.innerHTML = `
+      <td>${escAttr(p.genetica||"—")}<br><small class="fila-planta-nombre">${escAttr(p.nombre||"")}</small></td>
+      <td>${escAttr(nombreLugar[p.lugarId]||"—")}</td>
+      <td><span class="cult-fase fase-${p.fase}">${FASE_LABEL[p.fase]||p.fase||"—"}</span></td>`;
+
+    const expand = document.createElement("tr");
+    expand.className = "fila-planta-expand";
+    expand.style.display = "none";
+    const td = document.createElement("td");
+    td.colSpan = 3;
+    td.innerHTML = `
+      <div class="fp-detalle">
+        <span>📅 Día ${dias(p.fechaInicio)}</span>
+        <span>🪴 ${p.tipoOrigen==="semilla"?"Semilla":"Esqueje"}</span>
+        ${p.alturaPlantin ? `<span>📏 ${p.alturaPlantin} cm</span>` : ""}
+        ${p.substrato ? `<span>🌱 ${escAttr(p.substrato)}</span>` : ""}
+      </div>
+      <div class="fp-acciones">
+        <button class="btn-sm btn-primary fp-medicion">🌡️ Medición</button>
+        <button class="btn-sm btn-primary fp-riego">💧 Riego / Fert.</button>
+        <button class="btn-sm btn-ghost fp-evento">📅 Evento</button>
+        <button class="btn-sm btn-ghost fp-ficha">Ver ficha completa →</button>
+      </div>`;
+    expand.appendChild(td);
+
+    fila.addEventListener("click", () => {
+      const abierta = expand.style.display !== "none";
+      document.querySelectorAll(".fila-planta-expand").forEach(f => f.style.display = "none");
+      document.querySelectorAll(".fila-planta.activa").forEach(f => f.classList.remove("activa"));
+      if (!abierta) { expand.style.display = ""; fila.classList.add("activa"); }
+    });
+    td.querySelector(".fp-medicion").addEventListener("click", (e) => { e.stopPropagation(); plantaActiva = id; window.abrirModalMedicion(); });
+    td.querySelector(".fp-riego").addEventListener("click", (e) => { e.stopPropagation(); window.abrirModalRiegoLugar(p.lugarId, nombreLugar[p.lugarId]||"", id); });
+    td.querySelector(".fp-evento").addEventListener("click", (e) => { e.stopPropagation(); plantaActiva = id; window.abrirModalEvento(); });
+    td.querySelector(".fp-ficha").addEventListener("click", (e) => { e.stopPropagation(); window.verPlanta(id); });
+
+    tbody.appendChild(fila);
+    tbody.appendChild(expand);
+  });
+}
+window.cargarTablaPlantas = cargarTablaPlantas;
+
 async function cargarPlantasLugar(lugarId) {
   const lista = document.getElementById("lista-plantas-lugar");
   lista.innerHTML = '<p class="cargando">Cargando...</p>';
@@ -1925,7 +1997,7 @@ window.eliminarMedicion = async (id) => {
 // ════════════════════════════════════════════════════════════════════════════
 let rlLugarId = null;
 
-window.abrirModalRiegoLugar = async (lugarId, lugarNombre) => {
+window.abrirModalRiegoLugar = async (lugarId, lugarNombre, soloPlantaId) => {
   rlLugarId = lugarId;
   const t = document.getElementById("rl-titulo");
   if (t) t.textContent = `💧 Registrar riego / fertilización — ${lugarNombre}`;
@@ -1938,9 +2010,12 @@ window.abrirModalRiegoLugar = async (lugarId, lugarNombre) => {
   try {
     const snap = await getDocs(query(collection(db,"plantas"), where("lugarId","==",lugarId)));
     const filas = [];
-    snap.forEach(d => filas.push(`<label class="chk-pill"><input type="checkbox" value="${d.id}" checked> ${escAttr(d.data().nombre)}</label>`));
+    snap.forEach(d => {
+      const marcada = soloPlantaId ? d.id===soloPlantaId : true;
+      filas.push(`<label class="chk-pill"><input type="checkbox" value="${d.id}" ${marcada?"checked":""}> ${escAttr(d.data().nombre)}</label>`);
+    });
     cont.innerHTML = filas.length
-      ? `<div class="chk-pill-label">Todas tildadas por defecto, destildá las que no correspondan:</div>${filas.join("")}`
+      ? `<div class="chk-pill-label">${soloPlantaId ? "Tildá también otras plantas de este lugar si corresponde:" : "Todas tildadas por defecto, destildá las que no correspondan:"}</div>${filas.join("")}`
       : '<span class="empty">Este lugar todavía no tiene plantas registradas.</span>';
   } catch (err) {
     cont.innerHTML = `<span class="empty">⚠️ No se pudieron cargar las plantas (${err.message})</span>`;

@@ -196,6 +196,19 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .fase-floracion{background:#3a2a1a;color:#e67e22}
 .fase-germinacion{background:#1a2a3a;color:#3498db}
 .fase-cosecha{background:#3a1a1a;color:#e74c3c}
+
+/* Vista Plantas: tabla global con fila expandible */
+.plantas-tabla-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:12px}
+.plantas-tabla{width:100%;border-collapse:collapse;font-size:.85rem}
+.plantas-tabla thead th{text-align:left;padding:10px 12px;background:var(--surface);color:var(--muted);font-size:.7rem;text-transform:uppercase;letter-spacing:.03em;position:sticky;top:0}
+.plantas-tabla td{padding:10px 12px;border-top:1px solid var(--border);vertical-align:middle}
+.fila-planta{cursor:pointer;transition:background .15s}
+.fila-planta:hover,.fila-planta:focus-visible{background:var(--card)}
+.fila-planta.activa{background:var(--card)}
+.fila-planta-nombre{color:var(--muted);font-weight:400}
+.fila-planta-expand td{background:var(--bg);padding:12px}
+.fp-detalle{display:flex;flex-wrap:wrap;gap:10px;font-size:.78rem;color:var(--muted);margin-bottom:10px}
+.fp-acciones{display:flex;flex-wrap:wrap;gap:8px}
 .cult-meta{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;font-size:.77rem;color:var(--muted)}
 .cult-actions{display:flex;gap:8px;margin-top:10px}
 
