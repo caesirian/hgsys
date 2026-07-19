@@ -1,8 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
 import { getFirestore, collection, doc, addDoc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, query, where, orderBy, limit, serverTimestamp }
   from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
-import { getStorage, ref, uploadBytes, getDownloadURL }
-  from "https://www.gstatic.com/firebasejs/12.14.0/firebase-storage.js";
 
 const firebaseConfig = {
   apiKey:            "AIzaSyB1T67NPR_qNcAyFp8_DT_QWCst7OBIxTc",
@@ -14,7 +12,22 @@ const firebaseConfig = {
 };
 const app = initializeApp(firebaseConfig);
 const db  = getFirestore(app);
-const storage = getStorage(app);
+
+// Fotos de mediciones: se suben a Cloudinary (unsigned upload preset), no a
+// Firebase Storage — el proyecto está en el plan gratis Spark y Storage
+// requiere plan Blaze. El preset "cultivapp_images" no es secreto, está
+// pensado para vivir en el cliente.
+const CLOUDINARY_CLOUD  = "dc4jzoeku";
+const CLOUDINARY_PRESET = "cultivapp_images";
+async function subirFotoCloudinary(archivo) {
+  const fd = new FormData();
+  fd.append("file", archivo);
+  fd.append("upload_preset", CLOUDINARY_PRESET);
+  const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, { method:"POST", body:fd });
+  if (!res.ok) throw new Error("Cloudinary respondió "+res.status);
+  const data = await res.json();
+  return data.secure_url;
+}
 
 // ════════════════════════════════════════════════════════════════════════════
 // ESTRUCTURA FIRESTORE
@@ -2043,10 +2056,7 @@ window.guardarMedicion = async () => {
       creadoEn:   serverTimestamp(),
     };
     if (archivo) {
-      const path = `plantas/${plantaActiva}/mediciones/${Date.now()}_${archivo.name}`;
-      const fotoRef = ref(storage, path);
-      await uploadBytes(fotoRef, archivo);
-      d.fotoUrl = await getDownloadURL(fotoRef);
+      d.fotoUrl = await subirFotoCloudinary(archivo);
     }
     await addDoc(collection(db,"plantas",plantaActiva,"mediciones"),d);
     cerrarModal("modal-medicion");
