@@ -81,6 +81,9 @@ let lugarActivo  = null;
 let areaActiva   = null;
 let plantaActiva = null;
 let panelPlantaActiva = null; // qué planta tiene abierto el panel lateral (Dashboard)
+const graficosCiclo = {}; // uid -> instancia Chart del gráfico de ciclo de vida
+let graficoCicloContador = 0;
+let plantasParaSelectorCiclo = []; // [{id, genetica, nombre, lugarNombre}] para los <select> de ciclo de vida
 let plantaEditando = null; // id de la planta que se está editando, o null si es "Nueva planta"
 let tuyaTimer    = null;
 
@@ -114,11 +117,12 @@ function show(id, opts) {
   if (!(opts && opts.sinHistorial)) history.pushState({ vista:id }, "", "#"+id);
 }
 window.addEventListener("popstate", (e) => {
-  const id = (e.state && e.state.vista) || "vista-dashboard";
+  const id = (e.state && e.state.vista) || "vista-inicio";
   show(id, { sinHistorial:true });
   if (id === "vista-dashboard") cargarDashboard();
   else if (id === "vista-lugares") cargarLugares();
   else if (id === "vista-plantas") cargarTablaPlantas();
+  else if (id === "vista-graficos") cargarVistaGraficos();
 });
 function toast(msg, tipo="ok") {
   const t = document.createElement("div");
@@ -473,7 +477,7 @@ async function cargarPlantasResumenCard(lugarId, contenedorId, iconosId) {
     if (tipo === "carpa") {
       const enMesa = plantas.filter(p => p.tipoOrigen === "esqueje");
       const enPiso = plantas.filter(p => p.tipoOrigen !== "esqueje");
-      distribuir(enMesa, 16, 28, 0.46, 32, 20); // sobre la mesa: más arriba, más chicas, más al centro
+      distribuir(enMesa, 16, 28, 0.46, 36, 20); // sobre la mesa: más arriba, más chicas, más al centro
       distribuir(enPiso, 46, 84, 0.58, 56, 10);  // resto: en el piso, con margen a los bordes
     } else {
       distribuir(plantas, 12, 82, 0.62, 62, 10);
@@ -594,45 +598,6 @@ async function cargarLugares() {
         </div>
       </div>
 
-      ${sensorClima ? `
-      <div class="clima-titulo graficos-header">
-        <span>📈 Histórico y gráficos</span>
-        <button class="btn-minimizar" onclick="toggleGraficosLugar('${d.id}')" id="btn-graf-${d.id}">${graficosColapsados?'▸ Mostrar':'▾ Minimizar'}</button>
-      </div>
-      <div class="graficos-hint">🖱️ Rueda: zoom · arrastrar: mover · doble click: volver a la vista completa</div>
-      <div class="graficos-contenedor ${graficosColapsados?'colapsado':''}" id="graficos-${d.id}">
-        <div class="clima-charts">
-          <div class="chart-box"><canvas id="chart-temp-${d.id}"></canvas><div class="chart-empty" id="chart-temp-empty-${d.id}"></div></div>
-          <div class="chart-box"><canvas id="chart-hum-${d.id}"></canvas><div class="chart-empty" id="chart-hum-empty-${d.id}"></div></div>
-        </div>
-        <div class="clima-titulo dia-titulo">
-          <span>📅 Ver un día puntual (datos minuto a minuto)</span>
-          <input type="date" id="fecha-dia-${d.id}" class="input-fecha-dia" onchange="cargarGraficoDia('${d.id}','${sensorClima}')">
-        </div>
-        <div class="clima-charts">
-          <div class="chart-box"><canvas id="chart-dia-temp-${d.id}"></canvas><div class="chart-empty" id="chart-dia-temp-empty-${d.id}"></div></div>
-          <div class="chart-box"><canvas id="chart-dia-hum-${d.id}"></canvas><div class="chart-empty" id="chart-dia-hum-empty-${d.id}"></div></div>
-        </div>
-        <div class="clima-titulo dia-titulo">
-          <span>📊 Histórico largo (base propia, sin límite de 7 días)</span>
-        </div>
-        <div class="historico-largo-controles">
-          <select id="hl-nivel-${d.id}" class="input-fecha-dia" onchange="cargarHistoricoLargoLugar('${d.id}','${sensorClima}')">
-            <option value="hora">Por hora (últimas 2 semanas)</option>
-            <option value="dia">Por día (histórico completo)</option>
-          </select>
-          <input type="date" id="hl-desde-${d.id}" class="input-fecha-dia" onchange="cargarHistoricoLargoLugar('${d.id}','${sensorClima}')">
-          <input type="date" id="hl-hasta-${d.id}" class="input-fecha-dia" onchange="cargarHistoricoLargoLugar('${d.id}','${sensorClima}')">
-        </div>
-        <div class="clima-charts">
-          <div class="chart-box"><canvas id="chart-hl-temp-${d.id}"></canvas><div class="chart-empty" id="chart-hl-temp-empty-${d.id}"></div></div>
-          <div class="chart-box"><canvas id="chart-hl-hum-${d.id}"></canvas><div class="chart-empty" id="chart-hl-hum-empty-${d.id}"></div></div>
-        </div>
-        <div class="clima-titulo dia-titulo">
-          <span>🧪 EC / PPFD + fechas de riego y fertilización (todas las plantas del lugar)</span>
-        </div>
-        <div class="chart-box chart-box-timeline"><canvas id="chart-timeline-${d.id}"></canvas><div class="chart-empty" id="chart-timeline-empty-${d.id}"></div></div>
-      </div>` : ""}
       <div class="cult-actions">
         <button class="btn-sm btn-primary" onclick="verLugar('${d.id}')">Ver áreas y plantas</button>
         <button class="btn-sm btn-danger"  onclick="eliminarLugar('${d.id}','${l.nombre}')">Eliminar</button>
@@ -644,23 +609,7 @@ async function cargarLugares() {
     lugaresClimaActivos[d.id] = { sensorKey: sensorClima, luzKey, etapa: etapaInicial };
     if (sensorClima) {
       refrescarActualLugar(d.id, sensorClima);
-      if (!graficosColapsados) cargarHistoricoLugar(d.id, sensorClima);
-      const fechaInput = document.getElementById("fecha-dia-"+d.id);
-      if (fechaInput) {
-        const hoy = fechaArgentinaISO(Date.now());
-        const hace7 = fechaArgentinaISO(Date.now() - 7*24*60*60*1000);
-        fechaInput.value = hoy; fechaInput.max = hoy; fechaInput.min = hace7;
-        if (!graficosColapsados) cargarGraficoDia(d.id, sensorClima);
-      }
-      const hlDesde = document.getElementById("hl-desde-"+d.id);
-      const hlHasta = document.getElementById("hl-hasta-"+d.id);
-      if (hlDesde && hlHasta) {
-        const hoy = fechaArgentinaISO(Date.now());
-        const hace30 = fechaArgentinaISO(Date.now() - 30*24*60*60*1000);
-        hlDesde.value = hace30; hlHasta.value = hoy; hlHasta.max = hoy;
-        if (!graficosColapsados) cargarHistoricoLargoLugar(d.id, sensorClima);
-      }
-      if (!graficosColapsados) cargarTimelineLugar(d.id);
+      cargarHistoricoLugar(d.id, sensorClima); // también alimenta el resumen 24h de Ambiente
     }
     if (luzKey) { refrescarLuzLugar(d.id, luzKey); cargarFotoperiodoLugar(d.id, luzKey); }
   }
@@ -1259,11 +1208,11 @@ function svgCarpa(encendida, alturaLuces, lugarId) {
     <ellipse cx="60" cy="130" rx="42" ry="95" class="glow-interior"/>
     <!-- Mesa 80x80cm, patas de 40cm — apoyo de esquejes -->
     <g class="mesa">
-      <line x1="38" y1="185" x2="38" y2="212" class="mesa-pata"/>
-      <line x1="82" y1="185" x2="82" y2="212" class="mesa-pata"/>
-      <line x1="30" y1="196" x2="30" y2="223" class="mesa-pata"/>
-      <line x1="90" y1="196" x2="90" y2="223" class="mesa-pata"/>
-      <polygon points="38,185 82,185 90,196 30,196" class="mesa-tabla"/>
+      <line x1="35" y1="185" x2="35" y2="212" class="mesa-pata"/>
+      <line x1="85" y1="185" x2="85" y2="212" class="mesa-pata"/>
+      <line x1="26" y1="196" x2="26" y2="223" class="mesa-pata"/>
+      <line x1="94" y1="196" x2="94" y2="223" class="mesa-pata"/>
+      <polygon points="35,185 85,185 94,196 26,196" class="mesa-tabla"/>
     </g>
     <!-- Haces de luz (cono), sobre la mesa/piso -->
     <g class="haces-luz">
@@ -1413,7 +1362,7 @@ async function cargarDashboard() {
         <span class="dash-dim">${l.dimensiones||""}</span>
       </div>
       <div class="dash-body">
-        <div class="dash-ilustracion" id="dash-ilus-${d.id}">${svgInicial}<div class="dash-plantas-iconos" id="dash-iconos-${d.id}" data-tipo="${tipo}"></div><div class="dash-clima-ext" id="dash-clima-ext-${d.id}">🌡️<span id="dash-clima-ext-val-${d.id}">…</span></div></div>
+        <div class="dash-ilustracion" id="dash-ilus-${d.id}">${svgInicial}<div class="dash-plantas-iconos" id="dash-iconos-${d.id}" data-tipo="${tipo}"></div><div class="dash-clima-ext" id="dash-clima-ext-${d.id}">🌡️<span id="dash-clima-ext-val-${d.id}">…</span></div><button class="btn-riego-icono" aria-label="Registrar riego o fertilización" title="Registrar riego / fertilización">💧</button></div>
         <div class="dash-datos">
           <div class="dash-dato"><div class="valor" id="dash-temp-${d.id}">—</div><div class="label">🌡️ Temp</div></div>
           <div class="dash-dato"><div class="valor" id="dash-hum-${d.id}">—</div><div class="label">💧 Humedad</div></div>
@@ -1429,6 +1378,7 @@ async function cargarDashboard() {
       <button class="btn-toggle-historial">📋 Ver historial de plantas y fertilización ▾</button>
       <div class="plantas-resumen colapsado" id="dash-plantas-${d.id}"><span class="clima-cargando">🌱 Consultando plantas...</span></div>`;
     grid.appendChild(card);
+    card.querySelector(".btn-riego-icono").addEventListener("click", () => window.abrirModalRiegoLugar(d.id, l.nombre));
     card.querySelector(".btn-toggle-historial").addEventListener("click", (e) => {
       const cont = document.getElementById("dash-plantas-"+d.id);
       const oculto = cont.classList.toggle("colapsado");
@@ -1673,7 +1623,7 @@ window.agregarLuzRowArea = () => {
 // riego/fertilización o evento sin tener que entrar al detalle completo.
 async function cargarTablaPlantas() {
   const tbody = document.getElementById("tabla-plantas-body");
-  tbody.innerHTML = '<tr><td colspan="3" class="cargando">Cargando...</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="4" class="cargando">Cargando...</td></tr>';
   let lugaresSnap, plantasSnap;
   try {
     [lugaresSnap, plantasSnap] = await Promise.all([
@@ -1682,7 +1632,7 @@ async function cargarTablaPlantas() {
     ]);
   } catch (err) {
     console.error("Error cargando tabla de plantas:", err);
-    tbody.innerHTML = `<tr><td colspan="3" class="empty">⚠️ No se pudo cargar (${err.message})</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="4" class="empty">⚠️ No se pudo cargar (${err.message})</td></tr>`;
     return;
   }
   const nombreLugar = {};
@@ -1690,7 +1640,7 @@ async function cargarTablaPlantas() {
 
   tbody.innerHTML = "";
   if (plantasSnap.empty) {
-    tbody.innerHTML = '<tr><td colspan="3" class="empty">Todavía no hay plantas registradas.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="4" class="empty">Todavía no hay plantas registradas.</td></tr>';
     return;
   }
   plantasSnap.forEach(d => {
@@ -1700,13 +1650,14 @@ async function cargarTablaPlantas() {
     fila.innerHTML = `
       <td>${escAttr(p.genetica||"—")}<br><small class="fila-planta-nombre">${escAttr(p.nombre||"")}</small></td>
       <td>${escAttr(nombreLugar[p.lugarId]||"—")}</td>
+      <td>Día ${dias(p.fechaInicio)}</td>
       <td><span class="cult-fase fase-${p.fase}">${FASE_LABEL[p.fase]||p.fase||"—"}</span></td>`;
 
     const expand = document.createElement("tr");
     expand.className = "fila-planta-expand";
     expand.style.display = "none";
     const td = document.createElement("td");
-    td.colSpan = 3;
+    td.colSpan = 4;
     td.innerHTML = `
       <div class="fp-detalle">
         <span>📅 Día ${dias(p.fechaInicio)}</span>
@@ -1738,6 +1689,229 @@ async function cargarTablaPlantas() {
   });
 }
 window.cargarTablaPlantas = cargarTablaPlantas;
+
+// Vista Gráficos y reportes: (1) temp/humedad de cada lugar con sensor —
+// reusa las mismas funciones que ya dibujaban esto en Lugares, solo que
+// ahora el HTML destino vive acá; (2) ciclo de vida por planta.
+async function cargarVistaGraficos() {
+  const cont = document.getElementById("graf-lugares-lista");
+  cont.innerHTML = '<p class="cargando">Cargando...</p>';
+  let lugaresSnap;
+  try {
+    lugaresSnap = await getDocs(collection(db,"lugares"));
+  } catch (err) {
+    cont.innerHTML = `<p class="empty">⚠️ No se pudieron cargar los lugares (${err.message})</p>`;
+    return;
+  }
+  cont.innerHTML = "";
+  const conSensor = lugaresSnap.docs.filter(d => (d.data().sensoresTuya||[]).some(s => DISPOSITIVOS_TUYA[s]?.tipo === "sensor"));
+  if (!conSensor.length) {
+    cont.innerHTML = '<p class="empty">Ningún lugar tiene un sensor de temperatura/humedad asociado todavía.</p>';
+  }
+  for (const d of conSensor) {
+    const l = d.data();
+    const sensorKey = (l.sensoresTuya||[]).find(s => DISPOSITIVOS_TUYA[s]?.tipo === "sensor");
+    const card = document.createElement("div");
+    card.className = "graf-lugar-card";
+    card.innerHTML = `
+      <div class="graf-lugar-header">🏕️ ${l.nombre}</div>
+      <div class="graficos-hint">🖱️ Rueda: zoom · arrastrar: mover · doble click: volver a la vista completa</div>
+      <div class="clima-titulo dia-titulo"><span>🌡️ Últimos 7 días</span></div>
+      <div class="clima-charts">
+        <div class="chart-box"><canvas id="chart-temp-${d.id}"></canvas><div class="chart-empty" id="chart-temp-empty-${d.id}"></div></div>
+        <div class="chart-box"><canvas id="chart-hum-${d.id}"></canvas><div class="chart-empty" id="chart-hum-empty-${d.id}"></div></div>
+      </div>
+      <div class="clima-titulo dia-titulo">
+        <span>📅 Ver un día puntual (datos minuto a minuto)</span>
+        <input type="date" id="fecha-dia-${d.id}" class="input-fecha-dia" onchange="cargarGraficoDia('${d.id}','${sensorKey}')">
+      </div>
+      <div class="clima-charts">
+        <div class="chart-box"><canvas id="chart-dia-temp-${d.id}"></canvas><div class="chart-empty" id="chart-dia-temp-empty-${d.id}"></div></div>
+        <div class="chart-box"><canvas id="chart-dia-hum-${d.id}"></canvas><div class="chart-empty" id="chart-dia-hum-empty-${d.id}"></div></div>
+      </div>
+      <div class="clima-titulo dia-titulo"><span>📊 Histórico largo (base propia, sin límite de 7 días)</span></div>
+      <div class="historico-largo-controles">
+        <select id="hl-nivel-${d.id}" class="input-fecha-dia" onchange="cargarHistoricoLargoLugar('${d.id}','${sensorKey}')">
+          <option value="hora">Por hora (últimas 2 semanas)</option>
+          <option value="dia">Por día (histórico completo)</option>
+        </select>
+        <input type="date" id="hl-desde-${d.id}" class="input-fecha-dia" onchange="cargarHistoricoLargoLugar('${d.id}','${sensorKey}')">
+        <input type="date" id="hl-hasta-${d.id}" class="input-fecha-dia" onchange="cargarHistoricoLargoLugar('${d.id}','${sensorKey}')">
+      </div>
+      <div class="clima-charts">
+        <div class="chart-box"><canvas id="chart-hl-temp-${d.id}"></canvas><div class="chart-empty" id="chart-hl-temp-empty-${d.id}"></div></div>
+        <div class="chart-box"><canvas id="chart-hl-hum-${d.id}"></canvas><div class="chart-empty" id="chart-hl-hum-empty-${d.id}"></div></div>
+      </div>
+      <div class="clima-titulo dia-titulo"><span>🧪 EC / PPFD + fechas de riego y fertilización</span></div>
+      <div class="chart-box chart-box-timeline"><canvas id="chart-timeline-${d.id}"></canvas><div class="chart-empty" id="chart-timeline-empty-${d.id}"></div></div>`;
+    cont.appendChild(card);
+
+    if (!lugaresClimaActivos[d.id]) lugaresClimaActivos[d.id] = { sensorKey, etapa: localStorage.getItem("etapa_"+d.id) || "vegetativo" };
+    cargarHistoricoLugar(d.id, sensorKey);
+    const fechaInput = document.getElementById("fecha-dia-"+d.id);
+    const hoy = fechaArgentinaISO(Date.now());
+    const hace7 = fechaArgentinaISO(Date.now() - 7*24*60*60*1000);
+    fechaInput.value = hoy; fechaInput.max = hoy; fechaInput.min = hace7;
+    cargarGraficoDia(d.id, sensorKey);
+    const hlDesde = document.getElementById("hl-desde-"+d.id);
+    const hlHasta = document.getElementById("hl-hasta-"+d.id);
+    const hace30 = fechaArgentinaISO(Date.now() - 30*24*60*60*1000);
+    hlDesde.value = hace30; hlHasta.value = hoy; hlHasta.max = hoy;
+    cargarHistoricoLargoLugar(d.id, sensorKey);
+    cargarTimelineLugar(d.id);
+  }
+
+  // Selector de plantas para los gráficos de ciclo de vida
+  try {
+    const [lugSnap, plantSnap] = await Promise.all([
+      getDocs(collection(db,"lugares")),
+      getDocs(query(collection(db,"plantas"), orderBy("creadoEn","desc"))),
+    ]);
+    const nombreLugar = {};
+    lugSnap.forEach(d => nombreLugar[d.id] = d.data().nombre || "");
+    plantasParaSelectorCiclo = plantSnap.docs.map(d => ({ id: d.id, ...d.data(), lugarNombre: nombreLugar[d.data().lugarId]||"" }));
+  } catch (err) {
+    console.error("Error cargando plantas para selector de ciclo:", err);
+  }
+  // Si todavía no hay ningún gráfico de ciclo armado, arrancar con uno vacío.
+  if (!document.getElementById("graf-ciclo-lista").children.length) agregarGraficoCiclo();
+  else {
+    // Si ya había gráficos (ej. volviste a esta vista), refrescar sus <select>
+    // con la lista de plantas actual sin perder la planta ya elegida.
+    document.querySelectorAll("#graf-ciclo-lista select").forEach(sel => {
+      const actual = sel.value;
+      sel.innerHTML = opcionesPlantasCiclo(actual);
+    });
+  }
+}
+window.cargarVistaGraficos = cargarVistaGraficos;
+
+function opcionesPlantasCiclo(seleccionadaId) {
+  const opts = plantasParaSelectorCiclo.map(p =>
+    `<option value="${p.id}" ${p.id===seleccionadaId?"selected":""}>${escAttr(p.genetica||p.nombre||"Planta")} — ${escAttr(p.lugarNombre)}</option>`).join("");
+  return `<option value="">Elegí una planta...</option>${opts}`;
+}
+
+// Agrega una tarjeta más de "ciclo de vida" (selector + gráfico propio), para
+// poder comparar varias plantas una al lado de la otra.
+window.agregarGraficoCiclo = () => {
+  const uid = "gc" + (++graficoCicloContador);
+  const div = document.createElement("div");
+  div.className = "graf-ciclo-card";
+  div.id = "graf-ciclo-"+uid;
+  div.innerHTML = `
+    <div class="graf-ciclo-controles">
+      <select onchange="cargarGraficoCiclo('${uid}', this.value)">${opcionesPlantasCiclo("")}</select>
+      <button class="btn-icon" onclick="quitarGraficoCiclo('${uid}')" aria-label="Quitar este gráfico">✕</button>
+    </div>
+    <div class="chart-box chart-box-ciclo">
+      <canvas id="chart-ciclo-${uid}"></canvas>
+      <div class="chart-empty" id="chart-ciclo-empty-${uid}">Elegí una planta para ver su ciclo de vida.</div>
+    </div>`;
+  document.getElementById("graf-ciclo-lista").appendChild(div);
+};
+
+window.quitarGraficoCiclo = (uid) => {
+  if (graficosCiclo[uid]) { graficosCiclo[uid].destroy(); delete graficosCiclo[uid]; }
+  document.getElementById("graf-ciclo-"+uid)?.remove();
+};
+
+// Arma el gráfico de ciclo de vida de una planta: eje X = día de vida (desde
+// fechaInicio), eje Y = temperatura/humedad promedio de ese día. Si ese día
+// hubo EC o luz medidos, marca una línea punteada; si hay foto, la muestra
+// como ícono del punto (agrandado) en vez de un punto genérico.
+window.cargarGraficoCiclo = async (uid, plantaId) => {
+  const empty = document.getElementById("chart-ciclo-empty-"+uid);
+  const ctx = document.getElementById("chart-ciclo-"+uid);
+  if (!ctx) return;
+  if (!plantaId) {
+    if (graficosCiclo[uid]) { graficosCiclo[uid].destroy(); delete graficosCiclo[uid]; }
+    if (empty) { empty.style.display = ""; empty.textContent = "Elegí una planta para ver su ciclo de vida."; }
+    return;
+  }
+  if (empty) { empty.style.display = ""; empty.textContent = "Cargando..."; }
+  try {
+    const pSnap = await getDoc(doc(db,"plantas",plantaId));
+    if (!pSnap.exists()) { if (empty) empty.textContent = "Esa planta ya no existe."; return; }
+    const p = pSnap.data();
+    const inicio = fechaComoDate(p.fechaInicio);
+    const medSnap = await getDocs(query(collection(db,"plantas",plantaId,"mediciones"), orderBy("fecha","asc")));
+
+    const porDia = {};
+    medSnap.forEach(md => {
+      const m = md.data();
+      const f = fechaComoDate(m.fecha);
+      if (!inicio || !f) return;
+      const diaEdad = Math.floor((f - inicio) / 86400000);
+      if (diaEdad < 0) return;
+      if (!porDia[diaEdad]) porDia[diaEdad] = { temps:[], hums:[], ec:false, luz:false, foto:null };
+      if (m.tempAmb != null) porDia[diaEdad].temps.push(m.tempAmb);
+      if (m.humedad != null) porDia[diaEdad].hums.push(m.humedad);
+      if (m.ec != null) porDia[diaEdad].ec = true;
+      if (m.ppfd != null || m.luz != null) porDia[diaEdad].luz = true;
+      if (m.fotoUrl && !porDia[diaEdad].foto) porDia[diaEdad].foto = m.fotoUrl;
+    });
+
+    const dias = Object.keys(porDia).map(Number).sort((a,b)=>a-b);
+    if (!dias.length) {
+      if (empty) { empty.style.display = ""; empty.textContent = "Esta planta todavía no tiene mediciones cargadas."; }
+      if (graficosCiclo[uid]) { graficosCiclo[uid].destroy(); delete graficosCiclo[uid]; }
+      return;
+    }
+    if (empty) empty.style.display = "none";
+
+    const prom = arr => arr.length ? +(arr.reduce((a,b)=>a+b,0)/arr.length).toFixed(1) : null;
+    const datosTemp = dias.map(d => ({ x:d, y:prom(porDia[d].temps) }));
+    const datosHum  = dias.map(d => ({ x:d, y:prom(porDia[d].hums) }));
+
+    // Puntos con foto: se agrandan y usan la miniatura como ícono del punto,
+    // para no sobrecargar el gráfico el resto de los puntos quedan invisibles.
+    const pointRadius = [], pointStyle = [];
+    dias.forEach(d => {
+      if (porDia[d].foto) {
+        const img = new Image(30,30);
+        img.src = porDia[d].foto;
+        pointRadius.push(15); pointStyle.push(img);
+      } else {
+        pointRadius.push(0); pointStyle.push("circle");
+      }
+    });
+
+    const anotaciones = {};
+    dias.forEach(d => {
+      if (porDia[d].ec)  anotaciones["ec"+d]  = { type:"line", xMin:d, xMax:d, borderColor:"#3ddc97", borderWidth:1, borderDash:[3,3], label:{display:false} };
+      if (porDia[d].luz) anotaciones["luz"+d] = { type:"line", xMin:d, xMax:d, borderColor:"#ffd23d", borderWidth:1, borderDash:[1,2], label:{display:false} };
+    });
+
+    if (graficosCiclo[uid]) graficosCiclo[uid].destroy();
+    graficosCiclo[uid] = new Chart(ctx, {
+      type: "line",
+      data: { datasets: [
+        { label:"Temp °C (prom. día)", data:datosTemp, borderColor:"#ff8a3d", backgroundColor:"rgba(255,138,61,.12)",
+          tension:.25, borderWidth:2, fill:false, yAxisID:"y", pointRadius, pointStyle, pointHoverRadius:17, spanGaps:true },
+        { label:"Humedad % (prom. día)", data:datosHum, borderColor:"#3ddc97", backgroundColor:"rgba(61,220,151,.12)",
+          tension:.25, borderWidth:2, fill:false, yAxisID:"y1", pointRadius:0, spanGaps:true },
+      ]},
+      options: {
+        responsive:true, maintainAspectRatio:false, animation:false,
+        plugins: {
+          legend: { display:true, labels:{ color:"#8a9a8f", font:{size:10} } },
+          annotation: { annotations: anotaciones },
+          zoom: { limits:{ x:{min:"original",max:"original",minRange:5} }, pan:{enabled:true,mode:"x"}, zoom:{wheel:{enabled:true},pinch:{enabled:true},mode:"x"} },
+        },
+        scales: {
+          x:  { type:"linear", title:{display:true,text:"Día de vida",color:"#8a9a8f"}, ticks:{color:"#8a9a8f",font:{size:10},stepSize:1}, grid:{display:false} },
+          y:  { position:"left",  ticks:{color:"#ff8a3d",font:{size:10},callback:v=>v+"°C"}, grid:{color:"rgba(255,255,255,.05)"} },
+          y1: { position:"right", ticks:{color:"#3ddc97",font:{size:10},callback:v=>v+"%"}, grid:{display:false} },
+        },
+      },
+    });
+    habilitarResetZoom(graficosCiclo[uid], ctx);
+  } catch (err) {
+    console.error("Error gráfico de ciclo de vida:", err);
+    if (empty) { empty.style.display = ""; empty.textContent = "⚠️ No se pudo cargar (" + err.message + ")"; }
+  }
+};
 
 async function cargarPlantasLugar(lugarId) {
   const lista = document.getElementById("lista-plantas-lugar");
@@ -2434,8 +2608,8 @@ window.importarDesde = (key) => {
 
 // ─── INIT ─────────────────────────────────────────────────────────────────
 window.addEventListener("DOMContentLoaded", () => {
-  show("vista-dashboard");
-  cargarCatalogoDispositivos().finally(() => cargarDashboard());
+  show("vista-inicio");
+  cargarCatalogoDispositivos();
   localStorage.setItem("tuya_proxy", PROXY_URL);
 
   const hoy = new Date().toISOString().split("T")[0];

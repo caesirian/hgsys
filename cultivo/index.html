@@ -19,8 +19,8 @@
 
 <!-- SIDEBAR -->
 <aside class="sidebar" role="navigation" aria-label="Navegación principal">
-  <div class="sidebar-logo">🌿 <span>Cultiv</span>App<small>Seguimiento de cultivo</small></div>
-  <button class="nav-btn activo" data-vista="vista-dashboard" onclick="show('vista-dashboard');cargarDashboard()">
+  <button class="sidebar-logo" onclick="show('vista-inicio')" aria-label="Ir a Inicio">🌿 <span>Cultiv</span>App<small>Seguimiento de cultivo</small></button>
+  <button class="nav-btn" data-vista="vista-dashboard" onclick="show('vista-dashboard');cargarDashboard()">
     <span class="nav-icon">🖥️</span><span class="nav-label">Dashboard</span>
   </button>
   <button class="nav-btn" data-vista="vista-lugares" onclick="show('vista-lugares');cargarLugares()">
@@ -28,6 +28,9 @@
   </button>
   <button class="nav-btn" data-vista="vista-plantas" onclick="show('vista-plantas');cargarTablaPlantas()">
     <span class="nav-icon">🪴</span><span class="nav-label">Plantas</span>
+  </button>
+  <button class="nav-btn" data-vista="vista-graficos" onclick="show('vista-graficos');cargarVistaGraficos()">
+    <span class="nav-icon">📊</span><span class="nav-label">Gráficos</span>
   </button>
   <button class="nav-btn" data-vista="vista-tuya" onclick="show('vista-tuya')">
     <span class="nav-icon">📡</span><span class="nav-label">Sensores</span>
@@ -37,7 +40,7 @@
 
 <!-- NAVBAR BOTTOM mobile -->
 <nav class="bottom-nav" role="navigation" aria-label="Navegación principal">
-  <button class="nav-btn activo" data-vista="vista-dashboard" onclick="show('vista-dashboard');cargarDashboard()">
+  <button class="nav-btn" data-vista="vista-dashboard" onclick="show('vista-dashboard');cargarDashboard()">
     <span class="nav-icon">🖥️</span><span class="nav-label">Dashboard</span>
   </button>
   <button class="nav-btn" data-vista="vista-lugares" onclick="show('vista-lugares');cargarLugares()">
@@ -46,6 +49,9 @@
   <button class="nav-btn" data-vista="vista-plantas" onclick="show('vista-plantas');cargarTablaPlantas()">
     <span class="nav-icon">🪴</span><span class="nav-label">Plantas</span>
   </button>
+  <button class="nav-btn" data-vista="vista-graficos" onclick="show('vista-graficos');cargarVistaGraficos()">
+    <span class="nav-icon">📊</span><span class="nav-label">Gráficos</span>
+  </button>
   <button class="nav-btn" data-vista="vista-tuya" onclick="show('vista-tuya')">
     <span class="nav-icon">📡</span><span class="nav-label">Sensores</span>
   </button>
@@ -53,10 +59,34 @@
 
 <main class="main">
 
-<!-- VISTA: DASHBOARD -->
-<section id="vista-dashboard" class="vista activa">
+<!-- VISTA: INICIO (home, 3 secciones principales) -->
+<section id="vista-inicio" class="vista activa">
   <div class="page-header">
-    <div class="page-title">Dashboard<small>Vista visual de cada espacio de cultivo</small></div>
+    <div class="page-title">CultivApp<small>Elegí qué querés ver</small></div>
+  </div>
+  <div class="inicio-grid">
+    <button class="inicio-btn" onclick="show('vista-dashboard');cargarDashboard()">
+      <span class="inicio-icono">🏕️</span>
+      <span class="inicio-titulo">Lugares de cultivo</span>
+      <span class="inicio-sub">Carpa y Estructura 3x1 — vista visual, luces, riego</span>
+    </button>
+    <button class="inicio-btn" onclick="show('vista-plantas');cargarTablaPlantas()">
+      <span class="inicio-icono">🪴</span>
+      <span class="inicio-titulo">Listado general de plantas</span>
+      <span class="inicio-sub">Todas las plantas, lugar, edad y etapa</span>
+    </button>
+    <button class="inicio-btn" onclick="show('vista-graficos');cargarVistaGraficos()">
+      <span class="inicio-icono">📊</span>
+      <span class="inicio-titulo">Gráficos y reportes</span>
+      <span class="inicio-sub">Temperatura, humedad y ciclo de vida por planta</span>
+    </button>
+  </div>
+</section>
+
+<!-- VISTA: DASHBOARD -->
+<section id="vista-dashboard" class="vista">
+  <div class="page-header">
+    <div class="page-title">Lugares de cultivo<small>Carpa y Estructura 3x1 — vista visual de cada espacio</small></div>
   </div>
   <div id="dashboard-grid" class="dashboard-grid"></div>
 </section>
@@ -64,7 +94,7 @@
 <!-- VISTA: LUGARES -->
 <section id="vista-lugares" class="vista">
   <div class="page-header">
-    <div class="page-title">Lugares de cultivo<small>Espacios físicos con sus plantas y sensores</small></div>
+    <div class="page-title">Gestión de lugares<small>Monitoreo, VPD, fotoperíodo y administración</small></div>
     <button class="btn btn-primary" onclick="abrirModal('modal-lugar')">+ Nuevo lugar</button>
   </div>
   <div id="lista-lugares" class="lugar-grid"></div>
@@ -73,15 +103,33 @@
 <!-- VISTA: PLANTAS (tabla global, todas las plantas de todos los lugares) -->
 <section id="vista-plantas" class="vista">
   <div class="page-header">
-    <div class="page-title">Plantas<small>Todas las plantas, en cualquier lugar</small></div>
+    <div class="page-title">Listado general de plantas<small>Todas las plantas, en cualquier lugar</small></div>
   </div>
   <div class="plantas-tabla-wrap">
     <table class="plantas-tabla">
       <thead>
-        <tr><th>Genética</th><th>Lugar</th><th>Etapa</th></tr>
+        <tr><th>Genética</th><th>Lugar</th><th>Edad</th><th>Etapa</th></tr>
       </thead>
-      <tbody id="tabla-plantas-body"><tr><td colspan="3" class="cargando">Cargando...</td></tr></tbody>
+      <tbody id="tabla-plantas-body"><tr><td colspan="4" class="cargando">Cargando...</td></tr></tbody>
     </table>
+  </div>
+</section>
+
+<!-- VISTA: GRÁFICOS Y REPORTES -->
+<section id="vista-graficos" class="vista">
+  <div class="page-header">
+    <div class="page-title">Gráficos y reportes<small>Temperatura, humedad y ciclo de vida por planta</small></div>
+  </div>
+
+  <div id="graf-lugares-lista"><p class="cargando">Cargando...</p></div>
+
+  <hr class="divider">
+
+  <div class="graf-ciclo-section">
+    <div class="section-label">🌱 Ciclo de vida por planta</div>
+    <div class="graficos-hint">Eje X: día de vida de la planta · eje Y: temperatura y humedad promedio de ese día · líneas punteadas: hubo EC o medición de luz ese día · fotos: se muestran como marcador en el punto del día</div>
+    <div id="graf-ciclo-lista"></div>
+    <button class="btn btn-ghost" onclick="agregarGraficoCiclo()">+ Agregar gráfico (comparar con otra planta)</button>
   </div>
 </section>
 

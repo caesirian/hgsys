@@ -10,7 +10,8 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 
 /* SIDEBAR */
 .sidebar{width:var(--sidebar);background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;z-index:100}
-.sidebar-logo{padding:20px 16px 12px;border-bottom:1px solid var(--border);font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.1rem}
+.sidebar-logo{padding:20px 16px 12px;border-bottom:1px solid var(--border);font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.1rem;
+  background:none;border-left:none;border-right:none;border-top:none;color:var(--text);width:100%;text-align:left;cursor:pointer;display:block}
 .sidebar-logo span{color:var(--lima)}
 .sidebar-logo small{display:block;font-size:.7rem;color:var(--muted);font-weight:400;margin-top:2px}
 .nav-btn{display:flex;align-items:center;gap:10px;padding:11px 16px;cursor:pointer;border:none;background:none;color:var(--muted);width:100%;text-align:left;font-size:.875rem;transition:all .15s;white-space:nowrap}
@@ -25,6 +26,15 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .vista{display:none}
 .vista.activa{display:block}
 .page-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:24px;flex-wrap:wrap}
+
+.inicio-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
+.inicio-btn{display:flex;flex-direction:column;align-items:flex-start;gap:6px;text-align:left;
+  background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;cursor:pointer;
+  color:var(--text);transition:all .15s;min-height:44px}
+.inicio-btn:hover,.inicio-btn:focus-visible{background:var(--card);border-color:var(--lima2);transform:translateY(-2px)}
+.inicio-icono{font-size:2.2rem}
+.inicio-titulo{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.1rem}
+.inicio-sub{color:var(--muted);font-size:.82rem;line-height:1.4}
 .page-title{font-family:'Space Grotesk',sans-serif;font-size:1.4rem;font-weight:700}
 .page-title small{display:block;font-size:.78rem;color:var(--muted);font-weight:400;margin-top:2px}
 
@@ -128,6 +138,13 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .clima-charts{display:flex;flex-direction:column;gap:14px;margin-bottom:10px}
 .chart-box{position:relative;height:150px;background:var(--surface);border-radius:10px;padding:8px;min-width:0}
 .chart-box-timeline{height:190px;margin-bottom:6px}
+.graf-lugar-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:20px}
+.graf-lugar-header{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.05rem;margin-bottom:10px}
+.graf-ciclo-section{margin-top:4px}
+.graf-ciclo-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:14px}
+.graf-ciclo-controles{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.graf-ciclo-controles select{flex:1}
+.chart-box-ciclo{height:260px}
 .ev-medidas{font-size:.72rem;color:#f4c542;margin-top:2px}
 .chart-box canvas{max-width:100%}
 .chart-empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:12px;font-size:.68rem;color:var(--muted);pointer-events:none}
@@ -146,7 +163,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .dash-planta-wrap{position:absolute;display:flex;flex-direction:column;align-items:center;pointer-events:auto;cursor:pointer;transition:transform .15s}
 .dash-planta-wrap:hover{filter:brightness(1.25)}
 .dash-planta-icono{display:block}
-.dash-planta-nombre{font-size:.52rem;color:#dfe8e0;text-shadow:0 1px 2px rgba(0,0,0,.9);white-space:nowrap;max-width:52px;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+.dash-planta-nombre{font-size:.72rem;color:#dfe8e0;text-shadow:0 1px 2px rgba(0,0,0,.9);white-space:nowrap;max-width:74px;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
 .dash-planta-icono:hover{transform:scale(1.2)}
 .dash-datos{display:flex;flex-direction:column;gap:10px;min-width:78px}
 .dash-dato{text-align:center}
@@ -165,6 +182,10 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .mesa-pata{stroke:#3d4a3a;stroke-width:2.5}
 .mesa-tabla{fill:#4a3a2a;stroke:#2a201a;stroke-width:1}
 .dash-clima-ext{position:absolute;top:2px;right:2px;background:rgba(13,15,23,.75);border:1px solid var(--border);border-radius:20px;padding:2px 8px;font-size:.68rem;color:#8fd0ff;display:flex;align-items:center;gap:3px;white-space:nowrap}
+.btn-riego-icono{position:absolute;top:2px;left:2px;width:34px;height:34px;border-radius:50%;
+  background:rgba(13,15,23,.75);border:1px solid var(--border);color:#8fd0ff;font-size:1.1rem;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;transition:transform .15s}
+.btn-riego-icono:hover,.btn-riego-icono:focus-visible{transform:scale(1.1);background:rgba(13,15,23,.9)}
 .altura-luces-box{margin-top:8px;font-size:.74rem;color:var(--muted)}
 .altura-luces-box label{display:block;margin-bottom:3px}
 .altura-luces-slider{width:100%}
