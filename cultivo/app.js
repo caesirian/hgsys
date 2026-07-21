@@ -711,36 +711,65 @@ async function cargarFotoperiodoLugar(lugarId, luzKey) {
   }
 }
 
+// Da formato legible a una cantidad de horas: si pasa del día, lo separa en
+// días + horas ("3d 4.2h") en vez de un número de horas gigante y confuso.
+function formatDuracionHoras(horas) {
+  if (horas < 24) return `${horas.toFixed(1)}h`;
+  const dias = Math.floor(horas / 24);
+  const resto = horas - dias*24;
+  return `${dias}d ${resto.toFixed(1)}h`;
+}
+
 function pintarFotoperiodo(lugarId) {
   const el   = document.getElementById("foto-"+lugarId);
   const data = fotoperiodoActivos[lugarId];
   if (!el || !data) return;
   const etapa    = lugaresClimaActivos[lugarId]?.etapa || "vegetativo";
   const objetivo = FOTOPERIODO_ESPERADO[etapa];
+  const esFloracion = etapa.startsWith("floracion");
 
-  // Línea principal: en curso, tipo "lleva 8.9h de luz de las 18h de hoy"
   const s = data.sesionActual || {};
-  let lineaActual;
-  if (!s.online) {
-    lineaActual = `<span class="foto-aviso">📴 Luz fuera de línea</span>`;
-  } else if (s.encendido) {
-    lineaActual = `🕐 Lleva <b>${s.horasSesion}h</b> de luz encendida de las <b>${objetivo}h</b> de hoy`;
-  } else {
-    lineaActual = `🕐 Luz apagada ahora (objetivo del día: ${objetivo}h)`;
+
+  // Estado actual: simple, sin ambigüedad.
+  let lineaEstado;
+  if (!s.online) lineaEstado = `📴 Estado actual: fuera de línea`;
+  else if (s.encendido) lineaEstado = `🟢 Estado actual: encendida y en línea`;
+  else lineaEstado = `⚪ Estado actual: apagada y en línea`;
+
+  // Horas encendida = ahora menos el último encendido, sin cortarla en el
+  // día calendario — así una tira de 24/0 se ve reflejada de verdad y no se
+  // resetea a la medianoche.
+  const corridaLarga = s.encendido && s.horasSesion > 24; // más de un día sin apagarse
+  let lineaSesion = "";
+  if (s.encendido) {
+    lineaSesion = `<div>🕐 Encendida hace <b>${formatDuracionHoras(s.horasSesion)}</b> sin cortes (objetivo diario: ${objetivo}h)</div>`;
   }
 
-  // Línea secundaria: chequeo estricto del día completo de ayer (para detectar
-  // desvíos reales de la automatización, no solo el progreso de hoy)
-  const diff    = Math.abs(data.horasEncendido - objetivo);
-  const critico = etapa.startsWith("floracion");
-  const okRango = diff <= (critico ? 0.3 : 1);
-  const clase   = okRango ? "foto-ok" : (critico ? "foto-alerta" : "foto-aviso");
-  const icono   = okRango ? "✅" : "⚠️";
+  // Un ciclo 24 luz / 0 oscuridad es una elección de cultivo válida (más
+  // frecuente en vegetativo) — no es un error de la automatización, así que
+  // en vez de la alarma de "desvío vs objetivo" se aclara sin alarmar.
+  // En floración sí se mantiene la advertencia: ahí la falta de oscuridad
+  // puede inducir hermafroditismo aunque haya sido algo intencional.
+  let lineaAviso;
+  if (corridaLarga && !esFloracion) {
+    lineaAviso = `<div class="foto-aviso">☀️ Pasaron ${formatDuracionHoras(s.horasSesion)} sin oscuridad — ciclo de luz continuo (24/0)</div>`;
+  } else if (corridaLarga && esFloracion) {
+    lineaAviso = `<div class="foto-critico">⚠️ Pasaron ${formatDuracionHoras(s.horasSesion)} sin oscuridad en floración — riesgo de hermafroditismo, revisá si es intencional.</div>`;
+  } else {
+    // Corrida normal (menos de 24h encendida seguida): mantener el chequeo
+    // de siempre contra el total de ayer, para detectar desvíos reales de
+    // la automatización.
+    const diff    = Math.abs(data.horasEncendido - objetivo);
+    const critico = esFloracion;
+    const okRango = diff <= (critico ? 0.3 : 1);
+    const clase   = okRango ? "foto-ok" : (critico ? "foto-alerta" : "foto-aviso");
+    const icono   = okRango ? "✅" : "⚠️";
+    lineaAviso = `
+      <div class="${clase}" style="font-size:.68rem">${icono} Ayer (${data.fecha}): ${data.horasEncendido}h total${!okRango ? ` — desvío de ${diff.toFixed(1)}h vs objetivo` : " (dentro de lo esperado)"}</div>
+      ${critico && !okRango ? `<div class="foto-critico">⚠️ En floración esto puede inducir hermafroditismo — revisá el temporizador/automatización ya.</div>` : ""}`;
+  }
 
-  el.innerHTML = `
-    <div>${lineaActual}</div>
-    <div class="${clase}" style="font-size:.68rem">${icono} Ayer (${data.fecha}): ${data.horasEncendido}h total${!okRango ? ` — desvío de ${diff.toFixed(1)}h vs objetivo` : " (dentro de lo esperado)"}</div>
-    ${critico && !okRango ? `<div class="foto-critico">⚠️ En floración esto puede inducir hermafroditismo — revisá el temporizador/automatización ya.</div>` : ""}`;
+  el.innerHTML = `<div>${lineaEstado}</div>${lineaSesion}${lineaAviso}`;
 }
 
 // Refresco automático liviano (solo valores actuales, no historial) cada 1 minuto
