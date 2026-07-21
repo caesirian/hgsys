@@ -365,7 +365,7 @@
         <h2 class="font-display balanced text-4xl font-black leading-tight md:text-6xl" data-i18n="contact.title">¿Querés mejorar la gestión de tu empresa con un sistema real?</h2>
         <p class="mt-5 text-lg font-semibold text-ink/75" data-i18n="contact.desc">Diseño herramientas a medida para negocios, cooperativas, profesionales y PyMEs.</p>
         <div class="mt-8 flex flex-wrap gap-3">
-          <a href="https://wa.me/1134796562" class="btn !border-ink/15 !bg-ink !text-white" data-i18n="contact.cta">Automatizar mi negocio ahora</a>
+          <a href="https://wa.me/1168610100" class="btn !border-ink/15 !bg-ink !text-white" data-i18n="contact.cta">Automatizar mi negocio ahora</a>
           <button class="btn !border-ink/15 !bg-white/40 !text-ink" onclick="loadModule('https://hgsolucionesweb.com.ar/presupuesto.html')" data-i18n="contact.quote">Ver la magia en acción</button>
         </div>
       </div>
@@ -478,7 +478,7 @@ const i18n = {
     'chat.header': 'Asistente Web',
     'chat.greeting': 'Hola 👋 ¿En qué te ayudo?',
     'toast.sending': 'Enviando…',
-    'bot.continue': 'Si querés avanzar con un proyecto real, podés escribirme a hernan.garbarino@gmail.com o por WhatsApp al 1134796562.'
+    'bot.continue': 'Si querés avanzar con un proyecto real, podés escribirme a hernan.garbarino@gmail.com o por WhatsApp al 1168610100.'
   },
   en: {
     'nav.services': 'Services',
@@ -537,7 +537,7 @@ const i18n = {
     'chat.header': 'Web Assistant',
     'chat.greeting': 'Hi 👋 How can I help?',
     'toast.sending': 'Sending…',
-    'bot.continue': 'If you want to move forward with a real project, you can write to me at hernan.garbarino@gmail.com or WhatsApp at 1134796562.'
+    'bot.continue': 'If you want to move forward with a real project, you can write to me at hernan.garbarino@gmail.com or WhatsApp at 1168610100.'
   }
 };
 
@@ -645,7 +645,7 @@ function initHgChat(){
     const body = document.getElementById(bodyId);
     if(!input || !body || !input.value.trim()) return;
     appendChatLine(body, 'Vos', input.value.trim());
-    appendChatLine(body, 'HG', 'Recibido. Para avanzar rápido, pedime un presupuesto o escribime por WhatsApp al 1134796562.');
+    appendChatLine(body, 'HG', 'Recibido. Para avanzar rápido, pedime un presupuesto o escribime por WhatsApp al 1168610100.');
     input.value = '';
     body.scrollTop = body.scrollHeight;
   };
@@ -657,7 +657,7 @@ function initHgChat(){
   document.getElementById('hgFullSend')?.addEventListener('click', () => send('hgFullInput','hgFullBody'));
   document.getElementById('hgInput')?.addEventListener('keydown', e => { if(e.key === 'Enter') send('hgInput','hgBody'); });
   document.getElementById('hgFullInput')?.addEventListener('keydown', e => { if(e.key === 'Enter') send('hgFullInput','hgFullBody'); });
-  contactHuman?.addEventListener('click', () => { window.location.href = 'https://wa.me/1134796562'; });
+  contactHuman?.addEventListener('click', () => { window.location.href = 'https://wa.me/1168610100'; });
   sendPdfBtn?.addEventListener('click', () => { loadModule('https://hgsolucionesweb.com.ar/presupuesto.html'); });
 }
 document.addEventListener('click', showSplash, { passive:true });
