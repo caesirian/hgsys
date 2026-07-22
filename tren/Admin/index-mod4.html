@@ -52,6 +52,14 @@
     .hidden{display:none!important;}
     .menu-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:18px;}
     .section-card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.05);border-radius:16px;padding:16px;}
+    /* ── Historial de notificaciones ── */
+    .notif-table{width:100%;border-collapse:collapse;font-size:.78rem;margin-top:4px;}
+    .notif-table th{background:rgba(255,255,255,.06);color:var(--muted,#8899aa);font-weight:600;padding:7px 10px;text-align:left;border-bottom:1px solid rgba(255,255,255,.08);}
+    .notif-table td{padding:8px 10px;border-bottom:1px solid rgba(255,255,255,.04);vertical-align:top;color:#d0dbe8;}
+    .notif-table tr:last-child td{border-bottom:none;}
+    .notif-table tr:hover td{background:rgba(255,255,255,.03);}
+    .notif-recipients{display:inline-block;background:rgba(0,149,212,.15);color:#0095D4;border-radius:10px;padding:1px 8px;font-weight:700;}
+    .notif-table-wrap{overflow-x:auto;border-radius:10px;border:1px solid rgba(255,255,255,.07);}
     .section-title{font-size:18px;font-weight:700;margin-bottom:10px;}
     .section-description{color:var(--muted);font-size:13px;margin-bottom:14px;}
     .form-group{margin-bottom:14px;}
@@ -286,6 +294,7 @@
       <button class="primary-btn" id="btnNoticias">Noticias</button>
       <button class="primary-btn" id="btnCronograma">Cronograma</button>
       <button class="primary-btn" id="btnUltimosTrenes">Últimos Trenes</button>
+      <button class="primary-btn" id="btnNotificaciones">Notificaciones Push</button>
     </div>
 
     <!-- Estado -->
@@ -536,9 +545,50 @@
       <div id="utStatusMsg"></div>
     </div>
 
+    <!-- ── Notificaciones Push ─────────────────────────────── -->
+    <div id="seccionNotificaciones" class="section-card hidden">
+      <div class="section-title">Notificaciones Push</div>
+      <div class="section-description">
+        Enviá una alerta a todos los suscriptores. Se manda en tiempo real — revisá bien antes de enviar.
+      </div>
+
+      <div class="form-group">
+        <label>Título <span style="font-size:.75rem;color:var(--muted)">(máx. 60 caracteres)</span></label>
+        <input type="text" id="notifTitulo" placeholder="Ej: Servicio interrumpido" maxlength="60"/>
+        <div style="font-size:.72rem;color:var(--muted);margin-top:3px;text-align:right"><span id="notifTituloCount">0</span>/60</div>
+      </div>
+
+      <div class="form-group">
+        <label>Mensaje <span style="font-size:.75rem;color:var(--muted)">(máx. 180 caracteres)</span></label>
+        <textarea id="notifMensaje" placeholder="Ej: El servicio está suspendido por falta de personal. Consultá el sitio para más info." maxlength="180" rows="3"></textarea>
+        <div style="font-size:.72rem;color:var(--muted);margin-top:3px;text-align:right"><span id="notifMensajeCount">0</span>/180</div>
+      </div>
+
+      <div class="form-group">
+        <label>URL al hacer click</label>
+        <input type="text" id="notifUrl" value="https://trensarmientoenlinea.com.ar"/>
+      </div>
+
+      <button class="primary-btn" style="background:linear-gradient(135deg,#e53935,#b71c1c);width:100%;margin-top:4px;" id="notifEnviarBtn">
+        📨 Enviar notificación a todos los suscriptores
+      </button>
+      <div id="notifStatusMsg" style="margin-top:12px;"></div>
+
+      <!-- Historial -->
+      <div style="margin-top:28px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+          <div class="section-title" style="margin:0;font-size:1rem;">Historial de envíos</div>
+          <button class="secondary-btn" id="notifRefreshBtn" style="font-size:.78rem;padding:5px 12px;">↺ Actualizar</button>
+        </div>
+        <div id="notifHistorialWrap">
+          <p style="font-size:.85rem;color:var(--muted);">Cargando historial…</p>
+        </div>
+      </div>
+    </div>
+
   </div>
 
-  <div class="footer">Firebase Auth + Firestore · Cloudinary · ultimosTrenes</div>
+  <div class="footer">Firebase Auth + Firestore · Cloudinary · OneSignal</div>
 </div>
 
 <script type="module">
@@ -599,17 +649,19 @@ onAuthStateChanged(auth, user => {
 });
 
 // ── Navegación ─────────────────────────────────────────────────
-const SECS = ["Estado","PuntosSube","Noticias","Cronograma","UltimosTrenes"];
+const SECS = ["Estado","PuntosSube","Noticias","Cronograma","UltimosTrenes","Notificaciones"];
 function mostrarSeccion(n) {
   SECS.forEach(s => document.getElementById("seccion"+s).classList.add("hidden"));
   document.getElementById("seccion"+n).classList.remove("hidden");
   if (n==="Noticias" && !_lstIniciado) initLst();
+  if (n==="Notificaciones") notifCargarHistorial();
 }
 document.getElementById("btnEstado").addEventListener("click",        () => mostrarSeccion("Estado"));
 document.getElementById("btnPuntosSube").addEventListener("click",    () => mostrarSeccion("PuntosSube"));
 document.getElementById("btnNoticias").addEventListener("click",       () => mostrarSeccion("Noticias"));
 document.getElementById("btnCronograma").addEventListener("click",     () => mostrarSeccion("Cronograma"));
 document.getElementById("btnUltimosTrenes").addEventListener("click",  () => { mostrarSeccion("UltimosTrenes"); utInit(); });
+document.getElementById("btnNotificaciones").addEventListener("click", () => mostrarSeccion("Notificaciones"));
 
 // ── Semáforo ───────────────────────────────────────────────────
 onSnapshot(estadoRef, snap => {
@@ -1307,6 +1359,166 @@ function utClearStatus() {
   const el = document.getElementById('utStatusMsg');
   if (el) el.innerHTML = '';
 }
+
+// ══════════════════════════════════════════════════════════════
+// NOTIFICACIONES PUSH — OneSignal REST API
+// Completá ONESIGNAL_REST_API_KEY con tu key de OneSignal:
+// OneSignal → Settings → Keys & IDs → REST API Key
+// ══════════════════════════════════════════════════════════════
+const ONESIGNAL_APP_ID       = '114f6665-eede-42d0-90ad-4d6480f10c76';
+const ONESIGNAL_REST_API_KEY = 'REEMPLAZÁ_ESTO_CON_TU_REST_API_KEY';
+const ONESIGNAL_API          = 'https://onesignal.com/api/v1';
+
+// Contadores de caracteres
+['notifTitulo','notifMensaje'].forEach(id => {
+  const el  = document.getElementById(id);
+  const cnt = document.getElementById(id + 'Count');
+  if (el && cnt) {
+    el.addEventListener('input', () => { cnt.textContent = el.value.length; });
+  }
+});
+
+function notifSetStatus(type, html) {
+  const el = document.getElementById('notifStatusMsg');
+  if (el) el.innerHTML = `<div class="ut-status-badge ${type}">${html}</div>`;
+}
+
+// ── Enviar notificación ───────────────────────────────────────
+document.getElementById('notifEnviarBtn').addEventListener('click', async () => {
+  const titulo  = document.getElementById('notifTitulo').value.trim();
+  const mensaje = document.getElementById('notifMensaje').value.trim();
+  const url     = document.getElementById('notifUrl').value.trim() || 'https://trensarmientoenlinea.com.ar';
+
+  if (!titulo)  { notifSetStatus('error', '⚠️ El título es obligatorio.'); return; }
+  if (!mensaje) { notifSetStatus('error', '⚠️ El mensaje es obligatorio.'); return; }
+  if (ONESIGNAL_REST_API_KEY === 'REEMPLAZÁ_ESTO_CON_TU_REST_API_KEY') {
+    notifSetStatus('error', '⚠️ Falta configurar la REST API Key de OneSignal en el código.');
+    return;
+  }
+
+  const btn = document.getElementById('notifEnviarBtn');
+  btn.disabled = true;
+  btn.textContent = '📨 Enviando…';
+  notifSetStatus('', '');
+
+  try {
+    const res = await fetch(`${ONESIGNAL_API}/notifications`, {
+      method: 'POST',
+      headers: {
+        'Content-Type':  'application/json',
+        'Authorization': `Basic ${ONESIGNAL_REST_API_KEY}`
+      },
+      body: JSON.stringify({
+        app_id:            ONESIGNAL_APP_ID,
+        included_segments: ['All'],
+        headings:          { es: titulo,  en: titulo  },
+        contents:          { es: mensaje, en: mensaje },
+        url,
+        chrome_web_icon:   'https://trensarmientoenlinea.com.ar/logo.png',
+        firefox_icon:      'https://trensarmientoenlinea.com.ar/logo.png',
+      })
+    });
+
+    const data = await res.json();
+
+    if (res.ok && data.id) {
+      notifSetStatus('success',
+        `✅ Enviada correctamente · ID: <code>${data.id}</code> · Receptores: <strong>${data.recipients ?? '—'}</strong>`
+      );
+      document.getElementById('notifTitulo').value  = '';
+      document.getElementById('notifMensaje').value = '';
+      document.getElementById('notifTituloCount').textContent  = '0';
+      document.getElementById('notifMensajeCount').textContent = '0';
+      // Refrescar historial automáticamente tras envío exitoso
+      setTimeout(notifCargarHistorial, 1500);
+    } else {
+      const err = data.errors ? JSON.stringify(data.errors) : JSON.stringify(data);
+      notifSetStatus('error', `❌ Error al enviar: ${err}`);
+    }
+  } catch(err) {
+    notifSetStatus('error', `❌ Error de red: ${err.message}`);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '📨 Enviar notificación a todos los suscriptores';
+  }
+});
+
+// ── Historial de notificaciones ───────────────────────────────
+async function notifCargarHistorial() {
+  const wrap = document.getElementById('notifHistorialWrap');
+  if (!wrap) return;
+
+  if (ONESIGNAL_REST_API_KEY === 'REEMPLAZÁ_ESTO_CON_TU_REST_API_KEY') {
+    wrap.innerHTML = '<p style="font-size:.82rem;color:var(--muted);">Configurá la REST API Key para ver el historial.</p>';
+    return;
+  }
+
+  wrap.innerHTML = '<p style="font-size:.82rem;color:var(--muted);">Cargando historial…</p>';
+
+  try {
+    const res = await fetch(
+      `${ONESIGNAL_API}/notifications?app_id=${ONESIGNAL_APP_ID}&limit=20&offset=0&kind=1`,
+      { headers: { 'Authorization': `Basic ${ONESIGNAL_REST_API_KEY}` } }
+    );
+
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    const notifs = data.notifications || [];
+
+    if (!notifs.length) {
+      wrap.innerHTML = '<p style="font-size:.82rem;color:var(--muted);">No hay notificaciones enviadas todavía.</p>';
+      return;
+    }
+
+    const rows = notifs.map(n => {
+      const fecha = n.completed_at
+        ? new Date(n.completed_at * 1000)
+        : n.queued_at
+          ? new Date(n.queued_at * 1000)
+          : null;
+      const p2 = x => String(x).padStart(2,'0');
+      const fechaStr = fecha
+        ? `${p2(fecha.getDate())}/${p2(fecha.getMonth()+1)}/${fecha.getFullYear()}`
+        : '—';
+      const horaStr = fecha
+        ? `${p2(fecha.getHours())}:${p2(fecha.getMinutes())}`
+        : '—';
+      const titulo  = n.headings?.es  || n.headings?.en  || '(sin título)';
+      const mensaje = n.contents?.es  || n.contents?.en  || '(sin mensaje)';
+      const recibidos = n.successful ?? n.converted ?? '—';
+
+      return `<tr>
+        <td>${fechaStr}</td>
+        <td>${horaStr}</td>
+        <td>${titulo}</td>
+        <td style="max-width:200px;word-break:break-word;">${mensaje}</td>
+        <td><span class="notif-recipients">${recibidos}</span></td>
+      </tr>`;
+    }).join('');
+
+    wrap.innerHTML = `
+      <div class="notif-table-wrap">
+        <table class="notif-table">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Hora</th>
+              <th>Título</th>
+              <th>Mensaje</th>
+              <th>Llegó a</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+      <p style="font-size:.7rem;color:var(--muted);margin-top:8px;">Últimas 20 notificaciones · Fuente: OneSignal API</p>`;
+
+  } catch(err) {
+    wrap.innerHTML = `<p style="font-size:.82rem;color:var(--red,#e53935);">❌ Error al cargar historial: ${err.message}</p>`;
+  }
+}
+
+document.getElementById('notifRefreshBtn').addEventListener('click', notifCargarHistorial);
 
 </script>
 </body>
