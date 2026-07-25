@@ -1,5 +1,7 @@
 import {
   signInWithEmailAndPassword,
+  signInWithPopup,
+  GoogleAuthProvider,
   signInWithCustomToken,
   signOut,
   onAuthStateChanged
@@ -52,6 +54,11 @@ async function loadPerfil(firebaseUser) {
 export const authService = {
   async login(email, password) {
     const cred = await signInWithEmailAndPassword(auth, email, password);
+    return loadPerfil(cred.user);
+  },
+  async loginWithGoogle() {
+    const provider = new GoogleAuthProvider();
+    const cred = await signInWithPopup(auth, provider);
     return loadPerfil(cred.user);
   },
   // Login sin contraseña: la verificación biométrica ya ocurrió en
