@@ -61,6 +61,10 @@ export const authService = {
     const cred = await signInWithPopup(auth, provider);
     return loadPerfil(cred.user);
   },
+  async loginWithCustomToken(customToken) {
+    const cred = await signInWithCustomToken(auth, customToken);
+    return loadPerfil(cred.user);
+  },
   // Login sin contraseña: la verificación biométrica ya ocurrió en
   // webauthnService.loginConPasskey(), acá solo se canjea el customToken
   // que devuelve por una sesión real de Firebase.
