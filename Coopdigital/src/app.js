@@ -1,5 +1,6 @@
 import { authService } from './services/auth.service.js';
 import { webauthnService } from './services/webauthn.service.js';
+import { perfilView, bindPerfil } from './modules/perfil/perfil.view.js';
 import { layout } from './layouts/main-layout/main-layout.js';
 import { loginView } from './pages/login/login.view.js';
 import { dashboardView, bindDashboard } from './pages/dashboard/dashboard.view.js';
@@ -50,11 +51,29 @@ function renderLogin(errorMessage) {
       errEl.appendChild(div);
     }
   }
-  const form = document.querySelector('#loginForm');
-  const submitBtn = document.querySelector('#loginSubmit');
-  const googleBtn = document.querySelector('#loginGoogle');
+  const form        = document.querySelector('#loginForm');
+  const submitBtn   = document.querySelector('#loginSubmit');
+  const googleBtn   = document.querySelector('#loginGoogle');
+  const bioBtn      = document.querySelector('#loginBiometrico');
 
-  googleBtn.onclick = async () => {
+  // Mostrar botón biometría solo si el dispositivo soporta passkeys
+  if (webauthnService.soportado()) {
+    bioBtn.style.display = 'flex';
+    bioBtn.onclick = async () => {
+      bioBtn.disabled = true;
+      bioBtn.textContent = 'Verificando…';
+      try {
+        const customToken = await webauthnService.loginConPasskey();
+        user = await authService.loginWithCustomToken(customToken);
+        location.hash = '/dashboard';
+        render();
+      } catch (err) {
+        bioBtn.disabled = false;
+        bioBtn.innerHTML = '🔐 Ingresar con biometría / passkey';
+        renderLogin(mapAuthError(err));
+      }
+    };
+  }
     googleBtn.disabled = true;
     googleBtn.textContent = 'Conectando…';
     try {
@@ -190,6 +209,9 @@ async function render() {
   } else if (path === '/configuracion') {
     view = configuracionView();
     bind = () => bindConfiguracion();
+  } else if (path === '/perfil') {
+    view = perfilView();
+    bind = () => bindPerfil();
   } else if (path === '/padron-electoral') {
     view = padronElectoralView();
     bind = () => bindPadronElectoral();
