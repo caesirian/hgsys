@@ -7,6 +7,7 @@ import { adminAuth } from './src/middleware/admin-auth.js';
 import { router as v1Router } from './src/routes/v1.js';
 import { router as webauthnRouter } from './src/routes/auth-webauthn.js';
 import { router as adminRouter } from './src/routes/admin.routes.js';
+import { router as padronRouter } from './src/routes/padron.routes.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -34,6 +35,10 @@ app.get('/admin-panel.html', (req, res) => {
 
 app.use('/v1', apiKeyAuth, v1Router);
 app.use('/auth/webauthn', webauthnRouter);
+
+// Padrón de ARCA — proxy público, sin API key.
+// Usado por el panel internamente al cargar un asociado.
+app.use('/padron', padronRouter);
 
 // Rutas de administración interna — solo hernan.garbarino@gmail.com
 // vía x-admin-secret header (configurado en Render como ADMIN_SECRET).
