@@ -18,6 +18,7 @@ const nav = [
   { href: '/generador-convocatorias',  ico: '✉️', label: 'Generador de Convocatorias' },
   { href: '/firmas',          ico: '✍️', label: 'Firma Digital' },
   { section: 'Sistema' },
+  { href: '/perfil',          ico: '👤', label: 'Mi perfil' },
   { href: '/configuracion',   ico: '⚙️', label: 'Configuración' },
   { href: '/documentos',      ico: '📄', label: 'Documentos' },
   { href: '/vencimientos',    ico: '⏱',  label: 'Vencimientos' },
