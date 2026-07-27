@@ -74,6 +74,8 @@ function renderLogin(errorMessage) {
       }
     };
   }
+
+  googleBtn.onclick = async () => {
     googleBtn.disabled = true;
     googleBtn.textContent = 'Conectando…';
     try {
