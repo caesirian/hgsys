@@ -16,7 +16,8 @@ export function validateMovimientoContable(d) {
     descripcion: escapeText(d.descripcion),
     medioPago: escapeText(d.medioPago),
     comprobante: escapeText(d.comprobante ?? ''),
-    comprobanteUrl: escapeText(d.comprobanteUrl ?? '')
+    comprobanteUrl: escapeText(d.comprobanteUrl ?? ''),
+    comprobanteStoragePath: escapeText(d.comprobanteStoragePath ?? '')
   };
 
   if (!tipos.includes(x.tipo)) throw new Error('El tipo de movimiento debe ser ingreso o egreso.');
