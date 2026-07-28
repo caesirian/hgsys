@@ -17,6 +17,7 @@ export const movimientoFields = [
 ].map(([name, label, type, options]) => ({
   name, label, type, options,
   accept:    name === 'archivo' ? '.pdf,.jpg,.jpeg,.png' : undefined,
-  pathField: name === 'archivo' ? 'comprobanteUrl' : undefined,
+  urlField:  name === 'archivo' ? 'comprobanteUrl' : undefined,
+  pathField: name === 'archivo' ? 'comprobanteStoragePath' : undefined,
   full:      ['descripcion', 'archivo'].includes(name)
 }));
