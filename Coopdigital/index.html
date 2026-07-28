@@ -15,6 +15,27 @@
       <p>CoopDigital requiere JavaScript habilitado para operar el panel del sistema.</p>
     </noscript>
     <div id="app"></div>
+    <script>
+      // Error handler de emergencia — captura fallos de imports ES Modules
+      // que ocurren ANTES de que app.js pueda ejecutarse.
+      window.addEventListener('error', function(e) {
+        document.getElementById('app').innerHTML =
+          '<div style="font-family:monospace;padding:32px;color:#e8f0f7;background:#080f14;min-height:100vh">' +
+          '<h2 style="color:#e05c5c;margin-bottom:16px">Error al cargar CoopDigital</h2>' +
+          '<pre style="background:#0d1b26;padding:16px;border-radius:6px;white-space:pre-wrap;font-size:13px">' +
+          (e.message || 'Error desconocido') + '\n' +
+          (e.filename ? e.filename + ':' + e.lineno : '') +
+          '</pre></div>';
+      });
+      window.addEventListener('unhandledrejection', function(e) {
+        document.getElementById('app').innerHTML =
+          '<div style="font-family:monospace;padding:32px;color:#e8f0f7;background:#080f14;min-height:100vh">' +
+          '<h2 style="color:#e05c5c;margin-bottom:16px">Error al cargar CoopDigital</h2>' +
+          '<pre style="background:#0d1b26;padding:16px;border-radius:6px;white-space:pre-wrap;font-size:13px">' +
+          String(e.reason && e.reason.message ? e.reason.message : e.reason || 'Promise rechazada') +
+          '</pre></div>';
+      });
+    </script>
     <script type="module" src="./src/app.js"></script>
   </body>
 </html>
