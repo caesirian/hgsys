@@ -242,6 +242,34 @@ async function render() {
 renderLoading();
 addEventListener('hashchange', render);
 
+// Capturar errores no manejados y mostrarlos en pantalla
+// en vez de dejar la app en blanco sin diagnóstico.
+window.addEventListener('error', (e) => {
+  document.querySelector('#app').innerHTML = `
+    <main class="auth">
+      <div class="auth-card" style="max-width:600px">
+        <div class="logo">CD</div>
+        <h1 style="color:var(--danger,#e05c5c)">Error al cargar</h1>
+        <p class="muted" style="margin-bottom:16px">Ocurrió un error al inicializar la aplicación.</p>
+        <pre style="background:#0d1b26;padding:16px;border-radius:6px;font-size:.75rem;overflow:auto;color:#e8f0f7;white-space:pre-wrap">${e.message}\n${e.filename}:${e.lineno}</pre>
+        <button class="btn ghost" style="margin-top:16px;width:100%" onclick="location.reload()">Recargar</button>
+      </div>
+    </main>`;
+});
+
+window.addEventListener('unhandledrejection', (e) => {
+  document.querySelector('#app').innerHTML = `
+    <main class="auth">
+      <div class="auth-card" style="max-width:600px">
+        <div class="logo">CD</div>
+        <h1 style="color:var(--danger,#e05c5c)">Error al cargar</h1>
+        <p class="muted" style="margin-bottom:16px">Ocurrió un error inesperado.</p>
+        <pre style="background:#0d1b26;padding:16px;border-radius:6px;font-size:.75rem;overflow:auto;color:#e8f0f7;white-space:pre-wrap">${String(e.reason?.message || e.reason || 'Error desconocido')}</pre>
+        <button class="btn ghost" style="margin-top:16px;width:100%" onclick="location.reload()">Recargar</button>
+      </div>
+    </main>`;
+});
+
 authService.onChange((sessionUser) => {
   user = sessionUser;
   if (!authReady) authReady = true;
