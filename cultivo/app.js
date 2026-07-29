@@ -865,7 +865,7 @@ async function cargarHistoricoLugar(lugarId, sensorKey) {
   const el = document.getElementById("clima-"+lugarId);
   try {
     const proxyBase = (localStorage.getItem("tuya_proxy") || PROXY_URL).replace(/\/tuya$/, "");
-    const resp = await fetch(`${proxyBase}/tuya/history/resumen?device=${sensorKey}`, { signal: AbortSignal.timeout(25000) });
+    const resp = await fetch(`${proxyBase}/tuya/history/resumen?device=${sensorKey}`, { signal: AbortSignal.timeout(45000) });
     if (!resp.ok) throw new Error("HTTP "+resp.status);
     const data = await resp.json();
     const h24  = (data.historico && data.historico["24h"]) || {};
