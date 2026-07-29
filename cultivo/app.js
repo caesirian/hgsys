@@ -1957,7 +1957,7 @@ async function cargarPlantasLugar(lugarId) {
     card.innerHTML = `
       <div class="cult-header">
         <span class="cult-nombre">${p.nombre}</span>
-        <span class="cult-fase fase-${p.fase}">${p.fase}</span>
+        <span class="cult-fase fase-${p.fase}">${FASE_LABEL[p.fase]||p.fase||"—"}</span>
       </div>
       <div class="cult-meta">
         <span>🧬 ${p.genetica}</span>
