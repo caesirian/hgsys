@@ -1,6 +1,6 @@
 import {
   collection, doc, getDocs, getDoc, addDoc, updateDoc, deleteDoc,
-  serverTimestamp
+  setDoc, serverTimestamp
 } from 'https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js';
 import { db } from '../firebase/firebase.config.js';
 import { authStore } from '../stores/auth.store.js';
@@ -93,6 +93,15 @@ export const firestoreDb = {
     const ref = doc(db, 'cooperativas', cooperativaId());
     const s = await getDoc(ref);
     return s.exists() ? { id: s.id, ...s.data() } : null;
+  },
+
+  // Escribe un documento con ID conocido (merge:true = upsert).
+  // Usado para documentos únicos como configuracionContable/balance.
+  async upsert(colName, id, data) {
+    const ref = doc(db, 'cooperativas', cooperativaId(), colName, id);
+    const payload = { ...data, ...auditUpdate() };
+    await setDoc(ref, payload, { merge: true });
+    return { id, ...payload };
   },
 
   // Actualiza el documento raíz de la cooperativa activa (datos institucionales).
