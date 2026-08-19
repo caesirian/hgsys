@@ -9,6 +9,7 @@ import { documentosView, bindDocumentos } from './modules/documentos/views/docum
 import { vencimientosView, bindVencimientos } from './modules/vencimientos/views/vencimientos.view.js';
 import { contabilidadView, bindContabilidad } from './modules/contabilidad/views/contabilidad.view.js';
 import { reportesContablesView, bindReportesContables } from './modules/contabilidad/views/reportes-contables.view.js';
+import { balanceView, bindBalance } from './modules/contabilidad/views/balance.view.js';
 import { eventosView, bindEventos } from './modules/eventos/views/eventos.view.js';
 import { consejoView, bindConsejo } from './modules/consejo/views/consejo.view.js';
 import { sindicaturaView, bindSindicatura } from './modules/sindicatura/views/sindicatura.view.js';
@@ -170,6 +171,9 @@ async function render() {
   } else if (path === '/reportes-contables') {
     view = reportesContablesView();
     bind = () => bindReportesContables();
+  } else if (path === '/balance') {
+    view = balanceView();
+    bind = () => bindBalance();
   } else if (path === '/gastos-a-rendir') {
     view = gastosARendirView();
     bind = () => bindGastosARendir();
