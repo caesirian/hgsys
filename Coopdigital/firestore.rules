@@ -234,6 +234,13 @@ service cloud.firestore {
         allow delete: if false;
       }
 
+      // Configuración contable: saldo inicial, cuentas de balance.
+      // Solo admin y consejero pueden escribir; el resto puede leer.
+      match /configuracionContable/{docId} {
+        allow read: if puedeLeer(cooperativaId);
+        allow write: if puedeEscribirGobernanza(cooperativaId);
+      }
+
       // Certificados: solo se crean, nunca se modifican (trazabilidad).
       match /certificados/{certificadoId} {
         allow read: if puedeLeer(cooperativaId);
