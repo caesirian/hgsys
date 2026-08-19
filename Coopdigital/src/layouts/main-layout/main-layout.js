@@ -26,6 +26,7 @@ const nav = [
   { href: '/contabilidad',        ico: '💰', label: 'Movimientos' },
   { href: '/reportes-contables',  ico: '📊', label: 'Estado de Recursos y Gastos' },
   { href: '/balance',             ico: '⚖️', label: 'Balance General' },
+  { href: '/libro-diario',        ico: '📒', label: 'Libro Diario' },
   { href: '/gastos-a-rendir',     ico: '💸', label: 'Gastos a Rendir' },
   { section: 'Gobernanza' },
   { href: '/consejo',         ico: '🏛️', label: 'Consejo de Administración' },
