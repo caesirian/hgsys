@@ -11,6 +11,7 @@ import { contabilidadView, bindContabilidad } from './modules/contabilidad/views
 import { reportesContablesView, bindReportesContables } from './modules/contabilidad/views/reportes-contables.view.js';
 import { balanceView, bindBalance } from './modules/contabilidad/views/balance.view.js';
 import { libroDiarioView, bindLibroDiario } from './modules/contabilidad/views/libro-diario.view.js';
+import { libroMayorView, bindLibroMayor } from './modules/contabilidad/views/libro-mayor.view.js';
 import { eventosView, bindEventos } from './modules/eventos/views/eventos.view.js';
 import { consejoView, bindConsejo } from './modules/consejo/views/consejo.view.js';
 import { sindicaturaView, bindSindicatura } from './modules/sindicatura/views/sindicatura.view.js';
@@ -178,6 +179,9 @@ async function render() {
   } else if (path === '/libro-diario') {
     view = libroDiarioView();
     bind = () => bindLibroDiario();
+  } else if (path === '/libro-mayor') {
+    view = libroMayorView();
+    bind = () => bindLibroMayor();
   } else if (path === '/gastos-a-rendir') {
     view = gastosARendirView();
     bind = () => bindGastosARendir();
