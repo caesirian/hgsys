@@ -50,6 +50,44 @@ export function openModal(title, fields, row, onSave) {
 
   modal.querySelector('[data-close]').onclick = () => modal.remove();
 
+  // ── Cablear onChange por campo ────────────────────────────────────────────
+  // Si un field define `onChange: (valor, setOptions, setField) => {}`,
+  // se ejecuta cada vez que el usuario cambia el valor del input/select.
+  // setOptions(name, opciones) reemplaza las opciones de un <select>.
+  // setField(name, val) escribe el valor en otro input del mismo modal.
+  fields.forEach(f => {
+    if (typeof f.onChange !== 'function') return;
+    const input = modal.querySelector(`[name="${f.name}"]`);
+    if (!input) return;
+
+    const setOptions = (fieldName, opciones) => {
+      const sel = modal.querySelector(`[name="${fieldName}"]`);
+      if (!sel || sel.tagName !== 'SELECT') return;
+      const valorActual = sel.value;
+      sel.innerHTML = opciones.map(o => {
+        const v = typeof o === 'object' ? o.value : o;
+        const l = typeof o === 'object' ? o.label : o;
+        return `<option value="${escapeHtml(v)}" ${v === valorActual ? 'selected' : ''}>${escapeHtml(l)}</option>`;
+      }).join('');
+      // Si el valor actual no está en las nuevas opciones, resetear
+      if (!opciones.find(o => (typeof o === 'object' ? o.value : o) === valorActual)) {
+        sel.value = opciones[0] ? (typeof opciones[0] === 'object' ? opciones[0].value : opciones[0]) : '';
+      }
+    };
+
+    const setField = (fieldName, val) => {
+      const target = modal.querySelector(`[name="${fieldName}"]`);
+      if (target) target.value = val ?? '';
+    };
+
+    input.addEventListener('change', () => {
+      f.onChange(input.value, setOptions, setField);
+    });
+
+    // Ejecutar inmediatamente para el estado inicial
+    f.onChange(input.value, setOptions, setField);
+  });
+
   // ── Cablear onBlur por campo ──────────────────────────────────────────────
   // Si un field define `onBlur: async (valor, setField, setHint) => {}`,
   // se ejecuta al salir del input. setField(name, val) modifica otro campo
