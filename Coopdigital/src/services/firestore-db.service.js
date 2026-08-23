@@ -1,6 +1,6 @@
 import {
   collection, doc, getDocs, getDoc, addDoc, updateDoc, deleteDoc,
-  setDoc, serverTimestamp
+  setDoc, serverTimestamp, runTransaction, increment
 } from 'https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js';
 import { db } from '../firebase/firebase.config.js';
 import { authStore } from '../stores/auth.store.js';
@@ -102,6 +102,73 @@ export const firestoreDb = {
     const payload = { ...data, ...auditUpdate() };
     await setDoc(ref, payload, { merge: true });
     return { id, ...payload };
+  },
+
+  // Crea un movimiento contable asignando un número de asiento correlativo
+  // e inmutable usando una transacción atómica. El contador vive en
+  // configuracionContable/contadores.{campo}. Si no existe lo inicializa en 1.
+  async createMovimiento(data) {
+    const contadorRef = doc(db, 'cooperativas', cooperativaId(),
+      'configuracionContable', 'contadores');
+    const movimientosCol = col('movimientosContables');
+
+    return runTransaction(db, async (tx) => {
+      const contadorSnap = await tx.get(contadorRef);
+      const nroActual = contadorSnap.exists()
+        ? (contadorSnap.data().ultimoAsiento ?? 0)
+        : 0;
+      const nroAsiento = nroActual + 1;
+
+      tx.set(contadorRef, {
+        ultimoAsiento: nroAsiento,
+        ...auditUpdate()
+      }, { merge: true });
+
+      const payload = {
+        ...data,
+        nroAsiento,
+        anulado: false,
+        ...auditCreate()
+      };
+      const newRef = doc(movimientosCol);
+      tx.set(newRef, payload);
+      return { id: newRef.id, ...payload };
+    });
+  },
+
+  // Anula un movimiento contable (nunca se borra — se crea un asiento
+  // contrario y se marca el original como anulado).
+  async anularMovimiento(id, motivo) {
+    const ref = doc(db, 'cooperativas', cooperativaId(), 'movimientosContables', id);
+    const snap = await getDoc(ref);
+    if (!snap.exists()) throw new Error('Movimiento no encontrado.');
+    const original = snap.data();
+    if (original.anulado) throw new Error('Este movimiento ya fue anulado.');
+
+    // Crear asiento de anulación (tipo contrario, mismo monto)
+    const tipoContrario = original.tipo === 'ingreso' ? 'egreso' : 'ingreso';
+    const asientoAnulacion = await this.createMovimiento({
+      tipo:        tipoContrario,
+      categoria:   original.categoria,
+      monto:       original.monto,
+      fecha:       new Date().toISOString().slice(0, 10),
+      descripcion: `ANULACIÓN asiento N° ${original.nroAsiento}: ${original.descripcion}`,
+      medioPago:   '',
+      comprobante: `Anulación N° ${original.nroAsiento}`,
+      comprobanteUrl: '',
+      esAnulacion: true,
+      asientoAnuladoId: id
+    });
+
+    // Marcar el original como anulado
+    await updateDoc(ref, {
+      anulado: true,
+      motivoAnulacion: motivo ?? '',
+      asientoAnulacionId: asientoAnulacion.id,
+      ...auditUpdate()
+    });
+
+    return asientoAnulacion;
   },
 
   // Actualiza el documento raíz de la cooperativa activa (datos institucionales).
