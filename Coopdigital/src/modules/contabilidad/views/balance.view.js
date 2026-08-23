@@ -25,6 +25,12 @@ import { configuracionService } from '../../configuracion/services/configuracion
 import { toast } from '../../../utils/toast.js';
 import { escapeHtml } from '../../../utils/security.js';
 
+const LEYENDA_LEGAL = `<div style="margin-top:20px;padding:12px;border:1px solid var(--border);border-radius:6px;font-size:.78rem;color:var(--muted);text-align:center">
+  📋 <strong>Documento de uso interno.</strong> Borrador sujeto a revisión y firma de contador/a matriculado/a.<br>
+  No válido como libro legal hasta su rubricación ante el CPCE jurisdiccional.<br>
+  Generado por CoopDigital conforme Res. INAES 1481/2009 y 3369/2009.
+</div>`;
+
 const money = n => Number(n ?? 0).toLocaleString('es-AR', { style: 'currency', currency: 'ARS' });
 const esc = escapeHtml;
 
@@ -240,7 +246,8 @@ export async function bindBalance() {
             </span>
           </span>
         </div>
-      </div>`;
+      ${LEYENDA_LEGAL}
+      </div>`
   }
 
   await cargar();
@@ -351,7 +358,7 @@ export async function bindBalance() {
         .badge{display:inline-block;padding:2px 8px;border:1px solid #000;border-radius:3px;font-size:9pt}
         @media print{body{margin:1.5cm}}
       </style>
-    </head><body>${contenido}</body></html>`);
+    </head><body>${contenido}${LEYENDA_LEGAL}</body></html>`);
     ventana.document.close();
     ventana.focus();
     ventana.print();
