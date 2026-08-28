@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Calcador con Cámara</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    width: 100%; height: 100%;
+    overflow: hidden;
+    background: #000;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    touch-action: none;
+  }
+  #stage {
+    position: fixed; inset: 0;
+    overflow: hidden;
+  }
+  #camera {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    object-fit: cover;
+  }
+  #overlayImg {
+    position: absolute;
+    top: 0; left: 0;
+    transform-origin: 0 0;
+    opacity: 0.5;
+    pointer-events: none;
+    user-select: none;
+    -webkit-user-drag: none;
+    display: none;
+    will-change: transform;
+  }
+  /* Panel superior */
+  #topBar {
+    position: fixed; top: 0; left: 0; right: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: calc(env(safe-area-inset-top, 10px) + 8px) 10px 8px;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.65), transparent);
+  }
+  .btn {
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.3);
+    color: #fff;
+    border-radius: 10px;
+    padding: 9px 12px;
+    font-size: 13px;
+    font-weight: 600;
+    backdrop-filter: blur(6px);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+  }
+  .btn:active { background: rgba(255,255,255,0.3); }
+  .btn.active { background: #ff9500; border-color: #ff9500; }
+  #fileInput { display: none; }
+
+  /* Panel inferior de controles */
+  #bottomPanel {
+    position: fixed; left: 0; right: 0; bottom: 0;
+    z-index: 20;
+    padding: 10px 14px calc(env(safe-area-inset-bottom, 10px) + 12px);
+    background: linear-gradient(to top, rgba(0,0,0,0.75), transparent);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    transform: translateY(0);
+    transition: transform 0.25s ease;
+  }
+  #bottomPanel.hidden { transform: translateY(100%); }
+  .sliderRow {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #fff;
+    font-size: 12px;
+  }
+  .sliderRow label {
+    width: 62px;
+    flex-shrink: 0;
+    opacity: 0.85;
+  }
+  input[type="range"] {
+    flex: 1;
+    accent-color: #ff9500;
+    height: 24px;
+  }
+  .controlsRowBtns {
+    display: flex;
+    gap: 8px;
+    justify-content: space-between;
+  }
+  .controlsRowBtns .btn { flex: 1; justify-content: center; }
+
+  #emptyState {
+    position: fixed;
+    inset: 0;
+    z-index: 15;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    color: #fff;
+    text-align: center;
+    padding: 20px;
+    pointer-events: none;
+  }
+  #emptyState.hide { display: none; }
+  #emptyState .icon { font-size: 46px; opacity: 0.9; }
+  #emptyState p { max-width: 260px; opacity: 0.85; font-size: 14px; line-height: 1.4; }
+
+  #permError {
+    position: fixed; inset: 0;
+    background: #111;
+    color: #fff;
+    z-index: 50;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 30px;
+    gap: 14px;
+  }
+  #permError.show { display: flex; }
+  #permError button {
+    margin-top: 10px;
+    background: #ff9500;
+    border: none;
+    color: #fff;
+    padding: 12px 20px;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 14px;
+  }
+
+  #hintToast {
+    position: fixed;
+    top: 70px; left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.75);
+    color: #fff;
+    padding: 8px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    z-index: 25;
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+    white-space: nowrap;
+  }
+  #hintToast.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<div id="stage">
+  <video id="camera" autoplay playsinline muted></video>
+  <img id="overlayImg" alt="Imagen a calcar">
+</div>
+
+<div id="emptyState">
+  <div class="icon">📷✏️</div>
+  <p>Cargá una imagen y movela con los dedos sobre el papel para calcarla.<br>Usá los controles de abajo.</p>
+</div>
+
+<div id="topBar">
+  <button class="btn" id="btnLoad">🖼️ Cargar imagen</button>
+  <input type="file" id="fileInput" accept="image/*">
+  <button class="btn" id="btnFlipCam">🔄 Cámara</button>
+  <button class="btn" id="btnHideUI" style="margin-left:auto;">👁️ UI</button>
+</div>
+
+<div id="bottomPanel">
+  <div class="sliderRow">
+    <label>Opacidad</label>
+    <input type="range" id="opacitySlider" min="0" max="100" value="50">
+  </div>
+  <div class="sliderRow">
+    <label>Tamaño</label>
+    <input type="range" id="scaleSlider" min="10" max="400" value="100">
+  </div>
+  <div class="sliderRow">
+    <label>Rotar</label>
+    <input type="range" id="rotateSlider" min="0" max="360" value="0">
+  </div>
+  <div class="controlsRowBtns">
+    <button class="btn" id="btnMirror">🪞 Espejar</button>
+    <button class="btn" id="btnCenter">🎯 Centrar</button>
+    <button class="btn" id="btnLockPos">🔒 Bloquear</button>
+  </div>
+</div>
+
+<div id="hintToast"></div>
+
+<div id="permError">
+  <div style="font-size:40px;">🚫📷</div>
+  <p><strong>No se pudo acceder a la cámara.</strong><br>Revisá los permisos de cámara para este sitio en la configuración de tu navegador y volvé a intentar.</p>
+  <button id="btnRetryCam">Reintentar</button>
+</div>
+
+<script>
+(function(){
+  const video = document.getElementById('camera');
+  const overlayImg = document.getElementById('overlayImg');
+  const stage = document.getElementById('stage');
+  const emptyState = document.getElementById('emptyState');
+  const permError = document.getElementById('permError');
+  const bottomPanel = document.getElementById('bottomPanel');
+  const topBar = document.getElementById('topBar');
+  const hintToast = document.getElementById('hintToast');
+
+  const btnLoad = document.getElementById('btnLoad');
+  const fileInput = document.getElementById('fileInput');
+  const btnFlipCam = document.getElementById('btnFlipCam');
+  const btnHideUI = document.getElementById('btnHideUI');
+  const btnMirror = document.getElementById('btnMirror');
+  const btnCenter = document.getElementById('btnCenter');
+  const btnLockPos = document.getElementById('btnLockPos');
+  const btnRetryCam = document.getElementById('btnRetryCam');
+
+  const opacitySlider = document.getElementById('opacitySlider');
+  const scaleSlider = document.getElementById('scaleSlider');
+  const rotateSlider = document.getElementById('rotateSlider');
+
+  let currentFacing = 'environment';
+  let stream = null;
+
+  let imgState = {
+    x: 0, y: 0,
+    scale: 1,
+    baseW: 0, baseH: 0,
+    rotation: 0,
+    mirrored: false,
+    locked: false
+  };
+
+  let hintTimer = null;
+  function showHint(msg){
+    hintToast.textContent = msg;
+    hintToast.classList.add('show');
+    clearTimeout(hintTimer);
+    hintTimer = setTimeout(()=> hintToast.classList.remove('show'), 1400);
+  }
+
+  // ---- Cámara ----
+  async function startCamera(facing){
+    if (stream) {
+      stream.getTracks().forEach(t => t.stop());
+    }
+    permError.classList.remove('show');
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: { ideal: facing },
+          width: { ideal: 1920 },
+          height: { ideal: 1080 }
+        },
+        audio: false
+      });
+      video.srcObject = stream;
+      currentFacing = facing;
+    } catch (err) {
+      console.error(err);
+      permError.classList.add('show');
+    }
+  }
+
+  btnFlipCam.addEventListener('click', () => {
+    const next = currentFacing === 'environment' ? 'user' : 'environment';
+    startCamera(next);
+  });
+
+  btnRetryCam.addEventListener('click', () => startCamera(currentFacing));
+
+  startCamera('environment');
+
+  // ---- Cargar imagen ----
+  btnLoad.addEventListener('click', () => fileInput.click());
+
+  fileInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const tempImg = new Image();
+      tempImg.onload = () => {
+        overlayImg.src = ev.target.result;
+        overlayImg.style.display = 'block';
+        emptyState.classList.add('hide');
+
+        // Ajustar tamaño base al 70% del ancho de pantalla, manteniendo proporción
+        const maxW = window.innerWidth * 0.7;
+        const ratio = tempImg.naturalHeight / tempImg.naturalWidth;
+        imgState.baseW = maxW;
+        imgState.baseH = maxW * ratio;
+        overlayImg.style.width = imgState.baseW + 'px';
+        overlayImg.style.height = imgState.baseH + 'px';
+
+        centerImage();
+        applyTransform();
+        showHint('Movela, pellizcá para agrandar, girá con 2 dedos');
+      };
+      tempImg.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+
+  function centerImage(){
+    imgState.x = (window.innerWidth - imgState.baseW * imgState.scale) / 2;
+    imgState.y = (window.innerHeight - imgState.baseH * imgState.scale) / 2;
+  }
+
+  function applyTransform(){
+    const mirror = imgState.mirrored ? -1 : 1;
+    overlayImg.style.transform =
+      `translate(${imgState.x}px, ${imgState.y}px) rotate(${imgState.rotation}deg) scale(${imgState.scale * mirror}, ${imgState.scale})`;
+  }
+
+  // ---- Controles deslizantes ----
+  opacitySlider.addEventListener('input', () => {
+    overlayImg.style.opacity = opacitySlider.value / 100;
+  });
+
+  scaleSlider.addEventListener('input', () => {
+    const centerXBefore = imgState.x + (imgState.baseW * imgState.scale) / 2;
+    const centerYBefore = imgState.y + (imgState.baseH * imgState.scale) / 2;
+    imgState.scale = scaleSlider.value / 100;
+    imgState.x = centerXBefore - (imgState.baseW * imgState.scale) / 2;
+    imgState.y = centerYBefore - (imgState.baseH * imgState.scale) / 2;
+    applyTransform();
+  });
+
+  rotateSlider.addEventListener('input', () => {
+    imgState.rotation = Number(rotateSlider.value);
+    applyTransform();
+  });
+
+  btnMirror.addEventListener('click', () => {
+    imgState.mirrored = !imgState.mirrored;
+    btnMirror.classList.toggle('active', imgState.mirrored);
+    applyTransform();
+  });
+
+  btnCenter.addEventListener('click', () => {
+    centerImage();
+    applyTransform();
+  });
+
+  btnLockPos.addEventListener('click', () => {
+    imgState.locked = !imgState.locked;
+    btnLockPos.classList.toggle('active', imgState.locked);
+    showHint(imgState.locked ? 'Posición bloqueada' : 'Posición desbloqueada');
+  });
+
+  btnHideUI.addEventListener('click', () => {
+    const hiding = !bottomPanel.classList.contains('hidden');
+    bottomPanel.classList.toggle('hidden', hiding);
+    topBar.style.opacity = hiding ? '0' : '1';
+    topBar.style.pointerEvents = hiding ? 'none' : 'auto';
+  });
+
+  // ---- Gestos táctiles: arrastrar, pellizcar (zoom), rotar con 2 dedos ----
+  let touchState = {
+    dragging: false,
+    startX: 0, startY: 0,
+    startImgX: 0, startImgY: 0,
+    pinchStartDist: 0,
+    pinchStartScale: 1,
+    rotateStartAngle: 0,
+    rotateStartRotation: 0
+  };
+
+  function getTouchDist(t0, t1){
+    return Math.hypot(t1.clientX - t0.clientX, t1.clientY - t0.clientY);
+  }
+  function getTouchAngle(t0, t1){
+    return Math.atan2(t1.clientY - t0.clientY, t1.clientX - t0.clientX) * 180 / Math.PI;
+  }
+
+  stage.addEventListener('touchstart', (e) => {
+    if (overlayImg.style.display === 'none' || imgState.locked) return;
+
+    if (e.touches.length === 1) {
+      touchState.dragging = true;
+      touchState.startX = e.touches[0].clientX;
+      touchState.startY = e.touches[0].clientY;
+      touchState.startImgX = imgState.x;
+      touchState.startImgY = imgState.y;
+    } else if (e.touches.length === 2) {
+      touchState.dragging = false;
+      touchState.pinchStartDist = getTouchDist(e.touches[0], e.touches[1]);
+      touchState.pinchStartScale = imgState.scale;
+      touchState.rotateStartAngle = getTouchAngle(e.touches[0], e.touches[1]);
+      touchState.rotateStartRotation = imgState.rotation;
+    }
+  }, { passive: true });
+
+  stage.addEventListener('touchmove', (e) => {
+    if (overlayImg.style.display === 'none' || imgState.locked) return;
+
+    if (e.touches.length === 1 && touchState.dragging) {
+      const dx = e.touches[0].clientX - touchState.startX;
+      const dy = e.touches[0].clientY - touchState.startY;
+      imgState.x = touchState.startImgX + dx;
+      imgState.y = touchState.startImgY + dy;
+      applyTransform();
+    } else if (e.touches.length === 2) {
+      const dist = getTouchDist(e.touches[0], e.touches[1]);
+      const scaleFactor = dist / touchState.pinchStartDist;
+      imgState.scale = Math.max(0.1, Math.min(4, touchState.pinchStartScale * scaleFactor));
+      scaleSlider.value = Math.round(imgState.scale * 100);
+
+      const angle = getTouchAngle(e.touches[0], e.touches[1]);
+      const deltaAngle = angle - touchState.rotateStartAngle;
+      imgState.rotation = (touchState.rotateStartRotation + deltaAngle + 360) % 360;
+      rotateSlider.value = Math.round(imgState.rotation);
+
+      applyTransform();
+    }
+  }, { passive: true });
+
+  stage.addEventListener('touchend', (e) => {
+    if (e.touches.length === 0) touchState.dragging = false;
+  });
+
+  // Doble tap para reset rápido de posición
+  let lastTap = 0;
+  stage.addEventListener('touchend', () => {
+    const now = Date.now();
+    if (now - lastTap < 300) {
+      centerImage();
+      applyTransform();
+      showHint('Centrada');
+    }
+    lastTap = now;
+  });
+
+  window.addEventListener('resize', () => {
+    if (overlayImg.style.display !== 'none' && !imgState.locked) {
+      // mantiene posición relativa aproximada
+    }
+  });
+
+})();
+</script>
+</body>
+</html>
