@@ -1,0 +1,3715 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CultivApp – Seguimiento de Cultivo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
+import { getFirestore, collection, doc, addDoc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, query, where, orderBy, limit, serverTimestamp }
+  from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey:            "AIzaSyB1T67NPR_qNcAyFp8_DT_QWCst7OBIxTc",
+  authDomain:        "cultivapp-c9672.firebaseapp.com",
+  projectId:         "cultivapp-c9672",
+  storageBucket:     "cultivapp-c9672.firebasestorage.app",
+  messagingSenderId: "964166014307",
+  appId:             "1:964166014307:web:84ef7664c025f3d1c86f56"
+};
+const app = initializeApp(firebaseConfig);
+const db  = getFirestore(app);
+
+// ════════════════════════════════════════════════════════════════════════════
+// ESTRUCTURA FIRESTORE
+// lugares/{lugarId}                  → espacio físico (Carpa, Estructura 3x1)
+// lugares/{lugarId}/areas/{areaId}   → subdivisión (Sub1, Sub2 o única)
+// plantas/{plantaId}                 → planta individual (ref a lugar+area)
+// plantas/{plantaId}/mediciones/
+// plantas/{plantaId}/eventos/
+// plantas/{plantaId}/nutricion/
+// plantas/{plantaId}/inase/
+// ════════════════════════════════════════════════════════════════════════════
+
+// ─── CONSTANTES ─────────────────────────────────────────────────────────────
+const LUCES_LISTA = [
+  "Insativa 200w",
+  "Santa Planta 250w",
+  "Galponera 100w Fría",
+  "Mars Orbiter"
+];
+
+// Fallback local por si el proxy no responde al arrancar (ej. Render recién despertando).
+// La fuente de verdad real es GET /tuya/devices del proxy — ver cargarCatalogoDispositivos().
+let DISPOSITIVOS_TUYA = {
+  sensor_carpa:   { id: "ebefb9fc12b7940a71l8gp", tipo: "sensor",  nombre: "Sensor Carpa",   lugar: "Carpa" },
+  luces_carpa:    { id: "ebb60fa54c54559c63ysur",  tipo: "switch",  nombre: "Luces Carpa",    lugar: "Carpa" },
+  cooler_carpa: { id: "3522204898f4abba2357",    tipo: "switch",  nombre: "Cooler Ventilador Carpa", lugar: "Carpa" },
+  sensor_3x1:     { id: "eb8fc54c62a0049352pgax",  tipo: "sensor",  nombre: "Sensor 3x1",     lugar: "Estructura 3x1" },
+  luces_3x1:      { id: "80210308a4cf12ac315b",    tipo: "switch",  nombre: "Luces 3x1",      lugar: "Estructura 3x1" },
+};
+
+const PROXY_URL = "https://cultivapp-tuya-proxy.onrender.com/tuya";
+
+// Trae el catálogo real de dispositivos desde el proxy (fuente única de verdad).
+// Si falla, se sigue usando el fallback hardcodeado de arriba sin romper nada.
+async function cargarCatalogoDispositivos() {
+  try {
+    const proxyBase = (localStorage.getItem("tuya_proxy") || PROXY_URL).replace(/\/tuya$/, "");
+    const resp = await fetch(`${proxyBase}/tuya/devices`, { signal: AbortSignal.timeout(12000) });
+    if (!resp.ok) throw new Error("HTTP "+resp.status);
+    const data = await resp.json();
+    if (data.ok && data.devices && Object.keys(data.devices).length) {
+      DISPOSITIVOS_TUYA = data.devices;
+    }
+  } catch (err) {
+    console.warn("No se pudo cargar el catálogo de dispositivos del proxy, uso el de respaldo:", err.message);
+  }
+}
+
+// ─── ESTADO GLOBAL ───────────────────────────────────────────────────────────
+let lugarActivo  = null;
+let areaActiva   = null;
+let plantaActiva = null;
+let tuyaTimer    = null;
+
+// ─── HELPERS ────────────────────────────────────────────────────────────────
+const val  = id => document.getElementById(id)?.value?.trim() || "";
+const fmt  = ts => { if (!ts) return "—"; const d = ts.toDate ? ts.toDate() : new Date(ts); return d.toLocaleDateString("es-AR"); };
+const dias = ts => { if (!ts) return "—"; const d = ts.toDate ? ts.toDate() : new Date(ts); return Math.floor((Date.now()-d.getTime())/86400000); };
+
+function show(id) {
+  document.querySelectorAll(".vista").forEach(v => v.classList.remove("activa"));
+  document.getElementById(id)?.classList.add("activa");
+  document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("activo"));
+  document.querySelectorAll(`[data-vista="${id}"]`).forEach(b => b.classList.add("activo"));
+  // Frenar los auto-refrescos de las vistas que no están activas, para no pegarle
+  // al proxy de fondo mientras el usuario está mirando otra pestaña.
+  if (id !== "vista-lugares" && typeof climaTimer !== "undefined" && climaTimer) { clearInterval(climaTimer); climaTimer = null; }
+  if (id !== "vista-dashboard" && typeof dashboardTimer !== "undefined" && dashboardTimer) { clearInterval(dashboardTimer); dashboardTimer = null; }
+}
+function toast(msg, tipo="ok") {
+  const t = document.createElement("div");
+  t.className = `toast toast-${tipo}`; t.textContent = msg;
+  document.body.appendChild(t); setTimeout(() => t.remove(), 3200);
+}
+function abrirModal(id)  { document.getElementById(id).classList.add("open"); }
+function cerrarModal(id) { document.getElementById(id).classList.remove("open"); }
+
+// ════════════════════════════════════════════════════════════════════════════
+// LUGARES
+// ════════════════════════════════════════════════════════════════════════════
+const TEMP_OPTIMA_MIN = 16, TEMP_OPTIMA_MAX = 28;
+let lugaresClimaActivos = {}; // { lugarId: { sensorKey, luzKey, etapa } }
+let climaTimer = null;
+let sensorAlarmTimer = null;
+const SENSOR_TIMEOUT_MIN = 15; // alarma si no hay dato en 15 minutos
+
+function verificarFrescuraSensores() {
+  if (!window._tsSensor) return;
+  const ahora = Date.now();
+  for (const [lugar, ts] of Object.entries(window._tsSensor)) {
+    const minutos = Math.round((ahora - ts) / 60000);
+    if (minutos > SENSOR_TIMEOUT_MIN) {
+      toast(`⚠️ ${lugar}: sin datos hace ${minutos} min`, "err");
+    }
+  }
+}
+let chartsPorLugar = {};      // { lugarId: { temp: Chart, hum: Chart } }
+let chartsDiaPorLugar = {};   // { lugarId: { temp: Chart, hum: Chart } } (gráfico del día seleccionado)
+
+// Fecha en formato YYYY-MM-DD según el huso de Argentina (UTC-3), sin depender del huso del navegador
+function fechaArgentinaISO(timestampMs) {
+  const ajustado = new Date(timestampMs - 3 * 60 * 60 * 1000); // corre el reloj a UTC-3
+  return ajustado.toISOString().slice(0, 10);
+}
+
+// Tabla de VPD óptimo por etapa de cultivo (cannabis), en base a consenso de guías
+// de cultivo indoor 2026 (Blimburn, PlanaCan, Humboldt Seed Co, Smartfog, Emerald Harvest).
+const ETAPAS_VPD = {
+  plantula:           { nombre: "Plántula / Clon",              vpdMin: 0.4, vpdMax: 0.8, humedad: [70, 85] },
+  vegetativo:         { nombre: "Vegetativo",                   vpdMin: 0.8, vpdMax: 1.2, humedad: [55, 70] },
+  floracion_temprana: { nombre: "Floración temprana",           vpdMin: 1.0, vpdMax: 1.2, humedad: [50, 60] },
+  floracion_tardia:   { nombre: "Floración tardía / Maduración",vpdMin: 1.2, vpdMax: 1.6, humedad: [40, 55] },
+};
+// Horas de luz esperadas según etapa. 12/12 en floración es crítico: un solo
+// desvío puede inducir hermafroditismo y arruinar el ciclo.
+const FOTOPERIODO_ESPERADO = {
+  plantula: 18, vegetativo: 18, floracion_temprana: 12, floracion_tardia: 12,
+};
+// Mapeo desde el campo "fase" de las plantas a una etapa de VPD por defecto
+const FASE_A_ETAPA = { germinacion: "plantula", vegetativa: "vegetativo", floracion: "floracion_temprana", cosecha: "vegetativo" };
+const FASE_LABEL   = { germinacion:"Germinación", vegetativa:"Vegetativo", floracion:"Floración", cosecha:"Cosecha" };
+
+// ── RANGOS AGRONÓMICOS pH / EC / Temp por etapa ──────────────────────────────
+// Fuente: Canna Research, Blimburn, Emerald Harvest, estándares hidro indoor AR 2026
+const RANGOS_AGRONOMICOS = {
+  germinacion: {
+    ph: { min:6.0, max:6.5, optMin:6.2, optMax:6.4 },
+    ec: { min:0.4, max:0.8, optMin:0.5, optMax:0.7 },
+    tempAmb: { min:20, max:28, optMin:22, optMax:26 },
+    tempMaceta: { min:18, max:24, optMin:20, optMax:22 },
+    co2: { min:400, max:1500, optMin:600, optMax:1000 },
+  },
+  vegetativa: {
+    ph: { min:5.8, max:6.5, optMin:6.0, optMax:6.3 },
+    ec: { min:1.2, max:2.0, optMin:1.4, optMax:1.8 },
+    tempAmb: { min:20, max:30, optMin:22, optMax:28 },
+    tempMaceta: { min:18, max:24, optMin:20, optMax:22 },
+    co2: { min:400, max:1500, optMin:800, optMax:1200 },
+  },
+  floracion: {
+    ph: { min:5.8, max:6.5, optMin:6.0, optMax:6.2 },
+    ec: { min:1.4, max:2.4, optMin:1.6, optMax:2.0 },
+    tempAmb: { min:18, max:28, optMin:20, optMax:26 },
+    tempMaceta: { min:18, max:22, optMin:18, optMax:21 },
+    co2: { min:400, max:1500, optMin:800, optMax:1200 },
+  },
+  cosecha: {
+    ph: { min:5.8, max:6.5, optMin:5.9, optMax:6.1 },
+    ec: { min:0.4, max:1.0, optMin:0.4, optMax:0.6 }, // flush
+    tempAmb: { min:18, max:26, optMin:19, optMax:24 },
+    tempMaceta: { min:16, max:22, optMin:18, optMax:20 },
+    co2: { min:400, max:800, optMin:400, optMax:600 },
+  },
+};
+
+function semaforoValor(valor, rango) {
+  if (valor == null || !rango) return { clase:"", icono:"" };
+  if (valor < rango.min || valor > rango.max) return { clase:"val-critico", icono:"🔴" };
+  if (valor < rango.optMin || valor > rango.optMax) return { clase:"val-alerta", icono:"🟡" };
+  return { clase:"val-optimo", icono:"🟢" };
+}
+
+// Temperatura foliar estimada: hoja ≈ aire + 2°C bajo luz intensa (corrección simplificada)
+function vpdFoliar(tempAire, rh, lux) {
+  if (tempAire == null || rh == null) return null;
+  const offset = lux > 20000 ? 2.0 : lux > 10000 ? 1.0 : 0;
+  const tLeaf  = tempAire + offset;
+  const svp    = 0.6108 * Math.exp((17.27 * tLeaf) / (tLeaf + 237.3));
+  return +(svp * (1 - rh / 100)).toFixed(2);
+}
+
+function calcularVPD(tempC, rh) {
+  if (tempC == null || rh == null) return null;
+  const svp = 0.6108 * Math.exp((17.27 * tempC) / (tempC + 237.3)); // presión de vapor de saturación (kPa)
+  return +(svp * (1 - rh / 100)).toFixed(2);
+}
+
+// Sugerencia priorizando SIEMPRE bajar humedad antes que subirla (riesgo de hongos)
+function sugerenciaVPD(vpd, etapaKey, rhActual) {
+  const e = ETAPAS_VPD[etapaKey];
+  if (vpd == null || !e) return null;
+  const [hMin, hMax] = e.humedad;
+  const humedadBaja = rhActual != null && rhActual < hMin;
+  const humedadAlta  = rhActual != null && rhActual > hMax;
+
+  if (vpd < e.vpdMin) {
+    // VPD bajo: aire "encharcado" respecto a la temperatura. Si la humedad YA está
+    // por encima del objetivo, ahí está la causa -> bajarla es lo correcto (menos hongos).
+    // Si la humedad está normal o baja, el problema es más bien la temperatura -> subirla.
+    if (humedadAlta) {
+      return { estado: "bajo", texto: `VPD bajo (${vpd} kPa, objetivo ${e.vpdMin}–${e.vpdMax}). La humedad (${rhActual}%) está por encima del rango ${hMin}–${hMax}%: bajala para no favorecer hongos.` };
+    }
+    return { estado: "bajo", texto: `VPD bajo (${vpd} kPa, objetivo ${e.vpdMin}–${e.vpdMax}). Subí un poco la temperatura.` };
+  }
+
+  if (vpd > e.vpdMax) {
+    // VPD alto: aire "sediento". Si la humedad YA está por debajo del objetivo,
+    // ahí está la causa real -> subirla (no alcanza con bajar temperatura).
+    // Si la humedad está en rango o alta, mejor bajar temperatura para no mojar de más.
+    if (humedadBaja) {
+      return { estado: "alto", texto: `VPD alto (${vpd} kPa, objetivo ${e.vpdMin}–${e.vpdMax}). La humedad (${rhActual}%) está por debajo del rango ${hMin}–${hMax}% para esta etapa: subila (y/o bajá la temperatura).` };
+    }
+    return { estado: "alto", texto: `VPD alto (${vpd} kPa, objetivo ${e.vpdMin}–${e.vpdMax}). Bajá la temperatura; evitá subir más la humedad (ya está en ${hMin}–${hMax}% o por encima) para no favorecer hongos.` };
+  }
+
+  return { estado: "ok", texto: `VPD en rango óptimo (${vpd} kPa) para ${e.nombre.toLowerCase()}.` };
+}
+
+// Detecta la etapa más frecuente entre las plantas activas de un lugar
+async function detectarEtapaLugar(lugarId) {
+  try {
+    const snap = await getDocs(query(collection(db, "plantas"), where("lugarId", "==", lugarId)));
+    const conteo = {};
+    snap.forEach(p => {
+      const etapa = FASE_A_ETAPA[p.data().fase] || "vegetativo";
+      conteo[etapa] = (conteo[etapa] || 0) + 1;
+    });
+    const entries = Object.entries(conteo).sort((a,b)=>b[1]-a[1]);
+    return entries[0]?.[0] || "vegetativo";
+  } catch { return "vegetativo"; }
+}
+
+// Prioridad de orden en "Lugares": encendida primero, luego apagada, sin luz asociada
+// en medio, y fuera de línea siempre al final (sin importar lo demás).
+// Último estado conocido de cada lugar (se actualiza en cada refresco de 1 min),
+// usado para reordenar sin tener que re-consultar todo de nuevo.
+let estadoLuzActivos = {}; // { lugarId: {online, encendido} }
+
+const FASE_LABEL = { germinacion: "Germinación", vegetativa: "Vegetativo", floracion: "Floración", cosecha: "Cosecha" };
+
+function fechaComoDate(v) {
+  if (!v) return null;
+  if (typeof v.toDate === "function") return v.toDate();
+  const f = new Date(v);
+  return isNaN(f.getTime()) ? null : f;
+}
+
+function diasDesde(fecha) {
+  const f = fechaComoDate(fecha);
+  if (!f) return null;
+  return Math.max(0, Math.floor((Date.now() - f.getTime()) / 86400000));
+}
+
+// Última semana de nutrición cargada para una planta (fecha de creación del registro)
+async function obtenerUltimaFertilizacion(plantaId) {
+  try {
+    const snap = await getDocs(query(collection(db,"plantas",plantaId,"nutricion"), orderBy("creadoEn","desc"), limit(1)));
+    if (snap.empty) return null;
+    return fechaComoDate(snap.docs[0].data().creadoEn);
+  } catch { return null; }
+}
+
+// Trae todas las plantas de un lugar con su día de ciclo y última fertilización,
+// para mostrar en Lugares y Dashboard (genética, etapa real, cuidado reciente).
+async function obtenerPlantasResumenLugar(lugarId) {
+  try {
+    const snap = await getDocs(query(collection(db,"plantas"), where("lugarId","==",lugarId)));
+    return await Promise.all(snap.docs.map(async (pd) => {
+      const p = pd.data();
+      const ultimaFert = await obtenerUltimaFertilizacion(pd.id);
+      return {
+        id: pd.id, nombre: p.nombre, genetica: p.genetica, tipoOrigen: p.tipoOrigen,
+        fase: p.fase, dia: diasDesde(p.fechaInicio),
+        diasFert: ultimaFert ? diasDesde(ultimaFert) : null,
+      };
+    }));
+  } catch (err) {
+    console.warn("No se pudo traer plantas del lugar:", err.message);
+    return [];
+  }
+}
+
+function htmlResumenPlantas(plantas) {
+  if (!plantas.length) return `<div class="plantas-vacio">Sin plantas registradas en este lugar</div>`;
+
+  const conteo = {};
+  plantas.forEach(p => {
+    const g = p.genetica || "Sin genética";
+    conteo[g] = (conteo[g] || 0) + 1;
+  });
+  const resumenConteo = Object.entries(conteo)
+    .sort((a,b) => b[1]-a[1])
+    .map(([g,n]) => `<span class="planta-conteo-item">${n}× ${g}</span>`).join("");
+  const encabezado = `<div class="planta-conteo">🌿 ${plantas.length} planta${plantas.length>1?"s":""} · ${resumenConteo}</div>`;
+
+  return encabezado + plantas.map(p => `
+    <div class="planta-mini">
+      <div class="planta-mini-header">
+        <span class="planta-mini-nombre">${p.nombre}</span>
+        <span class="planta-mini-genetica">${p.genetica||"—"}</span>
+      </div>
+      <div class="planta-mini-meta">
+        <span>📅 Día ${p.dia ?? "—"} · ${FASE_LABEL[p.fase]||p.fase||"—"}</span>
+        ${p.tipoOrigen ? `<span>🌱 ${p.tipoOrigen}</span>` : ""}
+      </div>
+      <div class="planta-mini-fert">💧 Últ. fert: ${p.diasFert==null ? "sin registro" : (p.diasFert===0 ? "hoy" : `hace ${p.diasFert} día${p.diasFert>1?"s":""}`)}</div>
+    </div>`).join("");
+}
+
+async function cargarPlantasResumenCard(lugarId, contenedorId) {
+  const el = document.getElementById(contenedorId);
+  if (!el) return;
+  const plantas = await obtenerPlantasResumenLugar(lugarId);
+  el.innerHTML = htmlResumenPlantas(plantas);
+}
+
+function prioridadLuz(estado) {
+  if (!estado) return 1;
+  if (!estado.online) return 3;
+  return estado.encendido ? 0 : 2;
+}
+
+// Trae el estado de TODOS los dispositivos de una sola vez (para poder ordenar
+// las cards antes de dibujarlas, sin esperar N llamadas individuales).
+async function obtenerEstadoTodos() {
+  try {
+    const proxyBase = (localStorage.getItem("tuya_proxy") || PROXY_URL).replace(/\/tuya$/, "");
+    const resp = await fetch(`${proxyBase}/tuya/all`, { signal: AbortSignal.timeout(15000) });
+    if (!resp.ok) throw new Error("HTTP "+resp.status);
+    const data = await resp.json();
+    const estados = {};
+    Object.entries(data.dispositivos || {}).forEach(([alias, info]) => {
+      estados[alias] = { online: !!info.online, encendido: !!(info.sensores && info.sensores.encendido) };
+    });
+    return estados;
+  } catch (err) {
+    console.warn("No se pudo traer /tuya/all para ordenar por prioridad:", err.message);
+    return {};
+  }
+}
+
+async function cargarLugares() {
+  const lista = document.getElementById("lista-lugares");
+  lista.innerHTML = '<p class="cargando">Cargando...</p>';
+  const [snap, estadoTodos] = await Promise.all([
+    getDocs(query(collection(db,"lugares"), orderBy("creadoEn","desc"))),
+    obtenerEstadoTodos(),
+  ]);
+  lista.innerHTML = "";
+  lugaresClimaActivos = {};
+  if (snap.empty) { lista.innerHTML = '<p class="empty">No hay lugares. Creá uno nuevo.</p>'; return; }
+
+  // Ordenar por prioridad de luces (encendida > apagada > sin luz > fuera de línea)
+  const docsOrdenados = [...snap.docs].sort((a, b) => {
+    const luzA = (a.data().switchLuces||[])[0];
+    const luzB = (b.data().switchLuces||[])[0];
+    return prioridadLuz(estadoTodos[luzA]) - prioridadLuz(estadoTodos[luzB]);
+  });
+
+  for (const d of docsOrdenados) {
+    const l = d.data();
+    const card = document.createElement("div");
+    card.className = "lugar-card";
+    card.dataset.lugarId = d.id;
+    const sensores     = (l.sensoresTuya||[]).map(s=>DISPOSITIVOS_TUYA[s]?.nombre||s).join(", ") || "Sin sensor";
+    const sensorClima  = (l.sensoresTuya||[]).find(s => DISPOSITIVOS_TUYA[s]?.tipo === "sensor");
+    const luzKey       = (l.switchLuces||[])[0];
+    const etapaGuardada = localStorage.getItem("etapa_"+d.id);
+    const etapaInicial  = etapaGuardada || await detectarEtapaLugar(d.id);
+    const graficosColapsados = false; // Gráficos desplegados por defecto
+
+    const opcionesEtapa = Object.entries(ETAPAS_VPD)
+      .map(([k,v]) => `<option value="${k}" ${k===etapaInicial?"selected":""}>${v.nombre}</option>`).join("");
+
+    card.innerHTML = `
+      <div class="lugar-header">
+        <span class="lugar-nombre">${l.nombre}</span>
+        <span class="lugar-dim">${l.dimensiones||""}</span>
+      </div>
+      <div class="lugar-meta">
+        <span>📡 ${sensores}</span>
+        <span>💡 ${(l.luces||[]).map(lu=>`${lu.cantidad}× ${lu.tipo}`).join(", ")||"Sin luces"}</span>
+      </div>
+      ${l.intractor||l.extractor ? `<div class="lugar-meta"><span>${l.intractor?"✅ Intractor":""}${l.extractor?" ✅ Extractor":""}</span></div>`:""}
+      <div class="plantas-resumen" id="plantas-${d.id}"><span class="clima-cargando">🌱 Consultando plantas...</span></div>
+      ${sensorClima ? `<div class="lugar-clima" id="clima-${d.id}"><span class="clima-cargando">🌡️ Consultando sensor...</span></div>` : ""}
+      ${luzKey ? `<div class="luz-estado" id="luz-${d.id}"><span class="clima-cargando">💡 Consultando luces...</span></div>` : ""}
+      ${luzKey ? `<div class="foto-box" id="foto-${d.id}"><span class="clima-cargando">🕐 Calculando fotoperíodo...</span></div>` : ""}
+      <div class="alertas-agro" id="alertas-agro-${d.id}"></div>
+      ${sensorClima ? `
+      <div class="vpd-box">
+        <div class="vpd-header">
+          <span>🌬️ VPD</span>
+          <select class="vpd-etapa" id="etapa-${d.id}" onchange="cambiarEtapaLugar('${d.id}')">${opcionesEtapa}</select>
+        </div>
+        <div id="vpd-valor-${d.id}" class="vpd-valor">Calculando...</div>
+      </div>
+      <div class="clima-titulo graficos-header">
+        <span>📈 Histórico y gráficos</span>
+        <button class="btn-minimizar" onclick="toggleGraficosLugar('${d.id}')" id="btn-graf-${d.id}">${graficosColapsados?'▸ Mostrar':'▾ Minimizar'}</button>
+      </div>
+      <div class="graficos-contenedor ${graficosColapsados?'colapsado':''}" id="graficos-${d.id}">
+        <div class="clima-charts">
+          <div class="chart-box"><canvas id="chart-temp-${d.id}"></canvas><div class="chart-empty" id="chart-temp-empty-${d.id}"></div></div>
+          <div class="chart-box"><canvas id="chart-hum-${d.id}"></canvas><div class="chart-empty" id="chart-hum-empty-${d.id}"></div></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-top:4px">
+          <div class="chart-leyenda-noche">zona oscura = luces apagadas</div>
+          <div class="chart-leyenda-eventos">
+            <span><span class="chart-ev-dot" style="background:#3498db"></span>Riego</span>
+            <span><span class="chart-ev-dot" style="background:#9b59b6"></span>Fertilización</span>
+            <span><span class="chart-ev-dot" style="background:#00c896"></span>Poda</span>
+            <span><span class="chart-ev-dot" style="background:#f1c40f"></span>Cambio fase</span>
+          </div>
+        </div>
+        <div class="clima-titulo dia-titulo">
+          <span>📅 Ver un día puntual</span>
+          <input type="date" id="fecha-dia-${d.id}" class="input-fecha-dia" onchange="cargarGraficoDia('${d.id}','${sensorClima}')">
+        </div>
+        <div class="clima-charts">
+          <div class="chart-box"><canvas id="chart-dia-temp-${d.id}"></canvas><div class="chart-empty" id="chart-dia-temp-empty-${d.id}"></div></div>
+          <div class="chart-box"><canvas id="chart-dia-hum-${d.id}"></canvas><div class="chart-empty" id="chart-dia-hum-empty-${d.id}"></div></div>
+        </div>
+      </div>` : ""}
+      <div class="cult-actions">
+        <button class="btn-sm btn-primary" onclick="verLugar('${d.id}')">Ver áreas y plantas</button>
+        <button class="btn-sm btn-danger"  onclick="eliminarLugar('${d.id}','${l.nombre}')">Eliminar</button>
+      </div>`;
+    lista.appendChild(card);
+    cargarPlantasResumenCard(d.id, "plantas-"+d.id);
+
+    lugaresClimaActivos[d.id] = { sensorKey: sensorClima, luzKey, etapa: etapaInicial };
+    if (sensorClima) {
+      refrescarActualLugar(d.id, sensorClima);
+      if (!graficosColapsados) cargarHistoricoLugar(d.id, sensorClima);
+      const fechaInput = document.getElementById("fecha-dia-"+d.id);
+      if (fechaInput) {
+        const hoy = fechaArgentinaISO(Date.now());
+        const hace7 = fechaArgentinaISO(Date.now() - 7*24*60*60*1000);
+        fechaInput.value = hoy; fechaInput.max = hoy; fechaInput.min = hace7;
+        if (!graficosColapsados) cargarGraficoDia(d.id, sensorClima);
+      }
+    }
+    if (luzKey) { refrescarLuzLugar(d.id, luzKey); cargarFotoperiodoLugar(d.id, luzKey); }
+  }
+  iniciarAutoRefreshClima();
+}
+
+// Minimizar/mostrar los gráficos de un lugar. Si estaban colapsados y nunca se
+// cargaron los datos, los trae recién ahora (evita gastar llamadas de más si
+// el usuario nunca llega a abrirlos).
+window.toggleGraficosLugar = function(lugarId) {
+  const cont = document.getElementById("graficos-"+lugarId);
+  const btn  = document.getElementById("btn-graf-"+lugarId);
+  if (!cont) return;
+  const colapsado = cont.classList.toggle("colapsado");
+  localStorage.setItem("graficosColapsados_"+lugarId, colapsado ? "1" : "0");
+  if (btn) btn.textContent = colapsado ? "▸ Mostrar" : "▾ Minimizar";
+  if (!colapsado) {
+    if (!chartsPorLugar[lugarId] && lugaresClimaActivos[lugarId]?.sensorKey) {
+      cargarHistoricoLugar(lugarId, lugaresClimaActivos[lugarId].sensorKey);
+      cargarGraficoDia(lugarId, lugaresClimaActivos[lugarId].sensorKey);
+    } else {
+      // Ya estaban creados: solo hace falta recalcular tamaño (estaban con display:none)
+      chartsPorLugar[lugarId]?.temp?.resize();
+      chartsPorLugar[lugarId]?.hum?.resize();
+      chartsDiaPorLugar[lugarId]?.temp?.resize();
+      chartsDiaPorLugar[lugarId]?.hum?.resize();
+    }
+  }
+};
+
+window.cambiarEtapaLugar = function(lugarId) {
+  const sel = document.getElementById("etapa-"+lugarId);
+  if (!sel || !lugaresClimaActivos[lugarId]) return;
+  lugaresClimaActivos[lugarId].etapa = sel.value;
+  localStorage.setItem("etapa_"+lugarId, sel.value);
+  if (lugaresClimaActivos[lugarId].sensorKey) refrescarActualLugar(lugarId, lugaresClimaActivos[lugarId].sensorKey);
+  pintarFotoperiodo(lugarId);
+};
+
+// Trae las horas reales de luz de AYER (día completo, evita falsas alarmas a
+// mitad del día de hoy) y las compara contra lo esperado según la etapa.
+let fotoperiodoActivos = {}; // { lugarId: { horasEncendido, horasVentana, fecha, diaCompleto } }
+
+async function cargarFotoperiodoLugar(lugarId, luzKey) {
+  const el = document.getElementById("foto-"+lugarId);
+  if (!el) return;
+  try {
+    const proxyBase = (localStorage.getItem("tuya_proxy") || PROXY_URL).replace(/\/tuya$/, "");
+    const resp = await fetch(`${proxyBase}/tuya/fotoperiodo?device=${luzKey}`, { signal: AbortSignal.timeout(25000) });
+    if (!resp.ok) throw new Error("HTTP "+resp.status);
+    const data = await resp.json();
+    fotoperiodoActivos[lugarId] = data;
+    pintarFotoperiodo(lugarId);
+  } catch (err) {
+    el.innerHTML = `<span class="clima-error">Sin datos de fotoperíodo (${err.message})</span>`;
+  }
+}
+
+function pintarFotoperiodo(lugarId) {
+  const el   = document.getElementById("foto-"+lugarId);
+  const data = fotoperiodoActivos[lugarId];
+  if (!el || !data) return;
+  const etapa    = lugaresClimaActivos[lugarId]?.etapa || "vegetativo";
+  const objetivo = FOTOPERIODO_ESPERADO[etapa];
+
+  // Línea principal: en curso, tipo "lleva 8.9h de luz de las 18h de hoy"
+  const s = data.sesionActual || {};
+  let lineaActual;
+  if (!s.online) {
+    lineaActual = `<span class="foto-aviso">📴 Luz fuera de línea</span>`;
+  } else if (s.encendido) {
+    lineaActual = `🕐 Lleva <b>${s.horasSesion}h</b> de luz encendida de las <b>${objetivo}h</b> de hoy`;
+  } else {
+    lineaActual = `🕐 Luz apagada ahora (objetivo del día: ${objetivo}h)`;
+  }
+
+  // Línea secundaria: chequeo estricto del día completo de ayer (para detectar
+  // desvíos reales de la automatización, no solo el progreso de hoy)
+  const diff    = Math.abs(data.horasEncendido - objetivo);
+  const critico = etapa.startsWith("floracion");
+  const okRango = diff <= (critico ? 0.3 : 1);
+  const clase   = okRango ? "foto-ok" : (critico ? "foto-alerta" : "foto-aviso");
+  const icono   = okRango ? "✅" : "⚠️";
+
+  el.innerHTML = `
+    <div>${lineaActual}</div>
+    <div class="${clase}" style="font-size:.68rem">${icono} Ayer (${data.fecha}): ${data.horasEncendido}h total${!okRango ? ` — desvío de ${diff.toFixed(1)}h vs objetivo` : " (dentro de lo esperado)"}</div>
+    ${critico && !okRango ? `<div class="foto-critico">⚠️ En floración esto puede inducir hermafroditismo — revisá el temporizador/automatización ya.</div>` : ""}`;
+}
+
+// Refresco automático liviano (solo valores actuales, no historial) cada 1 minuto
+function iniciarAutoRefreshClima() {
+  if (climaTimer) clearInterval(climaTimer);
+  climaTimer = setInterval(async () => {
+    const tareas = Object.entries(lugaresClimaActivos).map(([lugarId, cfg]) => Promise.all([
+      cfg.sensorKey ? refrescarActualLugar(lugarId, cfg.sensorKey) : null,
+      cfg.luzKey    ? refrescarLuzLugar(lugarId, cfg.luzKey)       : null,
+    ]));
+    await Promise.all(tareas);
+    reordenarListaLugares();
+  }, 60 * 1000);
+}
+
+// Reordena las cards ya existentes en el DOM (sin recrearlas, para no perder
+// gráficos ya dibujados ni el estado de "minimizado") según prioridad de luces.
+function reordenarListaLugares() {
+  const lista = document.getElementById("lista-lugares");
+  if (!lista) return;
+  const tarjetas = Array.from(lista.querySelectorAll(":scope > .lugar-card"));
+  tarjetas.sort((a, b) => prioridadLuz(estadoLuzActivos[a.dataset.lugarId]) - prioridadLuz(estadoLuzActivos[b.dataset.lugarId]));
+  tarjetas.forEach(t => lista.appendChild(t));
+}
+
+function claseTemp(temp) {
+  if (temp == null) return "";
+  return (temp < TEMP_OPTIMA_MIN || temp > TEMP_OPTIMA_MAX) ? "temp-fuera" : "temp-ok";
+}
+
+// Temp/humedad actuales + VPD — llamada liviana (/tuya?device=), se repite cada 1 min
+async function refrescarActualLugar(lugarId, sensorKey) {
+  const el = document.getElementById("clima-"+lugarId);
+  if (!el) return;
+  try {
+    const proxyBase = (localStorage.getItem("tuya_proxy") || PROXY_URL).replace(/\/tuya$/, "");
+    const resp = await fetch(`${proxyBase}/tuya?device=${sensorKey}`, { signal: AbortSignal.timeout(12000) });
+    if (!resp.ok) throw new Error("HTTP "+resp.status);
+    const data = await resp.json();
+    const s    = data.sensores || {};
+    const temp = s.tempAmb ?? null, hum = s.humedad ?? null;
+    const statsPrevios = el.querySelector(".clima-stats")?.outerHTML || "";
+    // Timestamp de dato fresco
+    if (!window._tsSensor) window._tsSensor = {};
+    if (temp!==null||hum!==null) window._tsSensor[lugarId] = Date.now();
+    const minAgo = window._tsSensor[lugarId]
+      ? Math.round((Date.now()-window._tsSensor[lugarId])/60000) : null;
+    const frescoBadge = data.online===false
+      ? `<span class="dato-viejo">⚠ sin conexión</span>`
+      : minAgo !== null && minAgo < 3
+        ? `<span class="dato-fresco">● en vivo</span>`
+        : `<span class="dato-viejo">⚠ hace ${minAgo||"?"}m</span>`;
+    el.innerHTML = `
+      <div class="clima-actual">
+        <span class="${claseTemp(temp)}">🌡️ ${temp!=null?temp.toFixed(1):"—"}°C</span>
+        <span>💧 ${hum!=null?hum.toFixed(0):"—"}%</span>
+        ${frescoBadge}
+        <span class="clima-hora">${new Date().toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit"})}</span>
+      </div>${statsPrevios}`;
+    // Alertas agronómicas en tiempo real + indicador visual en card
+    const alertasEl = document.getElementById("alertas-agro-"+lugarId);
+    if (alertasEl) {
+      const alertas = [];
+      if (temp!=null&&temp>30) alertas.push({n:"critico",t:`🌡️ Temp crítica: ${temp.toFixed(1)}°C`});
+      if (temp!=null&&temp<18) alertas.push({n:"critico",t:`🌡️ Temp baja: ${temp.toFixed(1)}°C`});
+      if (hum!=null&&hum>72)   alertas.push({n:"critico",t:`💧 HR ${hum.toFixed(0)}% — riesgo Botrytis`});
+      if (hum!=null&&hum>65)   alertas.push({n:"alerta", t:`💧 HR alta: ${hum.toFixed(0)}%`});
+      if (hum!=null&&hum<35)   alertas.push({n:"alerta", t:`💧 HR baja: ${hum.toFixed(0)}%`});
+      alertasEl.innerHTML = alertas.map(a=>`<span class="alerta-agro ${a.n}">${a.t}</span>`).join("");
+      // Marcar la card de lugar con nivel de alerta
+      const card = alertasEl.closest(".lugar-card");
+      if (card) {
+        card.classList.remove("card-alerta-critica","card-alerta-warning");
+        const hayCritico = alertas.some(a=>a.n==="critico");
+        const hayAlerta  = alertas.some(a=>a.n==="alerta");
+        if (hayCritico) card.classList.add("card-alerta-critica");
+        else if (hayAlerta) card.classList.add("card-alerta-warning");
+      }
+    }
+
+    // VPD + sugerencia
+    const etapa = lugaresClimaActivos[lugarId]?.etapa || "vegetativo";
+    const vpd = calcularVPD(temp, hum);
+    const vEl = document.getElementById("vpd-valor-"+lugarId);
+    if (vEl) {
+      const sug = sugerenciaVPD(vpd, etapa, hum);
+      if (vpd == null) { vEl.innerHTML = "Sin datos"; }
+      else {
+        const pct = Math.min(100, Math.max(0, (vpd/2.5)*100));
+        vEl.innerHTML =
+          `<div class="vpd-num vpd-${sug?.estado||''}">${vpd} <small>kPa</small></div>` +
+          `<div class="vpd-barra-wrap">` +
+            `<div class="vpd-barra-bg">` +
+              `<div class="vpd-zona vpd-z-bajo"></div>` +
+              `<div class="vpd-zona vpd-z-ok"></div>` +
+              `<div class="vpd-zona vpd-z-bien"></div>` +
+              `<div class="vpd-zona vpd-z-alto"></div>` +
+              `<div class="vpd-zona vpd-z-crit"></div>` +
+              `<div class="vpd-marker" style="left:${pct}%"></div>` +
+            `</div>` +
+            `<div class="vpd-barra-labels"><span>0</span><span>.4</span><span>.8</span><span>1.2</span><span>1.6</span><span>2.5</span></div>` +
+          `</div>` +
+          `<div class="vpd-sugerencia">${sug?.texto||""}</div>`;
+      }
+    }
+  } catch (err) {
+    el.innerHTML = `<span class="clima-error">Sin datos del sensor</span>`;
+  }
+}
+
+// Estado de luces encendido/apagado — llamada liviana, cada 1 min
+async function refrescarLuzLugar(lugarId, luzKey) {
+  const el = document.getElementById("luz-"+lugarId);
+  try {
+    const proxyBase = (localStorage.getItem("tuya_proxy") || PROXY_URL).replace(/\/tuya$/, "");
+    const resp = await fetch(`${proxyBase}/tuya?device=${luzKey}`, { signal: AbortSignal.timeout(12000) });
+    if (!resp.ok) throw new Error("HTTP "+resp.status);
+    const data = await resp.json();
+    estadoLuzActivos[lugarId] = { online: !!data.online, encendido: !!(data.sensores && data.sensores.encendido) };
+    if (el) el.innerHTML = htmlEstadoLuz(data, key);
+  } catch (err) {
+    if (el) el.innerHTML = `<span class="clima-error">Sin datos de luces</span>`;
+  }
+}
+
+// Tres estados posibles: encendida, apagada, o fuera de línea (el dispositivo no responde
+// a Tuya hace rato — en ese caso el último valor de "switch" conocido no es confiable).
+function htmlEstadoLuz(data, key) {
+  if (!window._estadoSwitches) window._estadoSwitches = {};
+  const encendido = !!(data.sensores && data.sensores.encendido);
+  if (key) window._estadoSwitches[key] = data.online !== false ? encendido : null;
+  if (!data.online) return `<span class="luz-offline">📴 Fuera de línea</span>`;
+  // Determinar etiqueta según tipo de dispositivo
+  const esCooler = key && key.includes("cooler");
+  const iconOn  = esCooler ? "🌀 Cooler encendido"  : "💡 Encendida";
+  const iconOff = esCooler ? "🌀 Cooler apagado"    : "🌑 Apagada";
+  return `<span class="${encendido?'luz-on':'luz-off'}">${encendido?iconOn:iconOff}</span>`;
+}
+
+// Estadística 24h + gráficos 7 días — llamada más pesada (report-logs), se carga una sola vez al entrar
+async function cargarHistoricoLugar(lugarId, sensorKey) {
+  const el = document.getElementById("clima-"+lugarId);
+  try {
+    const proxyBase = (localStorage.getItem("tuya_proxy") || PROXY_URL).replace(/\/tuya$/, "");
+    const resp = await fetch(`${proxyBase}/tuya/history/resumen?device=${sensorKey}`, { signal: AbortSignal.timeout(25000) });
+    if (!resp.ok) throw new Error("HTTP "+resp.status);
+    const data = await resp.json();
+    const h24  = (data.historico && data.historico["24h"]) || {};
+    const h7d  = (data.historico && data.historico["7d"])  || {};
+    const t    = h24.tempAmb, h = h24.humedad;
+    if (el && (t || h)) {
+      const ahora    = Date.now();
+      const tsLectura = window._tsSensor?.[lugarId] || 0;
+      const minutos   = Math.round((ahora - tsLectura) / 60000);
+      const frescoBadge = tsLectura
+        ? (minutos < 10
+            ? `<span class="dato-fresco">● en vivo</span>`
+            : `<span class="dato-viejo">⚠ hace ${minutos} min</span>`)
+        : `<span class="dato-desconocido">sin timestamp</span>`;
+      const statsHTML = `<div class="clima-stats">
+        ${t ? `<span class="clima-rango">24h temp ${t.min.toFixed(1)}–${t.max.toFixed(1)}°C · prom ${t.avg}</span>` : ""}
+        ${h ? `<span class="clima-rango">24h hum ${h.min.toFixed(0)}–${h.max.toFixed(0)}% · prom ${h.avg}</span>` : ""}
+        ${frescoBadge}
+      </div>`;
+      const existente = el.querySelector(".clima-stats");
+      if (existente) existente.outerHTML = statsHTML; else el.insertAdjacentHTML("beforeend", statsHTML);
+    }
+    dibujarGraficos(lugarId, h7d.tempAmb?.serie || [], h7d.humedad?.serie || []);
+    if (data.truncado && data.truncado["7d"]) {
+      const chartsCont = document.getElementById("chart-temp-"+lugarId)?.closest(".clima-charts");
+      if (chartsCont && !chartsCont.parentElement.querySelector(".aviso-truncado")) {
+        chartsCont.insertAdjacentHTML("afterend", `<div class="aviso-truncado">⚠️ El sensor reportó tan seguido que puede haber más lecturas de las mostradas en los 7 días.</div>`);
+      }
+    }
+  } catch (err) {
+    console.error("Error histórico", lugarId, err.message);
+    mostrarErrorGrafico(lugarId, err.message);
+  }
+}
+
+function mostrarErrorGrafico(lugarId, msg) {
+  ["temp","hum"].forEach(tipo => {
+    const box = document.getElementById(`chart-${tipo}-empty-${lugarId}`);
+    if (box) box.innerHTML = `⚠️ No se pudo cargar el histórico (${msg})`;
+  });
+}
+
+function chartOptionsBase(unidad, banda) {
+  const opts = {
+    responsive: true,
+    maintainAspectRatio: false,
+    animation: false,
+    plugins: {
+      legend: { display: false },
+      annotation: { annotations: {} },
+    },
+    scales: {
+      x: { ticks: { color: "#8a9a8f", maxTicksLimit: 6, font: { size: 10 } }, grid: { display: false } },
+      y: { ticks: { color: "#8a9a8f", font: { size: 10 }, callback: v => v + unidad }, grid: { color: "rgba(255,255,255,.05)" } },
+    },
+  };
+  if (banda) {
+    opts.plugins.annotation.annotations.banda = {
+      type: "box", yMin: banda.min, yMax: banda.max,
+      backgroundColor: "rgba(61,220,151,.10)", borderColor: "rgba(61,220,151,.35)", borderWidth: 1,
+      label: { display: true, content: banda.label, position: "start", color: "#3ddc97", font: { size: 9 }, backgroundColor: "rgba(0,0,0,0)" },
+    };
+  }
+  return opts;
+}
+
+function dibujarGraficos(lugarId, serieTemp, serieHum) {
+  const ctxTemp   = document.getElementById("chart-temp-"+lugarId);
+  const ctxHum    = document.getElementById("chart-hum-"+lugarId);
+  const emptyTemp = document.getElementById("chart-temp-empty-"+lugarId);
+  const emptyHum  = document.getElementById("chart-hum-empty-"+lugarId);
+  if (!ctxTemp || !ctxHum) return;
+  if (typeof Chart === "undefined") { if(emptyTemp) emptyTemp.textContent = "⚠️ No se pudo cargar Chart.js"; return; }
+
+  const fmt = ts => new Date(ts).toLocaleDateString("es-AR",{day:"2-digit",month:"2-digit"});
+
+  if (emptyTemp) emptyTemp.innerHTML = serieTemp.length ? "" : "Sin lecturas históricas todavía (puede tardar unas horas en acumular datos)";
+  if (emptyHum)  emptyHum.innerHTML  = serieHum.length  ? "" : "Sin lecturas históricas todavía (puede tardar unas horas en acumular datos)";
+
+  const etapa = lugaresClimaActivos[lugarId]?.etapa || "vegetativo";
+  const bandaHum = ETAPAS_VPD[etapa]?.humedad;
+
+  if (chartsPorLugar[lugarId]?.temp) chartsPorLugar[lugarId].temp.destroy();
+  if (chartsPorLugar[lugarId]?.hum)  chartsPorLugar[lugarId].hum.destroy();
+
+  // Plugin bandas día/noche — colorea fondo según hora del punto
+  // Asume fotoperíodo default 18/6 (18h luz, 6h noche) si no hay dato de switch
+  const horaLuzInicio = 6;  // 6:00
+  const horaLuzFin    = 24; // 24:00 (18 horas de luz)
+  // Plugin markers de eventos sobre el gráfico
+  // Usa window._eventosLugar[lugarId] — array de { fecha, tipo, titulo }
+  const eventMarkersPlugin = {
+    id: "eventMarkers_"+lugarId,
+    afterDraw(chart) {
+      const { ctx, chartArea, scales } = chart;
+      if (!chartArea || !scales.x) return;
+      const eventos = window._eventosLugar?.[lugarId] || [];
+      if (!eventos.length) return;
+      const labels = chart.data.labels;
+      eventos.forEach(ev => {
+        // Buscar el label más cercano a la fecha del evento
+        const evTs = ev.fecha?.toDate ? ev.fecha.toDate().getTime() : new Date(ev.fecha).getTime();
+        let bestIdx = -1, bestDiff = Infinity;
+        labels.forEach((lbl, i) => {
+          const ts = new Date(lbl).getTime();
+          if (!isNaN(ts)) {
+            const diff = Math.abs(ts - evTs);
+            if (diff < bestDiff) { bestDiff = diff; bestIdx = i; }
+          }
+        });
+        if (bestIdx < 0) return;
+        const x = scales.x.getPixelForValue(bestIdx);
+        const colores = { riego:"#3498db", fertilizacion:"#9b59b6", poda:"#00c896",
+                          cosecha:"#e67e22", cambio_fase:"#f1c40f", otro:"#95a5a6" };
+        const color = colores[ev.tipo] || "#95a5a6";
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(x, chartArea.top);
+        ctx.lineTo(x, chartArea.bottom);
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([3,3]);
+        ctx.stroke();
+        // Triángulo indicador
+        ctx.beginPath();
+        ctx.moveTo(x-5, chartArea.top);
+        ctx.lineTo(x+5, chartArea.top);
+        ctx.lineTo(x, chartArea.top+8);
+        ctx.closePath();
+        ctx.fillStyle = color;
+        ctx.fill();
+        ctx.restore();
+      });
+    }
+  };
+
+  const nocheBgPlugin = {
+    id: "nocheBg_"+lugarId,
+    beforeDraw(chart) {
+      const { ctx, chartArea, scales } = chart;
+      if (!chartArea) return;
+      const labels = chart.data.labels;
+      if (!labels || labels.length < 2) return;
+      ctx.save();
+      labels.forEach((lbl, i) => {
+        // Intentar parsear hora del label (formato HH:mm)
+        const match = String(lbl).match(/(\d{1,2}):(\d{2})/);
+        if (!match) return;
+        const h = parseInt(match[1]);
+        const esNoche = h < horaLuzInicio || h >= horaLuzFin;
+        if (!esNoche) return;
+        const x1 = scales.x.getPixelForValue(i);
+        const x2 = scales.x.getPixelForValue(i+1) || x1+4;
+        ctx.fillStyle = "rgba(0,0,0,0.25)";
+        ctx.fillRect(x1, chartArea.top, x2-x1, chartArea.height);
+      });
+      ctx.restore();
+    }
+  };
+
+  chartsPorLugar[lugarId] = {
+    temp: serieTemp.length ? new Chart(ctxTemp, {
+      type: "line",
+      data: { labels: serieTemp.map(p=>fmt(p.t)), datasets: [{ label:"Temp °C", data: serieTemp.map(p=>p.v), borderColor:"#ff8a3d", backgroundColor:"rgba(255,138,61,.15)", tension:.3, pointRadius:0, borderWidth:2, fill:true }] },
+      options: chartOptionsBase("°C", { min: TEMP_OPTIMA_MIN, max: TEMP_OPTIMA_MAX, label: `Óptimo ${TEMP_OPTIMA_MIN}-${TEMP_OPTIMA_MAX}°C` }),
+      plugins: [nocheBgPlugin, eventMarkersPlugin],
+    }) : null,
+    hum: serieHum.length ? new Chart(ctxHum, {
+      type: "line",
+      data: { labels: serieHum.map(p=>fmt(p.t)), datasets: [{ label:"Humedad %", data: serieHum.map(p=>p.v), borderColor:"#3ddc97", backgroundColor:"rgba(61,220,151,.15)", tension:.3, pointRadius:0, borderWidth:2, fill:true }] },
+      options: chartOptionsBase("%", bandaHum ? { min: bandaHum[0], max: bandaHum[1], label: `Óptimo ${bandaHum[0]}-${bandaHum[1]}%` } : null),
+      plugins: [nocheBgPlugin],
+    }) : null,
+  };
+}
+
+// Trae y dibuja el histórico de un día puntual (según la fecha elegida en el selector)
+async function cargarGraficoDia(lugarId, sensorKey) {
+  const fechaInput = document.getElementById("fecha-dia-"+lugarId);
+  const fecha = fechaInput?.value;
+  if (!fecha) return;
+  const emptyTemp = document.getElementById("chart-dia-temp-empty-"+lugarId);
+  const emptyHum  = document.getElementById("chart-dia-hum-empty-"+lugarId);
+  if (emptyTemp) emptyTemp.innerHTML = "Cargando...";
+  if (emptyHum)  emptyHum.innerHTML  = "Cargando...";
+  try {
+    const proxyBase = (localStorage.getItem("tuya_proxy") || PROXY_URL).replace(/\/tuya$/, "");
+    const resp = await fetch(`${proxyBase}/tuya/history?device=${sensorKey}&fecha=${fecha}`, { signal: AbortSignal.timeout(25000) });
+    if (!resp.ok) throw new Error("HTTP "+resp.status);
+    const data = await resp.json();
+    const est = data.estadisticas || {};
+    dibujarGraficosDia(lugarId, est.tempAmb?.serie || [], est.humedad?.serie || []);
+  } catch (err) {
+    console.error("Error gráfico día", lugarId, err.message);
+    if (emptyTemp) emptyTemp.innerHTML = `⚠️ No se pudo cargar (${err.message})`;
+    if (emptyHum)  emptyHum.innerHTML  = `⚠️ No se pudo cargar (${err.message})`;
+  }
+}
+
+function dibujarGraficosDia(lugarId, serieTemp, serieHum) {
+  const ctxTemp   = document.getElementById("chart-dia-temp-"+lugarId);
+  const ctxHum    = document.getElementById("chart-dia-hum-"+lugarId);
+  const emptyTemp = document.getElementById("chart-dia-temp-empty-"+lugarId);
+  const emptyHum  = document.getElementById("chart-dia-hum-empty-"+lugarId);
+  if (!ctxTemp || !ctxHum) return;
+  if (typeof Chart === "undefined") { if(emptyTemp) emptyTemp.textContent = "⚠️ No se pudo cargar Chart.js"; return; }
+
+  const fmt = ts => new Date(ts).toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit"});
+
+  if (emptyTemp) emptyTemp.innerHTML = serieTemp.length ? "" : "Sin lecturas ese día";
+  if (emptyHum)  emptyHum.innerHTML  = serieHum.length  ? "" : "Sin lecturas ese día";
+
+  const etapa    = lugaresClimaActivos[lugarId]?.etapa || "vegetativo";
+  const bandaHum = ETAPAS_VPD[etapa]?.humedad;
+
+  if (chartsDiaPorLugar[lugarId]?.temp) chartsDiaPorLugar[lugarId].temp.destroy();
+  if (chartsDiaPorLugar[lugarId]?.hum)  chartsDiaPorLugar[lugarId].hum.destroy();
+
+  // Plugin bandas noche para gráfico intradiario
+  const nocheDiaPlugin = {
+    id: "nocheDia_"+lugarId,
+    beforeDraw(chart) {
+      const { ctx, chartArea, scales } = chart;
+      if (!chartArea) return;
+      chart.data.labels.forEach((lbl, i) => {
+        const parts = String(lbl).split(":");
+        const h = parseInt(parts[0]);
+        if (isNaN(h)) return;
+        if (h < 6 || h >= 24) {
+          const x1 = scales.x.getPixelForValue(i);
+          const x2 = scales.x.getPixelForValue(i+1) || x1+4;
+          ctx.fillStyle = "rgba(0,0,0,0.28)";
+          ctx.fillRect(x1, chartArea.top, x2-x1, chartArea.height);
+        }
+      });
+    }
+  };
+
+  chartsDiaPorLugar[lugarId] = {
+    temp: serieTemp.length ? new Chart(ctxTemp, {
+      type: "line",
+      data: { labels: serieTemp.map(p=>fmt(p.t)), datasets: [{ label:"Temp °C", data: serieTemp.map(p=>p.v), borderColor:"#ff8a3d", backgroundColor:"rgba(255,138,61,.15)", tension:.3, pointRadius:0, borderWidth:2, fill:true }] },
+      options: chartOptionsBase("°C", { min: TEMP_OPTIMA_MIN, max: TEMP_OPTIMA_MAX, label: `Óptimo ${TEMP_OPTIMA_MIN}-${TEMP_OPTIMA_MAX}°C` }),
+    }) : null,
+    hum: serieHum.length ? new Chart(ctxHum, {
+      type: "line",
+      data: { labels: serieHum.map(p=>fmt(p.t)), datasets: [{ label:"Humedad %", data: serieHum.map(p=>p.v), borderColor:"#3ddc97", backgroundColor:"rgba(61,220,151,.15)", tension:.3, pointRadius:0, borderWidth:2, fill:true }] },
+      options: chartOptionsBase("%", bandaHum ? { min: bandaHum[0], max: bandaHum[1], label: `Óptimo ${bandaHum[0]}-${bandaHum[1]}%` } : null),
+      plugins: [nocheDiaPlugin],
+    }) : null,
+  };
+}
+
+
+let dashboardActivos = {}; // { lugarId: { sensorKey, luzKey, tipo } }
+let dashboardTimer   = null;
+
+// Detecta si el lugar es la Carpa (1×1×2) o la Estructura 3×1, usando el sensor
+// asociado como fuente de verdad y el texto de nombre/dimensiones como respaldo.
+function detectarTipoEstructura(l) {
+  const sensorKey = (l.sensoresTuya||[])[0];
+  const lugarDispositivo = sensorKey && DISPOSITIVOS_TUYA[sensorKey]?.lugar;
+  if (lugarDispositivo === "Estructura 3x1") return "estructura3x1";
+  if (lugarDispositivo === "Carpa") return "carpa";
+  const texto = ((l.dimensiones||"") + " " + (l.nombre||"")).toLowerCase();
+  if (texto.includes("3x1") || texto.includes("3×1") || texto.includes("estructura")) return "estructura3x1";
+  return "carpa";
+}
+
+function svgCarpa(encendida) {
+  return `
+  <svg viewBox="0 0 200 220" class="ilustracion ${encendida?'glow-on':'glow-off'}">
+    <polygon points="30,45 100,10 170,45 170,205 30,205" class="carpa-cuerpo"/>
+    <line x1="30" y1="45" x2="170" y2="45" class="carpa-marco"/>
+    <line x1="100" y1="45" x2="100" y2="205" class="carpa-cierre"/>
+    <ellipse cx="100" cy="100" rx="65" ry="55" class="glow-interior"/>
+    <rect x="55" y="38" width="90" height="10" rx="5" class="barra-luz"/>
+    <path d="M100 195 C88 165 68 155 58 122 C80 133 96 143 100 155 C104 143 120 133 142 122 C132 155 112 165 100 195 Z" class="planta-silueta"/>
+  </svg>`;
+}
+
+function svgEstructura3x1(encendida) {
+  return `
+  <svg viewBox="0 0 260 150" class="ilustracion ${encendida?'glow-on':'glow-off'}">
+    <rect x="18" y="95" width="8" height="42" class="estante-pata"/>
+    <rect x="234" y="95" width="8" height="42" class="estante-pata"/>
+    <rect x="12" y="85" width="236" height="12" rx="2" class="estante-base"/>
+    <ellipse cx="130" cy="55" rx="112" ry="35" class="glow-interior"/>
+    <rect x="28" y="22" width="204" height="10" rx="5" class="barra-luz"/>
+    <path d="M65 83 C58 70 46 64 40 53 C52 58 62 64 65 70 C68 64 78 58 90 53 C84 64 72 70 65 83Z" class="planta-silueta"/>
+    <path d="M130 83 C123 70 111 64 105 53 C117 58 127 64 130 70 C133 64 143 58 155 53 C149 64 137 70 130 83Z" class="planta-silueta"/>
+    <path d="M195 83 C188 70 176 64 170 53 C182 58 192 64 195 70 C198 64 208 58 220 53 C214 64 202 70 195 83Z" class="planta-silueta"/>
+  </svg>`;
+}
+
+async function cargarDashboard() {
+  const grid = document.getElementById("dashboard-grid");
+  grid.innerHTML = '<p class="cargando">Cargando...</p>';
+  const [snap, estadoTodos] = await Promise.all([
+    getDocs(query(collection(db,"lugares"), orderBy("creadoEn","desc"))),
+    obtenerEstadoTodos(),
+  ]);
+  grid.innerHTML = "";
+  dashboardActivos = {};
+  if (snap.empty) { grid.innerHTML = '<p class="empty">No hay lugares creados todavía.</p>'; return; }
+
+  const docsOrdenados = [...snap.docs].sort((a, b) => {
+    const luzA = (a.data().switchLuces||[])[0];
+    const luzB = (b.data().switchLuces||[])[0];
+    return prioridadLuz(estadoTodos[luzA]) - prioridadLuz(estadoTodos[luzB]);
+  });
+
+  docsOrdenados.forEach(d => {
+    const l = d.data();
+    const sensorKey = (l.sensoresTuya||[]).find(s => DISPOSITIVOS_TUYA[s]?.tipo === "sensor");
+    const luzKey    = (l.switchLuces||[])[0];
+    const tipo      = detectarTipoEstructura(l);
+    const svgInicial = tipo === "estructura3x1" ? svgEstructura3x1(false) : svgCarpa(false);
+
+    const card = document.createElement("div");
+    card.className = "dash-card";
+    card.dataset.lugarId = d.id;
+    card.innerHTML = `
+      <div class="dash-header">
+        <span class="dash-nombre">${l.nombre}</span>
+        <span class="dash-dim">${l.dimensiones||""}</span>
+      </div>
+      <div class="dash-body">
+        <div class="dash-ilustracion" id="dash-ilus-${d.id}">${svgInicial}</div>
+        <div class="dash-datos">
+          <div class="dash-dato"><div class="valor" id="dash-temp-${d.id}">—</div><div class="label">🌡️ Temp</div></div>
+          <div class="dash-dato"><div class="valor" id="dash-hum-${d.id}">—</div><div class="label">💧 Humedad</div></div>
+          <div class="dash-dato" id="dash-luz-${d.id}"><div class="label">${luzKey?'Consultando luces...':'Sin luces asociadas'}</div></div>
+        </div>
+      </div>
+      <div class="plantas-resumen" id="dash-plantas-${d.id}"><span class="clima-cargando">🌱 Consultando plantas...</span></div>`;
+    grid.appendChild(card);
+    cargarPlantasResumenCard(d.id, "dash-plantas-"+d.id);
+
+    dashboardActivos[d.id] = { sensorKey, luzKey, tipo };
+    refrescarDashboardCard(d.id, sensorKey, luzKey, tipo);
+  });
+  iniciarAutoRefreshDashboard();
+}
+
+function iniciarAutoRefreshDashboard() {
+  if (dashboardTimer) clearInterval(dashboardTimer);
+  dashboardTimer = setInterval(async () => {
+    const tareas = Object.entries(dashboardActivos).map(([id, cfg]) => refrescarDashboardCard(id, cfg.sensorKey, cfg.luzKey, cfg.tipo));
+    await Promise.all(tareas);
+    reordenarDashboard();
+  }, 60 * 1000);
+}
+
+function reordenarDashboard() {
+  const grid = document.getElementById("dashboard-grid");
+  if (!grid) return;
+  const tarjetas = Array.from(grid.querySelectorAll(":scope > .dash-card"));
+  tarjetas.sort((a, b) => prioridadLuz(estadoLuzActivos[a.dataset.lugarId]) - prioridadLuz(estadoLuzActivos[b.dataset.lugarId]));
+  tarjetas.forEach(t => grid.appendChild(t));
+}
+
+async function refrescarDashboardCard(lugarId, sensorKey, luzKey, tipo) {
+  const proxyBase = (localStorage.getItem("tuya_proxy") || PROXY_URL).replace(/\/tuya$/, "");
+
+  if (sensorKey) {
+    try {
+      const resp = await fetch(`${proxyBase}/tuya?device=${sensorKey}`, { signal: AbortSignal.timeout(12000) });
+      if (!resp.ok) throw new Error("HTTP "+resp.status);
+      const data = await resp.json();
+      const s = data.sensores || {};
+      const tEl = document.getElementById("dash-temp-"+lugarId);
+      const hEl = document.getElementById("dash-hum-"+lugarId);
+      if (tEl) { tEl.textContent = s.tempAmb!=null ? s.tempAmb.toFixed(1)+"°C" : "—"; tEl.className = "valor "+claseTemp(s.tempAmb); }
+      if (hEl) hEl.textContent = s.humedad!=null ? s.humedad.toFixed(0)+"%" : "—";
+    } catch (err) {
+      const tEl = document.getElementById("dash-temp-"+lugarId);
+      if (tEl) tEl.textContent = "—";
+    }
+  }
+
+  if (luzKey) {
+    try {
+      const resp = await fetch(`${proxyBase}/tuya?device=${luzKey}`, { signal: AbortSignal.timeout(12000) });
+      if (!resp.ok) throw new Error("HTTP "+resp.status);
+      const data = await resp.json();
+      const encendido = data.online && !!(data.sensores && data.sensores.encendido);
+      estadoLuzActivos[lugarId] = { online: !!data.online, encendido: !!(data.sensores && data.sensores.encendido) };
+      const ilusEl = document.getElementById("dash-ilus-"+lugarId);
+      if (ilusEl) ilusEl.innerHTML = tipo === "estructura3x1" ? svgEstructura3x1(encendido) : svgCarpa(encendido);
+      const luzEl = document.getElementById("dash-luz-"+lugarId);
+      if (luzEl) luzEl.innerHTML = `<div class="label ${data.online ? (encendido?'luz-on':'luz-off') : 'luz-offline'}">${!data.online ? '📴 Fuera de línea' : (encendido?'💡 Encendida':'🌑 Apagada')}</div>`;
+    } catch (err) {
+      const luzEl = document.getElementById("dash-luz-"+lugarId);
+      if (luzEl) luzEl.innerHTML = `<div class="label">Sin datos de luces</div>`;
+    }
+  }
+}
+
+
+// El nav "Plantas" antes solo cambiaba de pantalla sin cargar nada (parecía que
+// las plantas habían desaparecido). Ahora entra al último lugar visto, o al
+// primero que encuentre si todavía no entraste a ninguno.
+window.irAPlantas = () => {
+  if (lugarActivo) return verLugar(lugarActivo);
+  show("vista-lugares"); cargarLugares();
+  toast("Elegí un lugar para ver sus plantas 👇");
+};
+
+window.verLugar = async (id) => {
+  lugarActivo = id;
+  show("vista-lugar");
+  const snap = await getDoc(doc(db,"lugares",id));
+  const l = snap.data();
+  const nombreEl = document.getElementById("det-lugar-nombre");
+  const dimEl    = document.getElementById("det-lugar-dim");
+  if (nombreEl) nombreEl.textContent = l.nombre;
+  if (dimEl)    dimEl.textContent    = l.dimensiones||"";
+  cargarAreas(id);
+  cargarPlantasLugar(id);
+};
+
+window.eliminarLugar = async (id, nombre) => {
+  if (!confirm(`¿Eliminar "${nombre}"?`)) return;
+  await deleteDoc(doc(db,"lugares",id));
+  cargarLugares(); toast("Lugar eliminado");
+};
+
+// Todos los "form-X" del sitio son <div>, no <form> reales, así que .reset() nunca
+// fue válido en ninguno. Esta función limpia a mano cualquiera de ellos.
+function resetCamposDiv(containerId) {
+  const cont = document.getElementById(containerId);
+  if (!cont) return;
+  cont.querySelectorAll("input[type='text'], input[type='number'], input[type='date'], input[type='month'], input:not([type]), textarea")
+    .forEach(el => el.value = "");
+  cont.querySelectorAll("input[type='checkbox'], input[type='radio']").forEach(el => el.checked = false);
+  cont.querySelectorAll("select").forEach(el => el.selectedIndex = 0);
+}
+function resetFormLugar() { resetCamposDiv("form-lugar"); }
+
+window.guardarLugar = async () => {
+  try {
+    const luces = [];
+    document.querySelectorAll(".luz-row").forEach(row => {
+      const tipoEl = row.querySelector(".luz-tipo");
+      const cantEl = row.querySelector(".luz-cant");
+      if (tipoEl && tipoEl.value) luces.push({ tipo: tipoEl.value, cantidad: parseInt(cantEl?.value)||1 });
+    });
+    const sensores        = Array.from(document.querySelectorAll(".chk-sensor:checked")).map(c=>c.value);
+    const switchesLuces   = Array.from(document.querySelectorAll(".chk-switch-luz:checked")).map(c=>c.value);
+    const switchesTurbinas= Array.from(document.querySelectorAll(".chk-switch-turb:checked")).map(c=>c.value);
+    const intractorEl     = document.getElementById("l-intractor");
+    const extractorEl     = document.getElementById("l-extractor");
+
+    const d = {
+      nombre:        val("l-nombre"),
+      dimensiones:   val("l-dim"),
+      luces,
+      sensoresTuya:  sensores,
+      switchLuces:   switchesLuces,
+      switchTurbinas:switchesTurbinas,
+      intractor:     intractorEl ? intractorEl.checked : false,
+      extractor:     extractorEl ? extractorEl.checked : false,
+      sensorAltura:  val("l-sensor-altura"),
+    sensorDistLuz: val("l-sensor-distluz"),
+    sensorPos:     val("l-sensor-pos"),
+    notas:         val("l-notas"),
+      creadoEn:      serverTimestamp(),
+    };
+    if (!d.nombre) { toast("Ingresá un nombre","err"); return; }
+    await addDoc(collection(db,"lugares"), d);
+    cerrarModal("modal-lugar");
+    resetFormLugar();
+    document.getElementById("luces-rows").innerHTML = luzRowHTML();
+    cargarLugares();
+    toast("Lugar guardado ✓");
+  } catch(err) {
+    console.error("guardarLugar error:", err);
+    toast("Error: " + err.message, "err");
+  }
+};
+
+function luzRowHTML() {
+  return `<div class="luz-row">
+    <select class="luz-tipo" style="flex:1;background:#0d1a0f;border:1px solid var(--border);color:var(--text);padding:8px;border-radius:6px;font-size:.85rem">
+      <option value="">— Seleccionar luz —</option>
+      ${LUCES_LISTA.map(l=>`<option value="${l}">${l}</option>`).join("")}
+    </select>
+    <input class="luz-cant" type="number" min="1" value="1" style="width:60px;background:#0d1a0f;border:1px solid var(--border);color:var(--text);padding:8px;border-radius:6px;font-size:.85rem">
+    <button type="button" class="btn-icon" onclick="this.parentElement.remove()">🗑</button>
+  </div>`;
+}
+window.agregarLuzRow = () => {
+  document.getElementById("luces-rows").insertAdjacentHTML("beforeend", luzRowHTML());
+};
+
+// ════════════════════════════════════════════════════════════════════════════
+// ÁREAS
+// ════════════════════════════════════════════════════════════════════════════
+async function cargarAreas(lugarId) {
+  const lista = document.getElementById("lista-areas");
+  lista.innerHTML = '<p class="cargando">Cargando...</p>';
+  const snap = await getDocs(collection(db,"lugares",lugarId,"areas"));
+  lista.innerHTML = "";
+  if (snap.empty) { lista.innerHTML = '<p class="empty">Sin áreas. Creá una.</p>'; return; }
+  snap.forEach(d => {
+    const a = d.data();
+    const div = document.createElement("div");
+    div.className = "area-card" + (areaActiva===d.id?" activa":"");
+    div.innerHTML = `
+      <div class="area-header">
+        <span class="area-nombre">${a.nombre}</span>
+        <span class="area-dim">${a.dimensiones||""}</span>
+      </div>
+      <div class="lugar-meta"><span>💡 ${(a.luces||[]).map(l=>`${l.cantidad}× ${l.tipo}`).join(", ")||"Sin luces"}</span></div>
+      <div class="cult-actions">
+        <button class="btn-sm btn-primary" onclick="seleccionarArea('${lugarId}','${d.id}')">Seleccionar</button>
+        <button class="btn-sm btn-danger"  onclick="eliminarArea('${lugarId}','${d.id}','${a.nombre}')">Eliminar</button>
+      </div>`;
+    lista.appendChild(div);
+  });
+}
+
+window.seleccionarArea = (lugarId, areaId) => {
+  lugarActivo = lugarId; areaActiva = areaId;
+  document.querySelectorAll(".area-card").forEach(c=>c.classList.remove("activa"));
+  event.target.closest(".area-card").classList.add("activa");
+  toast("Área seleccionada — ahora podés agregar plantas");
+};
+
+window.eliminarArea = async (lugarId, areaId, nombre) => {
+  if (!confirm(`¿Eliminar área "${nombre}"?`)) return;
+  await deleteDoc(doc(db,"lugares",lugarId,"areas",areaId));
+  cargarAreas(lugarId); toast("Área eliminada");
+};
+
+window.guardarArea = async () => {
+  if (!lugarActivo) { toast("Seleccioná un lugar primero","err"); return; }
+  const luces = [];
+  document.querySelectorAll(".luz-row-area").forEach(row => {
+    const tipo = row.querySelector(".luz-tipo-area").value;
+    const cant = parseInt(row.querySelector(".luz-cant-area").value)||1;
+    if (tipo) luces.push({ tipo, cantidad: cant });
+  });
+  const d = {
+    nombre:      val("a-nombre"),
+    dimensiones: val("a-dim"),
+    luces,
+    notas:       val("a-notas"),
+    creadoEn:    serverTimestamp(),
+  };
+  if (!d.nombre) { toast("Ingresá un nombre","err"); return; }
+  await addDoc(collection(db,"lugares",lugarActivo,"areas"), d);
+  cerrarModal("modal-area");
+  resetCamposDiv("form-area");
+  document.getElementById("luces-rows-area").innerHTML = luzRowAreaHTML();
+  cargarAreas(lugarActivo);
+  toast("Área guardada ✓");
+};
+
+function luzRowAreaHTML() {
+  return `<div class="luz-row-area" style="display:flex;gap:8px;margin-bottom:8px;align-items:center">
+    <select class="luz-tipo-area" style="flex:1;background:#0d1a0f;border:1px solid var(--border);color:var(--text);padding:8px;border-radius:6px;font-size:.85rem">
+      <option value="">— Seleccionar luz —</option>
+      ${LUCES_LISTA.map(l=>`<option value="${l}">${l}</option>`).join("")}
+    </select>
+    <input class="luz-cant-area" type="number" min="1" value="1" style="width:60px;background:#0d1a0f;border:1px solid var(--border);color:var(--text);padding:8px;border-radius:6px;font-size:.85rem">
+    <button type="button" class="btn-icon" onclick="this.parentElement.remove()">🗑</button>
+  </div>`;
+}
+window.agregarLuzRowArea = () => {
+  document.getElementById("luces-rows-area").insertAdjacentHTML("beforeend", luzRowAreaHTML());
+};
+
+// ════════════════════════════════════════════════════════════════════════════
+// PLANTAS
+// ════════════════════════════════════════════════════════════════════════════
+async function cargarPlantasLugar(lugarId) {
+  const lista = document.getElementById("lista-plantas-lugar");
+  lista.innerHTML = '<p class="cargando">Cargando...</p>';
+  const snap = await getDocs(query(collection(db,"plantas"), orderBy("creadoEn","desc")));
+  lista.innerHTML = "";
+  let count = 0;
+  snap.forEach(d => {
+    const p = d.data();
+    if (p.lugarId !== lugarId) return;
+    count++;
+    const card = document.createElement("div");
+    card.className = "planta-card" + (plantaActiva===d.id?" activa":"");
+    card.innerHTML = `
+      <div class="cult-header">
+        <span class="cult-nombre">${p.nombre}</span>
+        <span class="cult-fase fase-${p.fase}">${p.fase}</span>
+      </div>
+      <div class="cult-meta">
+        <span>🧬 ${p.genetica}</span>
+        <span>📅 Día ${dias(p.fechaInicio)}</span>
+        ${p.alturaPlantin ? `<span>📏 ${p.alturaPlantin} cm</span>` : ""}
+      </div>
+      <div class="cult-meta">
+        <span>🪴 ${p.tipoOrigen==="semilla"?"Semilla":"Esqueje"}</span>
+        <span>🌱 ${p.substrato}</span>
+        <span>📦 ${p.tamMaceta}L</span>
+      </div>
+      ${p.areaId ? `<div class="cult-meta"><span>📍 ${p.areaNombre||"Área asignada"}</span></div>`:""}
+      <div class="cult-actions">
+        <button class="btn-sm btn-primary" onclick="verPlanta('${d.id}')">Ver detalle</button>
+        <button class="btn-sm btn-danger"  onclick="eliminarPlanta('${d.id}','${p.nombre}')">Eliminar</button>
+      </div>`;
+    lista.appendChild(card);
+  });
+  if (!count) lista.innerHTML = '<p class="empty">Sin plantas en este lugar.</p>';
+}
+
+window.verPlanta = async (id) => {
+  plantaActiva = id;
+  const snap = await getDoc(doc(db,"plantas",id));
+  const p = snap.data();
+  window._plantaFaseActual = p.fase || "vegetativa";
+  document.getElementById("det-nombre").textContent   = p.nombre;
+  document.getElementById("det-genetica").textContent = p.genetica;
+  document.getElementById("det-fase").textContent     = p.fase;
+  document.getElementById("det-origen").textContent   = p.tipoOrigen==="semilla"?"Semilla":"Esqueje";
+  document.getElementById("det-inicio").textContent   = fmt(p.fechaInicio);
+  document.getElementById("det-dia").textContent      = `Día ${dias(p.fechaInicio)}`;
+  document.getElementById("det-substrato").textContent= p.substrato;
+  document.getElementById("det-maceta").textContent   = p.tamMaceta+"L";
+  document.getElementById("det-riego").textContent    = p.sistemaRiego||"—";
+  document.getElementById("det-altura").textContent   = p.alturaPlantin ? p.alturaPlantin+" cm" : "—";
+  document.getElementById("det-notas").textContent    = p.notas||"Sin notas";
+  show("vista-planta");
+  cargarMediciones(); cargarEventos(); cargarNutricion();
+};
+
+window.eliminarPlanta = async (id, nombre) => {
+  if (!confirm(`¿Eliminar "${nombre}"?`)) return;
+  await deleteDoc(doc(db,"plantas",id));
+  if (plantaActiva===id) { plantaActiva=null; }
+  if (lugarActivo) cargarPlantasLugar(lugarActivo);
+  toast("Planta eliminada");
+};
+
+window.guardarPlanta = async () => {
+  // Obtener nombre del área si hay una seleccionada
+  let areaNombre = "";
+  if (lugarActivo && areaActiva) {
+    const aSnap = await getDoc(doc(db,"lugares",lugarActivo,"areas",areaActiva));
+    if (aSnap.exists()) areaNombre = aSnap.data().nombre;
+  }
+  const d = {
+    nombre:       val("p-nombre"),
+    genetica:     val("p-genetica"),
+    tipoOrigen:   val("p-origen"),
+    fechaInicio:  new Date(val("p-fecha")+"T00:00:00"),
+    fase:         val("p-fase"),
+    substrato:    val("p-substrato"),
+    tamMaceta:    val("p-maceta"),
+    sistemaRiego: val("p-riego"),
+    alturaPlantin:val("p-altura"),
+    notas:        val("p-notas"),
+    lugarId:      lugarActivo||"",
+    areaId:       areaActiva||"",
+    areaNombre,
+    creadoEn:     serverTimestamp(),
+  };
+  if (!d.nombre||!d.genetica) { toast("Completá nombre y genética","err"); return; }
+  if (!d.lugarId) { toast("Seleccioná un lugar primero","err"); return; }
+  await addDoc(collection(db,"plantas"), d);
+  cerrarModal("modal-planta");
+  resetCamposDiv("form-planta");
+  if (lugarActivo) cargarPlantasLugar(lugarActivo);
+  toast("Planta registrada ✓");
+};
+
+// ════════════════════════════════════════════════════════════════════════════
+// MEDICIONES
+// ════════════════════════════════════════════════════════════════════════════
+async function cargarMediciones() {
+  if (!plantaActiva) return;
+  const lista = document.getElementById("lista-mediciones");
+  lista.innerHTML = '<p class="cargando">Cargando...</p>';
+  const dias   = parseInt(document.getElementById("med-periodo")?.value ?? "30");
+  let   q      = query(collection(db,"plantas",plantaActiva,"mediciones"),orderBy("fecha","desc"));
+  if (dias > 0) {
+    const desde = new Date(Date.now() - dias * 86400000);
+    q = query(collection(db,"plantas",plantaActiva,"mediciones"), orderBy("fecha","desc"),
+              where("fecha",">=", desde));
+  }
+  const snap = await getDocs(q);
+  lista.innerHTML = "";
+  const resumenEl = document.getElementById("med-resumen");
+  if (snap.empty) {
+    lista.innerHTML = '<p class="empty">Sin mediciones en este período.</p>';
+    if (resumenEl) resumenEl.textContent = "";
+    return;
+  }
+  // Calcular estadísticas del período
+  let sumTemp=0,sumHum=0,sumPh=0,sumEc=0,nTemp=0,nHum=0,nPh=0,nEc=0;
+  let minTemp=Infinity,maxTemp=-Infinity;
+  snap.forEach(d => {
+    const m = d.data();
+    if (m.tempAmb!=null){sumTemp+=m.tempAmb;nTemp++;if(m.tempAmb<minTemp)minTemp=m.tempAmb;if(m.tempAmb>maxTemp)maxTemp=m.tempAmb;}
+    if (m.humedad!=null){sumHum+=m.humedad;nHum++;}
+    if (m.ph!=null){sumPh+=m.ph;nPh++;}
+    if (m.ec!=null){sumEc+=m.ec;nEc++;}
+  });
+  if (resumenEl && nTemp>0) {
+    resumenEl.textContent = `${snap.size} registros · T: ${minTemp.toFixed(1)}–${maxTemp.toFixed(1)}°C · HR prom: ${nHum>0?(sumHum/nHum).toFixed(0):"—"}% · pH prom: ${nPh>0?(sumPh/nPh).toFixed(2):"—"} · EC prom: ${nEc>0?(sumEc/nEc).toFixed(2):"—"}`;
+  } else if (resumenEl) {
+    resumenEl.textContent = `${snap.size} registros`;
+  }
+  snap.forEach(d => {
+    const m = d.data();
+    const row = document.createElement("div");
+    row.className = "med-row";
+    // Obtener fase de la planta activa para semáforo
+    const faseActual = window._plantaFaseActual || "vegetativa";
+    const rangos = RANGOS_AGRONOMICOS[faseActual] || RANGOS_AGRONOMICOS.vegetativa;
+    const sPh   = semaforoValor(m.ph,       rangos.ph);
+    const sEc   = semaforoValor(m.ec,       rangos.ec);
+    const sTemp = semaforoValor(m.tempAmb,  rangos.tempAmb);
+    const sTmac = semaforoValor(m.tempMaceta, rangos.tempMaceta);
+    const sCo2  = semaforoValor(m.co2,     rangos.co2);
+    const vpdF  = vpdFoliar(m.tempAmb, m.humedad, m.luz);
+    const luzOn = m.luzEncendida ?? null;
+    const luzIcon = luzOn === true ? "💡" : luzOn === false ? "🌑" : "";
+    const isMobile = window.innerWidth <= 600;
+    if (isMobile) {
+      row.className = "med-card";
+      row.innerHTML =
+        `<div class="med-card-header">` +
+          `<span class="med-card-fecha">${fmt(m.fecha)} ${luzIcon}</span>` +
+          `<div style="display:flex;gap:4px">` +
+            (sTemp.icono ? `<span class="med-badge ${sTemp.clase}">${sTemp.icono}T°</span>` : "") +
+            (sPh.icono   ? `<span class="med-badge ${sPh.clase}">${sPh.icono}pH</span>`   : "") +
+            (sEc.icono   ? `<span class="med-badge ${sEc.clase}">${sEc.icono}EC</span>`   : "") +
+          `</div>` +
+        `</div>` +
+        `<div class="med-card-grid">` +
+          `<div class="mci ${sTemp.clase}"><span class="mci-l">T° amb</span><b>${m.tempAmb!=null?m.tempAmb.toFixed(1)+"°":"—"}</b></div>` +
+          `<div class="mci ${sTmac.clase}"><span class="mci-l">T° mac</span><b>${m.tempMaceta!=null?m.tempMaceta.toFixed(1)+"°":"—"}</b></div>` +
+          `<div class="mci"><span class="mci-l">HR</span><b>${m.humedad!=null?m.humedad.toFixed(0)+"%":"—"}</b></div>` +
+          `<div class="mci ${sPh.clase}"><span class="mci-l">pH</span><b>${m.ph!=null?m.ph.toFixed(2):"—"}</b></div>` +
+          `<div class="mci ${sEc.clase}"><span class="mci-l">EC</span><b>${m.ec!=null?m.ec.toFixed(2):"—"}</b></div>` +
+          `<div class="mci ${sCo2.clase}"><span class="mci-l">CO₂</span><b>${m.co2!=null?m.co2:"—"}</b></div>` +
+          `<div class="mci"><span class="mci-l">VPD🌿</span><b>${vpdF!=null?vpdF:"—"}</b></div>` +
+          `<div class="mci"><span class="mci-l">Lux</span><b>${m.luz!=null?m.luz:"—"}</b></div>` +
+        `</div>` +
+        (m.notas ? `<div class="med-card-notas">${m.notas}</div>` : "") +
+        `<div style="text-align:right"><button class="btn-icon" onclick="eliminarMedicion('${d.id}')">🗑</button></div>`;
+    } else {
+      row.className = "med-row";
+      row.innerHTML =
+        `<span class="med-fecha">${fmt(m.fecha)}${luzIcon?"<br><small>"+luzIcon+"</small>":""}</span>` +
+        `<span class="med-val ${sTemp.clase}">${sTemp.icono} ${m.tempAmb??'—'}<small>°C</small></span>` +
+        `<span class="med-val ${sTmac.clase}">${sTmac.icono} ${m.tempMaceta??'—'}<small>°C🪴</small></span>` +
+        `<span class="med-val">💧 ${m.humedad??'—'}<small>%</small></span>` +
+        `<span class="med-val ${sPh.clase}">${sPh.icono} pH ${m.ph??'—'}</span>` +
+        `<span class="med-val ${sEc.clase}">${sEc.icono} ${m.ec??'—'}<small>EC</small></span>` +
+        `<span class="med-val ${sCo2.clase}">${sCo2.icono} ${m.co2??'—'}<small>ppm</small></span>` +
+        `<span class="med-val">${vpdF??'—'}<small>kPa🌿</small></span>` +
+        `<button class="btn-icon" onclick="eliminarMedicion('${d.id}')">🗑</button>`;
+    }
+    lista.appendChild(row);
+  });
+}
+window.guardarMedicion = async () => {
+  if (!plantaActiva) { toast("Seleccioná una planta primero","err"); return; }
+  // Detectar estado de luces al momento de registrar (desde cache Tuya)
+  const lugarDePlanta = window._lugarPorPlanta?.[plantaActiva] || null;
+  const estadoLuces   = window._estadoSwitches?.luces_carpa ?? window._estadoSwitches?.luces_3x1 ?? null;
+  const d = {
+    fecha:        new Date(val("m-fecha")+"T"+(val("m-hora")||"12:00")+":00"),
+    tempAmb:      parseFloat(val("m-tempamb"))||null,
+    tempMaceta:   parseFloat(val("m-tempmac"))||null,
+    humedad:      parseFloat(val("m-humedad"))||null,
+    ph:           parseFloat(val("m-ph"))||null,
+    ec:           parseFloat(val("m-ec"))||null,
+    tdsAgua:      parseFloat(val("m-tds"))||null,
+    luz:          parseFloat(val("m-luz"))||null,
+    co2:          parseFloat(val("m-co2"))||null,
+    vpd:          parseFloat(val("m-vpd"))||null,
+    tempFoliar:   parseFloat(val("m-tempfoliar"))||null,
+    vpdFoliar:    parseFloat(val("m-vpdfoliar"))||null,
+    // Agua de entrada
+    phEntrada:    parseFloat(val("m-ph"))||null,
+    ecEntrada:    parseFloat(val("m-ec"))||null,
+    volRiego:     parseFloat(val("m-volriego"))||null,
+    // Lixiviado / run-off
+    phLixiviado:  parseFloat(val("m-ph-lix"))||null,
+    ecLixiviado:  parseFloat(val("m-ec-lix"))||null,
+    volLixiviado: parseFloat(val("m-vollix"))||null,
+    // Delta EC y run-off calculados
+    deltaEC: (() => {
+      const ein = parseFloat(val("m-ec")); const elix = parseFloat(val("m-ec-lix"));
+      return (ein && elix) ? +(elix - ein).toFixed(2) : null;
+    })(),
+    runOff: (() => {
+      const vr = parseFloat(val("m-volriego")); const vl = parseFloat(val("m-vollix"));
+      return (vr && vl && vr > 0) ? +((vl/vr)*100).toFixed(1) : null;
+    })(),
+    luzEncendida: estadoLuces,   // true/false/null — período día o noche
+    notas:        val("m-notas"),
+    creadoEn:     serverTimestamp(),
+  };
+  await addDoc(collection(db,"plantas",plantaActiva,"mediciones"),d);
+  cerrarModal("modal-medicion");
+  resetCamposDiv("form-medicion");
+  cargarMediciones(); toast("Medición guardada ✓");
+};
+window.eliminarMedicion = async (id) => {
+  if (!confirm("¿Eliminar medición?")) return;
+  await deleteDoc(doc(db,"plantas",plantaActiva,"mediciones",id));
+  cargarMediciones(); toast("Eliminada");
+};
+
+// ════════════════════════════════════════════════════════════════════════════
+// EVENTOS
+// ════════════════════════════════════════════════════════════════════════════
+async function cargarEventos() {
+  if (!plantaActiva) return;
+  const lista = document.getElementById("lista-eventos");
+  lista.innerHTML = '<p class="cargando">Cargando...</p>';
+  const snap = await getDocs(query(collection(db,"plantas",plantaActiva,"eventos"),orderBy("fecha","desc")));
+  lista.innerHTML = "";
+  if (snap.empty) { lista.innerHTML = '<p class="empty">Sin eventos.</p>'; return; }
+  snap.forEach(d => {
+    const e = d.data();
+    const row = document.createElement("div");
+    row.className = `evento-row tipo-${e.tipo}`;
+    const iconos = {riego:"💧",fertilizacion:"⚗️",poda:"✂️",transplante:"🪴",cambio_fase:"🌿",cosecha:"🌾",inspeccion:"🔍",tratamiento:"💊",otro:"📌"};
+    row.innerHTML = `
+      <span class="ev-icon">${iconos[e.tipo]||"📌"}</span>
+      <div class="ev-body">
+        <strong>${e.titulo}</strong>
+        <small>${fmt(e.fecha)} ${e.hora||""}</small>
+        ${e.descripcion?`<p>${e.descripcion}</p>`:""}
+      </div>
+      <div class="ev-acciones">
+        <span>${e.realizado?"✅":"⏳"}</span>
+        <button class="btn-icon" onclick="toggleEvento('${d.id}',${!e.realizado})">${e.realizado?"↩":"✓"}</button>
+        <button class="btn-icon" onclick="eliminarEvento('${d.id}')">🗑</button>
+      </div>`;
+    lista.appendChild(row);
+  });
+}
+window.guardarEvento = async () => {
+  if (!plantaActiva) { toast("Seleccioná una planta","err"); return; }
+  const d = {
+    titulo:      val("ev-titulo"),
+    tipo:        val("ev-tipo"),
+    fecha:       new Date(val("ev-fecha")+"T00:00:00"),
+    hora:        val("ev-hora"),
+    descripcion: val("ev-desc"),
+    realizado:   false,
+    creadoEn:    serverTimestamp(),
+  };
+  if (!d.titulo) { toast("Ingresá un título","err"); return; }
+  await addDoc(collection(db,"plantas",plantaActiva,"eventos"),d);
+  cerrarModal("modal-evento");
+  resetCamposDiv("form-evento");
+  cargarEventos(); toast("Evento agendado ✓");
+};
+window.toggleEvento = async (id, estado) => {
+  await updateDoc(doc(db,"plantas",plantaActiva,"eventos",id),{realizado:estado});
+  cargarEventos();
+};
+window.eliminarEvento = async (id) => {
+  if (!confirm("¿Eliminar evento?")) return;
+  await deleteDoc(doc(db,"plantas",plantaActiva,"eventos",id));
+  cargarEventos(); toast("Eliminado");
+};
+
+// ════════════════════════════════════════════════════════════════════════════
+// NUTRICIÓN
+// ════════════════════════════════════════════════════════════════════════════
+async function cargarNutricion() {
+  if (!plantaActiva) return;
+  const lista = document.getElementById("lista-nutricion");
+  lista.innerHTML = '<p class="cargando">Cargando...</p>';
+  const snap = await getDocs(query(collection(db,"plantas",plantaActiva,"nutricion"),orderBy("semana","asc")));
+  lista.innerHTML = "";
+  if (snap.empty) { lista.innerHTML = '<p class="empty">Sin plan nutricional.</p>'; return; }
+  snap.forEach(d => {
+    const n = d.data();
+    const row = document.createElement("div");
+    row.className = "nutr-row";
+    row.innerHTML = `
+      <div class="nutr-sem">Sem ${n.semana}</div>
+      <div class="nutr-body">
+        <strong>${n.fase||""}</strong>
+        <div class="nutr-productos">
+          ${(n.productos||[]).map(p=>`<span class="nutr-tag">${p.nombre}: <b>${p.dosis}</b> ${p.unidad}</span>`).join("")}
+        </div>
+        ${n.notas?`<small>${n.notas}</small>`:""}
+      </div>
+      <button class="btn-icon" onclick="eliminarNutricion('${d.id}')">🗑</button>`;
+    lista.appendChild(row);
+  });
+}
+window.guardarNutricion = async () => {
+  if (!plantaActiva) { toast("Seleccioná una planta","err"); return; }
+  let productos = [];
+  try {
+    productos = val("nutr-productos").split("\n").filter(l=>l.trim()).map(l => {
+      const p = l.split(","); return { nombre:p[0]?.trim(), dosis:p[1]?.trim(), unidad:p[2]?.trim()||"ml/L" };
+    });
+  } catch(e){}
+  const d = {
+    semana:     parseInt(val("nutr-semana"))||1,
+    fase:       val("nutr-fase"),
+    productos,
+    phAgua:     parseFloat(val("nutr-ph"))||null,
+    ecObjetivo: parseFloat(val("nutr-ec"))||null,
+    notas:      val("nutr-notas"),
+    creadoEn:   serverTimestamp(),
+  };
+  await addDoc(collection(db,"plantas",plantaActiva,"nutricion"),d);
+  cerrarModal("modal-nutricion");
+  resetCamposDiv("form-nutricion");
+  cargarNutricion(); toast("Semana nutricional guardada ✓");
+};
+window.eliminarNutricion = async (id) => {
+  if (!confirm("¿Eliminar?")) return;
+  await deleteDoc(doc(db,"plantas",plantaActiva,"nutricion",id));
+  cargarNutricion();
+};
+
+// ════════════════════════════════════════════════════════════════════════════
+// INASE
+// ════════════════════════════════════════════════════════════════════════════
+async function cargarInase() {
+  if (!plantaActiva) return;
+  const lista = document.getElementById("lista-inase");
+  lista.innerHTML = '<p class="cargando">Cargando...</p>';
+  const snap = await getDocs(query(collection(db,"plantas",plantaActiva,"inase"),orderBy("creadoEn","desc")));
+  lista.innerHTML = "";
+  if (snap.empty) { lista.innerHTML = '<p class="empty">Sin registros INASE.</p>'; return; }
+  snap.forEach(d => {
+    const r = d.data();
+    const row = document.createElement("div");
+    row.className = "inase-row";
+    row.innerHTML = `
+      <div class="inase-header">
+        <span class="inase-tipo">${r.tipoRegistro}</span>
+        <span class="inase-fecha">${fmt(r.fecha)}</span>
+      </div>
+      <div class="inase-body">
+        <div><b>N° INASE:</b> ${r.nroRegistro||"—"}</div>
+        <div><b>Variedad:</b> ${r.variedad||"—"}</div>
+        <div><b>Categoría:</b> ${r.categoria||"—"}</div>
+        <div><b>Proveedor:</b> ${r.proveedor||"—"}</div>
+        <div><b>N° lote:</b> ${r.nroLote||"—"}</div>
+        <div><b>Cantidad:</b> ${r.cantidad||"—"} ${r.unidadCantidad||""}</div>
+        <div><b>Superficie:</b> ${r.superficie||"—"} m²</div>
+        <div><b>Destino:</b> ${r.destino||"—"}</div>
+      </div>
+      <button class="btn-icon" onclick="eliminarInase('${d.id}')">🗑</button>`;
+    lista.appendChild(row);
+  });
+}
+window.guardarInase = async () => {
+  if (!plantaActiva) { toast("Seleccioná una planta","err"); return; }
+  const d = {
+    tipoRegistro:   val("in-tipo"),
+    fecha:          new Date(val("in-fecha")+"T00:00:00"),
+    nroRegistro:    val("in-nro"),
+    variedad:       val("in-variedad"),
+    categoria:      val("in-categoria"),
+    proveedor:      val("in-proveedor"),
+    nroLote:        val("in-lote"),
+    cantidad:       val("in-cantidad"),
+    unidadCantidad: val("in-unidad"),
+    superficie:     val("in-superficie"),
+    destino:        val("in-destino"),
+    responsable:    val("in-responsable"),
+    observaciones:  val("in-obs"),
+    creadoEn:       serverTimestamp(),
+  };
+  if (!d.tipoRegistro) { toast("Seleccioná tipo","err"); return; }
+  await addDoc(collection(db,"plantas",plantaActiva,"inase"),d);
+  cerrarModal("modal-inase");
+  resetCamposDiv("form-inase");
+  cargarInase(); toast("Registro INASE guardado ✓");
+};
+window.eliminarInase = async (id) => {
+  if (!confirm("¿Eliminar?")) return;
+  await deleteDoc(doc(db,"plantas",plantaActiva,"inase",id));
+  cargarInase();
+};
+
+// ════════════════════════════════════════════════════════════════════════════
+// TUYA – sensores y switches
+// ════════════════════════════════════════════════════════════════════════════
+const TEMP_CODES = new Set(["va_temperature","temp_current","temperature","temp_indoor"]);
+const CODIGO_MAP = {
+  va_temperature:"tempAmb", temp_current:"tempAmb", temperature:"tempAmb", temp_indoor:"tempAmb",
+  va_humidity:"humedad", humidity_value:"humedad", humidity:"humedad", hum_indoor:"humedad",
+  co2_value:"co2", co2:"co2",
+  battery_percentage:"bateria",
+};
+
+async function consultarDispositivo(deviceId) {
+  const proxy = localStorage.getItem("tuya_proxy") || PROXY_URL;
+  const resp  = await fetch(`${proxy}?device=${deviceId}`, { signal: AbortSignal.timeout(12000) });
+  if (!resp.ok) throw new Error("HTTP "+resp.status);
+  return await resp.json();
+}
+
+window.actualizarSensores = async () => {
+  document.getElementById("tuya-estado").textContent = "Actualizando...";
+  let errores = 0;
+
+  for (const [key, dev] of Object.entries(DISPOSITIVOS_TUYA)) {
+    if (dev.tipo === "switch") {
+      const el = document.getElementById("switch-estado-"+key);
+      if (!el) continue;
+      try {
+        const data = await consultarDispositivo(dev.id);
+        el.innerHTML = htmlEstadoLuz(data, key);
+      } catch (err) {
+        el.innerHTML = `<span class="clima-error">Error: ${err.message}</span>`;
+        errores++;
+      }
+      continue;
+    }
+    if (dev.tipo !== "sensor") continue;
+    const card = document.getElementById("sensor-"+key);
+    if (!card) continue;
+    try {
+      const data = await consultarDispositivo(dev.id);
+      const s    = data.sensores || {};
+      const temp = s.tempAmb ?? null;
+      const hum  = s.humedad ?? null;
+      card.querySelector(".s-temp").textContent = temp !== null ? temp.toFixed(1) : "—";
+      card.querySelector(".s-hum").textContent  = hum  !== null ? hum.toFixed(0)  : "—";
+      // Registrar timestamp de última lectura válida por lugar
+      if (!window._tsSensor) window._tsSensor = {};
+      const lugarDelSensor = dev.lugar || key;
+      if (temp !== null || hum !== null) window._tsSensor[lugarDelSensor] = Date.now();
+      // Indicador en la card del sensor
+      const tsEl = card.querySelector(".s-ts");
+      if (tsEl) tsEl.textContent = `Actualizado ${new Date().toLocaleTimeString("es-AR")}`;
+      const onlineEl = card.querySelector(".s-online");
+      if (onlineEl) {
+        const minOld = window._tsSensor[lugarDelSensor]
+          ? Math.round((Date.now()-window._tsSensor[lugarDelSensor])/60000) : null;
+        onlineEl.innerHTML = data.online !== false
+          ? `<span class="dato-fresco">● en vivo</span>`
+          : `<span class="dato-viejo">⚠ sin conexión</span>`;
+      }
+      const onlineEl = card.querySelector(".s-online");
+      if (onlineEl) onlineEl.innerHTML = data.online ? `<span class="luz-on">🟢 En línea</span>` : `<span class="luz-offline">📴 Fuera de línea</span>`;
+      if (temp !== null && hum !== null) {
+        const svp = 0.6108 * Math.exp((17.27*temp)/(temp+237.3));
+        const vpd = (svp*(1-hum/100)).toFixed(2);
+        card.querySelector(".s-vpd").textContent = vpd;
+        const vpdEl = card.querySelector(".s-vpd-tag");
+        if (vpd<0.4)      { vpdEl.textContent="Muy bajo 🔵"; vpdEl.className="vpd-tag vpd-bajo"; }
+        else if (vpd<0.8) { vpdEl.textContent="Óptimo 🟢";   vpdEl.className="vpd-tag vpd-ok";  }
+        else if (vpd<1.2) { vpdEl.textContent="Bueno 🟡";    vpdEl.className="vpd-tag vpd-bien";}
+        else if (vpd<1.6) { vpdEl.textContent="Alto 🟠";     vpdEl.className="vpd-tag vpd-alto";}
+        else              { vpdEl.textContent="Crítico 🔴";   vpdEl.className="vpd-tag vpd-crit";}
+      }
+      // Alertas
+      const alertas = [];
+      if (temp!==null&&temp>28) alertas.push("🌡️ Temp alta");
+      if (temp!==null&&temp<16) alertas.push("🌡️ Temp baja");
+      if (hum!==null&&hum>70)   alertas.push("💧 Humedad alta");
+      if (hum!==null&&hum<40)   alertas.push("💧 Humedad baja");
+      card.querySelector(".s-alertas").innerHTML = alertas.length
+        ? alertas.map(a=>`<span class="alerta-tag">${a}</span>`).join("")
+        : '<span class="alerta-ok">✅ Rango OK</span>';
+      card.querySelector(".s-ts").textContent = new Date().toLocaleTimeString("es-AR");
+    } catch(err) {
+      card.querySelector(".s-temp").textContent = "—";
+      card.querySelector(".s-hum").textContent  = "—";
+      card.querySelector(".s-ts").textContent   = "Error: "+err.message;
+      errores++;
+    }
+  }
+  document.getElementById("tuya-estado").textContent = errores ? `${errores} sensor(es) con error` : `Actualizado ${new Date().toLocaleTimeString("es-AR")}`;
+};
+
+window.iniciarAutoRefresh = () => {
+  const mins = parseInt(document.getElementById("tuya-refresh").value)||5;
+  if (tuyaTimer) clearInterval(tuyaTimer);
+  tuyaTimer = setInterval(actualizarSensores, mins*60*1000);
+  actualizarSensores();
+  toast(`Auto cada ${mins} min ✓`);
+};
+window.detenerAutoRefresh = () => {
+  if (tuyaTimer) { clearInterval(tuyaTimer); tuyaTimer=null; }
+  toast("Auto-refresh detenido");
+};
+
+window.importarDesde = (key) => {
+  const card = document.getElementById("sensor-"+key);
+  if (!card) return;
+  const temp = card.querySelector(".s-temp").textContent;
+  const hum  = card.querySelector(".s-hum").textContent;
+  if (temp==="—"&&hum==="—") { toast("Sin datos del sensor","err"); return; }
+  if (!plantaActiva) { toast("Seleccioná una planta primero","err"); return; }
+  if (temp!=="—") document.getElementById("m-tempamb").value = temp;
+  if (hum !=="—") document.getElementById("m-humedad").value = hum;
+  document.getElementById("m-fecha").value = new Date().toISOString().split("T")[0];
+  document.getElementById("m-hora").value  = new Date().toTimeString().slice(0,5);
+  abrirModal("modal-medicion");
+  toast("Datos importados a medición");
+};
+
+// ─── INIT ─────────────────────────────────────────────────────────────────
+window.addEventListener("DOMContentLoaded", () => {
+  cargarCatalogoDispositivos().finally(() => cargarLugares());
+  localStorage.setItem("tuya_proxy", PROXY_URL);
+
+  const hoy = new Date().toISOString().split("T")[0];
+  ["p-fecha","m-fecha","ev-fecha","evg-fecha","cf-fecha","ft-fecha","in-fecha"].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = hoy;
+  });
+  document.getElementById("m-hora").value = new Date().toTimeString().slice(0,5);
+
+  // Auto-calcular delta EC y run-off
+  ["m-ec","m-ec-lix","m-volriego","m-vollix"].forEach(id => {
+    document.getElementById(id)?.addEventListener("input", () => {
+      const ein  = parseFloat(document.getElementById("m-ec")?.value);
+      const elix = parseFloat(document.getElementById("m-ec-lix")?.value);
+      const vr   = parseFloat(document.getElementById("m-volriego")?.value);
+      const vl   = parseFloat(document.getElementById("m-vollix")?.value);
+      const deltaEl = document.getElementById("m-delta-ec");
+      if (!deltaEl) return;
+      const parts = [];
+      if (!isNaN(ein) && !isNaN(elix)) {
+        const delta = (elix - ein).toFixed(2);
+        const clase = elix > ein + 0.5 ? "val-critico" : elix > ein + 0.2 ? "val-alerta" : "val-optimo";
+        parts.push(`<span class="${clase}">ΔEC: ${delta > 0 ? "+" : ""}${delta} mS/cm ${elix > ein + 0.3 ? "⚠ acumulación de sales" : elix < ein - 0.3 ? "✓ consumo normal" : ""}</span>`);
+      }
+      if (!isNaN(vr) && !isNaN(vl) && vr > 0) {
+        const pct = ((vl/vr)*100).toFixed(1);
+        const claseRo = pct < 10 ? "val-alerta" : pct > 30 ? "val-alerta" : "val-optimo";
+        parts.push(`<span class="${claseRo}">Run-off: ${pct}% ${pct < 10 ? "(insuficiente)" : pct > 30 ? "(excesivo)" : "(óptimo 10–30%)"}</span>`);
+      }
+      deltaEl.innerHTML = parts.join(" · ");
+    });
+  });
+
+  // Auto-calcular VPD foliar
+  ["m-tempfoliar","m-humedad","m-luz"].forEach(id => {
+    document.getElementById(id)?.addEventListener("input", () => {
+      const tf  = parseFloat(document.getElementById("m-tempfoliar")?.value);
+      const rh  = parseFloat(document.getElementById("m-humedad")?.value);
+      const lux = parseFloat(document.getElementById("m-luz")?.value) || 0;
+      if (!isNaN(tf) && !isNaN(rh)) {
+        const svp   = 0.6108 * Math.exp((17.27*tf)/(tf+237.3));
+        const vpdF  = +(svp*(1-rh/100)).toFixed(2);
+        const el    = document.getElementById("m-vpdfoliar");
+        if (el) el.value = vpdF;
+      }
+    });
+  });
+
+  // Verificar frescura de sensores cada 5 min
+  setInterval(verificarFrescuraSensores, 5 * 60 * 1000);
+
+  // Precargar eventos recientes de todas las plantas para markers en gráficos
+  window._eventosLugar = {};
+  async function cargarEventosParaGraficos() {
+    try {
+      const lugaresSnap = await getDocs(collection(db,"lugares"));
+      for (const ld of lugaresSnap.docs) {
+        const plantasSnap = await getDocs(query(collection(db,"plantas"),where("lugarId","==",ld.id)));
+        const evs = [];
+        for (const pd of plantasSnap.docs) {
+          const hace7 = new Date(Date.now() - 7*86400000);
+          const evSnap = await getDocs(query(
+            collection(db,"plantas",pd.id,"eventos"),
+            where("fecha",">=",hace7), orderBy("fecha","asc")
+          ));
+          evSnap.forEach(d => evs.push({...d.data(), plantaNombre: pd.data().nombre}));
+        }
+        window._eventosLugar[ld.id] = evs;
+      }
+    } catch(e) { console.warn("cargarEventosParaGraficos:", e.message); }
+  }
+  cargarEventosParaGraficos();
+
+  // Tabs planta
+  document.querySelectorAll(".tab-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const tab = btn.dataset.tab;
+      document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("activo"));
+      document.querySelectorAll(".tab-panel").forEach(p=>p.classList.remove("activo"));
+      btn.classList.add("activo");
+      document.getElementById("tab-"+tab).classList.add("activo");
+      if (tab==="inase") cargarInase();
+      if (tab==="fases") cargarHistorialFases();
+      if (tab==="fitosanitario") cargarFitosanitario();
+    });
+  });
+
+  // Iniciar sensores al cargar vista Tuya
+  document.querySelectorAll('[data-vista="vista-tuya"]')?.forEach(b => {
+    b.addEventListener("click", () => setTimeout(actualizarSensores, 300));
+  });
+});
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // PANEL DE CONTROL
+  // ═══════════════════════════════════════════════════════════════════════════
+  let _panelPlantas = [];
+
+  window.cargarPanelControl = async () => {
+    const grid = document.getElementById("panel-grid");
+    if (!grid) return;
+    grid.innerHTML = '<p class="cargando">Cargando plantas...</p>';
+    try {
+      const snap = await getDocs(query(collection(db,"plantas"), orderBy("creadoEn","desc")));
+      if (snap.empty) { grid.innerHTML = '<p class="empty">No hay plantas registradas.</p>'; return; }
+
+      const lugaresSnap = await getDocs(collection(db,"lugares"));
+      const lugaresMap  = {};
+      lugaresSnap.forEach(d => lugaresMap[d.id] = { ...d.data(), id: d.id });
+      const estadoTodos = await obtenerEstadoTodos();
+
+      // Batch: leer última medición y próximo evento de todas las plantas en paralelo
+      // pero limitado a lotes de 5 para no saturar Firestore
+      const BATCH_SIZE = 5;
+      const todasPlantas = snap.docs;
+      const plantas = [];
+      for (let i = 0; i < todasPlantas.length; i += BATCH_SIZE) {
+        const lote = todasPlantas.slice(i, i + BATCH_SIZE);
+        const resultados = await Promise.all(lote.map(async (pd) => {
+          const p     = pd.data();
+          const lugar = lugaresMap[p.lugarId] || {};
+          let ultimaMed = null, proximoEvento = null;
+          try {
+            const ms = await getDocs(query(
+              collection(db,"plantas",pd.id,"mediciones"),
+              orderBy("fecha","desc")
+            ));
+            if (!ms.empty) ultimaMed = ms.docs[0].data();
+          } catch(e){}
+          try {
+            const es = await getDocs(query(
+              collection(db,"plantas",pd.id,"eventos"),
+              where("realizado","==",false), orderBy("fecha","asc")
+            ));
+            if (!es.empty) proximoEvento = es.docs[0].data();
+          } catch(e){}
+          const sensorKey  = (lugar.sensoresTuya||[])[0];
+          const sensorData = sensorKey ? estadoTodos[sensorKey] : null;
+          return { id:pd.id, nombre:p.nombre, genetica:p.genetica, fase:p.fase,
+                   fechaInicio:p.fechaInicio, lugarNombre:lugar.nombre||"—",
+                   areaNombre:p.areaNombre||"", ultimaMed, proximoEvento,
+                   sensorData, alturaPlantin:p.alturaPlantin };
+        }));
+        plantas.push(...resultados);
+        // Actualizar grid progresivamente
+        _panelPlantas = plantas;
+        renderPanelGrid(plantas);
+      }
+      _panelPlantas = plantas;
+      renderPanelGrid(plantas);
+    } catch(err) {
+      document.getElementById("panel-grid").innerHTML = `<p class="empty">Error: ${err.message}</p>`;
+    }
+  };
+
+  function renderPanelGrid(plantas) {
+    const grid = document.getElementById("panel-grid");
+    if (!grid) return;
+    if (!plantas.length) { grid.innerHTML = '<p class="empty">Sin plantas para mostrar.</p>'; return; }
+    grid.innerHTML = plantas.map(p => htmlPanelCard(p)).join("");
+  }
+
+  function htmlPanelCard(p) {
+    const dias   = diasDesde(p.fechaInicio);
+    const m      = p.ultimaMed;
+    const s      = p.sensorData?.sensores || {};
+    const rangos = RANGOS_AGRONOMICOS[p.fase] || RANGOS_AGRONOMICOS.vegetativa;
+    const sPh    = m?.ph     != null ? semaforoValor(m.ph,    rangos.ph)     : null;
+    const sEc    = m?.ec     != null ? semaforoValor(m.ec,    rangos.ec)     : null;
+    const sTemp  = s.tempAmb != null ? semaforoValor(s.tempAmb, rangos.tempAmb) : null;
+    const alertas = [];
+    if (sTemp?.clase==="val-critico") alertas.push("🌡️ Temp crítica");
+    if (sPh?.clase  ==="val-critico") alertas.push("⚗️ pH crítico");
+    if (sEc?.clase  ==="val-critico") alertas.push("🔋 EC crítico");
+    if (s.humedad!=null && s.humedad>70) alertas.push("💧 HR alta");
+    const alertaHTML = alertas.length
+      ? `<div class="pc-alertas">${alertas.map(a=>`<span class="pc-alerta">${a}</span>`).join("")}</div>` : "";
+    const evHTML = p.proximoEvento
+      ? `<div class="pc-evento">📅 ${p.proximoEvento.titulo} · ${fmt(p.proximoEvento.fecha)}</div>` : "";
+    const diasMed = m?.fecha
+      ? Math.floor((Date.now()-(m.fecha.toDate?.()??new Date(m.fecha)).getTime())/86400000) : null;
+    const medFrescura = diasMed===0 ? `<span class="dato-fresco">● hoy</span>`
+      : diasMed===1 ? `<span class="dato-viejo">ayer</span>`
+      : diasMed!=null ? `<span class="dato-viejo">hace ${diasMed}d</span>`
+      : `<span class="dato-viejo sin-dato">sin medir</span>`;
+    return `
+    <div class="pc-card fase-borde-${p.fase}" data-fase="${p.fase}" data-alertas="${alertas.length}" onclick="verPlanta('${p.id}')">
+      <div class="pc-header">
+        <div>
+          <div class="pc-nombre">${p.nombre}</div>
+          <div class="pc-genetica">${p.genetica}</div>
+        </div>
+        <div class="pc-dia">
+          <span class="pc-dia-num">D${dias}</span>
+          <span class="cult-fase fase-${p.fase}">${FASE_LABEL[p.fase]||p.fase}</span>
+        </div>
+      </div>
+      <div class="pc-ubicacion">📍 ${p.lugarNombre}${p.areaNombre?" · "+p.areaNombre:""}</div>
+      ${alertaHTML}
+      <div class="pc-datos">
+        <div class="pc-dato"><span class="pc-d-label">T° amb</span><span class="pc-d-val ${sTemp?.clase||""}">${s.tempAmb!=null?s.tempAmb.toFixed(1)+"°":"—"}</span></div>
+        <div class="pc-dato"><span class="pc-d-label">HR</span><span class="pc-d-val">${s.humedad!=null?s.humedad.toFixed(0)+"%":"—"}</span></div>
+        <div class="pc-dato"><span class="pc-d-label">pH</span><span class="pc-d-val ${sPh?.clase||""}">${m?.ph!=null?m.ph.toFixed(2):"—"}</span></div>
+        <div class="pc-dato"><span class="pc-d-label">EC</span><span class="pc-d-val ${sEc?.clase||""}">${m?.ec!=null?m.ec.toFixed(2):"—"}</span></div>
+        <div class="pc-dato"><span class="pc-d-label">Ult. med</span><span class="pc-d-val">${medFrescura}</span></div>
+        <div class="pc-dato"><span class="pc-d-label">Altura</span><span class="pc-d-val">${p.alturaPlantin?p.alturaPlantin+"cm":"—"}</span></div>
+      </div>
+      ${evHTML}
+    </div>`;
+  }
+
+  window.filtrarPanel = (filtro, btn) => {
+    document.querySelectorAll(".panel-filtro").forEach(b => b.classList.remove("activo"));
+    btn.classList.add("activo");
+    let filtradas = _panelPlantas;
+    if (filtro==="vegetativa") filtradas = _panelPlantas.filter(p=>p.fase==="vegetativa");
+    else if (filtro==="floracion") filtradas = _panelPlantas.filter(p=>p.fase==="floracion");
+    else if (filtro==="alerta") filtradas = _panelPlantas.filter(p=>{
+      const m=p.ultimaMed; const s=p.sensorData?.sensores||{};
+      const r=RANGOS_AGRONOMICOS[p.fase]||RANGOS_AGRONOMICOS.vegetativa;
+      return (m?.ph&&semaforoValor(m.ph,r.ph).clase==="val-critico")||
+             (m?.ec&&semaforoValor(m.ec,r.ec).clase==="val-critico")||
+             (s.tempAmb&&semaforoValor(s.tempAmb,r.tempAmb).clase==="val-critico")||
+             (s.humedad&&s.humedad>70);
+    });
+    renderPanelGrid(filtradas);
+  };
+
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // EVENTO GLOBAL POR LUGAR
+  // ═══════════════════════════════════════════════════════════════════════════
+  window.guardarEventoGlobal = async () => {
+    if (!lugarActivo) { toast("Sin lugar activo","err"); return; }
+    const titulo = val("evg-titulo");
+    if (!titulo) { toast("Ingresá un título","err"); return; }
+    const ev = {
+      titulo,
+      tipo:        val("evg-tipo"),
+      fecha:       new Date(val("evg-fecha")+"T00:00:00"),
+      hora:        val("evg-hora"),
+      descripcion: val("evg-desc"),
+      realizado:   false,
+      global:      true,
+      creadoEn:    serverTimestamp(),
+    };
+    // Traer todas las plantas del lugar
+    const snap = await getDocs(query(collection(db,"plantas"), where("lugarId","==",lugarActivo)));
+    if (snap.empty) { toast("No hay plantas en este lugar","err"); return; }
+    let count = 0;
+    await Promise.all(snap.docs.map(async (pd) => {
+      await addDoc(collection(db,"plantas",pd.id,"eventos"), ev);
+      count++;
+    }));
+    cerrarModal("modal-evento-global");
+    resetCamposDiv("form-evento-global");
+    toast(`📅 Evento agendado en ${count} planta${count>1?"s":""} ✓`);
+    // Si hay una planta activa del mismo lugar, refrescar
+    if (plantaActiva) cargarEventos();
+  };
+
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // CAMBIO DE FASE CON FECHA Y VALIDACIÓN
+  // ═══════════════════════════════════════════════════════════════════════════
+  window.abrirModalCambioFase = () => {
+    if (!plantaActiva) { toast("Seleccioná una planta","err"); return; }
+    document.getElementById("cf-fecha").value = new Date().toISOString().split("T")[0];
+    document.getElementById("cf-advertencia").style.display = "none";
+    abrirModal("modal-cambio-fase");
+  };
+
+  // Validación de coherencia días/fase
+  document.addEventListener("DOMContentLoaded", () => {
+    document.getElementById("cf-fase")?.addEventListener("change", validarCoherenciaFase);
+    document.getElementById("cf-fecha")?.addEventListener("change", validarCoherenciaFase);
+  });
+
+  function validarCoherenciaFase() {
+    if (!plantaActiva) return;
+    const adv = document.getElementById("cf-advertencia");
+    if (!adv) return;
+    // Traer datos de la planta activa del cache
+    const fase  = document.getElementById("cf-fase")?.value;
+    const fecha = document.getElementById("cf-fecha")?.value;
+    if (!fecha) return;
+    adv.style.display = "none";
+  }
+
+  window.guardarCambioFase = async () => {
+    if (!plantaActiva) { toast("Sin planta activa","err"); return; }
+    const nuevaFase = val("cf-fase");
+    const fecha     = val("cf-fecha");
+    if (!nuevaFase || !fecha) { toast("Completá fase y fecha","err"); return; }
+
+    const fechaTs = new Date(fecha + "T00:00:00");
+
+    // Registrar evento de cambio de fase en la subcolección fases
+    await addDoc(collection(db,"plantas",plantaActiva,"fases"), {
+      fase: nuevaFase, fecha: fechaTs, notas: val("cf-notas"), creadoEn: serverTimestamp()
+    });
+    // Actualizar la fase actual de la planta
+    await updateDoc(doc(db,"plantas",plantaActiva), { fase: nuevaFase });
+
+    cerrarModal("modal-cambio-fase");
+    document.getElementById("cf-notas").value = "";
+    // Actualizar vista
+    document.getElementById("det-fase").textContent = nuevaFase;
+    window._plantaFaseActual = nuevaFase;
+    cargarHistorialFases();
+    toast(`🌿 Fase cambiada a ${FASE_LABEL[nuevaFase]||nuevaFase} ✓`);
+  };
+
+  async function cargarHistorialFases() {
+    if (!plantaActiva) return;
+    const lista = document.getElementById("lista-fases");
+    if (!lista) return;
+    lista.innerHTML = '<p class="cargando">Cargando...</p>';
+    const snap = await getDocs(query(collection(db,"plantas",plantaActiva,"fases"),orderBy("fecha","asc")));
+    if (snap.empty) { lista.innerHTML = '<p class="empty">Sin cambios de fase registrados.</p>'; return; }
+    let prev = null;
+    const rows = snap.docs.map(d => {
+      const f   = d.data();
+      const dur = prev ? Math.floor((f.fecha.toDate().getTime() - prev.toDate().getTime()) / 86400000) : null;
+      prev = f.fecha;
+      return `<div class="fase-hist-row fase-borde-${f.fase}">
+        <div class="fase-hist-header">
+          <span class="cult-fase fase-${f.fase}">${FASE_LABEL[f.fase]||f.fase}</span>
+          <span class="fase-hist-fecha">${fmt(f.fecha)}</span>
+        </div>
+        ${dur !== null ? `<div class="fase-hist-dur">Etapa anterior: ${dur} días</div>` : ""}
+        ${f.notas ? `<div class="fase-hist-notas">${f.notas}</div>` : ""}
+      </div>`;
+    });
+    lista.innerHTML = rows.join("");
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // MÓDULO FITOSANITARIO
+  // ═══════════════════════════════════════════════════════════════════════════
+  window.guardarFitosanitario = async () => {
+    if (!plantaActiva) { toast("Sin planta activa","err"); return; }
+    const tipo = val("ft-tipo");
+    if (!tipo) { toast("Seleccioná tipo","err"); return; }
+    const d = {
+      tipo, agente: val("ft-agente"),
+      fecha:       new Date(val("ft-fecha")+"T00:00:00"),
+      severidad:   val("ft-severidad"),
+      zona:        val("ft-zona"),
+      tratamiento: val("ft-tratamiento"),
+      recontrol:   val("ft-recontrol") ? new Date(val("ft-recontrol")+"T00:00:00") : null,
+      estado:      val("ft-estado"),
+      obs:         val("ft-obs"),
+      creadoEn:    serverTimestamp(),
+    };
+    await addDoc(collection(db,"plantas",plantaActiva,"fitosanitario"), d);
+    cerrarModal("modal-fitosanitario");
+    ["ft-agente","ft-tratamiento","ft-obs","ft-recontrol"].forEach(id => {
+      const el = document.getElementById(id); if(el) el.value = "";
+    });
+    cargarFitosanitario();
+    toast("🔬 Incidencia registrada ✓");
+  };
+
+  const FITO_ICONOS = {
+    plaga:"🐛", enfermedad:"🍄", bacteria:"🦠",
+    deficiencia:"🌿", toxicidad:"⚠️", estres_abiotico:"💧", otro:"📌"
+  };
+  const FITO_SEV = {
+    leve:"🟡 Leve", moderado:"🟠 Moderado",
+    severo:"🔴 Severo", critico:"💀 Crítico"
+  };
+
+  async function cargarFitosanitario() {
+    if (!plantaActiva) return;
+    const lista = document.getElementById("lista-fitosanitario");
+    if (!lista) return;
+    lista.innerHTML = '<p class="cargando">Cargando...</p>';
+    const snap = await getDocs(query(
+      collection(db,"plantas",plantaActiva,"fitosanitario"),
+      orderBy("fecha","desc")
+    ));
+    if (snap.empty) { lista.innerHTML = '<p class="empty">Sin incidencias registradas.</p>'; return; }
+    lista.innerHTML = snap.docs.map(d => {
+      const f = d.data();
+      return `<div class="fito-row sev-${f.severidad}">
+        <div class="fito-header">
+          <span class="fito-tipo">${FITO_ICONOS[f.tipo]||"📌"} ${f.agente||f.tipo}</span>
+          <span class="fito-sev">${FITO_SEV[f.severidad]||f.severidad}</span>
+          <span class="fito-fecha">${fmt(f.fecha)}</span>
+        </div>
+        <div class="fito-body">
+          ${f.zona ? `<div><b>Zona:</b> ${f.zona.replace(/_/g," ")}</div>` : ""}
+          ${f.tratamiento ? `<div><b>Tratamiento:</b> ${f.tratamiento}</div>` : ""}
+          ${f.recontrol ? `<div><b>Recontrol:</b> ${fmt(f.recontrol)}</div>` : ""}
+          <div><b>Estado:</b> <span class="fito-estado fito-estado-${f.estado}">${f.estado?.replace(/_/g," ")}</span></div>
+          ${f.obs ? `<div class="fito-obs">${f.obs}</div>` : ""}
+        </div>
+        <button class="btn-icon" onclick="eliminarFitosanitario('${d.id}')">🗑</button>
+      </div>`;
+    }).join("");
+  }
+
+  window.eliminarFitosanitario = async (id) => {
+    if (!confirm("¿Eliminar esta incidencia?")) return;
+    await deleteDoc(doc(db,"plantas",plantaActiva,"fitosanitario",id));
+    cargarFitosanitario(); toast("Eliminado");
+  };
+
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // VISTA KIOSKO / CAMPO
+  // ═══════════════════════════════════════════════════════════════════════════
+  let _kioskoTimer = null;
+
+  window.activarKiosko = async () => {
+    document.getElementById("vista-kiosko").style.display = "flex";
+    document.body.style.overflow = "hidden";
+    actualizarKiosko();
+    _kioskoTimer = setInterval(actualizarKiosko, 30000); // cada 30s
+    // Actualizar reloj
+    const tick = () => {
+      const el = document.getElementById("kiosko-hora");
+      if (el) el.textContent = new Date().toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit",second:"2-digit"});
+    };
+    tick();
+    setInterval(tick, 1000);
+  };
+
+  window.cerrarKiosko = () => {
+    document.getElementById("vista-kiosko").style.display = "none";
+    document.body.style.overflow = "";
+    if (_kioskoTimer) { clearInterval(_kioskoTimer); _kioskoTimer = null; }
+  };
+
+  window.actualizarKiosko = async () => {
+    const grid   = document.getElementById("kiosko-grid");
+    const estado = document.getElementById("kiosko-estado");
+    if (!grid) return;
+
+    try {
+      const estadoTodos = await obtenerEstadoTodos();
+      const lugares = Object.entries(DISPOSITIVOS_TUYA)
+        .filter(([k,v]) => v.tipo === "sensor");
+
+      grid.innerHTML = lugares.map(([key, dev]) => {
+        const data = estadoTodos[key] || {};
+        const s    = data.sensores || {};
+        const temp = s.tempAmb;
+        const hum  = s.humedad;
+        const online = data.online !== false && (temp !== undefined);
+
+        // VPD
+        let vpd = null, vpdClase = "";
+        if (temp != null && hum != null) {
+          const svp = 0.6108 * Math.exp((17.27*temp)/(temp+237.3));
+          vpd = (svp*(1-hum/100)).toFixed(2);
+          vpdClase = vpd < 0.4 ? "kiosko-bajo" : vpd < 1.2 ? "kiosko-ok" : vpd < 1.6 ? "kiosko-alto" : "kiosko-crit";
+        }
+
+        // Alertas críticas
+        const alertas = [];
+        if (temp > 30) alertas.push("🌡️ TEMP ALTA");
+        if (temp < 18) alertas.push("🌡️ TEMP BAJA");
+        if (hum  > 72) alertas.push("💧 HR ALTA — BOTRYTIS");
+        if (hum  < 35) alertas.push("💧 HR BAJA");
+
+        return `<div class="kiosko-card ${alertas.length ? 'kiosko-card-alerta' : ''} ${!online ? 'kiosko-offline' : ''}">
+          <div class="kiosko-lugar">${dev.lugar}</div>
+          ${alertas.length ? `<div class="kiosko-alertas">${alertas.map(a=>`<span>${a}</span>`).join("")}</div>` : ""}
+          <div class="kiosko-metricas">
+            <div class="kiosko-metrica">
+              <div class="kiosko-val ${temp>30||temp<18 ? 'kiosko-crit' : ''}">${temp!=null?temp.toFixed(1):"—"}</div>
+              <div class="kiosko-label">°C Temperatura</div>
+            </div>
+            <div class="kiosko-metrica">
+              <div class="kiosko-val ${hum>72||hum<35 ? 'kiosko-crit' : ''}">${hum!=null?hum.toFixed(0):"—"}</div>
+              <div class="kiosko-label">% Humedad</div>
+            </div>
+            <div class="kiosko-metrica">
+              <div class="kiosko-val ${vpdClase}">${vpd||"—"}</div>
+              <div class="kiosko-label">kPa VPD</div>
+            </div>
+          </div>
+          <div class="kiosko-status">${online ? '<span class="dato-fresco">● en vivo</span>' : '<span class="dato-viejo">⚠ sin señal</span>'}</div>
+        </div>`;
+      }).join("");
+
+      if (estado) estado.textContent = `Actualizado ${new Date().toLocaleTimeString("es-AR")}`;
+    } catch(err) {
+      if (estado) estado.textContent = "Error: " + err.message;
+    }
+  };
+
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // MODO CLARO / CAMPO
+  // ═══════════════════════════════════════════════════════════════════════════
+  window.toggleModoClaro = () => {
+    const activo = document.documentElement.classList.toggle("modo-claro");
+    localStorage.setItem("modoClaroActivo", activo ? "1" : "0");
+    const btn = document.getElementById("btn-modo-claro");
+    if (btn) {
+      btn.querySelector(".nav-icon").textContent = activo ? "🌙" : "☀️";
+      btn.querySelector(".nav-label").textContent = activo ? "Modo oscuro" : "Modo campo";
+    }
+  };
+
+  // Restaurar preferencia al cargar
+  if (localStorage.getItem("modoClaroActivo") === "1") {
+    document.documentElement.classList.add("modo-claro");
+    document.addEventListener("DOMContentLoaded", () => {
+      const btn = document.getElementById("btn-modo-claro");
+      if (btn) {
+        btn.querySelector(".nav-icon").textContent = "🌙";
+        btn.querySelector(".nav-label").textContent = "Modo oscuro";
+      }
+    });
+  }
+
+
+window.show = show;
+window.abrirModal = abrirModal;
+window.cerrarModal = cerrarModal;
+window.cargarGraficoDia = cargarGraficoDia;
+window.cargarLugares = cargarLugares;
+window.cargarDashboard = cargarDashboard;
+</script>
+
+<style>
+:root {
+  --bg:#0a160c; --surface:#111e13; --card:#162019; --border:#1f3322;
+  --green:#2d5a1b; --lima:#7ec845; --lima2:#5aaa28;
+  --text:#e8f0e9; --muted:#7a9b7e; --danger:#c0392b;
+  --radius:10px; --sidebar:220px; --nav-h:60px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{height:100%}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100%;display:flex;overflow-x:hidden}
+
+/* SIDEBAR */
+.sidebar{width:var(--sidebar);background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;z-index:100}
+.sidebar-logo{padding:20px 16px 12px;border-bottom:1px solid var(--border);font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.1rem}
+.sidebar-logo span{color:var(--lima)}
+.sidebar-logo small{display:block;font-size:.7rem;color:var(--muted);font-weight:400;margin-top:2px}
+.nav-btn{display:flex;align-items:center;gap:10px;padding:11px 16px;cursor:pointer;border:none;background:none;color:var(--muted);width:100%;text-align:left;font-size:.875rem;transition:all .15s;white-space:nowrap}
+.nav-btn:hover{background:var(--card);color:var(--text)}
+.nav-btn.activo{background:var(--green);color:var(--lima);font-weight:600}
+.nav-btn .nav-icon{font-size:1.1rem;width:22px;text-align:center;flex-shrink:0}
+.sidebar-footer{margin-top:auto;padding:12px 16px;border-top:1px solid var(--border);font-size:.75rem;color:var(--muted)}
+.bottom-nav{display:none}
+
+/* MAIN */
+.main{margin-left:var(--sidebar);flex:1;padding:24px;overflow-y:auto;min-width:0}
+.vista{display:none}
+.vista.activa{display:block}
+.page-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:24px;flex-wrap:wrap}
+.page-title{font-family:'Space Grotesk',sans-serif;font-size:1.4rem;font-weight:700}
+.page-title small{display:block;font-size:.78rem;color:var(--muted);font-weight:400;margin-top:2px}
+
+/* BOTONES */
+.btn{padding:9px 18px;border-radius:var(--radius);border:none;cursor:pointer;font-size:.875rem;font-weight:500;transition:all .15s;white-space:nowrap}
+.btn-primary{background:var(--lima);color:#0a160c}
+.btn-primary:hover{background:var(--lima2)}
+.btn-ghost{background:transparent;border:1px solid var(--border);color:var(--text)}
+.btn-ghost:hover{border-color:var(--lima);color:var(--lima)}
+.btn-sm{padding:5px 12px;font-size:.78rem;border-radius:6px;border:none;cursor:pointer;font-weight:500}
+.btn-sm.btn-primary{background:var(--lima);color:#0a160c}
+.btn-sm.btn-danger{background:#8b1a1a;color:#fff}
+.btn-icon{background:none;border:none;cursor:pointer;font-size:1rem;padding:6px 8px;border-radius:4px;color:var(--muted);transition:color .15s;flex-shrink:0}
+.btn-icon:hover{color:var(--danger)}
+
+/* GRIDS */
+.lugar-grid  { display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px }
+.planta-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px }
+.area-grid   { display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-bottom:20px }
+
+/* CARDS */
+.lugar-card,.planta-card,.area-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;transition:border-color .15s}
+.lugar-card:hover{border-color:var(--green)}
+.planta-card.activa,.area-card.activa{border-color:var(--lima)}
+.lugar-header,.area-header{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:10px}
+.lugar-nombre,.area-nombre{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:.95rem}
+.lugar-dim,.area-dim{font-size:.72rem;color:var(--muted);background:var(--surface);padding:2px 8px;border-radius:20px}
+.lugar-meta{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;font-size:.77rem;color:var(--muted)}
+.lugar-clima{display:flex;flex-direction:column;gap:4px;margin-bottom:8px;padding:8px 10px;background:var(--surface);border-radius:10px}
+.clima-actual{display:flex;align-items:center;gap:14px;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.95rem}
+.clima-hora{margin-left:auto;font-family:inherit;font-weight:400;font-size:.68rem;color:var(--muted)}
+.clima-stats{display:flex;flex-wrap:wrap;gap:10px;font-size:.68rem;color:var(--muted)}
+.clima-cargando{font-size:.75rem;color:var(--muted)}
+.clima-error{font-size:.75rem;color:var(--muted)}
+.aviso-truncado{font-size:.68rem;color:#ffb84d;margin-bottom:10px;padding:6px 8px;background:rgba(255,184,77,.08);border-radius:8px}
+.temp-ok{color:#3ddc97}
+.temp-fuera{color:#ff5c5c}
+.luz-estado{margin-bottom:10px;font-size:.82rem;font-weight:600}
+.luz-on{color:#ffd23d}
+.luz-off{color:var(--muted)}
+.luz-offline{color:#ff7a7a}
+.foto-box{margin-bottom:10px;padding:8px 10px;background:var(--surface);border-radius:10px;font-size:.78rem;display:flex;flex-direction:column;gap:4px}
+.foto-ok{color:#3ddc97;font-weight:600}
+.foto-aviso{color:#ffb84d;font-weight:600}
+.foto-alerta{color:#ff5c5c;font-weight:700}
+.foto-critico{font-size:.7rem;color:#ff8a8a;background:rgba(255,92,92,.1);border-radius:6px;padding:5px 7px}
+.plantas-resumen{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
+.plantas-vacio{font-size:.75rem;color:var(--muted);font-style:italic}
+.planta-mini{background:var(--surface);border-radius:8px;padding:7px 9px;font-size:.72rem}
+.planta-mini-header{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:3px}
+.planta-mini-nombre{font-weight:700;color:var(--lima)}
+.planta-mini-genetica{color:var(--muted);font-style:italic}
+.planta-mini-meta{display:flex;flex-wrap:wrap;gap:8px;color:var(--muted);margin-bottom:3px}
+.planta-mini-fert{color:var(--muted)}
+.planta-conteo{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:.78rem;font-weight:600;color:var(--lima);margin-bottom:2px}
+.planta-conteo-item{background:var(--surface);border-radius:6px;padding:2px 7px;font-weight:600}
+.vpd-box{margin-bottom:10px;padding:8px 10px;background:var(--surface);border-radius:10px}
+.vpd-header{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;font-size:.78rem;font-weight:600}
+.vpd-etapa{background:var(--bg,#0d1410);color:var(--fg,#e8f2ec);border:1px solid rgba(255,255,255,.15);border-radius:6px;font-size:.68rem;padding:3px 6px}
+.vpd-valor{font-size:.75rem}
+.vpd-num{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1rem;margin-bottom:2px}
+.vpd-ok{color:#3ddc97}
+.vpd-bajo{color:#5cb8ff}
+.vpd-alto{color:#ff5c5c}
+.vpd-sugerencia{font-size:.7rem;color:var(--muted);line-height:1.35}
+.clima-titulo{font-size:.75rem;color:var(--muted);margin-bottom:6px}
+.dia-titulo{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.graficos-header{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.btn-minimizar{background:none;border:1px solid rgba(255,255,255,.15);color:var(--muted);border-radius:6px;font-size:.68rem;padding:3px 8px;cursor:pointer}
+.graficos-contenedor.colapsado{display:none}
+.input-fecha-dia{background:var(--surface);color:inherit;border:1px solid rgba(255,255,255,.15);border-radius:6px;font-size:.72rem;padding:4px 6px}
+.clima-charts{display:flex;flex-direction:column;gap:14px;margin-bottom:10px}
+.chart-box{position:relative;height:150px;background:var(--surface);border-radius:10px;padding:8px}
+.chart-empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:12px;font-size:.68rem;color:var(--muted);pointer-events:none}
+@media(min-width:640px){.clima-charts{flex-direction:row}.chart-box{flex:1}}
+
+/* Dashboard visual */
+.dashboard-grid{display:grid;grid-template-columns:1fr;gap:16px}
+@media(min-width:640px){.dashboard-grid{grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}}
+.dash-card{background:var(--card,#101a14);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.dash-header{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.dash-nombre{font-family:'Space Grotesk',sans-serif;font-weight:700}
+.dash-dim{font-size:.72rem;color:var(--muted)}
+.dash-body{display:flex;align-items:center;gap:14px}
+.dash-ilustracion{flex:1;display:flex;justify-content:center;min-width:0}
+.dash-datos{display:flex;flex-direction:column;gap:10px;min-width:78px}
+.dash-dato{text-align:center}
+.dash-dato .valor{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.25rem}
+.dash-dato .label{font-size:.65rem;color:var(--muted)}
+
+.ilustracion{width:100%;max-width:210px;height:auto}
+.carpa-cuerpo{fill:#242b26;stroke:#0a0d0a;stroke-width:2}
+.carpa-marco{stroke:#0a0d0a;stroke-width:2}
+.carpa-cierre{stroke:#000;stroke-width:1;stroke-dasharray:3,3;opacity:.5}
+.estante-base,.estante-pata{fill:#33392f}
+.barra-luz{fill:#4a4a44;transition:fill .5s ease,filter .5s ease}
+.glow-interior{fill:#000;opacity:0;transition:opacity .6s ease,fill .6s ease}
+.planta-silueta{fill:#26402c;transition:fill .6s ease}
+
+.glow-on .barra-luz{fill:#ffd23d;filter:drop-shadow(0 0 6px #ffd23dcc)}
+.glow-on .glow-interior{fill:#ffd23d;opacity:.16}
+.glow-on .planta-silueta{fill:#6bbf5c}
+.glow-off .glow-interior{opacity:0}
+.glow-off .planta-silueta{fill:#233227}
+.cult-header{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:10px}
+.cult-nombre{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:.95rem}
+.cult-fase{font-size:.68rem;padding:3px 8px;border-radius:20px;font-weight:600;text-transform:uppercase;flex-shrink:0}
+.fase-vegetativa{background:#1a3a1a;color:#7ec845}
+.fase-floracion{background:#3a2a1a;color:#e67e22}
+.fase-germinacion{background:#1a2a3a;color:#3498db}
+.fase-cosecha{background:#3a1a1a;color:#e74c3c}
+.cult-meta{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;font-size:.77rem;color:var(--muted)}
+.cult-actions{display:flex;gap:8px;margin-top:10px}
+
+/* INFO CARDS */
+.info-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:16px}
+.info-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:12px}
+.info-card .ic-label{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.info-card .ic-val{font-family:'Space Grotesk',sans-serif;font-size:1rem;font-weight:600;word-break:break-word}
+
+/* TABS */
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--border);margin-bottom:20px;overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab-btn{padding:8px 14px;background:none;border:none;cursor:pointer;color:var(--muted);font-size:.82rem;border-bottom:2px solid transparent;transition:all .15s;white-space:nowrap;flex-shrink:0}
+.tab-btn.activo{color:var(--lima);border-bottom-color:var(--lima);font-weight:600}
+.tab-panel{display:none}
+.tab-panel.activo{display:block}
+
+/* MEDICIONES */
+.med-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.med-row{display:grid;grid-template-columns:90px repeat(7,minmax(80px,1fr)) 36px;align-items:center;gap:8px;padding:10px 12px;background:var(--card);border:1px solid var(--border);border-radius:8px;margin-bottom:8px;min-width:640px}
+.med-fecha{font-size:.78rem;color:var(--muted)}
+.med-val{display:flex;align-items:center;gap:3px;font-family:'Space Grotesk',sans-serif;font-size:.85rem}
+.med-val small{color:var(--muted);font-size:.68rem}
+
+/* EVENTOS */
+.evento-row{display:flex;align-items:flex-start;gap:10px;padding:12px;background:var(--card);border-left:3px solid var(--green);border-radius:8px;margin-bottom:8px}
+.tipo-riego{border-left-color:#2980b9}
+.tipo-fertilizacion{border-left-color:#8e44ad}
+.tipo-cosecha{border-left-color:#e67e22}
+.tipo-poda{border-left-color:#27ae60}
+.ev-icon{font-size:1.2rem;flex-shrink:0}
+.ev-body{flex:1;min-width:0}
+.ev-body strong{display:block;font-size:.88rem}
+.ev-body small{color:var(--muted);font-size:.74rem}
+.ev-body p{font-size:.78rem;color:var(--muted);margin-top:3px}
+.ev-acciones{display:flex;align-items:center;gap:2px;flex-shrink:0}
+
+/* NUTRICIÓN */
+.nutr-row{display:flex;gap:10px;align-items:flex-start;padding:12px;background:var(--card);border:1px solid var(--border);border-radius:8px;margin-bottom:8px}
+.nutr-sem{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.1rem;color:var(--lima);min-width:46px;flex-shrink:0}
+.nutr-body{flex:1;min-width:0}
+.nutr-body strong{font-size:.88rem;display:block;margin-bottom:6px}
+.nutr-productos{display:flex;flex-wrap:wrap;gap:5px}
+.nutr-tag{background:var(--green);padding:3px 8px;border-radius:20px;font-size:.73rem}
+.nutr-tag b{color:var(--lima)}
+.nutr-body small{color:var(--muted);font-size:.73rem;margin-top:6px;display:block}
+
+/* INASE */
+.inase-badge{display:inline-block;background:#1a0a2e;color:#a78bfa;border:1px solid #4c1d95;padding:4px 10px;border-radius:4px;font-size:.73rem;font-weight:600;margin-bottom:14px}
+.inase-row{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:10px}
+.inase-header{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.inase-tipo{background:#1a0a2e;color:#a78bfa;padding:3px 10px;border-radius:20px;font-size:.73rem;font-weight:600}
+.inase-fecha{font-size:.76rem;color:var(--muted)}
+.inase-body{display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:.81rem}
+.inase-body div b{color:var(--lima)}
+
+/* TUYA SENSORES */
+.sensores-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin-bottom:20px}
+.sensor-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;position:relative;overflow:hidden}
+.sensor-card::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:var(--lima);box-shadow:0 0 12px var(--lima)}
+.sensor-lugar{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.sensor-nombre{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1rem;margin-bottom:14px}
+.sensor-vals{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px}
+.sv-item{text-align:center}
+.sv-val{font-family:'Space Grotesk',sans-serif;font-size:1.6rem;font-weight:700;color:var(--lima);line-height:1}
+.sv-unit{font-size:.68rem;color:var(--muted);margin-top:2px}
+.sv-label{font-size:.68rem;color:var(--muted);margin-top:4px;text-transform:uppercase;letter-spacing:.4px}
+.s-alertas{display:flex;flex-wrap:wrap;gap:5px;margin:8px 0}
+.s-ts{font-size:.72rem;color:var(--muted);margin-top:8px}
+.sensor-acciones{display:flex;justify-content:space-between;align-items:center;margin-top:10px}
+
+/* VPD */
+.vpd-tag{display:inline-block;padding:3px 10px;border-radius:20px;font-size:.75rem;font-weight:600}
+.vpd-bajo{background:#0d2a3a;color:#3498db}
+.vpd-ok{background:#1a3a1a;color:#7ec845}
+.vpd-bien{background:#2a2a1a;color:#f1c40f}
+.vpd-alto{background:#3a2a1a;color:#e67e22}
+.vpd-crit{background:#3a1a1a;color:#e74c3c}
+.alerta-tag{background:#3a2a1a;color:#e67e22;padding:3px 8px;border-radius:20px;font-size:.72rem}
+.alerta-ok{color:var(--muted);font-size:.75rem}
+
+/* TUYA ESTADO */
+.tuya-top{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:20px}
+.tuya-controles{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+#tuya-estado{font-size:.78rem;color:var(--muted)}
+.refresh-select{background:#0d1a0f;border:1px solid var(--border);color:var(--text);padding:7px;border-radius:6px;font-size:.82rem}
+
+/* FORMULARIOS */
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.form-row.col3{grid-template-columns:1fr 1fr 1fr}
+.form-row.col1{grid-template-columns:1fr}
+.form-group{display:flex;flex-direction:column;gap:4px}
+.form-group label{font-size:.76rem;color:var(--muted);font-weight:500}
+.form-group input,.form-group select,.form-group textarea{background:#0d1a0f;border:1px solid var(--border);border-radius:6px;color:var(--text);padding:9px 10px;font-size:1rem;font-family:'Inter',sans-serif;outline:none;transition:border-color .15s;width:100%}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--lima)}
+.form-group textarea{resize:vertical;min-height:60px}
+.chk-group{display:flex;flex-direction:column;gap:6px}
+.chk-item{display:flex;align-items:center;gap:8px;font-size:.84rem;cursor:pointer}
+.chk-item input{width:auto;cursor:pointer}
+.luz-row{display:flex;gap:8px;margin-bottom:8px;align-items:center}
+.section-label{font-size:.78rem;color:var(--lima);font-weight:600;margin:14px 0 8px;text-transform:uppercase;letter-spacing:.5px}
+
+/* MODALES */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:1000;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:14px;width:100%;max-width:620px;max-height:90vh;overflow-y:auto;padding:22px}
+.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+.modal-header h3{font-family:'Space Grotesk',sans-serif;font-size:1.05rem;font-weight:700}
+.modal-footer{display:flex;gap:10px;justify-content:flex-end;margin-top:18px;padding-top:14px;border-top:1px solid var(--border);flex-wrap:wrap}
+
+/* TOAST */
+.toast{position:fixed;bottom:80px;right:16px;padding:10px 16px;border-radius:8px;font-size:.84rem;z-index:9999;animation:slideIn .2s ease;max-width:calc(100vw - 32px)}
+.toast-ok{background:#1a3a1a;border:1px solid var(--lima);color:var(--lima)}
+.toast-err{background:#3a1a1a;border:1px solid var(--danger);color:#ff8080}
+@keyframes slideIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* MISC */
+.cargando{color:var(--muted);font-size:.84rem;padding:16px 0}
+.empty{color:var(--muted);font-size:.84rem;padding:24px 0;text-align:center}
+.section-toolbar{display:flex;justify-content:flex-end;margin-bottom:12px}
+hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
+.breadcrumb{font-size:.8rem;color:var(--muted);margin-bottom:16px}
+.breadcrumb b{color:var(--text)}
+
+/* RESPONSIVE tablet */
+@media(max-width:900px){
+  :root{--sidebar:60px}
+  .sidebar-logo small{display:none}
+  .sidebar-logo{padding:16px 0;text-align:center;font-size:1.3rem}
+  .nav-btn .nav-label{display:none}
+  .nav-btn{justify-content:center;padding:12px}
+  .sidebar-footer{display:none}
+  .main{margin-left:var(--sidebar);padding:20px 16px}
+}
+/* RESPONSIVE mobile */
+@media(max-width:600px){
+  .sidebar{display:none}
+  .bottom-nav{display:flex;position:fixed;bottom:0;left:0;right:0;height:var(--nav-h);background:var(--surface);border-top:1px solid var(--border);z-index:200;justify-content:space-around;align-items:stretch}
+  .bottom-nav .nav-btn{flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:6px 4px;font-size:.62rem;flex:1;border-radius:0}
+  .bottom-nav .nav-btn .nav-icon{font-size:1.3rem;width:auto}
+  .bottom-nav .nav-btn .nav-label{display:block!important}
+  .main{margin-left:0;padding:16px 12px;padding-bottom:calc(var(--nav-h)+16px)}
+  .toast{bottom:calc(var(--nav-h)+12px)}
+  .modal-overlay{align-items:flex-end;padding:0}
+  .modal{border-radius:16px 16px 0 0;max-height:88vh;padding:16px 16px calc(var(--nav-h)+16px);margin:0}
+  .form-row,.form-row.col3{grid-template-columns:1fr}
+  .modal-footer{flex-direction:column-reverse}
+  .modal-footer .btn{width:100%;text-align:center}
+  .info-grid{grid-template-columns:1fr 1fr}
+  .inase-body{grid-template-columns:1fr}
+  .page-header{flex-direction:column;align-items:flex-start}
+  .page-header .btn{align-self:stretch;text-align:center}
+  .lugar-grid,.planta-grid,.area-grid,.sensores-grid{grid-template-columns:1fr}
+  .section-toolbar .btn{width:100%}
+  .sensor-vals{grid-template-columns:1fr 1fr 1fr}
+  .sv-val{font-size:1.3rem}
+}
+
+/* ── MEJORAS AGRONÓMICAS ────────────────────────────────────────────────────── */
+
+/* Semáforo mediciones */
+.val-optimo  { color: var(--accent); }
+.val-alerta  { color: var(--warning); }
+.val-critico { color: var(--danger); font-weight: 600; }
+
+/* Dato fresco / viejo */
+.dato-fresco     { display:inline-flex;align-items:center;gap:4px;font-size:.68rem;font-weight:600;color:var(--accent);background:rgba(0,200,150,.1);border:1px solid rgba(0,200,150,.25);padding:2px 8px;border-radius:20px; }
+.dato-viejo      { display:inline-flex;align-items:center;gap:4px;font-size:.68rem;font-weight:600;color:var(--warning);background:rgba(224,150,74,.08);border:1px solid rgba(224,150,74,.25);padding:2px 8px;border-radius:20px; }
+.dato-desconocido{ font-size:.68rem;color:var(--muted); }
+
+/* Alertas agronómicas */
+.alertas-agro {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-bottom: 8px;
+  min-height: 0;
+}
+.alerta-agro {
+  font-size: .72rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.alerta-agro.critico { background:rgba(224,92,92,.12); border:1px solid rgba(224,92,92,.3); color:var(--danger); }
+.alerta-agro.alerta  { background:rgba(224,150,74,.1); border:1px solid rgba(224,150,74,.25); color:var(--warning); }
+
+/* Selector período histórico */
+#med-resumen { display:block;font-size:.72rem;color:var(--muted);margin-top:4px; }
+@media(min-width:600px){ #med-resumen { display:inline;margin-top:0; } }
+
+/* VPD foliar */
+.vpd-foliar-label { font-size:.68rem; color:var(--accent); margin-left:4px; }
+
+
+/* ── PANEL DE CONTROL ────────────────────────────────────────────────────── */
+.panel-filtros {
+  display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px;
+}
+.panel-filtro {
+  padding: 6px 14px; border-radius: 20px; border: 1px solid var(--border2);
+  background: none; color: var(--text2); font-size: .78rem; cursor: pointer;
+  transition: all .15s; font-family: var(--font-body);
+}
+.panel-filtro:hover { border-color: var(--accent); color: var(--accent); }
+.panel-filtro.activo { background: var(--accent); color: #080f14; border-color: var(--accent); font-weight: 600; }
+.panel-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+.pc-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  cursor: pointer;
+  transition: border-color .2s, box-shadow .2s;
+  border-top: 3px solid var(--border2);
+}
+.pc-card:hover { border-color: var(--border2); box-shadow: 0 4px 20px rgba(0,0,0,.3); }
+.fase-borde-vegetativa  { border-top-color: var(--accent); }
+.fase-borde-floracion   { border-top-color: var(--warning); }
+.fase-borde-germinacion { border-top-color: var(--info); }
+.fase-borde-cosecha     { border-top-color: var(--danger); }
+.pc-header {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  gap: 8px; margin-bottom: 8px;
+}
+.pc-nombre   { font-family: var(--font-display); font-weight: 700; font-size: .95rem; }
+.pc-genetica { font-size: .74rem; color: var(--muted); margin-top: 2px; font-style: italic; }
+.pc-dia      { text-align: right; flex-shrink: 0; }
+.pc-dia-num  { display: block; font-family: var(--font-display); font-weight: 700; font-size: 1.1rem; color: var(--accent); }
+.pc-ubicacion { font-size: .72rem; color: var(--muted); margin-bottom: 10px; }
+.pc-alertas  { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px; }
+.pc-alerta   { font-size: .7rem; font-weight: 600; padding: 3px 8px; border-radius: 20px;
+               background: rgba(224,92,92,.1); border: 1px solid rgba(224,92,92,.25); color: var(--danger); }
+.pc-datos {
+  display: grid; grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px; margin-bottom: 10px;
+}
+.pc-dato { text-align: center; }
+.pc-d-label { display: block; font-size: .64rem; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; margin-bottom: 3px; }
+.pc-d-val   { font-family: var(--font-display); font-weight: 700; font-size: .9rem; }
+.pc-evento  { font-size: .74rem; color: var(--text2); padding: 6px 10px; background: var(--surface); border-radius: 6px; border: 1px solid var(--border); }
+.sin-dato   { color: var(--danger); font-size: .74rem; }
+
+/* ── MEDICIONES MOBILE CARDS ──────────────────────────────────────────────── */
+.med-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px;
+  margin-bottom: 10px;
+}
+.med-card-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 10px;
+}
+.med-card-fecha { font-size: .8rem; font-weight: 600; color: var(--text2); }
+.med-badge {
+  font-size: .68rem; padding: 2px 6px; border-radius: 10px;
+  font-weight: 700;
+}
+.med-badge.val-critico { background: rgba(224,92,92,.15); color: var(--danger); }
+.med-badge.val-alerta  { background: rgba(224,150,74,.12); color: var(--warning); }
+.med-card-grid {
+  display: grid; grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 8px; margin-bottom: 8px;
+}
+.mci { text-align: center; }
+.mci-l { display: block; font-size: .62rem; color: var(--muted); text-transform: uppercase; letter-spacing: .3px; margin-bottom: 2px; }
+.mci b  { font-family: var(--font-display); font-size: .88rem; font-weight: 700; }
+.mci.val-critico b { color: var(--danger); }
+.mci.val-alerta  b { color: var(--warning); }
+.mci.val-optimo  b { color: var(--accent); }
+.med-card-notas { font-size: .74rem; color: var(--muted); margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--border); }
+
+/* ── BARRA VPD VISUAL ─────────────────────────────────────────────────────── */
+.vpd-barra-wrap   { margin: 8px 0 6px; }
+.vpd-barra-bg     { display: flex; height: 10px; border-radius: 5px; overflow: hidden; position: relative; }
+.vpd-zona         { flex: 1; }
+.vpd-z-bajo       { background: rgba(74,181,224,.5); flex: 1.6; }   /* 0–0.4 */
+.vpd-z-ok         { background: rgba(0,200,150,.6); flex: 1.6; }    /* 0.4–0.8 */
+.vpd-z-bien       { background: rgba(241,196,15,.5); flex: 1.6; }   /* 0.8–1.2 */
+.vpd-z-alto       { background: rgba(224,150,74,.5); flex: 1.6; }   /* 1.2–1.6 */
+.vpd-z-crit       { background: rgba(224,92,92,.5); flex: 3.6; }    /* 1.6–2.5 */
+.vpd-marker {
+  position: absolute; top: -2px; width: 3px; height: 14px;
+  background: #fff; border-radius: 2px; transform: translateX(-50%);
+  box-shadow: 0 0 6px rgba(255,255,255,.8);
+  transition: left .4s ease;
+}
+.vpd-barra-labels {
+  display: flex; justify-content: space-between;
+  font-size: .58rem; color: var(--muted); margin-top: 3px; padding: 0 1px;
+}
+
+/* ── LEYENDA NOCHE EN GRÁFICOS ───────────────────────────────────────────── */
+.chart-leyenda-noche {
+  font-size: .66rem; color: var(--muted); margin-top: 4px; text-align: right;
+  display: flex; align-items: center; gap: 5px; justify-content: flex-end;
+}
+.chart-leyenda-noche::before {
+  content: ""; display: inline-block; width: 12px; height: 8px;
+  background: rgba(0,0,0,0.4); border-radius: 2px;
+}
+
+
+/* ── MODO CLARO / CAMPO ──────────────────────────────────────────────────── */
+.modo-claro {
+  --bg:        #f0f4f0;
+  --surface:   #ffffff;
+  --card:      #f8faf8;
+  --card2:     #eef2ee;
+  --border:    #c8d8c8;
+  --border2:   #a0baa0;
+  --accent:    #1a7a5e;
+  --accent2:   #155f49;
+  --accent-glow: rgba(26,122,94,.12);
+  --blue:      #1a6fa0;
+  --blue-dim:  rgba(26,111,160,.10);
+  --text:      #1a2a1a;
+  --text2:     #3a5a3a;
+  --muted:     #6a8a6a;
+  --danger:    #b02020;
+  --warning:   #b06020;
+}
+.modo-claro .sidebar { box-shadow: 2px 0 12px rgba(0,0,0,.08); }
+.modo-claro .modal   { box-shadow: 0 8px 40px rgba(0,0,0,.2); }
+.modo-claro .form-group input,
+.modo-claro .form-group select,
+.modo-claro .form-group textarea { background: #f8faf8; }
+.modo-claro .nav-btn.activo { background: rgba(26,122,94,.15); }
+
+/* ── KIOSKO / CAMPO ──────────────────────────────────────────────────────── */
+.kiosko-overlay {
+  position: fixed; inset: 0; z-index: 9000;
+  background: #050a0f;
+  display: flex; flex-direction: column;
+  font-family: var(--font-display);
+}
+.kiosko-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 16px 24px; border-bottom: 1px solid #1a2a3a;
+  flex-shrink: 0;
+}
+.kiosko-titulo { font-size: 1rem; font-weight: 700; color: var(--accent); letter-spacing: .5px; }
+.kiosko-hora   { font-size: 1.4rem; font-weight: 700; color: #e8f0e9; font-variant-numeric: tabular-nums; }
+.kiosko-grid   { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px,1fr)); gap: 20px; padding: 24px; flex: 1; align-content: start; overflow-y: auto; }
+.kiosko-card   { background: #0d1820; border: 1px solid #1a2d3e; border-radius: 16px; padding: 24px; transition: border-color .3s; }
+.kiosko-card-alerta { border-color: var(--danger); animation: pulso 2s ease-in-out infinite; }
+.kiosko-offline { opacity: .5; border-style: dashed; }
+@keyframes pulso {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(224,92,92,0); }
+  50%       { box-shadow: 0 0 0 6px rgba(224,92,92,.3); }
+}
+.kiosko-lugar    { font-size: .72rem; color: #4e6f82; text-transform: uppercase; letter-spacing: .8px; margin-bottom: 6px; }
+.kiosko-alertas  { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+.kiosko-alertas span { background: rgba(224,92,92,.15); border: 1px solid rgba(224,92,92,.4); color: #ff6060; padding: 4px 12px; border-radius: 20px; font-size: .8rem; font-weight: 700; }
+.kiosko-metricas { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+.kiosko-metrica  { text-align: center; }
+.kiosko-val      { font-size: 3rem; font-weight: 700; color: var(--accent); line-height: 1; }
+.kiosko-label    { font-size: .72rem; color: #4e6f82; margin-top: 6px; text-transform: uppercase; letter-spacing: .5px; }
+.kiosko-ok   { color: var(--accent); }
+.kiosko-bajo { color: var(--info); }
+.kiosko-alto { color: var(--warning); }
+.kiosko-crit { color: var(--danger); }
+.kiosko-status { text-align: right; margin-top: 12px; }
+.kiosko-footer {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 24px; border-top: 1px solid #1a2a3a; font-size: .76rem; color: #4e6f82; flex-shrink: 0;
+}
+
+/* ── HISTORIAL DE FASES ───────────────────────────────────────────────────── */
+.fase-hist-row {
+  background: var(--card); border-left: 3px solid var(--border2);
+  border-radius: var(--radius-sm); padding: 12px 14px; margin-bottom: 8px;
+}
+.fase-hist-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
+.fase-hist-fecha  { font-size: .76rem; color: var(--muted); }
+.fase-hist-dur    { font-size: .76rem; color: var(--text2); }
+.fase-hist-notas  { font-size: .74rem; color: var(--muted); margin-top: 4px; }
+
+/* ── INCIDENCIAS FITOSANITARIAS ───────────────────────────────────────────── */
+.fito-row {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 14px; margin-bottom: 10px;
+  border-left: 4px solid var(--border2);
+}
+.fito-row.sev-leve     { border-left-color: #f1c40f; }
+.fito-row.sev-moderado { border-left-color: var(--warning); }
+.fito-row.sev-severo   { border-left-color: var(--danger); }
+.fito-row.sev-critico  { border-left-color: #ff0000; animation: pulso 2s ease-in-out infinite; }
+.fito-header { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+.fito-tipo   { font-weight: 700; font-size: .9rem; flex: 1; }
+.fito-sev    { font-size: .74rem; font-weight: 600; }
+.fito-fecha  { font-size: .74rem; color: var(--muted); margin-left: auto; }
+.fito-body   { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-size: .8rem; }
+.fito-body b { color: var(--accent); }
+.fito-obs    { grid-column: 1/-1; color: var(--muted); font-size: .76rem; margin-top: 4px; }
+.fito-estado { font-weight: 600; }
+.fito-estado-activa        { color: var(--danger); }
+.fito-estado-en_tratamiento{ color: var(--warning); }
+.fito-estado-resuelta      { color: var(--accent); }
+
+/* ── ALERTAS DE PRIMER NIVEL EN CARDS ────────────────────────────────────── */
+.card-alerta-critica {
+  border-color: var(--danger) !important;
+  animation: pulso 2.5s ease-in-out infinite;
+}
+.card-alerta-critica::before {
+  content: "⚠️ ALERTA CRÍTICA";
+  display: block; background: rgba(224,92,92,.12); color: var(--danger);
+  font-size: .68rem; font-weight: 700; text-align: center;
+  padding: 4px; border-radius: 6px 6px 0 0; margin: -18px -18px 12px;
+  letter-spacing: .5px;
+}
+.card-alerta-warning {
+  border-color: var(--warning) !important;
+}
+
+/* ── LEYENDA GRÁFICOS CON EVENTOS ────────────────────────────────────────── */
+.chart-leyenda-eventos {
+  display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px;
+  font-size: .64rem; color: var(--muted);
+}
+.chart-leyenda-eventos span { display: flex; align-items: center; gap: 4px; }
+.chart-ev-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+
+/* ── RESPONSIVE KIOSKO MOBILE ────────────────────────────────────────────── */
+@media(max-width:600px) {
+  .kiosko-grid    { grid-template-columns: 1fr; padding: 12px; gap: 12px; }
+  .kiosko-val     { font-size: 2.2rem; }
+  .kiosko-hora    { font-size: 1.1rem; }
+  .fito-body      { grid-template-columns: 1fr; }
+  .card-alerta-critica::before { margin: -16px -16px 10px; }
+}
+
+</style>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">🌿 <span>Cultiv</span>App<small>Seguimiento de cultivo</small></div>
+  <button class="nav-btn" data-vista="vista-dashboard" onclick="show('vista-dashboard');cargarDashboard()">
+    <span class="nav-icon">🖥️</span><span class="nav-label">Dashboard</span>
+  </button>
+  <button class="nav-btn" data-vista="vista-panel" onclick="show('vista-panel');cargarPanelControl()">
+    <span class="nav-icon">📋</span><span class="nav-label">Panel</span>
+  </button>
+  <button class="nav-btn activo" data-vista="vista-lugares" onclick="show('vista-lugares');cargarLugares()">
+    <span class="nav-icon">🏕️</span><span class="nav-label">Lugares</span>
+  </button>
+  <button class="nav-btn" data-vista="vista-lugar" onclick="irAPlantas()">
+    <span class="nav-icon">🪴</span><span class="nav-label">Plantas</span>
+  </button>
+  <button class="nav-btn" data-vista="vista-planta" onclick="show('vista-planta')">
+    <span class="nav-icon">📊</span><span class="nav-label">Detalle</span>
+  </button>
+  <button class="nav-btn" data-vista="vista-tuya" onclick="show('vista-tuya')">
+    <span class="nav-icon">📡</span><span class="nav-label">Sensores</span>
+  </button>
+  <button class="nav-btn" onclick="activarKiosko()" title="Vista de campo">
+    <span class="nav-icon">📺</span><span class="nav-label">Kiosko</span>
+  </button>
+  <button class="nav-btn" onclick="toggleModoClaro()" id="btn-modo-claro" title="Modo campo (luz natural)">
+    <span class="nav-icon">☀️</span><span class="nav-label">Modo campo</span>
+  </button>
+  <div class="sidebar-footer">HG Soluciones Web</div>
+</aside>
+
+<!-- NAVBAR BOTTOM mobile -->
+<nav class="bottom-nav">
+  <button class="nav-btn" data-vista="vista-dashboard" onclick="show('vista-dashboard');cargarDashboard()">
+    <span class="nav-icon">🖥️</span><span class="nav-label">Dashboard</span>
+  </button>
+  <button class="nav-btn" data-vista="vista-panel" onclick="show('vista-panel');cargarPanelControl()">
+    <span class="nav-icon">📋</span><span class="nav-label">Panel</span>
+  </button>
+  <button class="nav-btn activo" data-vista="vista-lugares" onclick="show('vista-lugares');cargarLugares()">
+    <span class="nav-icon">🏕️</span><span class="nav-label">Lugares</span>
+  </button>
+  <button class="nav-btn" data-vista="vista-lugar" onclick="irAPlantas()">
+    <span class="nav-icon">🪴</span><span class="nav-label">Plantas</span>
+  </button>
+  <button class="nav-btn" data-vista="vista-planta" onclick="show('vista-planta')">
+    <span class="nav-icon">📊</span><span class="nav-label">Detalle</span>
+  </button>
+  <button class="nav-btn" data-vista="vista-tuya" onclick="show('vista-tuya')">
+    <span class="nav-icon">📡</span><span class="nav-label">Sensores</span>
+  </button>
+</nav>
+
+<main class="main">
+
+<!-- VISTA: DASHBOARD -->
+<section id="vista-dashboard" class="vista">
+  <div class="page-header">
+    <div class="page-title">Dashboard<small>Vista visual de cada espacio de cultivo</small></div>
+  </div>
+  <div id="dashboard-grid" class="dashboard-grid"></div>
+</section>
+
+<!-- VISTA: LUGARES -->
+<section id="vista-lugares" class="vista activa">
+  <div class="page-header">
+    <div class="page-title">Lugares de cultivo<small>Espacios físicos con sus plantas y sensores</small></div>
+    <button class="btn btn-primary" onclick="abrirModal('modal-lugar')">+ Nuevo lugar</button>
+  </div>
+  <div id="lista-lugares" class="lugar-grid"></div>
+</section>
+
+<!-- VISTA: LUGAR (áreas + plantas) -->
+<section id="vista-lugar" class="vista">
+  <div class="page-header">
+    <div class="page-title" id="det-lugar-nombre">—<small id="det-lugar-dim"></small></div>
+    <button class="btn btn-ghost" onclick="show('vista-lugares');cargarLugares()">← Volver</button>
+  </div>
+
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px">
+    <span class="section-label">Áreas</span>
+    <button class="btn btn-ghost" style="font-size:.8rem;padding:6px 12px" onclick="abrirModal('modal-area')">+ Nueva área</button>
+  </div>
+  <div id="lista-areas" class="area-grid"></div>
+
+  <hr class="divider">
+
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px">
+    <span class="section-label">Plantas en este lugar</span>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-ghost" style="font-size:.8rem;padding:6px 12px" onclick="abrirModal('modal-evento-global')" title="Agendar evento para todas las plantas del lugar">📅 Evento para todas</button>
+      <button class="btn btn-primary" style="font-size:.8rem;padding:6px 12px" onclick="abrirModal('modal-planta')">+ Nueva planta</button>
+    </div>
+  </div>
+  <div id="lista-plantas-lugar" class="planta-grid"></div>
+</section>
+
+<!-- VISTA: PLANTA (detalle) -->
+<section id="vista-planta" class="vista">
+  <div class="page-header">
+    <div class="page-title" id="det-nombre">—<small id="det-dia">—</small></div>
+    <button class="btn btn-ghost" onclick="show('vista-lugar')">← Volver</button>
+  </div>
+
+  <div class="info-grid">
+    <div class="info-card"><div class="ic-label">Genética</div><div class="ic-val" id="det-genetica">—</div></div>
+    <div class="info-card"><div class="ic-label">Fase</div><div class="ic-val" id="det-fase">—</div>
+      <button class="btn-sm btn-ghost" style="margin-top:6px;width:100%;font-size:.7rem" onclick="abrirModalCambioFase()">Cambiar fase</button>
+    </div>
+    <div class="info-card"><div class="ic-label">Origen</div><div class="ic-val" id="det-origen">—</div></div>
+    <div class="info-card"><div class="ic-label">Fecha inicio</div><div class="ic-val" id="det-inicio">—</div></div>
+    <div class="info-card"><div class="ic-label">Altura plantín</div><div class="ic-val" id="det-altura">—</div></div>
+    <div class="info-card"><div class="ic-label">Substrato</div><div class="ic-val" id="det-substrato">—</div></div>
+    <div class="info-card"><div class="ic-label">Maceta</div><div class="ic-val" id="det-maceta">—</div></div>
+    <div class="info-card"><div class="ic-label">Riego</div><div class="ic-val" id="det-riego">—</div></div>
+  </div>
+  <div class="info-card" style="margin-bottom:20px"><div class="ic-label">Notas</div><div id="det-notas" style="font-size:.85rem;margin-top:4px">—</div></div>
+
+  <div class="tabs">
+    <button class="tab-btn activo" data-tab="mediciones">🌡️ Mediciones</button>
+    <button class="tab-btn" data-tab="eventos">📅 Agenda</button>
+    <button class="tab-btn" data-tab="nutricion">⚗️ Nutrición</button>
+    <button class="tab-btn" data-tab="fases">🌿 Fases</button>
+    <button class="tab-btn" data-tab="fitosanitario">🔬 Fitosanitario</button>
+    <button class="tab-btn" data-tab="inase">📋 INASE</button>
+  </div>
+
+  <div id="tab-mediciones" class="tab-panel activo">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px">
+      <div style="display:flex;align-items:center;gap:8px">
+        <label style="font-size:.76rem;color:var(--muted)">Período:</label>
+        <select id="med-periodo" onchange="cargarMediciones()" style="background:var(--surface);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:6px;font-size:.8rem">
+          <option value="7">7 días</option>
+          <option value="30" selected>30 días</option>
+          <option value="60">60 días</option>
+          <option value="90">90 días</option>
+          <option value="0">Todo el ciclo</option>
+        </select>
+        <span id="med-resumen" style="font-size:.74rem;color:var(--muted)"></span>
+      </div>
+      <button class="btn btn-primary" onclick="abrirModal('modal-medicion')">+ Registrar medición</button>
+    </div>
+    <div class="med-scroll"><div id="lista-mediciones"></div></div>
+  </div>
+  <div id="tab-eventos" class="tab-panel">
+    <div class="section-toolbar"><button class="btn btn-primary" onclick="abrirModal('modal-evento')">+ Agendar evento</button></div>
+    <div id="lista-eventos"></div>
+  </div>
+  <div id="tab-nutricion" class="tab-panel">
+    <div class="section-toolbar"><button class="btn btn-primary" onclick="abrirModal('modal-nutricion')">+ Agregar semana</button></div>
+    <div id="lista-nutricion"></div>
+  </div>
+  <div id="tab-fases" class="tab-panel">
+    <div class="section-toolbar">
+      <button class="btn btn-primary" onclick="abrirModalCambioFase()">+ Registrar cambio de fase</button>
+    </div>
+    <div id="lista-fases"></div>
+  </div>
+
+  <div id="tab-fitosanitario" class="tab-panel">
+    <div class="section-toolbar">
+      <button class="btn btn-primary" onclick="abrirModal('modal-fitosanitario')">+ Nueva incidencia</button>
+    </div>
+    <div id="lista-fitosanitario"></div>
+  </div>
+
+  <div id="tab-inase" class="tab-panel">
+    <div class="inase-badge">📋 Registro INASE – Instituto Nacional de Semillas</div>
+    <div class="section-toolbar"><button class="btn btn-primary" onclick="abrirModal('modal-inase')">+ Nuevo registro</button></div>
+    <div id="lista-inase"></div>
+  </div>
+</section>
+
+<!-- VISTA: SENSORES TUYA -->
+<section id="vista-tuya" class="vista">
+  <div class="tuya-top">
+    <div class="page-title">Sensores y dispositivos<small>Tuya Smart – tiempo real</small></div>
+    <div class="tuya-controles">
+      <span id="tuya-estado">—</span>
+      <select id="tuya-refresh" class="refresh-select">
+        <option value="2">2 min</option>
+        <option value="5" selected>5 min</option>
+        <option value="10">10 min</option>
+        <option value="30">30 min</option>
+      </select>
+      <button class="btn btn-primary" onclick="iniciarAutoRefresh()">▶ Auto</button>
+      <button class="btn btn-ghost"   onclick="detenerAutoRefresh()">⏹</button>
+      <button class="btn btn-ghost"   onclick="actualizarSensores()">🔄</button>
+    </div>
+  </div>
+
+  <div class="sensores-grid">
+    <!-- Sensor Carpa -->
+    <div class="sensor-card" id="sensor-sensor_carpa">
+      <div class="sensor-lugar">Carpa 1×1×2</div>
+      <div class="sensor-nombre">🌡️ Sensor Ambiente</div>
+      <div class="s-online" style="margin-bottom:6px;font-size:.78rem"></div>
+      <div class="sensor-vals">
+        <div class="sv-item"><div class="sv-val s-temp">—</div><div class="sv-unit">°C</div><div class="sv-label">Temperatura</div></div>
+        <div class="sv-item"><div class="sv-val s-hum">—</div><div class="sv-unit">%</div><div class="sv-label">Humedad</div></div>
+        <div class="sv-item"><div class="sv-val s-vpd">—</div><div class="sv-unit">kPa</div><div class="sv-label">VPD</div></div>
+      </div>
+      <span class="s-vpd-tag vpd-tag">—</span>
+      <div class="s-alertas"></div>
+      <div class="sensor-acciones">
+        <small class="s-ts">Sin datos</small>
+        <button class="btn btn-ghost" style="font-size:.75rem;padding:5px 10px" onclick="importarDesde('sensor_carpa')">📥 Importar</button>
+      </div>
+    </div>
+
+    <!-- Sensor 3x1 -->
+    <div class="sensor-card" id="sensor-sensor_3x1">
+      <div class="sensor-lugar">Estructura 3×1×2</div>
+      <div class="sensor-nombre">🌡️ Sensor Ambiente</div>
+      <div class="s-online" style="margin-bottom:6px;font-size:.78rem"></div>
+      <div class="sensor-vals">
+        <div class="sv-item"><div class="sv-val s-temp">—</div><div class="sv-unit">°C</div><div class="sv-label">Temperatura</div></div>
+        <div class="sv-item"><div class="sv-val s-hum">—</div><div class="sv-unit">%</div><div class="sv-label">Humedad</div></div>
+        <div class="sv-item"><div class="sv-val s-vpd">—</div><div class="sv-unit">kPa</div><div class="sv-label">VPD</div></div>
+      </div>
+      <span class="s-vpd-tag vpd-tag">—</span>
+      <div class="s-alertas"></div>
+      <div class="sensor-acciones">
+        <small class="s-ts">Sin datos</small>
+        <button class="btn btn-ghost" style="font-size:.75rem;padding:5px 10px" onclick="importarDesde('sensor_3x1')">📥 Importar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Switches -->
+  <span class="section-label">Smart Switches</span>
+  <div class="sensores-grid" style="margin-top:10px">
+    <div class="sensor-card">
+      <div class="sensor-lugar">Carpa 1×1×2</div>
+      <div class="sensor-nombre">💡 Luces Carpa</div>
+      <div class="s-switch-estado" id="switch-estado-luces_carpa" style="margin:8px 0;font-size:.85rem;font-weight:600">Consultando...</div>
+      <div style="font-size:.75rem;color:var(--muted)">Device: <code style="color:var(--lima)">ebb60fa54c54559c63ysur</code></div>
+    </div>
+    <div class="sensor-card">
+      <div class="sensor-lugar">Carpa 1×1×2</div>
+      <div class="sensor-nombre">🌀 Cooler Ventilador Carpa</div>
+      <div class="s-switch-estado" id="switch-estado-cooler_carpa" style="margin:8px 0;font-size:.85rem;font-weight:600">Consultando...</div>
+      <div style="font-size:.75rem;color:var(--muted)">Device: <code style="color:var(--lima)">3522204898f4abba2357</code></div>
+    </div>
+    <div class="sensor-card">
+      <div class="sensor-lugar">Estructura 3×1×2</div>
+      <div class="sensor-nombre">💡 Luces 3×1</div>
+      <div class="s-switch-estado" id="switch-estado-luces_3x1" style="margin:8px 0;font-size:.85rem;font-weight:600">Consultando...</div>
+      <div style="font-size:.75rem;color:var(--muted)">Device: <code style="color:var(--lima)">80210308a4cf12ac315b</code></div>
+    </div>
+  </div>
+</section>
+
+
+<!-- VISTA: PANEL DE CONTROL -->
+<section id="vista-panel" class="vista">
+  <div class="page-header">
+    <div class="page-title">Panel de control<small>Estado actual de todas las plantas</small></div>
+    <button class="btn btn-ghost" style="font-size:.8rem" onclick="cargarPanelControl()">🔄 Actualizar</button>
+  </div>
+
+  <!-- Filtros rápidos -->
+  <div class="panel-filtros">
+    <button class="panel-filtro activo" onclick="filtrarPanel('todos',this)">Todas</button>
+    <button class="panel-filtro" onclick="filtrarPanel('vegetativa',this)">🌿 Vegetativo</button>
+    <button class="panel-filtro" onclick="filtrarPanel('floracion',this)">🌸 Floración</button>
+    <button class="panel-filtro" onclick="filtrarPanel('alerta',this)">⚠️ Con alertas</button>
+  </div>
+
+  <div id="panel-grid" class="panel-grid"></div>
+</section>
+
+
+<!-- VISTA: KIOSKO DE CAMPO -->
+<div id="vista-kiosko" class="kiosko-overlay" style="display:none">
+  <div class="kiosko-header">
+    <span class="kiosko-titulo">🌿 CultivApp — Vista de campo</span>
+    <div style="display:flex;gap:12px;align-items:center">
+      <span id="kiosko-hora" class="kiosko-hora"></span>
+      <button class="btn btn-ghost" onclick="cerrarKiosko()" style="font-size:.8rem">✕ Salir</button>
+    </div>
+  </div>
+  <div class="kiosko-grid" id="kiosko-grid"></div>
+  <div class="kiosko-footer">
+    <span id="kiosko-estado">Actualizando...</span>
+    <button class="btn btn-ghost" style="font-size:.75rem" onclick="actualizarKiosko()">🔄</button>
+  </div>
+</div>
+
+
+</main>
+
+<!-- ═══════════ MODALES ═══════════ -->
+
+<!-- Modal: Nuevo lugar -->
+<div class="modal-overlay" id="modal-lugar">
+  <div class="modal">
+    <div class="modal-header"><h3>🏕️ Nuevo lugar de cultivo</h3><button class="btn-icon" onclick="cerrarModal('modal-lugar')">✕</button></div>
+    <div id="form-lugar">
+      <div class="form-row">
+        <div class="form-group"><label>Nombre *</label><input id="l-nombre" placeholder="Ej: Carpa, Estructura 3x1"></div>
+        <div class="form-group"><label>Dimensiones</label><input id="l-dim" placeholder="Ej: 1×1×2 m"></div>
+      </div>
+      <div class="section-label">💡 Luces</div>
+      <div id="luces-rows">
+        <div class="luz-row">
+          <select class="luz-tipo" style="flex:1;background:#0d1a0f;border:1px solid var(--border);color:var(--text);padding:8px;border-radius:6px;font-size:.85rem">
+            <option value="">— Seleccionar luz —</option>
+            <option>Insativa 200w</option>
+            <option>Santa Planta 250w</option>
+            <option>Galponera 100w Fría</option>
+            <option>Mars Orbiter</option>
+          </select>
+          <input class="luz-cant" type="number" min="1" value="1" style="width:60px;background:#0d1a0f;border:1px solid var(--border);color:var(--text);padding:8px;border-radius:6px;font-size:.85rem">
+          <button type="button" class="btn-icon" onclick="this.parentElement.remove()">🗑</button>
+        </div>
+      </div>
+      <button type="button" class="btn btn-ghost" style="font-size:.78rem;padding:5px 12px;margin-bottom:12px" onclick="agregarLuzRow()">+ Agregar luz</button>
+
+      <div class="section-label">🌀 Renovación de aire</div>
+      <div class="form-row">
+        <div class="form-group">
+          <div class="chk-item"><input type="checkbox" id="l-intractor"><label for="l-intractor">Intractor</label></div>
+          <div class="chk-item" style="margin-top:8px"><input type="checkbox" id="l-extractor"><label for="l-extractor">Extractor</label></div>
+        </div>
+        <div class="form-group"><label>Smart Switch turbinas (Device ID)</label><input id="l-sw-intractor" placeholder="ID del switch Tuya"></div>
+      </div>
+
+      <div class="section-label">📡 Sensores Tuya vinculados</div>
+      <div class="chk-group">
+        <label class="chk-item"><input type="checkbox" class="chk-sensor" value="sensor_carpa"> Sensor Carpa (ebefb9fc...)</label>
+        <label class="chk-item"><input type="checkbox" class="chk-sensor" value="sensor_3x1"> Sensor 3×1 (eb8fc54c...)</label>
+      </div>
+
+      <div class="section-label" style="margin-top:14px">💡 Smart Switches de luces</div>
+      <div class="chk-group">
+        <label class="chk-item"><input type="checkbox" class="chk-switch-luz" value="luces_carpa"> Luces Carpa (ebb60fa5...)</label>
+        <label class="chk-item"><input type="checkbox" class="chk-switch-luz" value="luces_3x1"> Luces 3×1 (80210308...)</label>
+      </div>
+
+      <div class="section-label" style="margin-top:14px">🌀 Smart Switches de turbinas</div>
+      <div class="chk-group">
+        <label class="chk-item"><input type="checkbox" class="chk-switch-turb" value="cooler_carpa"> Cooler Ventilador Carpa (35222048...)</label>
+      </div>
+
+      <div class="section-label" style="margin-top:16px">📍 Posición del sensor</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Altura desde el suelo (cm)</label>
+          <input id="l-sensor-altura" type="number" min="0" max="300" placeholder="Ej: 150">
+        </div>
+        <div class="form-group">
+          <label>Distancia a la fuente de luz (cm)</label>
+          <input id="l-sensor-distluz" type="number" min="0" max="300" placeholder="Ej: 60">
+        </div>
+      </div>
+      <div class="form-row col1">
+        <div class="form-group">
+          <label>Descripción de ubicación</label>
+          <input id="l-sensor-pos" placeholder="Ej: centro del espacio, a 1.5m del suelo, 60cm bajo la luz">
+        </div>
+      </div>
+      <div class="form-row col1" style="margin-top:14px">
+        <div class="form-group"><label>Notas</label><textarea id="l-notas" placeholder="Observaciones del lugar..."></textarea></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="cerrarModal('modal-lugar')">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarLugar()">Guardar lugar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Nueva área -->
+<div class="modal-overlay" id="modal-area">
+  <div class="modal">
+    <div class="modal-header"><h3>📐 Nueva área</h3><button class="btn-icon" onclick="cerrarModal('modal-area')">✕</button></div>
+    <div id="form-area">
+      <div class="form-row">
+        <div class="form-group"><label>Nombre *</label><input id="a-nombre" placeholder="Ej: Sub 1, Sub 2, Sub 3"></div>
+        <div class="form-group"><label>Dimensiones</label><input id="a-dim" placeholder="Ej: 1×1 m"></div>
+      </div>
+      <div class="section-label">💡 Luces del área</div>
+      <div id="luces-rows-area">
+        <div class="luz-row-area" style="display:flex;gap:8px;margin-bottom:8px;align-items:center">
+          <select class="luz-tipo-area" style="flex:1;background:#0d1a0f;border:1px solid var(--border);color:var(--text);padding:8px;border-radius:6px;font-size:.85rem">
+            <option value="">— Seleccionar luz —</option>
+            <option>Insativa 200w</option>
+            <option>Santa Planta 250w</option>
+            <option>Galponera 100w Fría</option>
+            <option>Mars Orbiter</option>
+          </select>
+          <input class="luz-cant-area" type="number" min="1" value="1" style="width:60px;background:#0d1a0f;border:1px solid var(--border);color:var(--text);padding:8px;border-radius:6px;font-size:.85rem">
+          <button type="button" class="btn-icon" onclick="this.parentElement.remove()">🗑</button>
+        </div>
+      </div>
+      <button type="button" class="btn btn-ghost" style="font-size:.78rem;padding:5px 12px;margin-bottom:12px" onclick="agregarLuzRowArea()">+ Agregar luz</button>
+      <div class="form-row col1">
+        <div class="form-group"><label>Notas</label><textarea id="a-notas" placeholder="Observaciones del área..."></textarea></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="cerrarModal('modal-area')">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarArea()">Guardar área</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Nueva planta -->
+<div class="modal-overlay" id="modal-planta">
+  <div class="modal">
+    <div class="modal-header"><h3>🌱 Nueva planta</h3><button class="btn-icon" onclick="cerrarModal('modal-planta')">✕</button></div>
+    <div id="form-planta">
+      <div class="form-row">
+        <div class="form-group"><label>Nombre *</label><input id="p-nombre" placeholder="Ej: OG Kush #1"></div>
+        <div class="form-group"><label>Genética *</label><input id="p-genetica" placeholder="Ej: OG Kush"></div>
+      </div>
+      <div class="form-row col3">
+        <div class="form-group"><label>Origen</label>
+          <select id="p-origen"><option value="semilla">Semilla</option><option value="esqueje">Esqueje</option></select>
+        </div>
+        <div class="form-group"><label>Fecha siembra/llegada</label><input id="p-fecha" type="date"></div>
+        <div class="form-group"><label>Fase actual</label>
+          <select id="p-fase">
+            <option value="germinacion">Germinación</option>
+            <option value="vegetativa" selected>Vegetativa</option>
+            <option value="floracion">Floración</option>
+            <option value="cosecha">Cosecha</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row col3">
+        <div class="form-group"><label>Altura plantín (cm)</label><input id="p-altura" type="number" step="0.5" placeholder="Ej: 15"></div>
+        <div class="form-group"><label>Substrato</label>
+          <select id="p-substrato">
+            <option>Tierra + perlita</option>
+            <option>Coco coir</option>
+            <option>Hidropónico</option>
+            <option>Aeropónico</option>
+            <option>Orgánico vivo</option>
+            <option>Tierra premium</option>
+            <option>Otro</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Maceta (litros)</label><input id="p-maceta" type="number" placeholder="11"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Sistema de riego</label>
+          <select id="p-riego">
+            <option value="">Manual</option>
+            <option>Goteo</option>
+            <option>Autorriego</option>
+            <option>NFT</option>
+            <option>DWC</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row col1">
+        <div class="form-group"><label>Notas</label><textarea id="p-notas" placeholder="Observaciones particulares de esta planta..."></textarea></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="cerrarModal('modal-planta')">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarPlanta()">Guardar planta</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Medición -->
+<div class="modal-overlay" id="modal-medicion">
+  <div class="modal">
+    <div class="modal-header"><h3>🌡️ Registrar medición</h3><button class="btn-icon" onclick="cerrarModal('modal-medicion')">✕</button></div>
+    <div id="form-medicion">
+      <div class="form-row">
+        <div class="form-group"><label>Fecha</label><input id="m-fecha" type="date"></div>
+        <div class="form-group"><label>Hora</label><input id="m-hora" type="time"></div>
+      </div>
+      <div class="form-row col3">
+        <div class="form-group"><label>Temp. ambiente (°C)</label><input id="m-tempamb" type="number" step="0.1" placeholder="24.5"></div>
+        <div class="form-group"><label>Humedad (%)</label><input id="m-humedad" type="number" step="0.1" placeholder="55"></div>
+        <div class="form-group"><label>Temp. maceta (°C)</label><input id="m-tempmac" type="number" step="0.1" placeholder="22.0"></div>
+      </div>
+      <div class="section-label" style="margin-top:4px">💧 Agua de entrada (riego)</div>
+      <div class="form-row col3">
+        <div class="form-group"><label>pH entrada</label><input id="m-ph" type="number" step="0.01" placeholder="6.2"></div>
+        <div class="form-group"><label>EC entrada (mS/cm)</label><input id="m-ec" type="number" step="0.01" placeholder="1.8"></div>
+        <div class="form-group"><label>Volumen riego (ml)</label><input id="m-volriego" type="number" placeholder="500"></div>
+      </div>
+      <div class="section-label">🪣 Lixiviado / Run-off</div>
+      <div class="form-row col3">
+        <div class="form-group"><label>pH lixiviado</label><input id="m-ph-lix" type="number" step="0.01" placeholder="6.5"></div>
+        <div class="form-group"><label>EC lixiviado (mS/cm)</label><input id="m-ec-lix" type="number" step="0.01" placeholder="2.1"></div>
+        <div class="form-group"><label>Volumen lixiviado (ml)</label><input id="m-vollix" type="number" placeholder="150"></div>
+      </div>
+      <div id="m-delta-ec" style="font-size:.76rem;color:var(--muted);margin-bottom:8px"></div>
+      <div class="form-row col3">
+        <div class="form-group"><label>Luz (lux)</label><input id="m-luz" type="number" placeholder="25000"></div>
+        <div class="form-group"><label>CO₂ (ppm)</label><input id="m-co2" type="number" placeholder="800"></div>
+        <div class="form-group"><label>VPD aire (kPa)</label><input id="m-vpd" type="number" step="0.01" placeholder="1.2"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Temp. foliar (°C) <small style="color:var(--muted)">— opcional, para VPD hoja</small></label>
+          <input id="m-tempfoliar" type="number" step="0.1" placeholder="Ej: 26.5 (termómetro IR)">
+        </div>
+        <div class="form-group">
+          <label>VPD foliar calc. (kPa) <small style="color:var(--muted)">— se auto-calcula</small></label>
+          <input id="m-vpdfoliar" type="number" step="0.01" placeholder="Auto" readonly style="opacity:.6">
+        </div>
+      </div>
+      <div class="form-row col1">
+        <div class="form-group"><label>Notas</label><textarea id="m-notas" placeholder="Observaciones..."></textarea></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="cerrarModal('modal-medicion')">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarMedicion()">Guardar medición</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Cambio de Fase -->
+<div class="modal-overlay" id="modal-cambio-fase">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>🌿 Registrar cambio de fase</h3>
+      <button class="btn-icon" onclick="cerrarModal('modal-cambio-fase')">✕</button>
+    </div>
+    <div style="background:rgba(0,200,150,.07);border:1px solid rgba(0,200,150,.2);border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:.8rem;color:var(--text2)">
+      El cambio de fase queda registrado con fecha para análisis de ciclo.
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Nueva fase</label>
+        <select id="cf-fase">
+          <option value="germinacion">Germinación</option>
+          <option value="vegetativa">Vegetativa</option>
+          <option value="floracion">Floración</option>
+          <option value="cosecha">Cosecha</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Fecha del cambio</label>
+        <input id="cf-fecha" type="date">
+      </div>
+    </div>
+    <div class="form-row col1">
+      <div class="form-group"><label>Notas</label>
+        <textarea id="cf-notas" placeholder="Ej: Cambio a 12/12, inicio de floración..."></textarea>
+      </div>
+    </div>
+    <div id="cf-advertencia" style="display:none;background:rgba(224,150,74,.1);border:1px solid rgba(224,150,74,.3);border-radius:8px;padding:10px;font-size:.8rem;color:var(--warning);margin-bottom:10px"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="cerrarModal('modal-cambio-fase')">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarCambioFase()">Confirmar cambio</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Evento Global por Lugar -->
+<div class="modal-overlay" id="modal-evento-global">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>📅 Evento para todas las plantas del lugar</h3>
+      <button class="btn-icon" onclick="cerrarModal('modal-evento-global')">✕</button>
+    </div>
+    <div style="background:rgba(0,200,150,.07);border:1px solid rgba(0,200,150,.2);border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:.8rem;color:var(--text2)">
+      Se va a crear el mismo evento en <b>todas las plantas</b> del lugar activo.
+    </div>
+    <div id="form-evento-global">
+      <div class="form-row col1"><div class="form-group"><label>Título *</label><input id="evg-titulo" placeholder="Ej: Fertilización semanal, Inspección general..."></div></div>
+      <div class="form-row col3">
+        <div class="form-group"><label>Tipo</label>
+          <select id="evg-tipo">
+            <option value="riego">💧 Riego</option>
+            <option value="fertilizacion">⚗️ Fertilización</option>
+            <option value="poda">✂️ Poda / LST</option>
+            <option value="inspeccion">🔍 Inspección</option>
+            <option value="tratamiento">💊 Tratamiento</option>
+            <option value="otro">📌 Otro</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Fecha</label><input id="evg-fecha" type="date"></div>
+        <div class="form-group"><label>Hora</label><input id="evg-hora" type="time"></div>
+      </div>
+      <div class="form-row col1"><div class="form-group"><label>Descripción</label><textarea id="evg-desc" placeholder="Detalles del evento..."></textarea></div></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="cerrarModal('modal-evento-global')">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarEventoGlobal()">Agendar para todas</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Evento -->
+<div class="modal-overlay" id="modal-evento">
+  <div class="modal">
+    <div class="modal-header"><h3>📅 Agendar evento</h3><button class="btn-icon" onclick="cerrarModal('modal-evento')">✕</button></div>
+    <div id="form-evento">
+      <div class="form-row col1"><div class="form-group"><label>Título *</label><input id="ev-titulo" placeholder="Ej: Riego con nutrientes, Poda..."></div></div>
+      <div class="form-row col3">
+        <div class="form-group"><label>Tipo</label>
+          <select id="ev-tipo">
+            <option value="riego">💧 Riego</option>
+            <option value="fertilizacion">⚗️ Fertilización</option>
+            <option value="poda">✂️ Poda / LST</option>
+            <option value="transplante">🪴 Trasplante</option>
+            <option value="cambio_fase">🌿 Cambio de fase</option>
+            <option value="cosecha">🌾 Cosecha</option>
+            <option value="inspeccion">🔍 Inspección</option>
+            <option value="tratamiento">💊 Tratamiento</option>
+            <option value="otro">📌 Otro</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Fecha</label><input id="ev-fecha" type="date"></div>
+        <div class="form-group"><label>Hora</label><input id="ev-hora" type="time"></div>
+      </div>
+      <div class="form-row col1"><div class="form-group"><label>Descripción</label><textarea id="ev-desc" placeholder="Detalles del evento..."></textarea></div></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="cerrarModal('modal-evento')">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarEvento()">Agendar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Nutrición -->
+<div class="modal-overlay" id="modal-nutricion">
+  <div class="modal">
+    <div class="modal-header"><h3>⚗️ Plan nutricional – Semana</h3><button class="btn-icon" onclick="cerrarModal('modal-nutricion')">✕</button></div>
+    <div id="form-nutricion">
+      <div class="form-row">
+        <div class="form-group"><label>Semana #</label><input id="nutr-semana" type="number" placeholder="1" min="1"></div>
+        <div class="form-group"><label>Fase</label>
+          <select id="nutr-fase">
+            <option>Germinación</option><option>Vegetativa temprana</option><option>Vegetativa</option>
+            <option>Pre-floración</option><option>Floración temprana</option><option>Floración pico</option>
+            <option>Engorde</option><option>Maduración</option><option>Flush</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>pH objetivo</label><input id="nutr-ph" type="number" step="0.01" placeholder="6.2"></div>
+        <div class="form-group"><label>EC objetivo (mS/cm)</label><input id="nutr-ec" type="number" step="0.01" placeholder="1.6"></div>
+      </div>
+      <div class="form-row col1">
+        <div class="form-group">
+          <label>Productos (Nombre, Dosis, Unidad — uno por línea)</label>
+          <textarea id="nutr-productos" placeholder="BioBizz Grow, 4, ml/L&#10;BioBizz Bloom, 2, ml/L" style="min-height:80px"></textarea>
+        </div>
+      </div>
+      <div class="form-row col1"><div class="form-group"><label>Notas</label><textarea id="nutr-notas" placeholder="Observaciones..."></textarea></div></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="cerrarModal('modal-nutricion')">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarNutricion()">Guardar semana</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Incidencia Fitosanitaria -->
+<div class="modal-overlay" id="modal-fitosanitario">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>🔬 Nueva incidencia fitosanitaria</h3>
+      <button class="btn-icon" onclick="cerrarModal('modal-fitosanitario')">✕</button>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Tipo *</label>
+        <select id="ft-tipo">
+          <option value="plaga">🐛 Plaga</option>
+          <option value="enfermedad">🍄 Enfermedad fúngica</option>
+          <option value="bacteria">🦠 Bacteria</option>
+          <option value="deficiencia">🌿 Deficiencia nutricional</option>
+          <option value="toxicidad">⚠️ Toxicidad</option>
+          <option value="estres_abiotico">💧 Estrés abiótico</option>
+          <option value="otro">📌 Otro</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Fecha detección *</label>
+        <input id="ft-fecha" type="date">
+      </div>
+    </div>
+    <div class="form-row col1">
+      <div class="form-group"><label>Agente causal / Nombre</label>
+        <input id="ft-agente" placeholder="Ej: Tetranychus urticae (ácaro rojo), Botrytis cinerea, deficiencia de Mg...">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Severidad</label>
+        <select id="ft-severidad">
+          <option value="leve">🟡 Leve — aislado, &lt;10% superficie</option>
+          <option value="moderado">🟠 Moderado — 10–40% superficie</option>
+          <option value="severo">🔴 Severo — &gt;40% superficie</option>
+          <option value="critico">💀 Crítico — riesgo de pérdida total</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Zona afectada</label>
+        <select id="ft-zona">
+          <option value="hojas_bajas">Hojas bajas</option>
+          <option value="hojas_altas">Hojas altas / cogollos</option>
+          <option value="tallo">Tallo</option>
+          <option value="raices">Raíces</option>
+          <option value="toda_planta">Toda la planta</option>
+          <option value="otra">Otra</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row col1">
+      <div class="form-group"><label>Tratamiento aplicado</label>
+        <input id="ft-tratamiento" placeholder="Ej: Aceite de neem 2ml/L, Azufre mojable, corrección pH...">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Fecha recontrol (seguimiento)</label>
+        <input id="ft-recontrol" type="date">
+      </div>
+      <div class="form-group"><label>Estado</label>
+        <select id="ft-estado">
+          <option value="activa">Activa</option>
+          <option value="en_tratamiento">En tratamiento</option>
+          <option value="resuelta">Resuelta</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row col1">
+      <div class="form-group"><label>Observaciones</label>
+        <textarea id="ft-obs" placeholder="Descripción visual, síntomas, condiciones en que se detectó..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="cerrarModal('modal-fitosanitario')">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarFitosanitario()">Registrar incidencia</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: INASE -->
+<div class="modal-overlay" id="modal-inase">
+  <div class="modal">
+    <div class="modal-header"><h3>📋 Registro INASE</h3><button class="btn-icon" onclick="cerrarModal('modal-inase')">✕</button></div>
+    <div id="form-inase">
+      <div class="form-row">
+        <div class="form-group"><label>Tipo de registro *</label>
+          <select id="in-tipo">
+            <option value="Adquisición de semillas">Adquisición de semillas</option>
+            <option value="Producción de semillas">Producción de semillas</option>
+            <option value="Siembra / plantación">Siembra / plantación</option>
+            <option value="Cosecha">Cosecha</option>
+            <option value="Stock / inventario">Stock / inventario</option>
+            <option value="Destrucción / descarte">Destrucción / descarte</option>
+            <option value="Importación">Importación</option>
+            <option value="Exportación">Exportación</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Fecha *</label><input id="in-fecha" type="date"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>N° Registro INASE</label><input id="in-nro" placeholder="IA-0001-2025"></div>
+        <div class="form-group"><label>Variedad</label><input id="in-variedad" placeholder="Nombre varietal"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Categoría</label>
+          <select id="in-categoria">
+            <option value="">— Seleccionar —</option>
+            <option>Original / Fundación</option><option>Registrada</option>
+            <option>Fiscalizada</option><option>Identificada</option><option>No categorizada</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Proveedor / Origen</label><input id="in-proveedor" placeholder="Banco de semillas"></div>
+      </div>
+      <div class="form-row col3">
+        <div class="form-group"><label>N° de lote</label><input id="in-lote" placeholder="Lote proveedor"></div>
+        <div class="form-group"><label>Cantidad</label><input id="in-cantidad" type="number" step="0.01" placeholder="10"></div>
+        <div class="form-group"><label>Unidad</label>
+          <select id="in-unidad"><option>semillas</option><option>kg</option><option>g</option><option>plantas</option><option>esquejes</option></select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Superficie (m²)</label><input id="in-superficie" type="number" step="0.01" placeholder="4.5"></div>
+        <div class="form-group"><label>Destino</label>
+          <select id="in-destino">
+            <option value="">— Seleccionar —</option>
+            <option>Uso personal</option><option>Investigación</option>
+            <option>Uso medicinal</option><option>Producción registrada</option><option>Otro</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row col1"><div class="form-group"><label>Responsable técnico</label><input id="in-responsable" placeholder="Nombre y matrícula"></div></div>
+      <div class="form-row col1"><div class="form-group"><label>Observaciones</label><textarea id="in-obs" placeholder="Notas adicionales..."></textarea></div></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="cerrarModal('modal-inase')">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarInase()">Guardar registro</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
