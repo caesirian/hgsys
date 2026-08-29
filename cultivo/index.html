@@ -35,6 +35,9 @@
   <button class="nav-btn" data-vista="vista-tuya" onclick="show('vista-tuya')">
     <span class="nav-icon">📡</span><span class="nav-label">Sensores</span>
   </button>
+    <button class="nav-btn" onclick="toggleModoClaro()" id="btn-modo-claro">
+    <span class="nav-icon">☀️</span><span class="nav-label">Modo campo</span>
+  </button>
   <div class="sidebar-footer">HG Soluciones Web</div>
 </aside>
 
@@ -182,11 +185,26 @@
     <button class="tab-btn activo" data-tab="mediciones">🌡️ Mediciones</button>
     <button class="tab-btn" data-tab="eventos">📅 Agenda</button>
     <button class="tab-btn" data-tab="nutricion">⚗️ Nutrición</button>
+    <button class="tab-btn" data-tab="fases">🌿 Fases</button>
+    <button class="tab-btn" data-tab="fitosanitario">🔬 Fitosanitario</button>
     <button class="tab-btn" data-tab="inase">📋 INASE</button>
   </div>
 
   <div id="tab-mediciones" class="tab-panel activo">
-    <div class="section-toolbar"><button class="btn btn-primary" onclick="abrirModalMedicion()">+ Registrar medición</button></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <label style="font-size:.76rem;color:var(--muted)">Período:</label>
+        <select id="med-periodo" onchange="cargarMediciones()" style="background:var(--surface);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:6px;font-size:.8rem">
+          <option value="7">7 días</option>
+          <option value="30" selected>30 días</option>
+          <option value="60">60 días</option>
+          <option value="90">90 días</option>
+          <option value="0">Todo el ciclo</option>
+        </select>
+        <span id="med-resumen" style="font-size:.74rem;color:var(--muted)"></span>
+      </div>
+      <button class="btn btn-primary" onclick="abrirModalMedicion()">+ Registrar medición</button>
+    </div>
     <div class="med-scroll"><div id="lista-mediciones"></div></div>
   </div>
   <div id="tab-eventos" class="tab-panel">
@@ -197,6 +215,20 @@
     <div class="section-toolbar"><button class="btn btn-primary" onclick="abrirModal('modal-nutricion')">+ Agregar semana</button></div>
     <div id="lista-nutricion"></div>
   </div>
+  <div id="tab-fases" class="tab-panel">
+    <div class="section-toolbar">
+      <button class="btn btn-primary" onclick="abrirModalCambioFase()">+ Registrar cambio de fase</button>
+    </div>
+    <div id="lista-fases"></div>
+  </div>
+
+  <div id="tab-fitosanitario" class="tab-panel">
+    <div class="section-toolbar">
+      <button class="btn btn-primary" onclick="abrirModal('modal-fitosanitario')">+ Nueva incidencia</button>
+    </div>
+    <div id="lista-fitosanitario"></div>
+  </div>
+
   <div id="tab-inase" class="tab-panel">
     <div class="inase-badge">📋 Registro INASE – Instituto Nacional de Semillas</div>
     <div class="section-toolbar"><button class="btn btn-primary" onclick="abrirModal('modal-inase')">+ Nuevo registro</button></div>
@@ -498,11 +530,19 @@
         <div class="form-group"><label>Humedad (%)</label><input id="m-humedad" type="number" step="0.1" placeholder="55"></div>
         <div class="form-group"><label>Temp. maceta (°C)</label><input id="m-tempmac" type="number" step="0.1" placeholder="22.0"></div>
       </div>
+      <div style="font-size:.72rem;color:var(--accent);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin:4px 0 6px">💧 Agua de entrada</div>
       <div class="form-row col3">
-        <div class="form-group"><label>pH agua</label><input id="m-ph" type="number" step="0.01" placeholder="6.2"></div>
-        <div class="form-group"><label>EC (mS/cm)</label><input id="m-ec" type="number" step="0.01" placeholder="1.8"></div>
-        <div class="form-group"><label>TDS (ppm)</label><input id="m-tds" type="number" placeholder="900"></div>
+        <div class="form-group"><label>pH entrada</label><input id="m-ph" type="number" step="0.01" placeholder="6.2"></div>
+        <div class="form-group"><label>EC entrada (mS/cm)</label><input id="m-ec" type="number" step="0.01" placeholder="1.8"></div>
+        <div class="form-group"><label>Vol. riego (ml)</label><input id="m-volriego" type="number" placeholder="500"></div>
       </div>
+      <div style="font-size:.72rem;color:var(--accent);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin:4px 0 6px">🪣 Lixiviado / Run-off</div>
+      <div class="form-row col3">
+        <div class="form-group"><label>pH lixiviado</label><input id="m-ph-lix" type="number" step="0.01" placeholder="6.5" oninput="calcDeltaEC()"></div>
+        <div class="form-group"><label>EC lixiviado (mS/cm)</label><input id="m-ec-lix" type="number" step="0.01" placeholder="2.1" oninput="calcDeltaEC()"></div>
+        <div class="form-group"><label>Vol. lixiviado (ml)</label><input id="m-vollix" type="number" placeholder="150" oninput="calcDeltaEC()"></div>
+      </div>
+      <div id="m-delta-ec" style="font-size:.76rem;padding:6px 10px;background:var(--surface);border-radius:6px;border:1px solid var(--border);margin-bottom:8px;min-height:28px"></div>
       <div class="form-row col3">
         <div class="form-group"><label>Luz (lux)</label><input id="m-luz" type="number" placeholder="25000"></div>
         <div class="form-group"><label>PPFD (µmol/m²/s)</label><input id="m-ppfd" type="number" placeholder="600"></div>
@@ -668,5 +708,153 @@
   </aside>
 </div>
 
+<!-- Modal: Cambio de Fase -->
+<div class="modal-overlay" id="modal-cambio-fase">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>🌿 Registrar cambio de fase</h3>
+      <button class="btn-icon" onclick="cerrarModal('modal-cambio-fase')">✕</button>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Nueva fase</label>
+        <select id="cf-fase">
+          <option value="germinacion">Germinación</option>
+          <option value="vegetativa">Vegetativa</option>
+          <option value="floracion">Floración</option>
+          <option value="cosecha">Cosecha</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Fecha del cambio</label>
+        <input id="cf-fecha" type="date">
+      </div>
+    </div>
+    <div class="form-row col1">
+      <div class="form-group"><label>Notas</label>
+        <textarea id="cf-notas" placeholder="Ej: Cambio a 12/12, inicio de floración..."></textarea>
+      </div>
+    </div>
+    <div id="cf-advertencia" style="display:none;background:rgba(224,144,64,.1);border:1px solid rgba(224,144,64,.3);border-radius:8px;padding:10px;font-size:.8rem;color:var(--warning);margin-bottom:10px"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="cerrarModal('modal-cambio-fase')">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarCambioFase()">Confirmar cambio</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Incidencia Fitosanitaria -->
+<div class="modal-overlay" id="modal-fitosanitario">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>🔬 Nueva incidencia fitosanitaria</h3>
+      <button class="btn-icon" onclick="cerrarModal('modal-fitosanitario')">✕</button>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Tipo *</label>
+        <select id="ft-tipo">
+          <option value="plaga">🐛 Plaga</option>
+          <option value="enfermedad">🍄 Enfermedad fúngica</option>
+          <option value="bacteria">🦠 Bacteria</option>
+          <option value="deficiencia">🌿 Deficiencia nutricional</option>
+          <option value="toxicidad">⚠️ Toxicidad</option>
+          <option value="estres_abiotico">💧 Estrés abiótico</option>
+          <option value="otro">📌 Otro</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Fecha detección *</label>
+        <input id="ft-fecha" type="date">
+      </div>
+    </div>
+    <div class="form-row col1">
+      <div class="form-group"><label>Agente causal / Nombre</label>
+        <input id="ft-agente" placeholder="Ej: Tetranychus urticae, Botrytis cinerea, def. Mg...">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Severidad</label>
+        <select id="ft-severidad">
+          <option value="leve">🟡 Leve — &lt;10% superficie</option>
+          <option value="moderado">🟠 Moderado — 10–40%</option>
+          <option value="severo">🔴 Severo — &gt;40%</option>
+          <option value="critico">💀 Crítico — riesgo pérdida total</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Zona afectada</label>
+        <select id="ft-zona">
+          <option value="hojas_bajas">Hojas bajas</option>
+          <option value="hojas_altas">Hojas altas / cogollos</option>
+          <option value="tallo">Tallo</option>
+          <option value="raices">Raíces</option>
+          <option value="toda_planta">Toda la planta</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row col1">
+      <div class="form-group"><label>Tratamiento aplicado</label>
+        <input id="ft-tratamiento" placeholder="Ej: Aceite de neem 2ml/L, corrección pH...">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Fecha recontrol</label>
+        <input id="ft-recontrol" type="date">
+      </div>
+      <div class="form-group"><label>Estado</label>
+        <select id="ft-estado">
+          <option value="activa">Activa</option>
+          <option value="en_tratamiento">En tratamiento</option>
+          <option value="resuelta">Resuelta</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row col1">
+      <div class="form-group"><label>Observaciones</label>
+        <textarea id="ft-obs" placeholder="Síntomas, condiciones de detección..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="cerrarModal('modal-fitosanitario')">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarFitosanitario()">Registrar incidencia</button>
+    </div>
+  </div>
+</div>
+
+<!-- Vista: Panel de Control -->
+<div id="vista-panel" style="display:none;padding:0">
+  <div class="page-header" style="padding:24px 24px 0">
+    <div class="page-title">Panel de control<small>Estado actual de todas las plantas</small></div>
+    <button class="btn btn-ghost" style="font-size:.8rem" onclick="cargarPanelControl()">🔄 Actualizar</button>
+  </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;padding:12px 24px">
+    <button class="panel-filtro activo" onclick="filtrarPanel('todos',this)">Todas</button>
+    <button class="panel-filtro" onclick="filtrarPanel('vegetativa',this)">🌿 Vegetativo</button>
+    <button class="panel-filtro" onclick="filtrarPanel('floracion',this)">🌸 Floración</button>
+    <button class="panel-filtro" onclick="filtrarPanel('alerta',this)">⚠️ Con alertas</button>
+  </div>
+  <div id="panel-grid" class="panel-grid" style="padding:0 24px 24px"></div>
+</div>
+
+
+<script>
+// Helper delta EC para el formulario de medición
+function calcDeltaEC() {
+  const ein  = parseFloat(document.getElementById("m-ec")?.value);
+  const elix = parseFloat(document.getElementById("m-ec-lix")?.value);
+  const vr   = parseFloat(document.getElementById("m-volriego")?.value);
+  const vl   = parseFloat(document.getElementById("m-vollix")?.value);
+  const el   = document.getElementById("m-delta-ec");
+  if (!el) return;
+  const parts = [];
+  if (!isNaN(ein) && !isNaN(elix)) {
+    const delta = (elix - ein).toFixed(2);
+    const cls   = elix > ein+0.5 ? "val-critico" : elix > ein+0.2 ? "val-alerta" : "val-optimo";
+    parts.push(`<span class="${cls}">ΔEC: ${delta>0?"+":""}${delta} mS/cm ${elix>ein+0.3?"⚠ acumulación de sales":elix<ein-0.3?"✓ consumo normal":""}</span>`);
+  }
+  if (!isNaN(vr) && !isNaN(vl) && vr > 0) {
+    const pct = ((vl/vr)*100).toFixed(1);
+    const cls = (pct < 10 || pct > 30) ? "val-alerta" : "val-optimo";
+    parts.push(`<span class="${cls}">Run-off: ${pct}% ${pct<10?"(insuficiente)":pct>30?"(excesivo)":"(óptimo 10–30%)"}</span>`);
+  }
+  el.innerHTML = parts.join(" · ");
+}
+</script>
 </body>
 </html>
