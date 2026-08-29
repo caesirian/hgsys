@@ -1,8 +1,33 @@
 :root {
-  --bg:#0a160c; --surface:#111e13; --card:#162019; --border:#1f3322;
-  --green:#2d5a1b; --lima:#7ec845; --lima2:#5aaa28;
-  --text:#e8f0e9; --muted:#7a9b7e; --danger:#c0392b;
-  --radius:10px; --sidebar:220px; --nav-h:60px;
+  /* Paleta científica / terapéutica */
+  --bg:        #07111a;
+  --surface:   #0c1922;
+  --card:      #0f2030;
+  --border:    #18303f;
+  --border2:   #204050;
+
+  --accent:    #00c896;
+  --accent2:   #00a87e;
+  --accent-glow: rgba(0,200,150,.15);
+
+  --blue:      #1a9fd4;
+  --text:      #ddeef5;
+  --text2:     #90b8c8;
+  --muted:     #4a6878;
+
+  --danger:    #e05050;
+  --warning:   #e09040;
+  --info:      #40b0e0;
+
+  --radius:    10px;
+  --sidebar:   220px;
+  --nav-h:     60px;
+
+  /* Aliases para compatibilidad con código existente */
+  --lima:      var(--accent);
+  --lima2:     var(--accent2);
+  --green:     #1a5a40;
+  --card2:     var(--card);
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{height:100%}
@@ -408,4 +433,183 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
   .section-toolbar .btn{width:100%}
   .sensor-vals{grid-template-columns:1fr 1fr 1fr}
   .sv-val{font-size:1.3rem}
+}
+
+
+/* ══════════════════════════════════════════════════════════════════
+   MEJORAS DE DISEÑO PROFESIONAL
+════════════════════════════════════════════════════════════════════ */
+
+/* Sidebar con separación visual más clara */
+.nav-btn.activo {
+  background: var(--accent-glow) !important;
+  color: var(--accent) !important;
+  border-left: 2px solid var(--accent);
+  font-weight: 600;
+}
+.nav-btn:hover { background: rgba(255,255,255,.04); color: var(--text); }
+
+/* Cards con hover suave */
+.lugar-card, .planta-card, .area-card {
+  transition: border-color .2s, box-shadow .2s;
+}
+.lugar-card:hover { box-shadow: 0 4px 24px rgba(0,0,0,.4); border-color: var(--border2); }
+
+/* Fases con colores más claros y bordes */
+.fase-vegetativa  { background: rgba(0,200,150,.12); color: var(--accent); border: 1px solid rgba(0,200,150,.3); }
+.fase-floracion   { background: rgba(224,144,64,.12); color: var(--warning); border: 1px solid rgba(224,144,64,.3); }
+.fase-germinacion { background: rgba(64,176,224,.12); color: var(--info); border: 1px solid rgba(64,176,224,.3); }
+.fase-cosecha     { background: rgba(224,80,80,.12); color: var(--danger); border: 1px solid rgba(224,80,80,.3); }
+
+/* Botón primario con el nuevo acento */
+.btn-primary { background: var(--accent); color: #07111a; font-weight: 600; }
+.btn-primary:hover { background: var(--accent2); }
+.btn-ghost { border-color: var(--border2); color: var(--text2); }
+.btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+
+/* Mediciones — semáforo */
+.val-optimo  { color: var(--accent) !important; }
+.val-alerta  { color: var(--warning) !important; }
+.val-critico { color: var(--danger) !important; font-weight: 700; }
+
+/* Alertas agronómicas */
+.alertas-agro { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 8px; }
+.alerta-agro  { font-size: .72rem; font-weight: 600; padding: 4px 10px; border-radius: 20px; display: inline-flex; align-items: center; gap: 4px; }
+.alerta-agro.critico { background: rgba(224,80,80,.12); border: 1px solid rgba(224,80,80,.3); color: var(--danger); }
+.alerta-agro.alerta  { background: rgba(224,144,64,.1); border: 1px solid rgba(224,144,64,.25); color: var(--warning); }
+
+/* Dato fresco / viejo */
+.dato-fresco { display:inline-flex;align-items:center;gap:4px;font-size:.68rem;font-weight:600;color:var(--accent);background:rgba(0,200,150,.08);border:1px solid rgba(0,200,150,.2);padding:2px 8px;border-radius:20px; }
+.dato-viejo  { display:inline-flex;align-items:center;gap:4px;font-size:.68rem;font-weight:600;color:var(--warning);background:rgba(224,144,64,.07);border:1px solid rgba(224,144,64,.2);padding:2px 8px;border-radius:20px; }
+
+/* Cards con alerta crítica */
+.card-alerta-critica {
+  border-color: var(--danger) !important;
+  animation: pulso 2.5s ease-in-out infinite;
+}
+.card-alerta-critica::before {
+  content: "⚠ ALERTA CRÍTICA";
+  display: block; background: rgba(224,80,80,.1); color: var(--danger);
+  font-size: .66rem; font-weight: 700; text-align: center; letter-spacing: .5px;
+  padding: 3px; border-radius: 8px 8px 0 0; margin: -16px -16px 10px;
+}
+.card-alerta-warning { border-color: var(--warning) !important; }
+@keyframes pulso {
+  0%,100% { box-shadow: 0 0 0 0 rgba(224,80,80,0); }
+  50%      { box-shadow: 0 0 0 5px rgba(224,80,80,.25); }
+}
+
+/* Barra VPD visual */
+.vpd-barra-wrap   { margin: 8px 0 6px; }
+.vpd-barra-bg     { display: flex; height: 10px; border-radius: 5px; overflow: hidden; position: relative; }
+.vpd-zona         { flex: 1; }
+.vpd-z-bajo  { background: rgba(64,176,224,.5);  flex:1.6; }
+.vpd-z-ok    { background: rgba(0,200,150,.6);   flex:1.6; }
+.vpd-z-bien  { background: rgba(241,196,15,.5);  flex:1.6; }
+.vpd-z-alto  { background: rgba(224,144,64,.5);  flex:1.6; }
+.vpd-z-crit  { background: rgba(224,80,80,.5);   flex:3.6; }
+.vpd-marker  { position:absolute;top:-2px;width:3px;height:14px;background:#fff;border-radius:2px;transform:translateX(-50%);box-shadow:0 0 6px rgba(255,255,255,.8);transition:left .4s ease; }
+.vpd-barra-labels { display:flex;justify-content:space-between;font-size:.58rem;color:var(--muted);margin-top:3px;padding:0 1px; }
+
+/* Panel de control */
+.panel-filtros  { display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px; }
+.panel-filtro   { padding:6px 14px;border-radius:20px;border:1px solid var(--border2);background:none;color:var(--text2);font-size:.78rem;cursor:pointer;transition:all .15s; }
+.panel-filtro:hover  { border-color:var(--accent);color:var(--accent); }
+.panel-filtro.activo { background:var(--accent);color:#07111a;border-color:var(--accent);font-weight:600; }
+.panel-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px; }
+.pc-card    { background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;cursor:pointer;transition:border-color .2s,box-shadow .2s;border-top:3px solid var(--border2); }
+.pc-card:hover { box-shadow:0 4px 20px rgba(0,0,0,.4); border-color:var(--border2); }
+.fase-borde-vegetativa  { border-top-color:var(--accent); }
+.fase-borde-floracion   { border-top-color:var(--warning); }
+.fase-borde-germinacion { border-top-color:var(--info); }
+.fase-borde-cosecha     { border-top-color:var(--danger); }
+.pc-header   { display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:8px; }
+.pc-nombre   { font-weight:700;font-size:.95rem; }
+.pc-genetica { font-size:.74rem;color:var(--muted);margin-top:2px;font-style:italic; }
+.pc-dia      { text-align:right;flex-shrink:0; }
+.pc-dia-num  { display:block;font-weight:700;font-size:1.1rem;color:var(--accent); }
+.pc-ubicacion{ font-size:.72rem;color:var(--muted);margin-bottom:10px; }
+.pc-alertas  { display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px; }
+.pc-alerta   { font-size:.7rem;font-weight:600;padding:3px 8px;border-radius:20px;background:rgba(224,80,80,.1);border:1px solid rgba(224,80,80,.25);color:var(--danger); }
+.pc-datos    { display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px; }
+.pc-dato     { text-align:center; }
+.pc-d-label  { display:block;font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px; }
+.pc-d-val    { font-weight:700;font-size:.9rem; }
+.pc-evento   { font-size:.74rem;color:var(--text2);padding:6px 10px;background:var(--surface);border-radius:6px;border:1px solid var(--border); }
+
+/* Mediciones mobile cards */
+.med-card        { background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:10px; }
+.med-card-header { display:flex;justify-content:space-between;align-items:center;margin-bottom:10px; }
+.med-card-fecha  { font-size:.8rem;font-weight:600;color:var(--text2); }
+.med-card-grid   { display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:8px; }
+.mci    { text-align:center; }
+.mci-l  { display:block;font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:.3px;margin-bottom:2px; }
+.mci b  { font-weight:700;font-size:.88rem; }
+.mci.val-critico b { color:var(--danger); }
+.mci.val-alerta  b { color:var(--warning); }
+.mci.val-optimo  b { color:var(--accent); }
+.med-badge { font-size:.68rem;padding:2px 6px;border-radius:10px;font-weight:700; }
+.med-badge.val-critico { background:rgba(224,80,80,.15);color:var(--danger); }
+.med-badge.val-alerta  { background:rgba(224,144,64,.12);color:var(--warning); }
+
+/* Historial de fases */
+.fase-hist-row    { background:var(--card);border-left:3px solid var(--border2);border-radius:6px;padding:12px 14px;margin-bottom:8px; }
+.fase-hist-header { display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px; }
+.fase-hist-fecha  { font-size:.76rem;color:var(--muted); }
+.fase-hist-dur    { font-size:.76rem;color:var(--text2); }
+.fase-hist-notas  { font-size:.74rem;color:var(--muted);margin-top:4px; }
+
+/* Fitosanitario */
+.fito-row    { background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:10px;border-left:4px solid var(--border2); }
+.fito-row.sev-leve     { border-left-color:#f1c40f; }
+.fito-row.sev-moderado { border-left-color:var(--warning); }
+.fito-row.sev-severo   { border-left-color:var(--danger); }
+.fito-row.sev-critico  { border-left-color:#ff0000;animation:pulso 2s ease-in-out infinite; }
+.fito-header { display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px; }
+.fito-tipo   { font-weight:700;font-size:.9rem;flex:1; }
+.fito-sev    { font-size:.74rem;font-weight:600; }
+.fito-fecha  { font-size:.74rem;color:var(--muted);margin-left:auto; }
+.fito-body   { display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:.8rem; }
+.fito-body b { color:var(--accent); }
+.fito-obs    { grid-column:1/-1;color:var(--muted);font-size:.76rem;margin-top:4px; }
+.fito-estado-activa        { color:var(--danger);font-weight:600; }
+.fito-estado-en_tratamiento{ color:var(--warning);font-weight:600; }
+.fito-estado-resuelta      { color:var(--accent);font-weight:600; }
+
+/* Delta EC / run-off */
+#m-delta-ec { font-size:.76rem;padding:6px 10px;background:var(--surface);border-radius:6px;border:1px solid var(--border);margin-bottom:8px;min-height:28px; }
+
+/* Modo claro / campo */
+.modo-claro {
+  --bg:#f0f5f0; --surface:#ffffff; --card:#f5f9f5; --border:#c0d0c0; --border2:#90b090;
+  --accent:#1a7a5e; --accent2:#155f49; --accent-glow:rgba(26,122,94,.1);
+  --text:#1a2a1a; --text2:#3a5a3a; --muted:#5a7a5a;
+  --danger:#b02020; --warning:#a06020;
+}
+.modo-claro .form-group input,
+.modo-claro .form-group select,
+.modo-claro .form-group textarea { background:#f5f9f5; }
+
+/* Leyenda gráficos */
+.chart-leyenda-noche    { font-size:.66rem;color:var(--muted);margin-top:4px;text-align:right;display:flex;align-items:center;gap:5px;justify-content:flex-end; }
+.chart-leyenda-noche::before { content:"";display:inline-block;width:12px;height:8px;background:rgba(0,0,0,.35);border-radius:2px; }
+.chart-leyenda-eventos  { display:flex;flex-wrap:wrap;gap:10px;margin-top:4px;font-size:.64rem;color:var(--muted); }
+.chart-leyenda-eventos span { display:flex;align-items:center;gap:4px; }
+.chart-ev-dot { width:8px;height:8px;border-radius:50%;display:inline-block; }
+
+/* Modal con blur */
+.modal-overlay.open { backdrop-filter: blur(4px); }
+.modal { box-shadow: 0 20px 60px rgba(0,0,0,.6); border-color: var(--border2); }
+
+/* Form inputs mejorados */
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(0,200,150,.1);
+}
+
+@media(max-width:600px) {
+  .fito-body { grid-template-columns:1fr; }
+  .panel-grid { grid-template-columns:1fr; }
+  .pc-datos { grid-template-columns:1fr 1fr 1fr; }
+  .card-alerta-critica::before { margin:-14px -14px 8px; }
 }
