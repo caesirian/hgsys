@@ -338,7 +338,6 @@ async function detectarEtapaLugar(lugarId) {
 // usado para reordenar sin tener que re-consultar todo de nuevo.
 let estadoLuzActivos = {}; // { lugarId: {online, encendido} }
 
-const FASE_LABEL = { germinacion: "Germinación", vegetativa: "Vegetativo", floracion: "Floración", cosecha: "Cosecha" };
 
 function fechaComoDate(v) {
   if (!v) return null;
