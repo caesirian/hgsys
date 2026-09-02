@@ -29,52 +29,6 @@ async function subirFotoCloudinary(archivo) {
   return data.secure_url;
 }
 
-// ══════════════════════════════════════════════════════════════════════════
-// RANGOS AGRONÓMICOS — pH, EC, Temp por etapa
-// ══════════════════════════════════════════════════════════════════════════
-const RANGOS_AGRONOMICOS = {
-  germinacion: {
-    ph: { min:6.0, max:6.5, optMin:6.2, optMax:6.4 },
-    ec: { min:0.4, max:0.8, optMin:0.5, optMax:0.7 },
-    tempAmb: { min:20, max:28, optMin:22, optMax:26 },
-    tempMaceta: { min:18, max:24, optMin:20, optMax:22 },
-  },
-  vegetativa: {
-    ph: { min:5.8, max:6.5, optMin:6.0, optMax:6.3 },
-    ec: { min:1.2, max:2.0, optMin:1.4, optMax:1.8 },
-    tempAmb: { min:20, max:30, optMin:22, optMax:28 },
-    tempMaceta: { min:18, max:24, optMin:20, optMax:22 },
-  },
-  floracion: {
-    ph: { min:5.8, max:6.5, optMin:6.0, optMax:6.2 },
-    ec: { min:1.4, max:2.4, optMin:1.6, optMax:2.0 },
-    tempAmb: { min:18, max:28, optMin:20, optMax:26 },
-    tempMaceta: { min:18, max:22, optMin:18, optMax:21 },
-  },
-  cosecha: {
-    ph: { min:5.8, max:6.5, optMin:5.9, optMax:6.1 },
-    ec: { min:0.4, max:1.0, optMin:0.4, optMax:0.6 },
-    tempAmb: { min:18, max:26, optMin:19, optMax:24 },
-    tempMaceta: { min:16, max:22, optMin:18, optMax:20 },
-  },
-};
-const FASE_LABEL = { germinacion:"Germinación", vegetativa:"Vegetativo", floracion:"Floración", cosecha:"Cosecha" };
-
-function semaforoValor(valor, rango) {
-  if (valor == null || !rango) return { clase:"", icono:"" };
-  if (valor < rango.min || valor > rango.max) return { clase:"val-critico", icono:"🔴" };
-  if (valor < rango.optMin || valor > rango.optMax) return { clase:"val-alerta", icono:"🟡" };
-  return { clase:"val-optimo", icono:"🟢" };
-}
-
-function vpdFoliar(tempAire, rh, lux) {
-  if (tempAire == null || rh == null) return null;
-  const offset = lux > 20000 ? 2.0 : lux > 10000 ? 1.0 : 0;
-  const tLeaf  = tempAire + offset;
-  const svp    = 0.6108 * Math.exp((17.27 * tLeaf) / (tLeaf + 237.3));
-  return +(svp * (1 - rh / 100)).toFixed(2);
-}
-
 // ════════════════════════════════════════════════════════════════════════════
 // ESTRUCTURA FIRESTORE
 // lugares/{lugarId}                  → espacio físico (Carpa, Estructura 3x1)
@@ -338,6 +292,27 @@ async function detectarEtapaLugar(lugarId) {
 // usado para reordenar sin tener que re-consultar todo de nuevo.
 let estadoLuzActivos = {}; // { lugarId: {online, encendido} }
 
+const FASE_LABEL = { germinacion: "Germinación", vegetativa: "Vegetativo", floracion: "Floración", cosecha: "Cosecha" };
+
+// Rangos agronómicos pH / EC / Temp por etapa
+const RANGOS_AGRONOMICOS = {
+  germinacion: { ph:{min:6.0,max:6.5,optMin:6.2,optMax:6.4}, ec:{min:0.4,max:0.8,optMin:0.5,optMax:0.7}, tempAmb:{min:20,max:28,optMin:22,optMax:26}, tempMaceta:{min:18,max:24,optMin:20,optMax:22} },
+  vegetativa:  { ph:{min:5.8,max:6.5,optMin:6.0,optMax:6.3}, ec:{min:1.2,max:2.0,optMin:1.4,optMax:1.8}, tempAmb:{min:20,max:30,optMin:22,optMax:28}, tempMaceta:{min:18,max:24,optMin:20,optMax:22} },
+  floracion:   { ph:{min:5.8,max:6.5,optMin:6.0,optMax:6.2}, ec:{min:1.4,max:2.4,optMin:1.6,optMax:2.0}, tempAmb:{min:18,max:28,optMin:20,optMax:26}, tempMaceta:{min:18,max:22,optMin:18,optMax:21} },
+  cosecha:     { ph:{min:5.8,max:6.5,optMin:5.9,optMax:6.1}, ec:{min:0.4,max:1.0,optMin:0.4,optMax:0.6}, tempAmb:{min:18,max:26,optMin:19,optMax:24}, tempMaceta:{min:16,max:22,optMin:18,optMax:20} },
+};
+function semaforoValor(valor, rango) {
+  if (valor==null||!rango) return {clase:"",icono:""};
+  if (valor<rango.min||valor>rango.max) return {clase:"val-critico",icono:"🔴"};
+  if (valor<rango.optMin||valor>rango.optMax) return {clase:"val-alerta",icono:"🟡"};
+  return {clase:"val-optimo",icono:"🟢"};
+}
+function vpdFoliar(tempAire, rh, lux) {
+  if (tempAire==null||rh==null) return null;
+  const offset = lux>20000?2.0:lux>10000?1.0:0;
+  const tL = tempAire+offset;
+  return +(0.6108*Math.exp((17.27*tL)/(tL+237.3))*(1-rh/100)).toFixed(2);
+}
 
 function fechaComoDate(v) {
   if (!v) return null;
@@ -2126,7 +2101,6 @@ window.verPlanta = async (id) => {
     const snap = await getDoc(doc(db,"plantas",id));
     if (!snap.exists()) { toast("Esa planta ya no existe (¿se borró?)","err"); return; }
     plantaActiva = id;
-    window._plantaFaseActual = null; // se actualiza al leer datos
     const p = snap.data();
     setTxt("det-nombre",    p.nombre||"—");
     setTxt("det-genetica",  p.genetica||"—");
@@ -2302,19 +2276,12 @@ window.guardarMedicion = async () => {
       distanciaLuz: parseFloat(val("m-distancia"))||null,
       co2:        parseFloat(val("m-co2"))||null,
       vpd:        parseFloat(val("m-vpd"))||null,
-      // Lixiviado / run-off
       phLixiviado:  parseFloat(val("m-ph-lix"))||null,
       ecLixiviado:  parseFloat(val("m-ec-lix"))||null,
       volRiego:     parseFloat(val("m-volriego"))||null,
       volLixiviado: parseFloat(val("m-vollix"))||null,
-      deltaEC: (() => {
-        const ein = parseFloat(val("m-ec")); const elix = parseFloat(val("m-ec-lix"));
-        return (ein && elix) ? +(elix - ein).toFixed(2) : null;
-      })(),
-      runOff: (() => {
-        const vr = parseFloat(val("m-volriego")); const vl = parseFloat(val("m-vollix"));
-        return (vr && vl && vr > 0) ? +((vl/vr)*100).toFixed(1) : null;
-      })(),
+      deltaEC: (() => { const e=parseFloat(val("m-ec")),x=parseFloat(val("m-ec-lix")); return (e&&x)?+(x-e).toFixed(2):null; })(),
+      runOff:  (() => { const r=parseFloat(val("m-volriego")),l=parseFloat(val("m-vollix")); return (r&&l&&r>0)?+((l/r)*100).toFixed(1):null; })(),
       luzEncendida: window._estadoSwitches?.luces_carpa ?? window._estadoSwitches?.luces_3x1 ?? null,
       notas:      val("m-notas"),
       creadoEn:   serverTimestamp(),
@@ -2728,24 +2695,14 @@ window.addEventListener("DOMContentLoaded", () => {
   });
 });
 
-window.show = show;
-window.abrirModal = abrirModal;
-window.cerrarModal = cerrarModal;
-window.cargarGraficoDia = cargarGraficoDia;
-window.cargarHistoricoLargoLugar = cargarHistoricoLargoLugar;
-window.cargarLugares = cargarLugares;
-window.cargarDashboard = cargarDashboard;
-
 
 // ══════════════════════════════════════════════════════════════════════════
-// MÓDULO: CAMBIO DE FASE CON FECHA
+// MÓDULO: CAMBIO DE FASE
 // ══════════════════════════════════════════════════════════════════════════
 window.abrirModalCambioFase = () => {
   if (!plantaActiva) { toast("Seleccioná una planta","err"); return; }
-  const hoy = new Date().toISOString().split("T")[0];
-  const el  = document.getElementById("cf-fecha");
-  if (el) el.value = hoy;
-  document.getElementById("cf-advertencia")?.style && (document.getElementById("cf-advertencia").style.display = "none");
+  const el = document.getElementById("cf-fecha");
+  if (el) el.value = new Date().toISOString().split("T")[0];
   abrirModal("modal-cambio-fase");
 };
 
@@ -2756,10 +2713,8 @@ window.guardarCambioFase = async () => {
   if (!nuevaFase || !fecha) { toast("Completá fase y fecha","err"); return; }
   try {
     await addDoc(collection(db,"plantas",plantaActiva,"fases"), {
-      fase: nuevaFase,
-      fecha: new Date(fecha+"T00:00:00"),
-      notas: val("cf-notas"),
-      creadoEn: serverTimestamp()
+      fase: nuevaFase, fecha: new Date(fecha+"T00:00:00"),
+      notas: val("cf-notas"), creadoEn: serverTimestamp()
     });
     await updateDoc(doc(db,"plantas",plantaActiva), { fase: nuevaFase });
     cerrarModal("modal-cambio-fase");
@@ -2779,7 +2734,7 @@ async function cargarHistorialFases() {
   if (!lista) return;
   lista.innerHTML = '<p class="cargando">Cargando...</p>';
   try {
-    const snap = await getDocs(query(collection(db,"plantas",plantaActiva,"fases"),orderBy("fecha","asc")));
+    const snap = await getDocs(query(collection(db,"plantas",plantaActiva,"fases"), orderBy("fecha","asc")));
     if (snap.empty) { lista.innerHTML = '<p class="empty">Sin cambios de fase registrados.</p>'; return; }
     let prev = null;
     lista.innerHTML = snap.docs.map(d => {
@@ -2810,7 +2765,7 @@ window.guardarFitosanitario = async () => {
   if (!tipo) { toast("Seleccioná tipo","err"); return; }
   try {
     await addDoc(collection(db,"plantas",plantaActiva,"fitosanitario"), {
-      tipo, agente:       val("ft-agente"),
+      tipo, agente: val("ft-agente"),
       fecha:       new Date(val("ft-fecha")+"T00:00:00"),
       severidad:   val("ft-severidad"),
       zona:        val("ft-zona"),
@@ -2821,8 +2776,8 @@ window.guardarFitosanitario = async () => {
       creadoEn:    serverTimestamp(),
     });
     cerrarModal("modal-fitosanitario");
-    ["ft-agente","ft-tratamiento","ft-obs","ft-recontrol"].forEach(id=>{
-      const el=document.getElementById(id); if(el) el.value="";
+    ["ft-agente","ft-tratamiento","ft-obs","ft-recontrol"].forEach(id => {
+      const el = document.getElementById(id); if (el) el.value = "";
     });
     cargarFitosanitario();
     toast("🔬 Incidencia registrada ✓");
@@ -2835,7 +2790,7 @@ async function cargarFitosanitario() {
   if (!lista) return;
   lista.innerHTML = '<p class="cargando">Cargando...</p>';
   try {
-    const snap = await getDocs(query(collection(db,"plantas",plantaActiva,"fitosanitario"),orderBy("fecha","desc")));
+    const snap = await getDocs(query(collection(db,"plantas",plantaActiva,"fitosanitario"), orderBy("fecha","desc")));
     if (snap.empty) { lista.innerHTML = '<p class="empty">Sin incidencias registradas.</p>'; return; }
     lista.innerHTML = snap.docs.map(d => {
       const f = d.data();
@@ -2874,27 +2829,29 @@ window.cargarPanelControl = async () => {
   if (!grid) return;
   grid.innerHTML = '<p class="cargando">Cargando plantas...</p>';
   try {
-    const snap        = await getDocs(query(collection(db,"plantas"),orderBy("creadoEn","desc")));
-    if (snap.empty) { grid.innerHTML = '<p class="empty">No hay plantas registradas.</p>'; return; }
-    const lugaresSnap = await getDocs(collection(db,"lugares"));
-    const lugaresMap  = {};
-    lugaresSnap.forEach(d => lugaresMap[d.id] = { ...d.data(), id: d.id });
-    const estadoTodos = typeof obtenerEstadoTodos === "function" ? await obtenerEstadoTodos() : {};
-    const BATCH = 5;
-    const docs  = snap.docs;
+    const [plantasSnap, lugaresSnap] = await Promise.all([
+      getDocs(query(collection(db,"plantas"), orderBy("creadoEn","desc"))),
+      getDocs(collection(db,"lugares"))
+    ]);
+    if (plantasSnap.empty) { grid.innerHTML = '<p class="empty">No hay plantas.</p>'; return; }
+    const lugaresMap = {};
+    lugaresSnap.forEach(d => lugaresMap[d.id] = d.data());
+    // Obtener estado sensores si está disponible
+    const estadoTodos = typeof obtenerEstadoTodos === "function" ? await obtenerEstadoTodos().catch(()=>({})) : {};
+    // Cargar en lotes de 5 para no saturar Firestore
+    const docs = plantasSnap.docs;
     _panelPlantas = [];
-    for (let i = 0; i < docs.length; i += BATCH) {
-      const lote = docs.slice(i, i+BATCH);
-      const res  = await Promise.all(lote.map(async pd => {
-        const p     = pd.data();
-        const lugar = lugaresMap[p.lugarId] || {};
+    for (let i = 0; i < docs.length; i += 5) {
+      const lote = await Promise.all(docs.slice(i,i+5).map(async pd => {
+        const p = pd.data(), lugar = lugaresMap[p.lugarId] || {};
         let ultimaMed = null, proximoEvento = null;
         try {
-          const ms = await getDocs(query(collection(db,"plantas",pd.id,"mediciones"),orderBy("fecha","desc")));
+          const ms = await getDocs(query(collection(db,"plantas",pd.id,"mediciones"), orderBy("fecha","desc")));
           if (!ms.empty) ultimaMed = ms.docs[0].data();
         } catch(e){}
         try {
-          const es = await getDocs(query(collection(db,"plantas",pd.id,"eventos"),where("realizado","==",false),orderBy("fecha","asc")));
+          const es = await getDocs(query(collection(db,"plantas",pd.id,"eventos"),
+            where("realizado","==",false), orderBy("fecha","asc")));
           if (!es.empty) proximoEvento = es.docs[0].data();
         } catch(e){}
         const sKey = (lugar.sensoresTuya||[])[0];
@@ -2904,11 +2861,12 @@ window.cargarPanelControl = async () => {
                  sensorData: sKey ? estadoTodos[sKey] : null,
                  alturaPlantin:p.alturaPlantin };
       }));
-      _panelPlantas.push(...res);
-      renderPanelGrid(_panelPlantas);
+      _panelPlantas.push(...lote);
+      renderPanelGrid(_panelPlantas); // render progresivo
     }
   } catch(err) {
-    document.getElementById("panel-grid").innerHTML = `<p class="empty">Error: ${err.message}</p>`;
+    const g = document.getElementById("panel-grid");
+    if (g) g.innerHTML = `<p class="empty">Error: ${err.message}</p>`;
   }
 };
 
@@ -2917,7 +2875,7 @@ function renderPanelGrid(plantas) {
   if (!grid) return;
   if (!plantas.length) { grid.innerHTML = '<p class="empty">Sin plantas.</p>'; return; }
   grid.innerHTML = plantas.map(p => {
-    const dias   = typeof diasDesde === "function" ? diasDesde(p.fechaInicio) : "—";
+    const dias   = diasDesde(p.fechaInicio);
     const m      = p.ultimaMed;
     const s      = p.sensorData?.sensores || {};
     const rangos = RANGOS_AGRONOMICOS[p.fase] || RANGOS_AGRONOMICOS.vegetativa;
@@ -2928,13 +2886,13 @@ function renderPanelGrid(plantas) {
     if (sTemp.clase==="val-critico") alertas.push("🌡️ Temp");
     if (sPh.clase  ==="val-critico") alertas.push("⚗️ pH");
     if (sEc.clase  ==="val-critico") alertas.push("🔋 EC");
-    if (s.humedad!=null&&s.humedad>70) alertas.push("💧 HR alta");
+    if ((s.humedad||0)>70) alertas.push("💧 HR");
     const diasMed = m?.fecha ? Math.floor((Date.now()-(m.fecha.toDate?.()??new Date(m.fecha)).getTime())/86400000) : null;
-    const medTag  = diasMed===0 ? `<span class="dato-fresco">● hoy</span>`
-      : diasMed===1 ? `<span class="dato-viejo">ayer</span>`
-      : diasMed!=null ? `<span class="dato-viejo">hace ${diasMed}d</span>`
-      : `<span class="dato-viejo">sin medir</span>`;
-    return `<div class="pc-card fase-borde-${p.fase}" data-fase="${p.fase}" onclick="verPlanta('${p.id}')">
+    const medTag  = diasMed===0?`<span class="dato-fresco">● hoy</span>`
+      :diasMed===1?`<span class="dato-viejo">ayer</span>`
+      :diasMed!=null?`<span class="dato-viejo">hace ${diasMed}d</span>`
+      :`<span class="dato-viejo">sin medir</span>`;
+    return `<div class="pc-card fase-borde-${p.fase}" onclick="verPlanta('${p.id}')">
       <div class="pc-header">
         <div><div class="pc-nombre">${p.nombre}</div><div class="pc-genetica">${p.genetica}</div></div>
         <div class="pc-dia"><span class="pc-dia-num">D${dias}</span><span class="cult-fase fase-${p.fase}">${FASE_LABEL[p.fase]||p.fase}</span></div>
@@ -2961,12 +2919,11 @@ window.filtrarPanel = (filtro, btn) => {
   if (filtro==="vegetativa") f = _panelPlantas.filter(p=>p.fase==="vegetativa");
   else if (filtro==="floracion") f = _panelPlantas.filter(p=>p.fase==="floracion");
   else if (filtro==="alerta") f = _panelPlantas.filter(p=>{
-    const m=p.ultimaMed; const s=p.sensorData?.sensores||{};
-    const r=RANGOS_AGRONOMICOS[p.fase]||RANGOS_AGRONOMICOS.vegetativa;
+    const m=p.ultimaMed,s=p.sensorData?.sensores||{},r=RANGOS_AGRONOMICOS[p.fase]||RANGOS_AGRONOMICOS.vegetativa;
     return semaforoValor(m?.ph,r.ph).clase==="val-critico"||
            semaforoValor(m?.ec,r.ec).clase==="val-critico"||
            semaforoValor(s.tempAmb,r.tempAmb).clase==="val-critico"||
-           (s.humedad&&s.humedad>70);
+           (s.humedad||0)>70;
   });
   renderPanelGrid(f);
 };
@@ -2976,27 +2933,21 @@ window.filtrarPanel = (filtro, btn) => {
 // ══════════════════════════════════════════════════════════════════════════
 window.toggleModoClaro = () => {
   const activo = document.documentElement.classList.toggle("modo-claro");
-  localStorage.setItem("modoClaroActivo", activo ? "1" : "0");
+  localStorage.setItem("modoClaroActivo", activo?"1":"0");
   const btn = document.getElementById("btn-modo-claro");
   if (btn) {
-    btn.querySelector(".nav-icon").textContent = activo ? "🌙" : "☀️";
-    btn.querySelector(".nav-label").textContent = activo ? "Modo oscuro" : "Modo campo";
+    btn.querySelector(".nav-icon").textContent = activo?"🌙":"☀️";
+    btn.querySelector(".nav-label").textContent = activo?"Modo oscuro":"Modo campo";
   }
 };
-if (localStorage.getItem("modoClaroActivo") === "1") {
+if (localStorage.getItem("modoClaroActivo")==="1") {
   document.documentElement.classList.add("modo-claro");
 }
 
-// ══════════════════════════════════════════════════════════════════════════
-// CACHE ESTADO SWITCHES (para mediciones)
-// ══════════════════════════════════════════════════════════════════════════
-if (!window._estadoSwitches) window._estadoSwitches = {};
-
-// Exportar nuevas funciones globales
-window.abrirModalCambioFase  = window.abrirModalCambioFase;
-window.guardarCambioFase     = window.guardarCambioFase;
-window.guardarFitosanitario  = window.guardarFitosanitario;
-window.eliminarFitosanitario = window.eliminarFitosanitario;
-window.cargarPanelControl    = window.cargarPanelControl;
-window.filtrarPanel          = window.filtrarPanel;
-window.toggleModoClaro       = window.toggleModoClaro;
+window.show = show;
+window.abrirModal = abrirModal;
+window.cerrarModal = cerrarModal;
+window.cargarGraficoDia = cargarGraficoDia;
+window.cargarHistoricoLargoLugar = cargarHistoricoLargoLugar;
+window.cargarLugares = cargarLugares;
+window.cargarDashboard = cargarDashboard;
