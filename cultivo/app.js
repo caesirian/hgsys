@@ -103,6 +103,7 @@ const dias = ts => { if (!ts) return "—"; const d = ts.toDate ? ts.toDate() : 
 // "Ver detalle no funciona").
 const escAttr = s => String(s??"").replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/'/g,"&#39;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 
+const TITULOS_VISTA = { "vista-inicio":"CultivApp", "vista-dashboard":"Mis lugares", "vista-lugares":"Gestión de lugares", "vista-lugar":"Lugar", "vista-plantas":"Plantas", "vista-planta":"Planta", "vista-graficos":"Gráficos", "vista-tuya":"Sensores" };
 function show(id, opts) {
   document.querySelectorAll(".vista").forEach(v => v.classList.remove("activa"));
   document.getElementById(id)?.classList.add("activa");
@@ -114,6 +115,9 @@ function show(id, opts) {
   if (id !== "vista-dashboard" && typeof dashboardTimer !== "undefined" && dashboardTimer) { clearInterval(dashboardTimer); dashboardTimer = null; }
   // Empuja al historial del navegador para que el botón atrás (celular o
   // navegador) navegue adentro de la app en vez de salir directo de la página.
+  const t = document.getElementById("appbar-titulo");
+  if (t) t.textContent = TITULOS_VISTA[id] || "CultivApp";
+  window.scrollTo(0, 0);
   if (!(opts && opts.sinHistorial)) history.pushState({ vista:id }, "", "#"+id);
 }
 window.addEventListener("popstate", (e) => {
@@ -2951,3 +2955,6 @@ window.cargarGraficoDia = cargarGraficoDia;
 window.cargarHistoricoLargoLugar = cargarHistoricoLargoLugar;
 window.cargarLugares = cargarLugares;
 window.cargarDashboard = cargarDashboard;
+
+// PWA: instalable + abre rápido
+if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));

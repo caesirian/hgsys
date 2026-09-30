@@ -1,0 +1,70 @@
+/* CultivApp — capa "app": táctil, accesible, instalable. Va DESPUÉS de style.css */
+:root{--muted:#8aa7b5;--text2:#b4d0dc;--sat:env(safe-area-inset-top,0px);--sab:env(safe-area-inset-bottom,0px);--nav-h:64px;--r:18px}
+.modo-claro{--muted:#4a6a4a;--text2:#2f4f2f}
+html{-webkit-text-size-adjust:100%;-webkit-tap-highlight-color:transparent;scroll-behavior:smooth}
+body{min-height:100dvh;overscroll-behavior-y:none;-webkit-font-smoothing:antialiased}
+.appbar{display:none}
+button,select,input,textarea{font-family:inherit}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px;border-radius:8px}
+button:active:not(:disabled){transform:scale(.97)}
+button{touch-action:manipulation}
+/* Tamaños táctiles (mín. 44px) y texto legible (mín. ~12px) */
+.btn{min-height:44px;border-radius:14px;font-size:.95rem}
+.btn-sm{min-height:36px;padding:6px 14px;font-size:.82rem;border-radius:10px}
+.btn-icon{min-width:44px;min-height:44px;font-size:1.15rem}
+.tab-btn{min-height:44px;font-size:.9rem;padding:8px 16px}
+.panel-filtro{min-height:40px;font-size:.85rem}
+.form-group label{font-size:.82rem}
+.form-group input,.form-group select,.form-group textarea{min-height:48px;border-radius:12px;padding:10px 12px}
+.chk-item,.chk-pill{min-height:40px;font-size:.9rem}
+.chk-item input{width:20px;height:20px}
+.dash-dato .label,.pc-d-label,.mci-l,.sv-label,.sv-unit,.chip-dato,.cult-fase,.lugar-dim,.area-dim,.eco-title,.vpd-sugerencia,.planta-mini,.clima-stats,.foto-critico,.anomalia-item,.med-badge,.dato-fresco,.dato-viejo,.alerta-agro,.pc-alerta,.s-ts,.graficos-hint{font-size:.78rem}
+.dash-planta-nombre,.vpd-barra-labels,.btn-minimizar,.btn-toggle-historial,.input-fecha-dia,.vpd-etapa{font-size:.78rem}
+/* Cards más limpias */
+.lugar-card,.planta-card,.area-card,.pc-card,.sensor-card,.graf-lugar-card,.graf-ciclo-card,.dash-card,.info-card,.med-card,.inase-row,.fito-row,.nutr-row,.evento-row{border-radius:var(--r)}
+.dash-card{background:var(--card);border:1px solid var(--border)}
+.lugar-card:hover,.pc-card:hover,.inicio-btn:hover{transform:none}
+.eco-section{border-radius:14px}
+/* Inicio: lista de accesos grandes */
+.inicio-btn{border-radius:20px;padding:20px;flex-direction:row;align-items:center;flex-wrap:wrap;column-gap:16px;min-height:88px}
+.inicio-icono{font-size:2rem;width:56px;height:56px;display:grid;place-items:center;background:var(--accent-glow);border-radius:16px}
+.inicio-titulo{flex:1 1 0;min-width:0;font-size:1.05rem}
+.inicio-sub{flex-basis:100%;padding-left:72px;margin-top:-12px;font-size:.85rem}
+.inicio-grid{gap:12px}
+/* Carga con esqueleto */
+.cargando{height:64px;border-radius:14px;color:transparent;overflow:hidden;background:linear-gradient(90deg,var(--card) 25%,var(--border) 50%,var(--card) 75%);background-size:200% 100%;animation:shimmer 1.3s linear infinite}
+td.cargando{height:auto}
+@keyframes shimmer{to{background-position:-200% 0}}
+.toast{border-radius:14px;font-size:.92rem;padding:12px 18px;bottom:calc(var(--nav-h) + var(--sab) + 12px)}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+/* ===== Móvil: se ve y se siente como app ===== */
+@media(max-width:600px){
+  html{font-size:17px}
+  body{display:block}
+  .appbar{display:flex;position:sticky;top:0;z-index:150;align-items:center;justify-content:space-between;gap:8px;padding:calc(var(--sat) + 8px) 16px 8px;background:color-mix(in srgb,var(--surface) 88%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--border)}
+  .appbar-titulo{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.15rem;display:flex;align-items:center;gap:8px}
+  .appbar button{width:44px;height:44px;border-radius:50%;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:1.2rem;cursor:pointer}
+  .appbar .atras{display:none}
+  .main{padding:16px 14px calc(var(--nav-h) + var(--sab) + 24px)}
+  .page-header{margin-bottom:16px;gap:10px}
+  .page-title{font-size:1.3rem}
+  .bottom-nav{height:calc(var(--nav-h) + var(--sab));padding-bottom:var(--sab);background:color-mix(in srgb,var(--surface) 92%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+  .bottom-nav .nav-btn{position:relative;font-size:.72rem;min-height:var(--nav-h);gap:2px;border-left:none!important;background:none!important}
+  .bottom-nav .nav-btn .nav-icon{font-size:1.4rem;height:32px;width:56px;display:grid;place-items:center;border-radius:16px;transition:background .2s}
+  .bottom-nav .nav-btn.activo{color:var(--accent)!important}
+  .bottom-nav .nav-btn.activo .nav-icon{background:var(--accent-glow)}
+  /* Modales = hojas inferiores */
+  .modal-overlay{align-items:flex-end}
+  .modal{border-radius:24px 24px 0 0;max-height:92dvh;padding:8px 16px calc(var(--sab) + 16px);border:none;animation:sheet .25s ease}
+  .modal::before{content:"";display:block;width:40px;height:5px;border-radius:3px;background:var(--border2);margin:4px auto 14px}
+  .modal-footer{position:sticky;bottom:calc(-1 * var(--sab) - 16px);background:var(--surface);padding-bottom:calc(var(--sab) + 12px)}
+  .modal-footer .btn{min-height:50px}
+  .panel-planta{border-radius:24px 24px 0 0;top:auto;height:92dvh}
+  .tabs{position:sticky;top:calc(var(--sat) + 61px);z-index:50;background:var(--bg);margin:0 -14px 16px;padding:0 10px}
+  .plantas-tabla{font-size:.95rem}
+  .plantas-tabla td,.plantas-tabla th{padding:14px 10px}
+  .inicio-sub{padding-left:0;margin-top:0}
+}
+@keyframes sheet{from{transform:translateY(40px);opacity:.6}to{transform:none;opacity:1}}
+/* Ya instalada como app: más aire arriba */
+@media(display-mode:standalone){body{user-select:none;-webkit-user-select:none}input,textarea{user-select:text;-webkit-user-select:text}}
