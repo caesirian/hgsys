@@ -103,12 +103,22 @@ const dias = ts => { if (!ts) return "—"; const d = ts.toDate ? ts.toDate() : 
 // "Ver detalle no funciona").
 const escAttr = s => String(s??"").replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/'/g,"&#39;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 
-const TITULOS_VISTA = { "vista-inicio":"CultivApp", "vista-dashboard":"Mis lugares", "vista-lugares":"Gestión de lugares", "vista-lugar":"Lugar", "vista-plantas":"Plantas", "vista-planta":"Planta", "vista-graficos":"Gráficos", "vista-tuya":"Sensores" };
+const TITULOS_VISTA = { "vista-dashboard":"Hoy", "vista-lugares":"Lugares", "vista-lugar":"Lugar", "vista-plantas":"Plantas", "vista-planta":"Planta", "vista-graficos":"Gráficos", "vista-tuya":"Sensores" };
+const CARGADORES_VISTA = {
+  "vista-dashboard": () => cargarDashboard(),
+  "vista-lugares":   () => cargarLugares(),
+  "vista-plantas":   () => cargarTablaPlantas(),
+  "vista-graficos":  () => cargarVistaGraficos(),
+  "vista-tuya":      () => setTimeout(() => window.actualizarSensores && window.actualizarSensores(), 300),
+};
+// Único punto de entrada de la navegación: muestra la vista y dispara su carga.
+window.irA = (id) => { show(id); CARGADORES_VISTA[id]?.(); };
 function show(id, opts) {
   document.querySelectorAll(".vista").forEach(v => v.classList.remove("activa"));
   document.getElementById(id)?.classList.add("activa");
   document.querySelectorAll(".nav-btn").forEach(b => { b.classList.remove("activo"); b.removeAttribute("aria-current"); });
   document.querySelectorAll(`[data-vista="${id}"]`).forEach(b => { b.classList.add("activo"); b.setAttribute("aria-current","page"); });
+  document.getElementById("btn-mas")?.classList.toggle("activo", id==="vista-graficos"||id==="vista-tuya");
   // Frenar los auto-refrescos de las vistas que no están activas, para no pegarle
   // al proxy de fondo mientras el usuario está mirando otra pestaña.
   if (id !== "vista-lugares" && typeof climaTimer !== "undefined" && climaTimer) { clearInterval(climaTimer); climaTimer = null; }
@@ -121,12 +131,9 @@ function show(id, opts) {
   if (!(opts && opts.sinHistorial)) history.pushState({ vista:id }, "", "#"+id);
 }
 window.addEventListener("popstate", (e) => {
-  const id = (e.state && e.state.vista) || "vista-inicio";
+  const id = (e.state && e.state.vista) || "vista-dashboard";
   show(id, { sinHistorial:true });
-  if (id === "vista-dashboard") cargarDashboard();
-  else if (id === "vista-lugares") cargarLugares();
-  else if (id === "vista-plantas") cargarTablaPlantas();
-  else if (id === "vista-graficos") cargarVistaGraficos();
+  if (id !== "vista-tuya") CARGADORES_VISTA[id]?.();
 });
 function toast(msg, tipo="ok") {
   const t = document.createElement("div");
@@ -1674,9 +1681,10 @@ window.agregarLuzRowArea = () => {
 // Tabla global de plantas (todos los lugares juntos). Cada fila se puede
 // desplegar tocándola: muestra más datos + botones para cargar medición,
 // riego/fertilización o evento sin tener que entrar al detalle completo.
+let plantasGlobal = [];
 async function cargarTablaPlantas() {
-  const tbody = document.getElementById("tabla-plantas-body");
-  tbody.innerHTML = '<tr><td colspan="4" class="cargando">Cargando...</td></tr>';
+  const grid = document.getElementById("plantas-global-grid");
+  grid.innerHTML = '<p class="cargando">Cargando...</p>';
   let lugaresSnap, plantasSnap;
   try {
     [lugaresSnap, plantasSnap] = await Promise.all([
@@ -1684,63 +1692,31 @@ async function cargarTablaPlantas() {
       getDocs(query(collection(db,"plantas"), orderBy("creadoEn","desc"))),
     ]);
   } catch (err) {
-    console.error("Error cargando tabla de plantas:", err);
-    tbody.innerHTML = `<tr><td colspan="4" class="empty">⚠️ No se pudo cargar (${err.message})</td></tr>`;
+    console.error("Error cargando plantas:", err);
+    grid.innerHTML = `<p class="empty">⚠️ No se pudo cargar (${escAttr(err.message)})</p>`;
     return;
   }
-  const nombreLugar = {};
-  lugaresSnap.forEach(d => nombreLugar[d.id] = d.data().nombre || "Lugar sin nombre");
-
-  tbody.innerHTML = "";
-  if (plantasSnap.empty) {
-    tbody.innerHTML = '<tr><td colspan="4" class="empty">Todavía no hay plantas registradas.</td></tr>';
-    return;
-  }
-  plantasSnap.forEach(d => {
-    const p = d.data(), id = d.id;
-    const fila = document.createElement("tr");
-    fila.className = "fila-planta clickeable";
-    fila.innerHTML = `
-      <td>${escAttr(p.genetica||"—")}<br><small class="fila-planta-nombre">${escAttr(p.nombre||"")}</small></td>
-      <td>${escAttr(nombreLugar[p.lugarId]||"—")}</td>
-      <td>Día ${dias(p.fechaInicio)}</td>
-      <td><span class="cult-fase fase-${p.fase}">${FASE_LABEL[p.fase]||p.fase||"—"}</span></td>`;
-
-    const expand = document.createElement("tr");
-    expand.className = "fila-planta-expand";
-    expand.style.display = "none";
-    const td = document.createElement("td");
-    td.colSpan = 4;
-    td.innerHTML = `
-      <div class="fp-detalle">
-        <span>📅 Día ${dias(p.fechaInicio)}</span>
-        <span>🪴 ${p.tipoOrigen==="semilla"?"Semilla":"Esqueje"}</span>
-        ${p.alturaPlantin ? `<span>📏 ${p.alturaPlantin} cm</span>` : ""}
-        ${p.substrato ? `<span>🌱 ${escAttr(p.substrato)}</span>` : ""}
-      </div>
-      <div class="fp-acciones">
-        <button class="btn-sm btn-primary fp-medicion">🌡️ Medición</button>
-        <button class="btn-sm btn-primary fp-riego">💧 Riego / Fert.</button>
-        <button class="btn-sm btn-ghost fp-evento">📅 Evento</button>
-        <button class="btn-sm btn-ghost fp-ficha">Ver ficha completa →</button>
-      </div>`;
-    expand.appendChild(td);
-
-    fila.addEventListener("click", () => {
-      const abierta = expand.style.display !== "none";
-      document.querySelectorAll(".fila-planta-expand").forEach(f => f.style.display = "none");
-      document.querySelectorAll(".fila-planta.activa").forEach(f => f.classList.remove("activa"));
-      if (!abierta) { expand.style.display = ""; fila.classList.add("activa"); }
-    });
-    td.querySelector(".fp-medicion").addEventListener("click", (e) => { e.stopPropagation(); plantaActiva = id; window.abrirModalMedicion(); });
-    td.querySelector(".fp-riego").addEventListener("click", (e) => { e.stopPropagation(); window.abrirModalRiegoLugar(p.lugarId, nombreLugar[p.lugarId]||"", id); });
-    td.querySelector(".fp-evento").addEventListener("click", (e) => { e.stopPropagation(); plantaActiva = id; window.abrirModalEvento(); });
-    td.querySelector(".fp-ficha").addEventListener("click", (e) => { e.stopPropagation(); window.verPlanta(id); });
-
-    tbody.appendChild(fila);
-    tbody.appendChild(expand);
-  });
+  const nombres = {};
+  lugaresSnap.forEach(d => nombres[d.id] = d.data().nombre || "Lugar sin nombre");
+  plantasGlobal = plantasSnap.docs.map(d => ({ id:d.id, p:d.data(), lugar:nombres[d.data().lugarId]||"—" }));
+  const selL = document.getElementById("pl-filtro-lugar");
+  const previo = selL.value;
+  selL.innerHTML = '<option value="">Todos los lugares</option>' +
+    Object.entries(nombres).map(([id,n]) => `<option value="${escAttr(id)}">${escAttr(n)}</option>`).join("");
+  selL.value = nombres[previo] ? previo : "";
+  renderPlantasGlobal();
 }
+function renderPlantasGlobal() {
+  const grid = document.getElementById("plantas-global-grid");
+  const fl = document.getElementById("pl-filtro-lugar").value;
+  const ff = document.getElementById("pl-filtro-fase").value;
+  const lista = plantasGlobal.filter(x => (!fl || x.p.lugarId===fl) && (!ff || x.p.fase===ff));
+  document.getElementById("pl-contador").textContent = `${lista.length} planta${lista.length===1?"":"s"}`;
+  grid.innerHTML = "";
+  if (!lista.length) { grid.innerHTML = '<p class="empty">No hay plantas con ese filtro.</p>'; return; }
+  lista.forEach(x => grid.appendChild(crearTarjetaPlanta(x.p, x.id, x.lugar)));
+}
+window.renderPlantasGlobal = renderPlantasGlobal;
 window.cargarTablaPlantas = cargarTablaPlantas;
 
 // Vista Gráficos y reportes: (1) temp/humedad de cada lugar con sensor —
@@ -1966,45 +1942,45 @@ window.cargarGraficoCiclo = async (uid, plantaId) => {
   }
 };
 
+// Tarjeta ÚNICA de planta: la usan la lista de cada lugar y el listado general,
+// así ambas vistas muestran siempre lo mismo. Editar/eliminar viven en la ficha.
+function crearTarjetaPlanta(p, id, lugarNombre) {
+  const card = document.createElement("div");
+  card.className = "planta-card clickeable" + (plantaActiva===id ? " activa" : "");
+  card.innerHTML = `
+    <div class="cult-header">
+      <span class="cult-nombre">${escAttr(p.nombre||p.genetica||"Planta")}</span>
+      <span class="cult-fase fase-${escAttr(p.fase)}">${escAttr(FASE_LABEL[p.fase]||p.fase||"—")}</span>
+    </div>
+    <div class="cult-meta"><span>🧬 ${escAttr(p.genetica||"—")}</span><span>📅 Día ${dias(p.fechaInicio)}</span></div>
+    <div class="cult-meta"><span>📍 ${escAttr(lugarNombre||"—")}${p.areaNombre?" · "+escAttr(p.areaNombre):""}</span></div>
+    <div class="pc-acciones">
+      <button class="btn-sm btn-ghost pc-med" aria-label="Cargar medición">🌡️ Medir</button>
+      <button class="btn-sm btn-ghost pc-riego" aria-label="Riego o fertilización">💧 Riego</button>
+      <button class="btn-sm btn-ghost pc-evento" aria-label="Agendar evento">📅 Evento</button>
+    </div>`;
+  card.querySelector(".pc-med").addEventListener("click", (e) => { e.stopPropagation(); plantaActiva = id; window._plantaFaseActual = p.fase||"vegetativa"; window.abrirModalMedicion(); });
+  card.querySelector(".pc-riego").addEventListener("click", (e) => { e.stopPropagation(); window.abrirModalRiegoLugar(p.lugarId, lugarNombre||"", id); });
+  card.querySelector(".pc-evento").addEventListener("click", (e) => { e.stopPropagation(); plantaActiva = id; window.abrirModalEvento(); });
+  card.addEventListener("click", () => window.verPlanta(id));
+  return card;
+}
+
 async function cargarPlantasLugar(lugarId) {
   const lista = document.getElementById("lista-plantas-lugar");
   lista.innerHTML = '<p class="cargando">Cargando...</p>';
-  const snap = await getDocs(query(collection(db,"plantas"), orderBy("creadoEn","desc")));
+  const [lSnap, snap] = await Promise.all([
+    getDoc(doc(db,"lugares",lugarId)),
+    getDocs(query(collection(db,"plantas"), orderBy("creadoEn","desc"))),
+  ]);
+  const lugarNombre = lSnap.exists() ? (lSnap.data().nombre||"") : "";
   lista.innerHTML = "";
   let count = 0;
   snap.forEach(d => {
     const p = d.data();
     if (p.lugarId !== lugarId) return;
     count++;
-    const card = document.createElement("div");
-    card.className = "planta-card clickeable" + (plantaActiva===d.id?" activa":"");
-    card.innerHTML = `
-      <div class="cult-header">
-        <span class="cult-nombre">${p.nombre}</span>
-        <span class="cult-fase fase-${p.fase}">${FASE_LABEL[p.fase]||p.fase||"—"}</span>
-      </div>
-      <div class="cult-meta">
-        <span>🧬 ${p.genetica}</span>
-        <span>📅 Día ${dias(p.fechaInicio)}</span>
-        ${p.alturaPlantin ? `<span>📏 ${p.alturaPlantin} cm</span>` : ""}
-      </div>
-      <div class="cult-meta">
-        <span>🪴 ${p.tipoOrigen==="semilla"?"Semilla":"Esqueje"}</span>
-        <span>🌱 ${p.substrato}</span>
-        <span>📦 ${p.tamMaceta}L</span>
-      </div>
-      ${p.areaId ? `<div class="cult-meta"><span>📍 ${p.areaNombre||"Área asignada"}</span></div>`:""}
-      <div class="cult-actions">
-        <button class="btn-sm btn-ghost btn-editar">✏️ Editar</button>
-        <button class="btn-sm btn-danger btn-eliminar">Eliminar</button>
-      </div>`;
-    // Closures directas (nada de ids embebidos en texto/onclick): elimina de
-    // raíz la clase de bug donde un caracter especial en un nombre rompía el
-    // atributo HTML y el botón dejaba de responder.
-    card.querySelector(".btn-editar").addEventListener("click", (e) => { e.stopPropagation(); window.editarPlanta(d.id); });
-    card.querySelector(".btn-eliminar").addEventListener("click", (e) => { e.stopPropagation(); window.eliminarPlanta(d.id, p.nombre||""); });
-    card.addEventListener("click", () => window.verPlanta(d.id));
-    lista.appendChild(card);
+    lista.appendChild(crearTarjetaPlanta(p, d.id, lugarNombre));
   });
   if (!count) lista.innerHTML = '<p class="empty">Sin plantas en este lugar.</p>';
 }
@@ -2109,7 +2085,7 @@ window.verPlanta = async (id) => {
     setTxt("det-nombre",    p.nombre||"—");
     setTxt("det-genetica",  p.genetica||"—");
     window._plantaFaseActual = p.fase || "vegetativa";
-    setTxt("det-fase",      p.fase||"—");
+    setTxt("det-fase",      FASE_LABEL[p.fase]||p.fase||"—");
     setTxt("det-origen",    p.tipoOrigen==="semilla"?"Semilla":"Esqueje");
     setTxt("det-inicio",    fmt(p.fechaInicio));
     setTxt("det-dia",       `Día ${dias(p.fechaInicio)}`);
@@ -2121,6 +2097,7 @@ window.verPlanta = async (id) => {
     show("vista-planta");
     await cargarSelectorPlanta(p.lugarId, id);
     cargarMediciones(); cargarEventos(); cargarNutricion();
+    window.activarTabPlanta("resumen");
   } catch (err) {
     console.error("verPlanta:", err);
     toast("No se pudo abrir el detalle: "+err.message, "err");
@@ -2669,7 +2646,7 @@ window.importarDesde = (key) => {
 
 // ─── INIT ─────────────────────────────────────────────────────────────────
 window.addEventListener("DOMContentLoaded", () => {
-  show("vista-inicio");
+  window.irA("vista-dashboard");
   cargarCatalogoDispositivos();
   localStorage.setItem("tuya_proxy", PROXY_URL);
 
@@ -2688,15 +2665,11 @@ window.addEventListener("DOMContentLoaded", () => {
       btn.classList.add("activo");
       document.getElementById("tab-"+tab).classList.add("activo");
       if (tab==="inase") cargarInase();
-      if (tab==="fases") cargarHistorialFases();
-      if (tab==="fitosanitario") cargarFitosanitario();
+      if (tab==="resumen" && plantaActiva) cargarResumenPlanta(plantaActiva);
+      if (tab==="historial") { cargarHistorialFases(); cargarFitosanitario(); }
     });
   });
 
-  // Iniciar sensores al cargar vista Tuya
-  document.querySelectorAll('[data-vista="vista-tuya"]')?.forEach(b => {
-    b.addEventListener("click", () => setTimeout(actualizarSensores, 300));
-  });
 });
 
 
@@ -2958,3 +2931,145 @@ window.cargarDashboard = cargarDashboard;
 
 // PWA: instalable + abre rápido
 if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+
+
+// ══════════════════════════════════════════════════════════════════════════
+// REDISEÑO APP: perfil unificado + registro rápido (botón +)
+// ══════════════════════════════════════════════════════════════════════════
+window.activarTabPlanta = (tab) => document.querySelector(`.tab-btn[data-tab="${tab}"]`)?.click();
+
+window.eliminarPlantaActiva = async () => {
+  const id = plantaActiva;
+  if (!id) return;
+  const nombre = document.getElementById("det-nombre")?.textContent || "";
+  await window.eliminarPlanta(id, nombre);
+  if (plantaActiva !== id) history.back();
+};
+
+// Pestaña Resumen: todo lo importante de la planta en una pantalla.
+async function cargarResumenPlanta(id) {
+  const $ = x => document.getElementById(x);
+  const snap = await getDoc(doc(db,"plantas",id));
+  if (!snap.exists() || plantaActiva !== id) return;
+  const p = snap.data();
+  const rangos = RANGOS_AGRONOMICOS[p.fase] || RANGOS_AGRONOMICOS.vegetativa;
+  let lugarNombre = "—", sensorKey = null;
+  try {
+    const l = await getDoc(doc(db,"lugares",p.lugarId));
+    if (l.exists()) {
+      lugarNombre = l.data().nombre || "—";
+      sensorKey = (l.data().sensoresTuya||[]).find(k => DISPOSITIVOS_TUYA[k]?.tipo === "sensor") || null;
+    }
+  } catch (err) { console.warn("Resumen: lugar no disponible", err.message); }
+  $("res-chips").innerHTML = `
+    <span class="cult-fase fase-${escAttr(p.fase)}">${escAttr(FASE_LABEL[p.fase]||p.fase||"—")}</span>
+    <span class="chip-dato">📅 Día ${dias(p.fechaInicio)}</span>
+    <span class="chip-dato">📍 ${escAttr(lugarNombre)}${p.areaNombre?" · "+escAttr(p.areaNombre):""}</span>
+    <span class="chip-dato">🧬 ${escAttr(p.genetica||"—")}</span>`;
+  ["res-clima","res-medicion","res-pendientes","res-fito"].forEach(x => $(x).textContent = "Cargando...");
+
+  // Datos de Firestore en paralelo
+  try {
+    const [med, ev, ft] = await Promise.all([
+      getDocs(query(collection(db,"plantas",id,"mediciones"), orderBy("fecha","desc"), limit(1))),
+      getDocs(collection(db,"plantas",id,"eventos")),
+      getDocs(collection(db,"plantas",id,"fitosanitario")),
+    ]);
+    if (plantaActiva !== id) return;
+    const m = med.docs[0]?.data();
+    if (m) {
+      const items = [["ph","pH"],["ec","EC"],["tempAmb","T° aire"]]
+        .filter(([k]) => m[k] != null)
+        .map(([k,l]) => `<span>${semaforoValor(m[k], rangos[k]).icono} ${l} ${m[k]}</span>`);
+      $("res-medicion").innerHTML = `<div class="res-vals">${items.join("") || "Sin valores clave"}</div><small class="muted">${fmt(m.fecha)} · hace ${dias(m.fecha)} d</small>`;
+    } else $("res-medicion").textContent = "Todavía no hay mediciones.";
+
+    const hoy = new Date(); hoy.setHours(0,0,0,0);
+    const iconos = {riego:"💧",fertilizacion:"⚗️",poda:"✂️",transplante:"🪴",cambio_fase:"🌿",cosecha:"🌾",inspeccion:"🔍",tratamiento:"💊",otro:"📌"};
+    const pend = ev.docs.map(d => d.data()).filter(e => !e.realizado)
+      .sort((a,b) => fechaComoDate(a.fecha) - fechaComoDate(b.fecha)).slice(0,4);
+    $("res-pendientes").innerHTML = pend.length
+      ? pend.map(e => `<div>${fechaComoDate(e.fecha) < hoy ? "🔴" : (iconos[e.tipo]||"📌")} ${escAttr(e.titulo||"")} <small class="muted">${fmt(e.fecha)}</small></div>`).join("")
+      : "Nada pendiente ✅";
+
+    const abiertas = ft.docs.map(d => d.data()).filter(f => f.estado !== "resuelta");
+    $("res-fito").innerHTML = abiertas.length
+      ? abiertas.map(f => `<div>🔬 ${escAttr(f.agente||f.tipo||"Incidencia")} <small class="muted">${escAttr((f.estado||"").replace(/_/g," "))}${f.recontrol?" · recontrol "+fmt(f.recontrol):""}</small></div>`).join("")
+      : "Sin incidencias activas ✅";
+  } catch (err) {
+    console.error("Resumen planta:", err);
+    ["res-medicion","res-pendientes","res-fito"].forEach(x => $(x).textContent = "⚠️ No se pudo cargar");
+  }
+
+  // Clima en vivo del lugar (sensor Tuya), sin bloquear el resto
+  if (!sensorKey) { $("res-clima").textContent = "Este lugar no tiene sensor."; return; }
+  try {
+    const data = await consultarDispositivo(sensorKey);
+    if (plantaActiva !== id) return;
+    const s = data.sensores || {};
+    if (s.tempAmb == null && s.humedad == null) { $("res-clima").textContent = "Sin lectura del sensor."; return; }
+    const vpd = calcularVPD(s.tempAmb, s.humedad);
+    $("res-clima").innerHTML = `<div class="res-vals">
+      <span>${semaforoValor(s.tempAmb, rangos.tempAmb).icono} ${s.tempAmb ?? "—"} °C</span>
+      <span>💧 ${s.humedad ?? "—"} %</span>
+      ${vpd!=null?`<span>VPD ${vpd} kPa</span>`:""}</div>`;
+  } catch (err) { $("res-clima").textContent = "Sensor sin respuesta."; }
+}
+window.cargarResumenPlanta = cargarResumenPlanta;
+
+// Botón "+": registrar cualquier cosa desde cualquier pantalla.
+let rapidoDatos = { lugares:{}, plantas:{} };
+window.abrirRegistroRapido = async () => {
+  abrirModal("modal-rapido");
+  const sel = document.getElementById("rapido-destino");
+  sel.innerHTML = "<option>Cargando...</option>";
+  try {
+    const [lSnap, pSnap] = await Promise.all([
+      getDocs(collection(db,"lugares")),
+      getDocs(query(collection(db,"plantas"), orderBy("creadoEn","desc"))),
+    ]);
+    rapidoDatos = { lugares:{}, plantas:{} };
+    lSnap.forEach(d => rapidoDatos.lugares[d.id] = d.data().nombre || "Lugar");
+    pSnap.forEach(d => rapidoDatos.plantas[d.id] = d.data());
+    let html = "";
+    Object.entries(rapidoDatos.lugares).forEach(([lid, nombre]) => {
+      html += `<optgroup label="${escAttr(nombre)}"><option value="l:${escAttr(lid)}">🏕️ Todo el lugar</option>`;
+      Object.entries(rapidoDatos.plantas).filter(([,p]) => p.lugarId===lid).forEach(([pid,p]) => {
+        html += `<option value="p:${escAttr(pid)}">🪴 ${escAttr(p.nombre||p.genetica||"Planta")} · ${escAttr(FASE_LABEL[p.fase]||p.fase||"")}</option>`;
+      });
+      html += "</optgroup>";
+    });
+    sel.innerHTML = html || "<option value=''>No hay lugares cargados</option>";
+    if (plantaActiva && rapidoDatos.plantas[plantaActiva]) sel.value = "p:" + plantaActiva;
+  } catch (err) {
+    console.error("Registro rápido:", err);
+    sel.innerHTML = "<option value=''>⚠️ No se pudo cargar</option>";
+  }
+};
+
+window.rapidoAccion = (tipo) => {
+  const v = document.getElementById("rapido-destino").value;
+  if (!v || !v.includes(":")) return;
+  const kind = v[0], id = v.slice(2);
+  if (kind === "l") {
+    if (tipo !== "riego") { toast("Para este registro elegí una planta","err"); return; }
+    cerrarModal("modal-rapido");
+    window.abrirModalRiegoLugar(id, rapidoDatos.lugares[id]||"");
+    return;
+  }
+  const p = rapidoDatos.plantas[id];
+  if (!p) return;
+  plantaActiva = id;
+  window._plantaFaseActual = p.fase || "vegetativa";
+  cerrarModal("modal-rapido");
+  const hoy = new Date().toISOString().split("T")[0];
+  const acciones = {
+    medicion:   () => window.abrirModalMedicion(),
+    riego:      () => window.abrirModalRiegoLugar(p.lugarId, rapidoDatos.lugares[p.lugarId]||"", id),
+    evento:     () => window.abrirModalEvento(),
+    nutricion:  () => abrirModal("modal-nutricion"),
+    fase:       () => window.abrirModalCambioFase(),
+    incidencia: () => { val("ft-fecha", hoy); abrirModal("modal-fitosanitario"); },
+  };
+  acciones[tipo]?.();
+};

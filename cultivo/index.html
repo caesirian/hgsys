@@ -31,79 +31,34 @@
   <button onclick="toggleModoClaro()" aria-label="Cambiar entre modo oscuro y modo campo (claro)">🌓</button>
 </header>
 
-<!-- SIDEBAR -->
+<!-- SIDEBAR (escritorio) -->
 <aside class="sidebar" role="navigation" aria-label="Navegación principal">
-  <button class="sidebar-logo" onclick="show('vista-inicio')" aria-label="Ir a Inicio">🌿 <span>Cultiv</span>App<small>Seguimiento de cultivo</small></button>
-  <button class="nav-btn" data-vista="vista-dashboard" onclick="show('vista-dashboard');cargarDashboard()">
-    <span class="nav-icon">🖥️</span><span class="nav-label">Dashboard</span>
-  </button>
-  <button class="nav-btn" data-vista="vista-lugares" onclick="show('vista-lugares');cargarLugares()">
-    <span class="nav-icon">🏕️</span><span class="nav-label">Lugares</span>
-  </button>
-  <button class="nav-btn" data-vista="vista-plantas" onclick="show('vista-plantas');cargarTablaPlantas()">
-    <span class="nav-icon">🪴</span><span class="nav-label">Plantas</span>
-  </button>
-  <button class="nav-btn" data-vista="vista-graficos" onclick="show('vista-graficos');cargarVistaGraficos()">
-    <span class="nav-icon">📊</span><span class="nav-label">Gráficos</span>
-  </button>
-  <button class="nav-btn" data-vista="vista-tuya" onclick="show('vista-tuya')">
-    <span class="nav-icon">📡</span><span class="nav-label">Sensores</span>
-  </button>
-    <button class="nav-btn" onclick="toggleModoClaro()" id="btn-modo-claro">
-    <span class="nav-icon">☀️</span><span class="nav-label">Modo campo</span>
-  </button>
+  <button class="sidebar-logo" onclick="irA('vista-dashboard')" aria-label="Ir a Hoy">🌿 <span>Cultiv</span>App<small>Seguimiento de cultivo</small></button>
+  <button class="nav-registrar" onclick="abrirRegistroRapido()">＋ Registrar</button>
+  <button class="nav-btn" data-vista="vista-dashboard" onclick="irA('vista-dashboard')"><span class="nav-icon">🏠</span><span class="nav-label">Hoy</span></button>
+  <button class="nav-btn" data-vista="vista-lugares" onclick="irA('vista-lugares')"><span class="nav-icon">🏕️</span><span class="nav-label">Lugares</span></button>
+  <button class="nav-btn" data-vista="vista-plantas" onclick="irA('vista-plantas')"><span class="nav-icon">🪴</span><span class="nav-label">Plantas</span></button>
+  <button class="nav-btn" data-vista="vista-graficos" onclick="irA('vista-graficos')"><span class="nav-icon">📊</span><span class="nav-label">Gráficos</span></button>
+  <button class="nav-btn" data-vista="vista-tuya" onclick="irA('vista-tuya')"><span class="nav-icon">📡</span><span class="nav-label">Sensores</span></button>
+  <button class="nav-btn" onclick="toggleModoClaro()" id="btn-modo-claro"><span class="nav-icon">☀️</span><span class="nav-label">Modo campo</span></button>
   <div class="sidebar-footer">HG Soluciones Web</div>
 </aside>
 
-<!-- NAVBAR BOTTOM mobile -->
+<!-- NAVBAR BOTTOM (celular): 4 destinos + botón + central -->
 <nav class="bottom-nav" role="navigation" aria-label="Navegación principal">
-  <button class="nav-btn" data-vista="vista-dashboard" onclick="show('vista-dashboard');cargarDashboard()">
-    <span class="nav-icon">🖥️</span><span class="nav-label">Dashboard</span>
-  </button>
-  <button class="nav-btn" data-vista="vista-lugares" onclick="show('vista-lugares');cargarLugares()">
-    <span class="nav-icon">🏕️</span><span class="nav-label">Lugares</span>
-  </button>
-  <button class="nav-btn" data-vista="vista-plantas" onclick="show('vista-plantas');cargarTablaPlantas()">
-    <span class="nav-icon">🪴</span><span class="nav-label">Plantas</span>
-  </button>
-  <button class="nav-btn" data-vista="vista-graficos" onclick="show('vista-graficos');cargarVistaGraficos()">
-    <span class="nav-icon">📊</span><span class="nav-label">Gráficos</span>
-  </button>
-  <button class="nav-btn" data-vista="vista-tuya" onclick="show('vista-tuya')">
-    <span class="nav-icon">📡</span><span class="nav-label">Sensores</span>
-  </button>
+  <button class="nav-btn" data-vista="vista-dashboard" onclick="irA('vista-dashboard')"><span class="nav-icon">🏠</span><span class="nav-label">Hoy</span></button>
+  <button class="nav-btn" data-vista="vista-lugares" onclick="irA('vista-lugares')"><span class="nav-icon">🏕️</span><span class="nav-label">Lugares</span></button>
+  <div class="nav-fab"><button class="fab-btn" onclick="abrirRegistroRapido()" aria-label="Registrar">＋</button></div>
+  <button class="nav-btn" data-vista="vista-plantas" onclick="irA('vista-plantas')"><span class="nav-icon">🪴</span><span class="nav-label">Plantas</span></button>
+  <button class="nav-btn" id="btn-mas" onclick="abrirModal('modal-mas')"><span class="nav-icon">⋯</span><span class="nav-label">Más</span></button>
 </nav>
 
 <main class="main">
 
-<!-- VISTA: INICIO (home, 3 secciones principales) -->
-<section id="vista-inicio" class="vista activa">
-  <div class="page-header">
-    <div class="page-title">CultivApp<small>Elegí qué querés ver</small></div>
-  </div>
-  <div class="inicio-grid">
-    <button class="inicio-btn" onclick="show('vista-dashboard');cargarDashboard()">
-      <span class="inicio-icono">🏕️</span>
-      <span class="inicio-titulo">Lugares de cultivo</span>
-      <span class="inicio-sub">Carpa y Estructura 3x1 — vista visual, luces, riego</span>
-    </button>
-    <button class="inicio-btn" onclick="show('vista-plantas');cargarTablaPlantas()">
-      <span class="inicio-icono">🪴</span>
-      <span class="inicio-titulo">Listado general de plantas</span>
-      <span class="inicio-sub">Todas las plantas, lugar, edad y etapa</span>
-    </button>
-    <button class="inicio-btn" onclick="show('vista-graficos');cargarVistaGraficos()">
-      <span class="inicio-icono">📊</span>
-      <span class="inicio-titulo">Gráficos y reportes</span>
-      <span class="inicio-sub">Temperatura, humedad y ciclo de vida por planta</span>
-    </button>
-  </div>
-</section>
-
 <!-- VISTA: DASHBOARD -->
-<section id="vista-dashboard" class="vista">
+<section id="vista-dashboard" class="vista activa">
   <div class="page-header">
-    <div class="page-title">Lugares de cultivo<small>Carpa y Estructura 3x1 — vista visual de cada espacio</small></div>
+    <div class="page-title">Hoy<small>Estado en vivo de cada lugar</small></div>
   </div>
   <div id="dashboard-grid" class="dashboard-grid"></div>
 </section>
@@ -117,19 +72,22 @@
   <div id="lista-lugares" class="lugar-grid"></div>
 </section>
 
-<!-- VISTA: PLANTAS (tabla global, todas las plantas de todos los lugares) -->
+<!-- VISTA: PLANTAS (mismas tarjetas que dentro de cada lugar, solo cambia el filtro) -->
 <section id="vista-plantas" class="vista">
   <div class="page-header">
-    <div class="page-title">Listado general de plantas<small>Todas las plantas, en cualquier lugar</small></div>
+    <div class="page-title">Plantas<small id="pl-contador">Todas, en cualquier lugar</small></div>
   </div>
-  <div class="plantas-tabla-wrap">
-    <table class="plantas-tabla">
-      <thead>
-        <tr><th>Genética</th><th>Lugar</th><th>Edad</th><th>Etapa</th></tr>
-      </thead>
-      <tbody id="tabla-plantas-body"><tr><td colspan="4" class="cargando">Cargando...</td></tr></tbody>
-    </table>
+  <div class="pl-filtros">
+    <select id="pl-filtro-lugar" onchange="renderPlantasGlobal()" aria-label="Filtrar por lugar"><option value="">Todos los lugares</option></select>
+    <select id="pl-filtro-fase" onchange="renderPlantasGlobal()" aria-label="Filtrar por fase">
+      <option value="">Todas las fases</option>
+      <option value="germinacion">Germinación</option>
+      <option value="vegetativa">Vegetativo</option>
+      <option value="floracion">Floración</option>
+      <option value="cosecha">Cosecha</option>
+    </select>
   </div>
+  <div id="plantas-global-grid" class="planta-grid"></div>
 </section>
 
 <!-- VISTA: GRÁFICOS Y REPORTES -->
@@ -172,18 +130,38 @@
   <div id="lista-plantas-lugar" class="planta-grid"></div>
 </section>
 
-<!-- VISTA: PLANTA (detalle) -->
+<!-- VISTA: PLANTA (perfil unificado) -->
 <section id="vista-planta" class="vista">
   <div class="page-header">
-    <div class="page-title" id="det-nombre">—<small id="det-dia">—</small></div>
-    <div style="display:flex;gap:8px;align-items:center">
+    <div class="page-title"><span id="det-nombre">—</span><small id="det-dia">—</small></div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
       <select id="selector-planta-activa" class="input-fecha-dia" onchange="cambiarPlantaSeleccionada()" title="Cambiar de planta"></select>
       <button class="btn btn-ghost" onclick="editarPlantaActiva()">✏️ Editar</button>
-      <button class="btn btn-ghost" onclick="show('vista-lugar')">← Volver</button>
+      <button class="btn btn-ghost" onclick="eliminarPlantaActiva()" aria-label="Eliminar planta">🗑️</button>
+      <button class="btn btn-ghost" onclick="history.back()">← Volver</button>
     </div>
   </div>
 
-  <div class="info-grid">
+  <div class="tabs">
+    <button class="tab-btn activo" data-tab="resumen">📋 Resumen</button>
+    <button class="tab-btn" data-tab="mediciones">🌡️ Mediciones</button>
+    <button class="tab-btn" data-tab="eventos">📅 Agenda</button>
+    <button class="tab-btn" data-tab="nutricion">⚗️ Nutrición</button>
+    <button class="tab-btn" data-tab="historial">🌿 Historial</button>
+    <button class="tab-btn" data-tab="inase">📋 INASE</button>
+  </div>
+
+  <div id="tab-resumen" class="tab-panel activo">
+    <div class="res-chips" id="res-chips"></div>
+    <div class="res-grid">
+      <div class="info-card"><div class="ic-label">🌡️ Clima del lugar (ahora)</div><div class="res-line" id="res-clima">—</div></div>
+      <div class="info-card"><div class="ic-label">📈 Última medición</div><div class="res-line" id="res-medicion">—</div></div>
+      <div class="info-card"><div class="ic-label">📅 Pendientes</div><div class="res-line" id="res-pendientes">—</div></div>
+      <div class="info-card"><div class="ic-label">🔬 Fitosanitario</div><div class="res-line" id="res-fito">—</div></div>
+    </div>
+    <details class="res-datos">
+      <summary>Datos de cultivo</summary>
+      <div class="info-grid">
     <div class="info-card"><div class="ic-label">Genética</div><div class="ic-val" id="det-genetica">—</div></div>
     <div class="info-card"><div class="ic-label">Fase</div><div class="ic-val" id="det-fase">—</div></div>
     <div class="info-card"><div class="ic-label">Origen</div><div class="ic-val" id="det-origen">—</div></div>
@@ -194,17 +172,10 @@
     <div class="info-card"><div class="ic-label">Riego</div><div class="ic-val" id="det-riego">—</div></div>
   </div>
   <div class="info-card" style="margin-bottom:20px"><div class="ic-label">Notas</div><div id="det-notas" style="font-size:.85rem;margin-top:4px">—</div></div>
-
-  <div class="tabs">
-    <button class="tab-btn activo" data-tab="mediciones">🌡️ Mediciones</button>
-    <button class="tab-btn" data-tab="eventos">📅 Agenda</button>
-    <button class="tab-btn" data-tab="nutricion">⚗️ Nutrición</button>
-    <button class="tab-btn" data-tab="fases">🌿 Fases</button>
-    <button class="tab-btn" data-tab="fitosanitario">🔬 Fitosanitario</button>
-    <button class="tab-btn" data-tab="inase">📋 INASE</button>
+    </details>
   </div>
 
-  <div id="tab-mediciones" class="tab-panel activo">
+  <div id="tab-mediciones" class="tab-panel">
     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px">
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
         <label style="font-size:.76rem;color:var(--muted)">Período:</label>
@@ -229,15 +200,15 @@
     <div class="section-toolbar"><button class="btn btn-primary" onclick="abrirModal('modal-nutricion')">+ Agregar semana</button></div>
     <div id="lista-nutricion"></div>
   </div>
-  <div id="tab-fases" class="tab-panel">
-    <div class="section-toolbar">
-      <button class="btn btn-primary" onclick="abrirModalCambioFase()">+ Registrar cambio de fase</button>
+
+  <div id="tab-historial" class="tab-panel">
+    <div class="section-toolbar" style="display:flex;justify-content:space-between;align-items:center">
+      <span class="section-label" style="margin:0">🌿 Fases</span>
+      <button class="btn btn-primary" onclick="abrirModalCambioFase()">+ Cambio de fase</button>
     </div>
     <div id="lista-fases"></div>
-  </div>
-
-  <div id="tab-fitosanitario" class="tab-panel">
-    <div class="section-toolbar">
+    <div class="section-toolbar" style="display:flex;justify-content:space-between;align-items:center;margin-top:18px">
+      <span class="section-label" style="margin:0">🔬 Fitosanitario</span>
       <button class="btn btn-primary" onclick="abrirModal('modal-fitosanitario')">+ Nueva incidencia</button>
     </div>
     <div id="lista-fitosanitario"></div>
@@ -335,6 +306,35 @@
 <!-- ═══════════ MODALES ═══════════ -->
 
 <!-- Modal: Nuevo lugar -->
+<!-- REGISTRO RÁPIDO (botón +) -->
+<div class="modal-overlay" id="modal-rapido" onclick="if(event.target===this)cerrarModal('modal-rapido')">
+  <div class="modal">
+    <div class="modal-header"><h3>＋ Registrar</h3><button class="btn-icon" onclick="cerrarModal('modal-rapido')" aria-label="Cerrar">✕</button></div>
+    <label class="rapido-label" for="rapido-destino">¿Sobre qué?</label>
+    <select id="rapido-destino" class="rapido-select"></select>
+    <div class="rapido-grid">
+      <button class="rapido-btn" onclick="rapidoAccion('medicion')"><span>🌡️</span>Medición</button>
+      <button class="rapido-btn" onclick="rapidoAccion('riego')"><span>💧</span>Riego / Fert.</button>
+      <button class="rapido-btn" onclick="rapidoAccion('evento')"><span>📅</span>Evento</button>
+      <button class="rapido-btn" onclick="rapidoAccion('nutricion')"><span>⚗️</span>Nutrición</button>
+      <button class="rapido-btn" onclick="rapidoAccion('fase')"><span>🌿</span>Cambio de fase</button>
+      <button class="rapido-btn" onclick="rapidoAccion('incidencia')"><span>🔬</span>Incidencia</button>
+    </div>
+    <p class="rapido-ayuda">Eligiendo "Todo el lugar" podés registrar riego / fertilización de varias plantas juntas.</p>
+  </div>
+</div>
+
+<!-- MÁS (celular) -->
+<div class="modal-overlay" id="modal-mas" onclick="if(event.target===this)cerrarModal('modal-mas')">
+  <div class="modal">
+    <div class="modal-header"><h3>Más</h3><button class="btn-icon" onclick="cerrarModal('modal-mas')" aria-label="Cerrar">✕</button></div>
+    <div class="mas-lista">
+      <button class="rapido-btn mas-btn" onclick="cerrarModal('modal-mas');irA('vista-graficos')"><span>📊</span>Gráficos y reportes</button>
+      <button class="rapido-btn mas-btn" onclick="cerrarModal('modal-mas');irA('vista-tuya')"><span>📡</span>Sensores y dispositivos</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="modal-lugar">
   <div class="modal">
     <div class="modal-header"><h3>🏕️ Nuevo lugar de cultivo</h3><button class="btn-icon" onclick="cerrarModal('modal-lugar')">✕</button></div>
