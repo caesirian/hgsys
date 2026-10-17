@@ -68,3 +68,25 @@ td.cargando{height:auto}
 @keyframes sheet{from{transform:translateY(40px);opacity:.6}to{transform:none;opacity:1}}
 /* Ya instalada como app: más aire arriba */
 @media(display-mode:standalone){body{user-select:none;-webkit-user-select:none}input,textarea{user-select:text;-webkit-user-select:text}}
+
+/* ===== Plano de la sala (Hoy) ===== */
+.plano-sala{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:16px;max-width:760px;margin-inline:auto}
+.plano-sala:empty{display:none}
+.plano-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px;font-weight:700;margin-bottom:6px}
+.plano-head small{color:var(--muted);font-weight:500}
+.plano-svg{display:block;width:100%;height:auto}
+.plano-sala-rect{fill:color-mix(in srgb,var(--surface) 70%,transparent);stroke:var(--border2);stroke-width:4}
+.plano-pared{fill:var(--muted);font-size:22px}
+.plano-zona rect{fill:var(--card);stroke:var(--accent);stroke-width:3;transition:fill .3s}
+.plano-zona[data-plano-lugar]{cursor:pointer}
+.plano-zona[data-plano-lugar]:hover rect{fill:var(--accent-glow)}
+.plano-zona.plano-on rect{fill:rgba(245,197,66,.28);stroke:#f5c542}
+.plano-zona.plano-offline rect{stroke:var(--warning,#e09040);stroke-dasharray:10 6}
+.plano-zona.plano-off rect{fill:none;stroke:var(--muted);stroke-dasharray:4 6;opacity:.7}
+.plano-zona.plano-sin-crear rect{fill:none;stroke:var(--muted);stroke-dasharray:10 8;opacity:.6}
+.plano-nombre{fill:var(--text);font-size:26px;font-weight:700}
+.plano-sub{fill:var(--text2);font-size:21px}
+.plano-off .plano-nombre,.plano-sin-crear .plano-nombre{fill:var(--muted)}
+.plano-cota line,.plano-cota polyline{stroke:var(--muted);stroke-width:2;stroke-dasharray:6 6;fill:none}
+.plano-cota text{fill:var(--muted);font-size:21px}
+.plano-leyenda{margin-top:6px;color:var(--muted);font-size:.78rem}

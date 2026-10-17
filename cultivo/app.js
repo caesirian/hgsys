@@ -1384,6 +1384,107 @@ async function pintarClimaExteriorDashboard() {
   });
 }
 
+// ════════════════════════════════════════════════════════════════════════════
+// PLANO DE LA SALA (vista cenital, 3 m × 6 m, 1 unidad = 1 cm)
+// Pared de atrás = lado de 6 m (arriba). Pared izquierda = lado de 3 m.
+//  · Estructura 3×1: pegada a la pared izquierda, en paralelo, a lo largo de sus 3 m.
+//  · Estructura 2×1: en paralelo a la pared de atrás (apoyada en ella), a 1 m de la 3×1.
+//  · Carpa 1×1: a 1 m de la 2×1, hacia adelante y hacia la derecha (queda en la esquina derecha del frente).
+// ════════════════════════════════════════════════════════════════════════════
+const PLANO_SALA = {
+  ancho: 600, fondo: 300,
+  zonas: {
+    "3x1":   { x: 0,   y: 0,   w: 100, h: 300, corto: "3×1",   nombre: "Estructura 3×1" },
+    "2x1":   { x: 200, y: 0,   w: 200, h: 100, corto: "2×1",   nombre: "Estructura 2×1" },
+    "carpa": { x: 500, y: 200, w: 100, h: 100, corto: "Carpa", nombre: "Carpa" },
+  },
+};
+let planoDatos = { lugares: [], plantas: {} };
+
+// A qué zona del plano corresponde un lugar (por nombre/dimensiones, igual que detectarTipoEstructura)
+function claveLugarPlano(l) {
+  const texto = ((l.nombre||"") + " " + (l.dimensiones||"")).toLowerCase();
+  if (/3\s*[x×]\s*1/.test(texto)) return "3x1";
+  if (/2\s*[x×]\s*1/.test(texto)) return "2x1";
+  if (texto.includes("carpa") || /1\s*[x×]\s*1/.test(texto)) return "carpa";
+  return null;
+}
+
+function renderPlanoSala() {
+  const cont = document.getElementById("plano-sala");
+  if (!cont) return;
+  const { ancho, fondo, zonas } = PLANO_SALA;
+  const porClave = {};
+  planoDatos.lugares.forEach(l => { const k = claveLugarPlano(l); if (k && !porClave[k]) porClave[k] = l; });
+
+  const resumen = [];
+  const bloques = Object.entries(zonas).map(([k, z]) => {
+    const l = porClave[k];
+    const off = l && l.activo === false;
+    const est = l && !off ? estadoLuzActivos[l.id] : null;
+    let clase = "plano-zona", icono = "", estado = "";
+    if (!l)            { clase += " plano-sin-crear"; estado = "sin crear"; }
+    else if (off)      { clase += " plano-off";       estado = "en off"; }
+    else if (!est)     { icono = "…"; estado = "consultando"; }
+    else if (!est.online)   { clase += " plano-offline"; icono = "📴"; estado = "sin conexión"; }
+    else if (est.encendido) { clase += " plano-on";      icono = "💡"; estado = "luces encendidas"; }
+    else                    { icono = "🌑"; estado = "luces apagadas"; }
+    const n = l ? (planoDatos.plantas[l.id] || 0) : 0;
+    const plantasTxt = l && !off ? `🌱 ${n}` : "";
+    resumen.push(`${z.nombre}: ${estado}${l && !off ? `, ${n} plantas` : ""}`);
+    const cx = z.x + z.w / 2, cy = z.y + z.h / 2;
+    const clic = l ? ` data-plano-lugar="${escAttr(l.id)}" tabindex="0" role="button" aria-label="Ver ${escAttr(z.nombre)}: ${escAttr(estado)}"` : "";
+    return `<g class="${clase}"${clic}>
+      <title>${escAttr(z.nombre)} — ${escAttr(estado)}${l && !off ? " · " + n + " plantas" : ""}</title>
+      <rect x="${z.x}" y="${z.y}" width="${z.w}" height="${z.h}" rx="6"/>
+      <text class="plano-nombre" x="${cx}" y="${cy - 8}" text-anchor="middle">${z.corto}</text>
+      <text class="plano-sub" x="${cx}" y="${cy + 16}" text-anchor="middle">${!l || off ? estado : icono + (plantasTxt ? " " + plantasTxt : "")}</text>
+    </g>`;
+  }).join("");
+
+  cont.innerHTML = `
+    <div class="plano-head"><span>🗺️ Plano de la sala</span><small>3 × 6 m</small></div>
+    <svg class="plano-svg" viewBox="-40 -46 ${ancho + 80} ${fondo + 92}" role="img" aria-label="Plano de la sala de 3 por 6 metros. ${escAttr(resumen.join(". "))}">
+      <rect class="plano-sala-rect" x="0" y="0" width="${ancho}" height="${fondo}"/>
+      <text class="plano-pared" x="${ancho/2}" y="-14" text-anchor="middle">Pared de atrás · 6 m</text>
+      <text class="plano-pared" x="-14" y="${fondo/2}" text-anchor="middle" transform="rotate(-90 -14 ${fondo/2})">Pared izquierda · 3 m</text>
+      <text class="plano-pared" x="${ancho/2}" y="${fondo + 30}" text-anchor="middle">Frente</text>
+      <g class="plano-cota">
+        <line x1="100" y1="50" x2="200" y2="50"/><text x="150" y="40" text-anchor="middle">1 m</text>
+        <polyline points="400,100 500,100 500,200"/>
+        <text x="450" y="90" text-anchor="middle">1 m</text><text x="512" y="152">1 m</text>
+      </g>
+      ${bloques}
+    </svg>
+    <div class="plano-leyenda">💡 encendida · 🌑 apagada · 📴 sin conexión · tocá un lugar para ir a su tarjeta</div>`;
+}
+
+async function cargarConteoPlantasPlano() {
+  try {
+    const snap = await getDocs(collection(db, "plantas"));
+    const cuenta = {};
+    snap.forEach(d => {
+      const p = d.data();
+      if (!p.lugarId || String(p.fase||"").toLowerCase().startsWith("cos")) return;
+      cuenta[p.lugarId] = (cuenta[p.lugarId] || 0) + 1;
+    });
+    planoDatos.plantas = cuenta;
+    renderPlanoSala();
+  } catch (err) { console.warn("Plano: no se pudo contar plantas:", err.message); }
+}
+
+document.addEventListener("click", e => {
+  const z = e.target.closest?.("[data-plano-lugar]");
+  if (!z) return;
+  const card = document.querySelector(`.dash-card[data-lugar-id="${CSS.escape(z.dataset.planoLugar)}"]`);
+  card?.scrollIntoView({ behavior: "smooth", block: "center" });
+});
+document.addEventListener("keydown", e => {
+  if (e.key !== "Enter" && e.key !== " ") return;
+  const z = e.target.closest?.("[data-plano-lugar]");
+  if (z) { e.preventDefault(); z.dispatchEvent(new MouseEvent("click", { bubbles: true })); }
+});
+
 async function cargarDashboard() {
   const grid = document.getElementById("dashboard-grid");
   grid.innerHTML = '<p class="cargando">Cargando...</p>';
@@ -1400,6 +1501,9 @@ async function cargarDashboard() {
   }
   grid.innerHTML = "";
   dashboardActivos = {};
+  planoDatos.lugares = snap.docs.map(d => ({ ...d.data(), id: d.id }));
+  renderPlanoSala();
+  cargarConteoPlantasPlano();
   if (snap.empty) { grid.innerHTML = '<p class="empty">No hay lugares creados todavía.</p>'; return; }
 
   const docsOrdenados = [...snap.docs].filter(d => d.data().activo !== false).sort((a, b) => {
@@ -1499,6 +1603,7 @@ async function refrescarDashboardCard(lugarId, sensorKey, luzKey, tipo, alturaLu
       const data = await resp.json();
       const encendido = data.online && !!(data.sensores && data.sensores.encendido);
       estadoLuzActivos[lugarId] = { online: !!data.online, encendido: !!(data.sensores && data.sensores.encendido) };
+      renderPlanoSala();
       const ilusEl = document.getElementById("dash-ilus-"+lugarId);
       if (ilusEl) {
         const svgEl = ilusEl.querySelector("svg");
