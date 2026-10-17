@@ -457,6 +457,7 @@ function iconoFase(fase) {
 const ZONA_PISO = {
   carpa:          { top: 73, bottom: 4 },
   estructura3x1:  { top: 75, bottom: 10 },
+  estructura2x1:  { top: 75, bottom: 10 },
 };
 
 async function cargarPlantasResumenCard(lugarId, contenedorId, iconosId) {
@@ -511,7 +512,7 @@ async function cargarPlantasResumenCard(lugarId, contenedorId, iconosId) {
       distribuir(enMesa, 16, 28, 0.46, 36, 20); // sobre la mesa: más arriba, más chicas, más al centro
       distribuir(enPiso, 46, 84, 0.58, 56, 10);  // resto: en el piso, con margen a los bordes
     } else {
-      distribuir(plantas, 12, 82, 0.62, 62, 10);
+      distribuir(plantas, 12, 82, 0.62, tipo === "estructura2x1" ? 42 : 62, 10); // la 2×1 es 1 m más angosta
     }
   }
 }
@@ -691,9 +692,7 @@ window.actualizarAlturaLucesDashboard = (lugarId, valor) => {
   const svgEl = ilusEl && ilusEl.querySelector("svg");
   if (!svgEl) return;
   const encendido = !!(estadoLuzActivos[lugarId] && estadoLuzActivos[lugarId].encendido);
-  svgEl.outerHTML = cfg.tipo === "estructura3x1"
-    ? svgEstructura3x1(encendido, v, lugarId)
-    : svgCarpa(encendido, v, lugarId);
+  svgEl.outerHTML = svgPorTipo(cfg.tipo, encendido, v, lugarId);
 };
 
 // Guarda la altura del panel de luces (0-100) para este lugar y refresca
@@ -1226,15 +1225,19 @@ let dashboardTimer   = null;
 // Detecta si el lugar es la Carpa (1×1×2) o la Estructura 3×1, usando el sensor
 // asociado como fuente de verdad y el texto de nombre/dimensiones como respaldo.
 function detectarTipoEstructura(l) {
-  const sensorKey = (l.sensoresTuya||[])[0];
-  const lugarDispositivo = sensorKey && DISPOSITIVOS_TUYA[sensorKey]?.lugar;
-  if (lugarDispositivo === "Estructura 3x1" || lugarDispositivo === "Estructura 2x1") return "estructura3x1";
-  if (lugarDispositivo === "Carpa") return "carpa";
-  const luzDispositivo = (l.switchLuces||[])[0] && DISPOSITIVOS_TUYA[(l.switchLuces||[])[0]]?.lugar;
-  if (luzDispositivo === "Estructura 3x1" || luzDispositivo === "Estructura 2x1") return "estructura3x1";
-  const texto = ((l.dimensiones||"") + " " + (l.nombre||"")).toLowerCase();
-  if (/[23]\s*[x×]\s*1/.test(texto) || texto.includes("estructura")) return "estructura3x1";
-  return "carpa";
+  // Manda el nombre/dimensiones: un lugar puede reutilizar el sensor de otro (ej. el sensor
+  // de la Carpa puesto en la 2×1) y entonces el dispositivo no dice qué estructura es.
+  const texto = ((l.nombre||"") + " " + (l.dimensiones||"")).toLowerCase();
+  if (/3\s*[x×]\s*1/.test(texto)) return "estructura3x1";
+  if (/2\s*[x×]\s*1/.test(texto)) return "estructura2x1";
+  if (texto.includes("carpa")) return "carpa";
+  // Respaldo: a qué lugar pertenecen los dispositivos asociados
+  const lugarDe = k => k && DISPOSITIVOS_TUYA[k]?.lugar;
+  const ld = lugarDe((l.sensoresTuya||[])[0]) || lugarDe((l.switchLuces||[])[0]);
+  if (ld === "Estructura 3x1") return "estructura3x1";
+  if (ld === "Estructura 2x1") return "estructura2x1";
+  if (ld === "Carpa") return "carpa";
+  return texto.includes("estructura") ? "estructura3x1" : "carpa";
 }
 
 // Carpa real: 100x100cm de base x 200cm de alto → el marco frontal (lo que
@@ -1356,6 +1359,56 @@ function svgEstructura3x1(encendida, alturaLuces, lugarId) {
       <rect x="228" y="${yLuz.toFixed(1)}" width="30" height="6" rx="2" class="barra-luz"/>
     </g>
   </svg>`;
+}
+
+// Estructura 2×1: igual que la 3×1 pero 1 m menos de ancho (200cm ancho x 200cm alto x
+// 100cm de profundidad) → mismo alto y misma profundidad, 2 compartimentos en vez de 3,
+// una Insativa por compartimento. Mismos 0.85px/cm de alto y mismo criterio de perspectiva.
+function svgEstructura2x1(encendida, alturaLuces, lugarId) {
+  const d = alturaLuces==null ? 70 : alturaLuces;
+  const yLuz = 150 - d * 0.85;
+  const n = 2, W = 280 * n / 3, L = 150 - W / 2, R = L + W; // marco frontal L,10–R,180
+  const bL = L + 49, bR = R - 49;                           // pared del fondo (anidada) bL,40–bR,150
+  const gy = "egY"+lugarId;
+  const f = v => v.toFixed(1);
+  const divisiones = [], haces = [], luces = [];
+  for (let k = 1; k < n; k++) {
+    const xf = L + W * k / n, xb = bL + (bR - bL) * k / n;
+    divisiones.push(`<line x1="${f(xf)}" y1="10" x2="${f(xb)}" y2="40" class="carpa-marco"/><line x1="${f(xf)}" y1="180" x2="${f(xb)}" y2="150" class="carpa-marco"/>`);
+  }
+  for (let k = 0; k < n; k++) {
+    const cx = L + W * (k + 0.5) / n;
+    haces.push(`<polygon points="${f(cx-10)},${f(yLuz+6)} ${f(cx+10)},${f(yLuz+6)} ${f(cx+28)},145 ${f(cx-28)},145" fill="url(#${gy})" class="beam"/>`);
+    luces.push(`<line x1="${f(cx)}" y1="16" x2="${f(cx)}" y2="${f(yLuz)}" class="cable-luz"/><rect x="${f(cx-15)}" y="${f(yLuz)}" width="30" height="6" rx="2" class="barra-luz"/>`);
+  }
+  return `
+  <svg viewBox="0 0 300 200" class="ilustracion ${encendida?'glow-on':'glow-off'}">
+    <defs>
+      <linearGradient id="${gy}" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#fff6c9" stop-opacity=".38"/>
+        <stop offset="100%" stop-color="#fff6c9" stop-opacity="0"/>
+      </linearGradient>
+    </defs>
+    <rect x="${f(L+18)}" y="180" width="7" height="16" class="estante-pata"/>
+    <rect x="${f(R-25)}" y="180" width="7" height="16" class="estante-pata"/>
+    <polygon points="${f(L)},10 ${f(R)},10 ${f(bR)},40 ${f(bL)},40" class="carpa-techo"/>
+    <polygon points="${f(L)},10 ${f(L)},180 ${f(bL)},150 ${f(bL)},40" class="carpa-pared"/>
+    <polygon points="${f(R)},10 ${f(R)},180 ${f(bR)},150 ${f(bR)},40" class="carpa-pared"/>
+    <polygon points="${f(L)},180 ${f(R)},180 ${f(bR)},150 ${f(bL)},150" class="carpa-piso"/>
+    <polygon points="${f(bL)},40 ${f(bR)},40 ${f(bR)},150 ${f(bL)},150" class="carpa-fondo"/>
+    ${divisiones.join("\n    ")}
+    <rect x="${f(L)}" y="10" width="${f(W)}" height="170" fill="none" class="carpa-marco"/>
+    <ellipse cx="150" cy="95" rx="${f(W/2-8)}" ry="80" class="glow-interior"/>
+    <g class="haces-luz">${haces.join("")}</g>
+    <g class="panel-led">${luces.join("")}</g>
+  </svg>`;
+}
+
+// Elige el dibujo según el tipo de estructura
+function svgPorTipo(tipo, encendida, alturaLuces, lugarId) {
+  if (tipo === "estructura3x1") return svgEstructura3x1(encendida, alturaLuces, lugarId);
+  if (tipo === "estructura2x1") return svgEstructura2x1(encendida, alturaLuces, lugarId);
+  return svgCarpa(encendida, alturaLuces, lugarId);
 }
 
 // Clima exterior real (Villa Luzuriaga, La Matanza, Bs.As.) vía Open-Meteo,
@@ -1517,7 +1570,7 @@ async function cargarDashboard() {
     const sensorKey = (l.sensoresTuya||[]).find(s => DISPOSITIVOS_TUYA[s]?.tipo === "sensor");
     const luzKey    = (l.switchLuces||[])[0];
     const tipo      = detectarTipoEstructura(l);
-    const svgInicial = tipo === "estructura3x1" ? svgEstructura3x1(false, l.alturaLuces, d.id) : svgCarpa(false, l.alturaLuces, d.id);
+    const svgInicial = svgPorTipo(tipo, false, l.alturaLuces, d.id);
 
     const card = document.createElement("div");
     card.className = "dash-card";
@@ -1607,7 +1660,7 @@ async function refrescarDashboardCard(lugarId, sensorKey, luzKey, tipo, alturaLu
       const ilusEl = document.getElementById("dash-ilus-"+lugarId);
       if (ilusEl) {
         const svgEl = ilusEl.querySelector("svg");
-        const nuevoSvg = tipo === "estructura3x1" ? svgEstructura3x1(encendido, alturaLuces, lugarId) : svgCarpa(encendido, alturaLuces, lugarId);
+        const nuevoSvg = svgPorTipo(tipo, encendido, alturaLuces, lugarId);
         if (svgEl) svgEl.outerHTML = nuevoSvg; else ilusEl.insertAdjacentHTML("afterbegin", nuevoSvg);
       }
       const luzEl = document.getElementById("dash-luz-"+lugarId);
