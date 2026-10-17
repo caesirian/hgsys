@@ -56,6 +56,7 @@ let DISPOSITIVOS_TUYA = {
   turbinas_carpa: { id: "3522204898f4abba2357",    tipo: "switch",  nombre: "Turbinas Carpa", lugar: "Carpa" },
   sensor_3x1:     { id: "eb8fc54c62a0049352pgax",  tipo: "sensor",  nombre: "Sensor 3x1",     lugar: "Estructura 3x1" },
   luces_3x1:      { id: "80210308a4cf12ac315b",    tipo: "switch",  nombre: "Luces 3x1",      lugar: "Estructura 3x1" },
+  luces_2x1:      { id: "eb4314e2ba9d6459046wao",  tipo: "switch",  nombre: "Luces 2x1",      lugar: "Estructura 2x1" },
 };
 
 const PROXY_URL = "https://cultivapp-tuya-proxy.onrender.com/tuya";
@@ -560,7 +561,7 @@ async function cargarLugares() {
   if (snap.empty) { lista.innerHTML = '<p class="empty">No hay lugares. Creá uno nuevo.</p>'; return; }
 
   // Ordenar por prioridad de luces (encendida > apagada > sin luz > fuera de línea)
-  const docsOrdenados = [...snap.docs].sort((a, b) => {
+  const docsOrdenados = [...snap.docs].filter(d => d.data().activo !== false).sort((a, b) => {
     const luzA = (a.data().switchLuces||[])[0];
     const luzB = (b.data().switchLuces||[])[0];
     return prioridadLuz(estadoTodos[luzA]) - prioridadLuz(estadoTodos[luzB]);
@@ -1228,10 +1229,12 @@ let dashboardTimer   = null;
 function detectarTipoEstructura(l) {
   const sensorKey = (l.sensoresTuya||[])[0];
   const lugarDispositivo = sensorKey && DISPOSITIVOS_TUYA[sensorKey]?.lugar;
-  if (lugarDispositivo === "Estructura 3x1") return "estructura3x1";
+  if (lugarDispositivo === "Estructura 3x1" || lugarDispositivo === "Estructura 2x1") return "estructura3x1";
   if (lugarDispositivo === "Carpa") return "carpa";
+  const luzDispositivo = (l.switchLuces||[])[0] && DISPOSITIVOS_TUYA[(l.switchLuces||[])[0]]?.lugar;
+  if (luzDispositivo === "Estructura 3x1" || luzDispositivo === "Estructura 2x1") return "estructura3x1";
   const texto = ((l.dimensiones||"") + " " + (l.nombre||"")).toLowerCase();
-  if (texto.includes("3x1") || texto.includes("3×1") || texto.includes("estructura")) return "estructura3x1";
+  if (/[23]\s*[x×]\s*1/.test(texto) || texto.includes("estructura")) return "estructura3x1";
   return "carpa";
 }
 
@@ -1400,7 +1403,7 @@ async function cargarDashboard() {
   dashboardActivos = {};
   if (snap.empty) { grid.innerHTML = '<p class="empty">No hay lugares creados todavía.</p>'; return; }
 
-  const docsOrdenados = [...snap.docs].sort((a, b) => {
+  const docsOrdenados = [...snap.docs].filter(d => d.data().activo !== false).sort((a, b) => {
     const luzA = (a.data().switchLuces||[])[0];
     const luzB = (b.data().switchLuces||[])[0];
     return prioridadLuz(estadoTodos[luzA]) - prioridadLuz(estadoTodos[luzB]);

@@ -2,7 +2,7 @@
 // Dos cosas, hechas fácil: (1) reasignar la ubicación de las plantas, (2) cambiar las luces.
 // Misma base Firestore que la app completa (lugares / plantas), sin imports cruzados.
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
-import { getFirestore, collection, doc, getDocs, updateDoc, writeBatch, serverTimestamp }
+import { getFirestore, collection, doc, getDocs, addDoc, updateDoc, writeBatch, serverTimestamp }
   from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -18,6 +18,16 @@ const db = getFirestore(initializeApp(firebaseConfig));
 const PROXY_URL   = "https://cultivapp-tuya-proxy.onrender.com";
 const LUCES_BASE  = ["Insativa 200w", "Santa Planta 250w", "Galponera 100w Fría", "Mars Orbiter"];
 const ALTURA_MIN  = 40, ALTURA_MAX = 140, ALTURA_DEF = 70;
+
+// Catálogo de dispositivos Tuya (se pisa con GET /tuya/devices del proxy; este es el respaldo)
+let catalogo = {
+  sensor_carpa:   { tipo: "sensor", nombre: "Sensor Carpa" },
+  luces_carpa:    { tipo: "switch", nombre: "Luces Carpa" },
+  turbinas_carpa: { tipo: "switch", nombre: "Turbinas Carpa" },
+  sensor_3x1:     { tipo: "sensor", nombre: "Sensor 3x1" },
+  luces_3x1:      { tipo: "switch", nombre: "Luces 3x1" },
+  luces_2x1:      { tipo: "switch", nombre: "Luces 2x1" },
+};
 
 // ─── Estado ──────────────────────────────────────────────────────────────────
 let lugares = [];   // [{id, nombre, luces[], alturaLuces, switchLuces[], areas:[{id,nombre,luces[]}]}]
@@ -71,7 +81,7 @@ async function cargar() {
     lugares.sort((a, b) => String(a.nombre || "").localeCompare(String(b.nombre || ""), "es"));
     plantas = pSnap.docs.map(d => ({ ...d.data(), id: d.id }));
     renderTodo();
-    cargarEstadoLuces();
+    cargarCatalogo().then(cargarEstadoLuces);
   } catch (err) {
     console.error(err);
     $("vista-plantas").innerHTML = `<p class="vacio">No se pudo cargar.<br>${esc(err.message)}<br><br><button class="btn" id="reintentar" type="button">Reintentar</button></p>`;
@@ -80,6 +90,18 @@ async function cargar() {
 }
 
 function renderTodo() { renderPlantas(); renderLuces(); renderSeleccion(); actualizarSugerenciasLuces(); }
+
+async function cargarCatalogo() {
+  try {
+    const base = (localStorage.getItem("tuya_proxy") || PROXY_URL + "/tuya").replace(/\/tuya$/, "");
+    const r = await fetch(`${base}/tuya/devices`, { signal: AbortSignal.timeout(12000) });
+    if (!r.ok) return;
+    const d = await r.json();
+    if (d.ok && d.devices && Object.keys(d.devices).length) catalogo = d.devices;
+  } catch { /* se usa el respaldo */ }
+}
+
+const activo = l => l.activo !== false;
 
 // ─── Vista PLANTAS ───────────────────────────────────────────────────────────
 function filaPlanta(p) {
@@ -104,9 +126,9 @@ function renderPlantas() {
 
   for (const l of lugares) {
     const delLugar = plantas.filter(p => p.lugarId === l.id);
-    if (!delLugar.length && !l.areas.length) continue;
+    if (!delLugar.length && (!l.areas.length || !activo(l))) continue;
     const idsArea = new Set(l.areas.map(a => a.id));
-    html += `<div class="grupo"><div class="grupo-head"><span>🏕️ ${esc(l.nombre || "Lugar")} <small>${delLugar.length} ${delLugar.length === 1 ? "planta" : "plantas"}</small></span>
+    html += `<div class="grupo"><div class="grupo-head"><span>🏕️ ${esc(l.nombre || "Lugar")}${activo(l) ? "" : " ⏸"} <small>${delLugar.length} ${delLugar.length === 1 ? "planta" : "plantas"}${activo(l) ? "" : " · en off"}</small></span>
       <button type="button" class="sel-grupo" data-selgrupo="${esc(l.id)}|*">Todas</button></div>`;
     if (l.areas.length) {
       for (const a of l.areas) {
@@ -167,18 +189,19 @@ function cerrarSheet() { $("overlay").hidden = true; accionSheet = null; documen
 function abrirMover(ids) {
   const sel = plantas.filter(p => ids.includes(p.id));
   if (!sel.length) return;
-  if (!lugares.length) { toast("No hay lugares cargados", true); return; }
+  const destinos = lugares.filter(activo);
+  if (!destinos.length) { toast("No hay lugares activos", true); return; }
 
   // Preselecciona el lugar/área actual si todas comparten uno
   const mismoLugar = sel.every(p => p.lugarId === sel[0].lugarId) ? sel[0].lugarId : null;
   const mismaArea  = mismoLugar && sel.every(p => (p.areaId || "") === (sel[0].areaId || "")) ? (sel[0].areaId || "") : "";
-  const lugarIni   = lugarPor(mismoLugar) ? mismoLugar : lugares[0].id;
+  const lugarIni   = destinos.some(l => l.id === mismoLugar) ? mismoLugar : destinos[0].id;
 
   const nombres = sel.length <= 4 ? sel.map(p => p.nombre || "Sin nombre").join(", ") : `${sel.length} plantas`;
   const cuerpo = `
     <p class="lead">${esc(nombres)}</p>
     <div class="campo-form"><label for="mv-lugar">Lugar</label>
-      <select id="mv-lugar">${lugares.map(l => `<option value="${esc(l.id)}"${l.id === lugarIni ? " selected" : ""}>${esc(l.nombre || "Lugar")}</option>`).join("")}</select></div>
+      <select id="mv-lugar">${destinos.map(l => `<option value="${esc(l.id)}"${l.id === lugarIni ? " selected" : ""}>${esc(l.nombre || "Lugar")}</option>`).join("")}</select></div>
     <div class="campo-form" id="mv-area-wrap"><label for="mv-area">Área</label><select id="mv-area"></select></div>`;
 
   const llenarAreas = (areaSel = "") => {
@@ -251,19 +274,25 @@ const estadoLuz = {}; // lugarId -> {online, encendido}
 
 function renderLuces() {
   const cont = $("vista-luces");
-  if (!lugares.length) { cont.innerHTML = '<p class="vacio">No hay lugares cargados.</p>'; return; }
-  cont.innerHTML = lugares.map(l => {
+  const nuevo = '<div style="margin-bottom:14px"><button type="button" class="btn btn-primary" data-nuevo="1">＋ Nuevo lugar</button></div>';
+  if (!lugares.length) { cont.innerHTML = nuevo + '<p class="vacio">No hay lugares cargados.</p>'; return; }
+  const ordenados = [...lugares].sort((a, b) => Number(activo(b)) - Number(activo(a)));
+  cont.innerHTML = nuevo + ordenados.map(l => {
     const est = estadoLuz[l.id];
-    const badge = !est ? "" : !est.online
+    const badge = !activo(l) ? '<span class="badge off">⏸ En off</span>' : !est ? "" : !est.online
       ? '<span class="badge off">📴 Sin conexión</span>'
       : est.encendido ? '<span class="badge on">💡 Encendidas</span>' : '<span class="badge">🌑 Apagadas</span>';
     const areas = l.areas.map(a => `
       <div class="area-fila"><div class="txt"><div class="nom">${esc(a.nombre || "Área")}</div><div class="sub">${textoLuces(a.luces)}</div></div>
         <button type="button" class="btn btn-sm" data-luces="${esc(l.id)}|${esc(a.id)}">Cambiar</button></div>`).join("");
-    return `<div class="card"><h3><span>🏕️ ${esc(l.nombre || "Lugar")}</span>${badge}</h3>
+    const nPl = plantas.filter(p => p.lugarId === l.id).length;
+    return `<div class="card"${activo(l) ? "" : ' style="opacity:.65"'}><h3><span>🏕️ ${esc(l.nombre || "Lugar")}</span>${badge}</h3>
       <div class="dato">💡 <b>${textoLuces(l.luces)}</b></div>
       <div class="dato">🔆 A <b>${esc(l.alturaLuces ?? ALTURA_DEF)} cm</b> de las plantas</div>
-      <div style="margin-top:12px"><button type="button" class="btn btn-primary" data-luces="${esc(l.id)}|">Cambiar luces</button></div>
+      <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+        <button type="button" class="btn btn-primary" data-luces="${esc(l.id)}|">Cambiar luces</button>
+        <button type="button" class="btn" data-activo="${esc(l.id)}|${activo(l) ? 0 : 1}">${activo(l) ? "Poner en off" : "Reactivar"}</button></div>
+      ${!activo(l) && nPl ? `<div class="dato">⚠️ Tiene ${nPl} ${nPl === 1 ? "planta" : "plantas"}: movelas desde la pestaña Plantas.</div>` : ""}
       ${areas}</div>`;
   }).join("");
 }
@@ -322,6 +351,60 @@ function abrirLuces(lugarId, areaId) {
   });
 }
 
+async function cambiarActivo(lugarId, on) {
+  const l = lugarPor(lugarId);
+  if (!l) return;
+  const nPl = plantas.filter(p => p.lugarId === lugarId).length;
+  if (!on && nPl && !confirm(`${l.nombre || "Este lugar"} tiene ${nPl} ${nPl === 1 ? "planta" : "plantas"}. ¿Ponerlo en off igual? (Después movelas desde Plantas.)`)) return;
+  await updateDoc(doc(db, "lugares", lugarId), { activo: on });
+  l.activo = on;
+  renderTodo();
+  toast(on ? `${l.nombre} reactivado ✓` : `${l.nombre} en off ✓`);
+}
+
+const optsDisp = (tipo, sel) => `<option value="">— Ninguno —</option>` + Object.entries(catalogo)
+  .filter(([, v]) => v.tipo === tipo)
+  .map(([k, v]) => `<option value="${esc(k)}"${k === sel ? " selected" : ""}>${esc(v.nombre || k)}${v.lugar ? " · " + esc(v.lugar) : ""}</option>`).join("");
+
+function abrirNuevoLugar() {
+  const luzPorDefecto = catalogo.luces_2x1 ? "luces_2x1" : "";
+  const cuerpo = `
+    <div class="campo-form"><label for="nl-nombre">Nombre</label><input id="nl-nombre" type="text" maxlength="60" value="Estructura 2×1"></div>
+    <div class="campo-form"><label for="nl-dim">Dimensiones</label><input id="nl-dim" type="text" maxlength="40" value="2×1×2 m"></div>
+    <div class="campo-form"><label for="nl-sw">Interruptor de luces (Tuya)</label><select id="nl-sw">${optsDisp("switch", luzPorDefecto)}</select></div>
+    <div class="campo-form"><label for="nl-sensor">Sensor de temperatura/humedad (opcional)</label><select id="nl-sensor">${optsDisp("sensor", "")}</select></div>
+    <div class="campo-form"><label>Luces instaladas</label>
+      <div id="luces-filas">${filaLuzHTML()}</div>
+      <button type="button" class="btn btn-sm" id="luz-agregar">＋ Agregar otra luz</button></div>`;
+  abrirSheet({
+    titulo: "Nuevo lugar", cuerpo, okTexto: "Crear",
+    onMostrar: () => {
+      $("luz-agregar").addEventListener("click", () => $("luces-filas").insertAdjacentHTML("beforeend", filaLuzHTML()));
+      $("luces-filas").addEventListener("click", e => { if (e.target.closest(".quitar")) e.target.closest(".luz-row").remove(); });
+    },
+    onOk: async () => {
+      const nombre = $("nl-nombre").value.trim().slice(0, 60);
+      if (!nombre) { toast("Ingresá un nombre", true); $("sheet-ok").disabled = false; return; }
+      const luces = [...document.querySelectorAll("#luces-filas .luz-row")].map(r => ({
+        tipo: r.querySelector(".luz-tipo").value.trim().slice(0, 60),
+        cantidad: Math.min(99, Math.max(1, parseInt(r.querySelector(".luz-cant").value, 10) || 1)),
+      })).filter(x => x.tipo);
+      const sw = $("nl-sw").value, sensor = $("nl-sensor").value;
+      // Misma forma que los lugares creados desde la app completa
+      const datos = {
+        nombre, dimensiones: $("nl-dim").value.trim().slice(0, 40), luces,
+        sensoresTuya: sensor ? [sensor] : [], switchLuces: sw ? [sw] : [], switchTurbinas: [],
+        intractor: false, extractor: false, notas: "", activo: true, creadoEn: serverTimestamp(),
+      };
+      const ref = await addDoc(collection(db, "lugares"), datos);
+      lugares.push({ ...datos, id: ref.id, areas: [], creadoEn: null });
+      lugares.sort((a, b) => String(a.nombre || "").localeCompare(String(b.nombre || ""), "es"));
+      cerrarSheet(); renderTodo(); cargarEstadoLuces();
+      toast(`${nombre} creado ✓`);
+    },
+  });
+}
+
 // Estado encendido/apagado (solo lectura, mejor esfuerzo: el proxy en Render puede estar dormido)
 async function cargarEstadoLuces() {
   const base = (localStorage.getItem("tuya_proxy") || PROXY_URL + "/tuya").replace(/\/tuya$/, "");
@@ -373,6 +456,13 @@ $("vista-plantas").addEventListener("click", e => {
 });
 
 $("vista-luces").addEventListener("click", e => {
+  if (e.target.closest("[data-nuevo]")) { abrirNuevoLugar(); return; }
+  const act = e.target.closest("[data-activo]");
+  if (act) {
+    const [lid, v] = act.dataset.activo.split("|");
+    cambiarActivo(lid, v === "1").catch(err => { console.error(err); toast("Error: " + err.message, true); });
+    return;
+  }
   const b = e.target.closest("[data-luces]");
   if (b) { const [lid, aid] = b.dataset.luces.split("|"); abrirLuces(lid, aid); }
 });
