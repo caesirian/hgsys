@@ -52,7 +52,6 @@ const LUCES_LISTA = [
 // La fuente de verdad real es GET /tuya/devices del proxy — ver cargarCatalogoDispositivos().
 let DISPOSITIVOS_TUYA = {
   sensor_carpa:   { id: "ebefb9fc12b7940a71l8gp", tipo: "sensor",  nombre: "Sensor Carpa",   lugar: "Carpa" },
-  luces_carpa:    { id: "ebb60fa54c54559c63ysur",  tipo: "switch",  nombre: "Luces Carpa",    lugar: "Carpa" },
   turbinas_carpa: { id: "3522204898f4abba2357",    tipo: "switch",  nombre: "Turbinas Carpa", lugar: "Carpa" },
   sensor_3x1:     { id: "eb8fc54c62a0049352pgax",  tipo: "sensor",  nombre: "Sensor 3x1",     lugar: "Estructura 3x1" },
   luces_3x1:      { id: "80210308a4cf12ac315b",    tipo: "switch",  nombre: "Luces 3x1",      lugar: "Estructura 3x1" },

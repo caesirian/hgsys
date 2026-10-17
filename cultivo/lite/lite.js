@@ -22,7 +22,6 @@ const ALTURA_MIN  = 40, ALTURA_MAX = 140, ALTURA_DEF = 70;
 // Catálogo de dispositivos Tuya (se pisa con GET /tuya/devices del proxy; este es el respaldo)
 let catalogo = {
   sensor_carpa:   { tipo: "sensor", nombre: "Sensor Carpa" },
-  luces_carpa:    { tipo: "switch", nombre: "Luces Carpa" },
   turbinas_carpa: { tipo: "switch", nombre: "Turbinas Carpa" },
   sensor_3x1:     { tipo: "sensor", nombre: "Sensor 3x1" },
   luces_3x1:      { tipo: "switch", nombre: "Luces 3x1" },
