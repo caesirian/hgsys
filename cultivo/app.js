@@ -1362,28 +1362,26 @@ function svgEstructura3x1(encendida, alturaLuces, lugarId) {
 }
 
 // Estructura 2×1: igual que la 3×1 pero 1 m menos de ancho (200cm ancho x 200cm alto x
-// 100cm de profundidad) → mismo alto y misma profundidad, 2 compartimentos en vez de 3,
-// una Insativa por compartimento. Mismos 0.85px/cm de alto y mismo criterio de perspectiva.
+// 100cm de profundidad) → mismo alto, misma profundidad y mismos 0.85px/cm de perspectiva.
+// Luces (de izquierda a derecha): Insativa 200w · Santa Planta 250w (centro) · 2 Mars Orbiter
+// (uno atrás del otro, a la derecha). Sin divisiones: las luces no van una por compartimento.
 function svgEstructura2x1(encendida, alturaLuces, lugarId) {
   const d = alturaLuces==null ? 70 : alturaLuces;
   const yLuz = 150 - d * 0.85;
-  const n = 2, W = 280 * n / 3, L = 150 - W / 2, R = L + W; // marco frontal L,10–R,180
-  const bL = L + 49, bR = R - 49;                           // pared del fondo (anidada) bL,40–bR,150
-  const gy = "egY"+lugarId;
+  const W = 280 * 2 / 3, L = 150 - W / 2, R = L + W; // marco frontal L,10–R,180
+  const bL = L + 49, bR = R - 49;                    // pared del fondo (anidada) bL,40–bR,150
+  const gw = "egW"+lugarId, gy = "egY"+lugarId;
   const f = v => v.toFixed(1);
-  const divisiones = [], haces = [], luces = [];
-  for (let k = 1; k < n; k++) {
-    const xf = L + W * k / n, xb = bL + (bR - bL) * k / n;
-    divisiones.push(`<line x1="${f(xf)}" y1="10" x2="${f(xb)}" y2="40" class="carpa-marco"/><line x1="${f(xf)}" y1="180" x2="${f(xb)}" y2="150" class="carpa-marco"/>`);
-  }
-  for (let k = 0; k < n; k++) {
-    const cx = L + W * (k + 0.5) / n;
-    haces.push(`<polygon points="${f(cx-10)},${f(yLuz+6)} ${f(cx+10)},${f(yLuz+6)} ${f(cx+28)},145 ${f(cx-28)},145" fill="url(#${gy})" class="beam"/>`);
-    luces.push(`<line x1="${f(cx)}" y1="16" x2="${f(cx)}" y2="${f(yLuz)}" class="cable-luz"/><rect x="${f(cx-15)}" y="${f(yLuz)}" width="30" height="6" rx="2" class="barra-luz"/>`);
-  }
+  const xIns = L + W * 0.18, xSan = 150, xOrb = R - W * 0.18;
+  // Orbiter de atrás: más arriba en pantalla, más chico y colgado de un punto más profundo del techo
+  const yOrbF = yLuz + 6, yOrbB = yLuz - 8;
   return `
   <svg viewBox="0 0 300 200" class="ilustracion ${encendida?'glow-on':'glow-off'}">
     <defs>
+      <linearGradient id="${gw}" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#ffffff" stop-opacity=".26"/>
+        <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+      </linearGradient>
       <linearGradient id="${gy}" x1="0" y1="0" x2="0" y2="1">
         <stop offset="0%" stop-color="#fff6c9" stop-opacity=".38"/>
         <stop offset="100%" stop-color="#fff6c9" stop-opacity="0"/>
@@ -1396,11 +1394,31 @@ function svgEstructura2x1(encendida, alturaLuces, lugarId) {
     <polygon points="${f(R)},10 ${f(R)},180 ${f(bR)},150 ${f(bR)},40" class="carpa-pared"/>
     <polygon points="${f(L)},180 ${f(R)},180 ${f(bR)},150 ${f(bL)},150" class="carpa-piso"/>
     <polygon points="${f(bL)},40 ${f(bR)},40 ${f(bR)},150 ${f(bL)},150" class="carpa-fondo"/>
-    ${divisiones.join("\n    ")}
     <rect x="${f(L)}" y="10" width="${f(W)}" height="170" fill="none" class="carpa-marco"/>
     <ellipse cx="150" cy="95" rx="${f(W/2-8)}" ry="80" class="glow-interior"/>
-    <g class="haces-luz">${haces.join("")}</g>
-    <g class="panel-led">${luces.join("")}</g>
+    <!-- Haces de luz (cono) -->
+    <g class="haces-luz">
+      <polygon points="${f(xIns-10)},${f(yLuz+6)} ${f(xIns+10)},${f(yLuz+6)} ${f(xIns+28)},145 ${f(xIns-28)},145" fill="url(#${gy})" class="beam"/>
+      <polygon points="${f(xSan-15)},${f(yLuz+8)} ${f(xSan+15)},${f(yLuz+8)} ${f(xSan+46)},148 ${f(xSan-46)},148" fill="url(#${gw})" class="beam"/>
+      <polygon points="${f(xOrb-6)},${f(yOrbB+5)} ${f(xOrb+6)},${f(yOrbB+5)} ${f(xOrb+17)},142 ${f(xOrb-17)},142" fill="url(#${gw})" class="beam beam-tenue"/>
+      <polygon points="${f(xOrb-8)},${f(yOrbF+5)} ${f(xOrb+8)},${f(yOrbF+5)} ${f(xOrb+22)},146 ${f(xOrb-22)},146" fill="url(#${gw})" class="beam"/>
+    </g>
+    <g class="panel-led">
+      <!-- Insativa 200w (izquierda) -->
+      <line x1="${f(xIns)}" y1="16" x2="${f(xIns)}" y2="${f(yLuz)}" class="cable-luz"/>
+      <rect x="${f(xIns-15)}" y="${f(yLuz)}" width="30" height="6" rx="2" class="barra-luz"/>
+      <!-- Santa Planta 250w (centro): panel más ancho con 3 tramos -->
+      <line x1="${f(xSan-14)}" y1="16" x2="${f(xSan-14)}" y2="${f(yLuz)}" class="cable-luz"/>
+      <line x1="${f(xSan+14)}" y1="16" x2="${f(xSan+14)}" y2="${f(yLuz)}" class="cable-luz"/>
+      <rect x="${f(xSan-22)}" y="${f(yLuz)}" width="44" height="8" rx="2" class="santaplanta"/>
+      <line x1="${f(xSan-7)}" y1="${f(yLuz+1)}" x2="${f(xSan-7)}" y2="${f(yLuz+7)}" class="santaplanta-sep"/>
+      <line x1="${f(xSan+7)}" y1="${f(yLuz+1)}" x2="${f(xSan+7)}" y2="${f(yLuz+7)}" class="santaplanta-sep"/>
+      <!-- 2 Mars Orbiter (derecha), uno atrás del otro -->
+      <line x1="${f(xOrb)}" y1="26" x2="${f(xOrb)}" y2="${f(yOrbB)}" class="cable-luz"/>
+      <ellipse cx="${f(xOrb)}" cy="${f(yOrbB+2)}" rx="9" ry="3.6" class="orbiter"/>
+      <line x1="${f(xOrb)}" y1="16" x2="${f(xOrb)}" y2="${f(yOrbF)}" class="cable-luz"/>
+      <ellipse cx="${f(xOrb)}" cy="${f(yOrbF+3)}" rx="11" ry="4.6" class="orbiter"/>
+    </g>
   </svg>`;
 }
 

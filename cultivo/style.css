@@ -217,10 +217,16 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .estante-base,.estante-pata{fill:#33392f}
 .barra-luz{fill:#4a4a44;transition:fill .5s ease,filter .5s ease}
 .galponera{fill:#3d413f;transition:fill .5s ease,filter .5s ease}
+.santaplanta{fill:#4a4a44;transition:fill .5s ease,filter .5s ease}
+.santaplanta-sep{stroke:#2c2f2c;stroke-width:1}
+.orbiter{fill:#3d413f;transition:fill .5s ease,filter .5s ease}
 .glow-interior{fill:#000;opacity:0;transition:opacity .6s ease,fill .6s ease}
 .planta-silueta{fill:#26402c;transition:fill .6s ease}
 
 .glow-on .barra-luz{fill:#ffd23d;filter:drop-shadow(0 0 6px #ffd23dcc)}
+.glow-on .santaplanta{fill:#fff1c9;filter:drop-shadow(0 0 6px #fff1c9cc)}
+.glow-on .santaplanta-sep{stroke:#d9c68f}
+.glow-on .orbiter{fill:#eef6ff;filter:drop-shadow(0 0 5px #eef6ffcc)}
 .glow-on .galponera{fill:#eef6ff;filter:drop-shadow(0 0 5px #eef6ffcc)}
 .glow-on .glow-interior{fill:#ffd23d;opacity:.16}
 .glow-on .planta-silueta{fill:#6bbf5c}
@@ -230,6 +236,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 /* Haces de luz tipo cono, mismo criterio on/off que barra-luz/galponera */
 .beam{mix-blend-mode:screen;opacity:0;transition:opacity .5s ease;pointer-events:none}
 .glow-on .beam{opacity:1}
+.glow-on .beam-tenue{opacity:.6}
 
 /* Plantas del Dashboard (iconos HTML, hermanos del SVG): oscuras con la luz
    apagada, brillo normal con la luz encendida. */
