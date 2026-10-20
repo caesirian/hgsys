@@ -1,7 +1,7 @@
 # HG Soluciones Web — Estado del proyecto
 **Última actualización:** junio 2026 (sesión: refactor index_pro sin scroll)  
 **Repo:** `Caesirian/Hgsys` (GitHub Pages → hgsolucionesweb.com.ar)  
-**Contacto:** hernan.garbarino@gmail.com · WhatsApp +5491125333769
+**Contacto:** hernan.garbarino@gmail.com · WhatsApp +5491168610100
 
 ---
 
