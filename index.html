@@ -239,6 +239,7 @@
       <div class="mt-8 flex flex-wrap gap-3">
         <button class="btn primary" onclick="loadModule('https://hgsolucionesweb.com.ar/presupuesto.html')" data-i18n="cta.quote">Automatizar mi negocio ahora</button>
         <button class="btn" onclick="loadModule('https://hgsolucionesweb.com.ar/HGSys.html')" data-i18n="cta.openSystem">Ver la magia en acción</button>
+        <button class="btn" onclick="loadModule('como-funciona.html')" data-i18n="cta.howItWorks">Cómo funciona</button>
         <button class="btn" onclick="loadModule('https://hgsolucionesweb.com.ar/reader.html')" data-i18n="cta.openReader">Probar lector QR</button>
         <button class="btn" onclick="loadModule('CV.html')" data-i18n="cta.openCV">Ver credenciales</button>
         <button class="btn" onclick="toggleChat()" data-i18n="cta.openChat">Hablar con HG</button>
@@ -365,7 +366,7 @@
         <h2 class="font-display balanced text-4xl font-black leading-tight md:text-6xl" data-i18n="contact.title">¿Querés mejorar la gestión de tu empresa con un sistema real?</h2>
         <p class="mt-5 text-lg font-semibold text-ink/75" data-i18n="contact.desc">Diseño herramientas a medida para negocios, cooperativas, profesionales y PyMEs.</p>
         <div class="mt-8 flex flex-wrap gap-3">
-          <a href="https://wa.me/1168610100" class="btn !border-ink/15 !bg-ink !text-white" data-i18n="contact.cta">Automatizar mi negocio ahora</a>
+          <a href="https://wa.me/5491168610100" class="btn !border-ink/15 !bg-ink !text-white" data-i18n="contact.cta">Automatizar mi negocio ahora</a>
           <button class="btn !border-ink/15 !bg-white/40 !text-ink" onclick="loadModule('https://hgsolucionesweb.com.ar/presupuesto.html')" data-i18n="contact.quote">Ver la magia en acción</button>
         </div>
       </div>
@@ -441,6 +442,7 @@ const i18n = {
     'hero.panel.step3': '03 · Sincroniza WhatsApp, Gmail, Sheets, Drive y APIs',
     'cta.quote': 'Automatizar mi negocio ahora',
     'cta.openSystem': 'Ver la magia en acción',
+    'cta.howItWorks': 'Cómo funciona',
     'cta.openReader': 'Probar lector QR',
     'cta.openCV': 'Ver credenciales',
     'cta.openChat': 'Hablar con HG',
@@ -500,6 +502,7 @@ const i18n = {
     'hero.panel.step3': '03 · Sync WhatsApp, Gmail, Sheets, Drive and APIs',
     'cta.quote': 'Automate my business now',
     'cta.openSystem': 'See the magic in action',
+    'cta.howItWorks': 'How it works',
     'cta.openReader': 'Try QR reader',
     'cta.openCV': 'View credentials',
     'cta.openChat': 'Talk to HG',
@@ -657,7 +660,7 @@ function initHgChat(){
   document.getElementById('hgFullSend')?.addEventListener('click', () => send('hgFullInput','hgFullBody'));
   document.getElementById('hgInput')?.addEventListener('keydown', e => { if(e.key === 'Enter') send('hgInput','hgBody'); });
   document.getElementById('hgFullInput')?.addEventListener('keydown', e => { if(e.key === 'Enter') send('hgFullInput','hgFullBody'); });
-  contactHuman?.addEventListener('click', () => { window.location.href = 'https://wa.me/1168610100'; });
+  contactHuman?.addEventListener('click', () => { window.location.href = 'https://wa.me/5491168610100'; });
   sendPdfBtn?.addEventListener('click', () => { loadModule('https://hgsolucionesweb.com.ar/presupuesto.html'); });
 }
 document.addEventListener('click', showSplash, { passive:true });

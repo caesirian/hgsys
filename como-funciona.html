@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cómo funciona – HG Soluciones Web</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F6F4EE;--card:#FFFFFF;--ink:#14211D;--mut:#3D4F49;--line:#DCE5E0;--acc:#0E7C66;--onacc:#FFFFFF;--sub:#F1F5F3;--okb:#D6EFE5;--okt:#0B5D4B;--wb:#FBEBC8;--wt:#6B4A0A;--bb:#FADADA;--bt:#8A1F1F;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0F1A17;--card:#17251F;--ink:#EEF4F1;--mut:#B5C5BF;--line:#2A3C35;--acc:#3DD6B0;--onacc:#04201A;--sub:#1D2E27;--okb:#17463A;--okt:#8CF0D3;--wb:#4A3A12;--wt:#FFD98A;--bb:#4D1E1E;--bt:#FFB3B3;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0F1A17;--card:#17251F;--ink:#EEF4F1;--mut:#B5C5BF;--line:#2A3C35;--acc:#3DD6B0;--onacc:#04201A;--sub:#1D2E27;--okb:#17463A;--okt:#8CF0D3;--wb:#4A3A12;--wt:#FFD98A;--bb:#4D1E1E;--bt:#FFB3B3;color-scheme:dark}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Manrope',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;font-size:18px;line-height:1.5;padding-bottom:110px}
+.wrap{max-width:680px;margin:0 auto;padding:22px 18px}
+.brand{font-weight:800;font-size:18px}
+h1{font-size:40px;line-height:1.08;letter-spacing:-1.2px;margin:34px 0 14px;font-weight:800}
+.lead{font-size:20px;color:var(--mut);margin:0 0 26px}
+.btn{display:flex;align-items:center;justify-content:center;background:var(--acc);color:var(--onacc);border-radius:16px;padding:16px 22px;font:800 18px 'Manrope',system-ui,sans-serif;min-height:52px;text-decoration:none;text-align:center}
+a:focus-visible{outline:3px solid var(--acc);outline-offset:3px}
+.btn.alt{background:transparent;color:var(--ink);border:2px solid var(--line)}
+.who{background:var(--card);border:2px solid var(--line);border-radius:24px;padding:22px}
+.who p{margin:0 0 12px}
+.svc{padding:14px 0;border-top:1px solid var(--line)}
+.svc:first-of-type{border-top:0}
+.svc b{display:block;font-size:19px}
+.svc span{color:var(--mut)}
+.sec{margin:44px 0}
+.n{display:inline-grid;place-items:center;width:38px;height:38px;border-radius:50%;background:var(--acc);color:var(--onacc);font-weight:800;margin-bottom:10px}
+h2{font-size:28px;line-height:1.15;letter-spacing:-.6px;margin:0 0 8px;font-weight:800}
+.sec p{margin:0 0 16px;color:var(--mut)}
+.mock{background:var(--card);border:2px solid var(--line);border-radius:24px;padding:8px 18px}
+.r{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 0;border-top:1px solid var(--line);font-weight:700}
+.r:first-child{border-top:0}
+.pill{border-radius:99px;padding:5px 14px;font-size:15px;font-weight:800;white-space:nowrap}
+.ok{background:var(--okb);color:var(--okt)}.w{background:var(--wb);color:var(--wt)}.b{background:var(--bb);color:var(--bt)}
+.msg{background:var(--card);border:2px solid var(--line);border-radius:24px;padding:18px}
+.bub{background:var(--sub);border-radius:18px 18px 18px 6px;padding:14px 16px;font-weight:700}
+.bub small{display:block;color:var(--mut);font-weight:600;margin-top:4px}
+.st{display:flex;gap:14px;align-items:center;padding:10px 0;font-weight:700}
+.c{width:28px;height:28px;border-radius:50%;border:3px solid var(--line);flex:none;display:grid;place-items:center;font-size:14px}
+.st.d .c{background:var(--acc);border-color:var(--acc);color:var(--onacc)}
+.st.now .c{border-color:var(--acc)}
+.st.now{color:var(--acc)}
+.tags{display:flex;flex-wrap:wrap;gap:10px}
+.tag{background:var(--card);border:2px solid var(--line);border-radius:99px;padding:10px 18px;font-weight:700}
+.end{background:var(--acc);color:var(--onacc);border-radius:28px;padding:28px 22px;text-align:center}
+.end h2{margin-bottom:10px}
+.end p{color:var(--onacc);margin-bottom:18px}
+.end .btn{background:var(--onacc);color:var(--acc)}
+.end .num{font-size:30px;font-weight:800;margin-top:16px}
+.cta{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:2px solid var(--line);padding:10px 18px calc(10px + env(safe-area-inset-bottom,0px));z-index:5}
+.cta .in{max-width:680px;margin:0 auto;display:flex;align-items:center;gap:14px}
+.cta p{margin:0;font-size:14px;font-weight:700;line-height:1.25;flex:1}
+.cta .btn{padding:12px 22px;min-height:48px}
+@media(max-width:420px){h1{font-size:34px}h2{font-size:25px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<a class="brand" href="https://hgsolucionesweb.com.ar" target="_blank" rel="noopener" style="color:inherit;text-decoration:none">HG Soluciones Web</a>
+<h1>Enterate de todo lo que pasa en tu negocio, sin tener que preguntar.</h1>
+<p class="lead">Un sistema web hecho a medida que te muestra el estado de todo, te avisa cuando hay un problema y deja que tus clientes se informen solos.</p>
+<a class="btn" href="https://wa.me/5491168610100?text=Hola%20Hern%C3%A1n%2C%20vi%20c%C3%B3mo%20funciona%20y%20quiero%20una%20demo%20para%20mi%20negocio." target="_blank" rel="noopener">Pedí tu demo gratis</a>
+
+<section class="sec">
+<div class="n">1</div>
+<h2>Ves todo en una sola pantalla</h2>
+<p>Un vistazo y sabés qué anda bien y qué necesita atención.</p>
+<div class="mock" aria-label="Ejemplo de panel con el estado de cuatro pedidos">
+<div class="r"><span>Pedido 4101</span><span class="pill ok">En orden</span></div>
+<div class="r"><span>Pedido 4102</span><span class="pill ok">En orden</span></div>
+<div class="r"><span>Pedido 4103</span><span class="pill w">Con demora</span></div>
+<div class="r"><span>Pedido 4104</span><span class="pill ok">En orden</span></div>
+</div>
+</section>
+
+<section class="sec">
+<div class="n">2</div>
+<h2>Te avisa cuando algo falla</h2>
+<p>No tenés que estar mirando la pantalla. Si algo se complica, te llega un mensaje al celular.</p>
+<div class="msg" aria-label="Ejemplo de aviso recibido por WhatsApp">
+<div class="bub">Pedido 4103 con 20 minutos de demora.<small>Aviso automático · 10:42</small></div>
+</div>
+</section>
+
+<section class="sec">
+<div class="n">3</div>
+<h2>Tu cliente se entera solo</h2>
+<p>Puede ver en qué etapa está lo suyo, sin llamarte ni escribirte.</p>
+<div class="mock" aria-label="Ejemplo de seguimiento que ve el cliente">
+<div class="st d"><span class="c">✓</span>Recibido</div>
+<div class="st d"><span class="c">✓</span>Preparado</div>
+<div class="st now"><span class="c"></span>En camino</div>
+<div class="st"><span class="c"></span>Entregado</div>
+</div>
+</section>
+
+<section class="sec">
+<div class="n">4</div>
+<h2>Lo repetitivo se hace solo</h2>
+<p>Informes, recordatorios y avisos salen sin que nadie los cargue a mano.</p>
+<div class="mock" aria-label="Ejemplo de tareas automáticas">
+<div class="r"><span>Informe del día</span><span class="pill ok">Enviado 18:00</span></div>
+<div class="r"><span>Recordatorio a clientes</span><span class="pill ok">Enviado</span></div>
+<div class="r"><span>Resumen semanal</span><span class="pill ok">Listo</span></div>
+</div>
+</section>
+
+<section class="sec">
+<h2>Funciona para cualquier rubro</h2>
+<p>Se adapta a lo que vos hacés: pedidos, viajes, trabajos, trámites, turnos, equipos.</p>
+<div class="tags"><span class="tag">Transporte</span><span class="tag">Reparto</span><span class="tag">Servicios técnicos</span><span class="tag">Comercios</span><span class="tag">Cooperativas</span><span class="tag">Estudios y gestorías</span><span class="tag">Talleres</span><span class="tag">Producción</span></div>
+</section>
+
+<section class="sec">
+<h2>Quién está detrás</h2>
+<div class="who">
+<p><b>Hernán Garbarino</b>, desarrollador web y administrador.</p>
+<p>Más de 18 años trabajando en gestión, finanzas y procesos. Por eso no te armo una pantalla linda: te armo un sistema pensado desde cómo funciona una empresa de verdad.</p>
+<a class="btn alt" href="https://hgsolucionesweb.com.ar" target="_blank" rel="noopener">Conocé más en hgsolucionesweb.com.ar</a>
+</div>
+</section>
+
+<section class="sec">
+<h2>Y además, te puedo ayudar con</h2>
+<div class="mock">
+<div class="svc"><b>Sitios web que venden</b><span>Webs institucionales, landing pages y portfolios pensados para captar clientes.</span></div>
+<div class="svc"><b>Sistemas administrativos</b><span>Presupuestos automáticos, control de clientes, seguimiento de pedidos y reportes.</span></div>
+<div class="svc"><b>Integraciones</b><span>WhatsApp, Gmail, Google Sheets, Drive, bots y avisos automáticos.</span></div>
+</div>
+</section>
+
+<section class="end">
+<h2>Lo armamos a medida de tu negocio</h2>
+<p>Contame qué hacés y te muestro una demo con tu caso, gratis y sin compromiso.</p>
+<a class="btn" href="https://wa.me/5491168610100?text=Hola%20Hern%C3%A1n%2C%20vi%20c%C3%B3mo%20funciona%20y%20quiero%20una%20demo%20para%20mi%20negocio." target="_blank" rel="noopener">Escribime por WhatsApp</a>
+<div class="num">11 6861 0100</div>
+<a class="btn" href="https://hgsolucionesweb.com.ar" target="_blank" rel="noopener" style="margin-top:16px;background:transparent;color:var(--onacc);border:2px solid var(--onacc)">hgsolucionesweb.com.ar</a>
+</section>
+</div>
+<div class="cta"><div class="in"><p>¿Lo querés en tu negocio?<br>Demo gratis</p><a class="btn" href="https://wa.me/5491168610100?text=Hola%20Hern%C3%A1n%2C%20vi%20c%C3%B3mo%20funciona%20y%20quiero%20una%20demo%20para%20mi%20negocio." target="_blank" rel="noopener">Escribime</a></div></div>
+</body>
+</html>
