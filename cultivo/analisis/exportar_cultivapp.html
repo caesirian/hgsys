@@ -37,7 +37,7 @@ async function getJSON(url, tries = 3) {
   }
   throw err;
 }
-const plain = v => JSON.parse(JSON.stringify(v, (k, x) => (x && typeof x.toDate === "function") ? x.toDate().toISOString() : x));
+const plain = v => JSON.parse(JSON.stringify(v, (k, x) => (x && typeof x === "object" && x.type === "firestore/timestamp/1.0") ? new Date(x.seconds * 1000).toISOString() : x));
 
 document.getElementById("go").onclick = async (ev) => {
   ev.target.disabled = true;
@@ -50,8 +50,9 @@ document.getElementById("go").onclick = async (ev) => {
   try {
     log("Despertando proxy y bajando catálogo…");
     out.dispositivos = await getJSON(PROXY + "/tuya/devices");
-    const cat = out.dispositivos.dispositivos || out.dispositivos;
-    const sensores = Object.entries(cat).filter(([, d]) => d.tipo === "sensor").map(([k]) => k);
+    const cat = out.dispositivos.devices || out.dispositivos.dispositivos || out.dispositivos;
+    let sensores = Object.entries(cat).filter(([, d]) => d && d.tipo === "sensor").map(([k]) => k);
+    if (!sensores.length) { sensores = ["sensor_3x1", "sensor_carpa"]; log("Catálogo sin sensores, uso sensor_3x1 y sensor_carpa"); }
     for (const s of sensores) {
       log("Sensor " + s + " (por hora)…");
       try {

@@ -4,7 +4,7 @@ Uso: python3 analizar_cultivapp.py cultivapp_export.json salida.md
 """
 import json, math, sys, statistics as st
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, timezone
 
 src = sys.argv[1]; dst = sys.argv[2] if len(sys.argv) > 2 else "informe.md"
 D = json.load(open(src))
@@ -33,7 +33,7 @@ R = dict(T_alta=30, T_baja=18, T_critica=33, H_alta=70, H_alta_flor=60, H_baja=3
 
 lines = []; P = lines.append
 P(f"# Análisis clima y condiciones biológicas · {D.get('desde')} → {D.get('hasta')}\n")
-cat = D.get("dispositivos", {}); cat = cat.get("dispositivos", cat)
+cat = D.get("dispositivos", {}); cat = cat.get("devices") or cat.get("dispositivos") or cat
 resumen_sala = {}
 
 for s, resp in D.get("sensores", {}).items():
@@ -116,6 +116,11 @@ for s, resp in D.get("sensores", {}).items():
 
 # Cruce con eventos reales de las plantas
 P("\n## Cruce con eventos y mediciones registrados en las plantas\n")
+def fch(x):
+    if isinstance(x, dict) and "seconds" in x:
+        return datetime.fromtimestamp(x["seconds"], timezone.utc).strftime("%Y-%m-%d")
+    return str(x or "")[:10]
+
 lug_nombre = {l["id"]: l.get("nombre", l["id"]) for l in D.get("lugares", [])}
 hay = False
 for p in D.get("plantas", []):
@@ -123,9 +128,9 @@ for p in D.get("plantas", []):
     if not evs and not p.get("mediciones"): continue
     hay = True
     P(f"### {p.get('nombre','?')} · {lug_nombre.get(p.get('lugarId'), p.get('lugarId'))} · fase {p.get('fase','?')}")
-    for e in sorted(evs, key=lambda e: str(e.get("fecha", "")))[-15:]:
-        P(f"- {str(e.get('fecha',''))[:10]} · {e.get('tipo')}: {e.get('titulo') or e.get('descripcion') or e.get('notas') or ''}".rstrip(": "))
-    ecs = [(str(m.get("fecha", ""))[:10], m.get("ec"), m.get("ph")) for m in p.get("mediciones", []) if m.get("ec") or m.get("ph")]
+    for e in sorted(evs, key=lambda e: fch(e.get("fecha")))[-15:]:
+        P(f"- {fch(e.get('fecha'))} · {e.get('tipo')}: {e.get('titulo') or e.get('descripcion') or e.get('notas') or ''}".rstrip(": "))
+    ecs = [(fch(m.get("fecha")), m.get("ec"), m.get("ph")) for m in p.get("mediciones", []) if m.get("ec") or m.get("ph")]
     if ecs:
         P("- EC/pH: " + " · ".join(f"{d}: EC {e or '–'} / pH {h or '–'}" for d, e, h in sorted(ecs)[-8:]))
 if not hay:
