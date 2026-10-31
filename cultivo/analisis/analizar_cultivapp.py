@@ -28,6 +28,21 @@ def series(resp):
         out.append((p["clave"], T, H, g("tempAmb", "min"), g("tempAmb", "max"), g("humedad", "min"), g("humedad", "max")))
     return out
 
+def desde_historia(h):
+    """Histórico crudo de Tuya (/tuya/history?fecha=) -> promedios por hora (huso Argentina)."""
+    por_hora = defaultdict(lambda: {"tempAmb": [], "humedad": []})
+    for dia, est in h.items():
+        for campo in ("tempAmb", "humedad"):
+            for p in (est.get(campo) or {}).get("serie", []):
+                k = datetime.fromtimestamp(p["t"] / 1000 - 3 * 3600, timezone.utc).strftime("%Y-%m-%dT%H")
+                por_hora[k][campo].append(p["v"])
+    out = []
+    for k in sorted(por_hora):
+        t, hm = por_hora[k]["tempAmb"], por_hora[k]["humedad"]
+        if t and hm:
+            out.append((k, sum(t) / len(t), sum(hm) / len(hm), min(t), max(t), min(hm), max(hm)))
+    return out
+
 # Rangos de referencia (ambiente, luces encendidas) — ajustables
 R = dict(T_alta=30, T_baja=18, T_critica=33, H_alta=70, H_alta_flor=60, H_baja=35, VPD_bajo=0.4, VPD_alto=1.6)
 
@@ -39,12 +54,15 @@ resumen_sala = {}
 for s, resp in D.get("sensores", {}).items():
     lugar = (cat.get(s) or {}).get("lugar", s)
     hs = series(resp.get("hora")); ds = series(resp.get("dia"))
+    fuente = "rollups propios (Firestore)"
+    if not hs and not ds and resp.get("historia"):
+        hs = desde_historia(resp["historia"]); fuente = "histórico crudo de Tuya (solo ~7 días)"
     base = hs or ds
     P(f"\n## {lugar} (`{s}`)\n")
     if not base:
-        P("Sin datos en el período (sensor offline o dispositivo reemplazado)."); continue
+        P("Sin datos en el período: los rollups están vacíos (el snapshot de 15 min no está guardando lecturas) y Tuya no devolvió histórico."); continue
     nivel = "hora" if hs else "día"
-    P(f"Resolución: **{nivel}** · puntos: {len(base)} · primer dato {base[0][0]} · último {base[-1][0]}\n")
+    P(f"Fuente: {fuente}\n\nResolución: **{nivel}** · puntos: {len(base)} · primer dato {base[0][0]} · último {base[-1][0]}\n")
 
     # cobertura (huecos)
     dias_con_datos = sorted({b[0][:10] for b in base})
