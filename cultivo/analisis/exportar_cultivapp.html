@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Exportar CultivApp (60 días)</title>
+<style>
+body{font-family:system-ui,sans-serif;max-width:640px;margin:32px auto;padding:0 16px;color:#1b1b1b}
+button{font-size:18px;padding:14px 22px;border:0;border-radius:10px;background:#2e7d32;color:#fff;cursor:pointer}
+button:disabled{opacity:.5}
+pre{background:#f3f3f3;padding:12px;border-radius:8px;white-space:pre-wrap;font-size:13px}
+</style></head><body>
+<h2>Exportar CultivApp · últimos 60 días</h2>
+<p>Baja un solo archivo <b>cultivapp_export.json</b> con temperatura/humedad por hora de todos los sensores, más plantas, eventos y mediciones. Después me lo adjuntás en el chat.</p>
+<label>Días: <input id="dias" type="number" value="60" min="7" max="120" style="width:70px"></label>
+<p><button id="go">Exportar</button></p>
+<pre id="log">Listo para exportar.</pre>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
+import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+
+const app = initializeApp({
+  apiKey: "AIzaSyB1T67NPR_qNcAyFp8_DT_QWCst7OBIxTc",
+  authDomain: "cultivapp-c9672.firebaseapp.com",
+  projectId: "cultivapp-c9672"
+});
+const db = getFirestore(app);
+const PROXY = "https://cultivapp-tuya-proxy.onrender.com";
+const logEl = document.getElementById("log");
+const log = m => { logEl.textContent += "\n" + m; };
+
+async function getJSON(url, tries = 3) {
+  let err;
+  for (let i = 0; i < tries; i++) {
+    try {
+      const r = await fetch(url, { signal: AbortSignal.timeout(60000) });
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      return await r.json();
+    } catch (e) { err = e; log("  reintento (" + e.message + ")"); await new Promise(r => setTimeout(r, 4000)); }
+  }
+  throw err;
+}
+const plain = v => JSON.parse(JSON.stringify(v, (k, x) => (x && typeof x.toDate === "function") ? x.toDate().toISOString() : x));
+
+document.getElementById("go").onclick = async (ev) => {
+  ev.target.disabled = true;
+  logEl.textContent = "Arrancando…";
+  const dias = +document.getElementById("dias").value || 60;
+  const hasta = new Date(), desde = new Date(Date.now() - dias * 864e5);
+  const iso = d => d.toISOString().slice(0, 10);
+  const out = { exportado: new Date().toISOString(), dias, desde: iso(desde), hasta: iso(hasta), dispositivos: {}, sensores: {}, lugares: [], plantas: [] };
+
+  try {
+    log("Despertando proxy y bajando catálogo…");
+    out.dispositivos = await getJSON(PROXY + "/tuya/devices");
+    const cat = out.dispositivos.dispositivos || out.dispositivos;
+    const sensores = Object.entries(cat).filter(([, d]) => d.tipo === "sensor").map(([k]) => k);
+    for (const s of sensores) {
+      log("Sensor " + s + " (por hora)…");
+      try {
+        out.sensores[s] = { hora: await getJSON(`${PROXY}/tuya/rollup?device=${s}&nivel=hora&desde=${iso(desde)}T00&hasta=${iso(hasta)}T23`) };
+      } catch (e) { log("  falló hora: " + e.message); out.sensores[s] = {}; }
+      try {
+        out.sensores[s].dia = await getJSON(`${PROXY}/tuya/rollup?device=${s}&nivel=dia&desde=${iso(desde)}&hasta=${iso(hasta)}`);
+      } catch (e) { log("  falló día: " + e.message); }
+    }
+  } catch (e) { log("⚠️ Proxy: " + e.message); }
+
+  try {
+    log("Lugares…");
+    out.lugares = (await getDocs(collection(db, "lugares"))).docs.map(d => ({ id: d.id, ...plain(d.data()) }));
+    log("Plantas, eventos y mediciones…");
+    const pSnap = await getDocs(collection(db, "plantas"));
+    for (const p of pSnap.docs) {
+      const o = { id: p.id, ...plain(p.data()), eventos: [], mediciones: [], nutricion: [] };
+      for (const sub of ["eventos", "mediciones", "nutricion"]) {
+        try { o[sub] = (await getDocs(collection(db, "plantas", p.id, sub))).docs.map(d => ({ id: d.id, ...plain(d.data()) })); } catch (e) {}
+      }
+      out.plantas.push(o);
+    }
+  } catch (e) { log("⚠️ Firestore: " + e.message); }
+
+  const blob = new Blob([JSON.stringify(out)], { type: "application/json" });
+  const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(blob), download: "cultivapp_export.json" });
+  a.click();
+  log(`\n✅ Listo. Sensores: ${Object.keys(out.sensores).length} · Plantas: ${out.plantas.length}. Se descargó cultivapp_export.json`);
+  ev.target.disabled = false;
+};
+</script></body></html>
